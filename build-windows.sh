@@ -6,8 +6,6 @@
 ## sudo apt install gcc-mingw-w64
 ##
 
-cd ./build
-
 echo "Generating Windows binary"
 
 ## Setup the flags
@@ -20,6 +18,4 @@ CGO_ENABLED=1 \
 CGO_CFLAGS="-pthread" \
 CGO_LDFLAGS="-pthread" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
-go build -ldflags "-w -s -H=windowsgui" -o jxwatcher.exe ../src/*
-
-cd ../
+go build -ldflags "-w -s -H=windowsgui" -o build/jxwatcher.exe src/*

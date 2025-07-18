@@ -7,9 +7,5 @@
 ## 
 
 
-cd ./build
-
 echo "Generating Linux binary"
-go build -ldflags "-w -s" -gcflags="-l" -o jxwatcher ../src/*
-
-cd ../
+go build -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher src/*
