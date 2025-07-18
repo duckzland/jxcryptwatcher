@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -50,12 +51,18 @@ func main() {
 		generateEmptyPanel()
 	}
 
-	topLayout := &stretchLayout{Widths: []float32{0.85, 0.15}}
 	topBg := canvas.NewRectangle(panelBG)
 	topBg.SetMinSize(fyne.NewSize(860, 20))
-	topBar := container.New(topLayout, topBg, widget.NewButton("Add Panel", func() {
-		generatePanelForm("new")
-	}))
+	topBar := container.New(
+		&stretchLayout{Widths: []float32{0.70, 0.15, 0.15}},
+		topBg,
+		widget.NewButton("Settings", func() {
+			generateSettingsForm()
+		}),
+		widget.NewButton("Add Panel", func() {
+			generatePanelForm("new")
+		}),
+	)
 
 	bg := canvas.NewRectangle(appBG)
 	bg.SetMinSize(fyne.NewSize(920, 400))
@@ -123,7 +130,7 @@ func generatePanelForm(panelKey string) {
 			return fmt.Errorf("This field cannot be empty")
 		}
 
-		value, err := strconv.ParseFloat(valueEntry.Text, 64)
+		value, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return fmt.Errorf("Only numerical number with decimals allowed")
 		}
@@ -224,6 +231,85 @@ func generatePanelForm(panelKey string) {
 }
 
 /**
+ * Helper function for generating settings form
+ */
+func generateSettingsForm() {
+
+	delayEntry := NewNumericalEntry(false)
+	dataEndPointEntry := widget.NewEntry()
+	exchangeEndPointEntry := widget.NewEntry()
+
+	delayEntry.SetDefaultValue(strconv.FormatInt(Config.Delay, 10))
+	dataEndPointEntry.SetText(Config.DataEndpoint)
+	exchangeEndPointEntry.SetText(Config.ExchangeEndpoint)
+
+	delayEntry.Validator = func(s string) error {
+		if len(s) == 0 {
+			return fmt.Errorf("This field cannot be empty")
+		}
+
+		x, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return fmt.Errorf("Only numerical value without decimals allowed")
+		}
+
+		if x < 0 {
+			return fmt.Errorf("Only number larger than zero allowed")
+		}
+
+		return nil
+	}
+
+	dataEndPointEntry.Validator = func(s string) error {
+		if len(s) == 0 {
+			return fmt.Errorf("This field cannot be empty")
+		}
+
+		_, err := url.ParseRequestURI(s)
+		if err != nil {
+			return fmt.Errorf("Invalid URL format")
+		}
+
+		return nil
+	}
+
+	exchangeEndPointEntry.Validator = func(s string) error {
+		if len(s) == 0 {
+			return fmt.Errorf("This field cannot be empty")
+		}
+
+		_, err := url.ParseRequestURI(s)
+		if err != nil {
+			return fmt.Errorf("Invalid URL format")
+		}
+
+		return nil
+	}
+
+	formItems := []*widget.FormItem{
+		widget.NewFormItem("Ticker URL", dataEndPointEntry),
+		widget.NewFormItem("Exchange URL", exchangeEndPointEntry),
+		widget.NewFormItem("Delay(seconds)", delayEntry),
+	}
+
+	d := dialog.NewForm("Settings", "Save", "Cancel", formItems, func(b bool) {
+		if b {
+
+			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
+
+			Config.DataEndpoint = dataEndPointEntry.Text
+			Config.ExchangeEndpoint = exchangeEndPointEntry.Text
+			Config.Delay = delay
+
+			saveConfig()
+		}
+	}, Window)
+
+	d.Show()
+	d.Resize(fyne.NewSize(800, 300))
+}
+
+/**
  * Helper function for generating empty panel
  */
 func generateEmptyPanel() {
@@ -303,7 +389,7 @@ func generatePanel(panelKey string, index int) {
 		rect.SetMinSize(fyne.NewSize(270, 120))
 
 		panelDisplay := panelItem(
-			NewDoubleClickWrapper(
+			NewDoubleClickContainer(
 				container.NewStack(
 					rect,
 					container.NewVBox(

@@ -42,6 +42,20 @@ func loadConfig() {
 	}
 }
 
+func saveConfig() {
+
+	jsonData, err := json.MarshalIndent(Config, "", "  ")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// Save to file
+	err = os.WriteFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), jsonData, 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
 /**
  * Helper function to check fo config.json and try to regenerate it when not found
  */

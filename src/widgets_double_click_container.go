@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type DoubleClickWrapper struct {
+type DoubleClickContainer struct {
 	widget.BaseWidget
 	content   fyne.CanvasObject
 	child     fyne.CanvasObject
@@ -15,9 +15,9 @@ type DoubleClickWrapper struct {
 	visible   bool
 }
 
-func NewDoubleClickWrapper(content, child fyne.CanvasObject) *DoubleClickWrapper {
+func NewDoubleClickContainer(content, child fyne.CanvasObject) *DoubleClickContainer {
 	child.Hide()
-	wrapper := &DoubleClickWrapper{
+	wrapper := &DoubleClickContainer{
 		content: content,
 		child:   child,
 		visible: false,
@@ -26,11 +26,11 @@ func NewDoubleClickWrapper(content, child fyne.CanvasObject) *DoubleClickWrapper
 	return wrapper
 }
 
-func (h *DoubleClickWrapper) CreateRenderer() fyne.WidgetRenderer {
+func (h *DoubleClickContainer) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.content)
 }
 
-func (h *DoubleClickWrapper) Tapped(_ *fyne.PointEvent) {
+func (h *DoubleClickContainer) Tapped(_ *fyne.PointEvent) {
 	now := time.Now()
 	if now.Sub(h.lastClick) < 500*time.Millisecond {
 		if h.visible {
