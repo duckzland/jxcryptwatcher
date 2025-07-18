@@ -43,7 +43,7 @@ func main() {
 
 	BindedData = binding.NewStringList()
 
-	Grid = container.New(layout.NewGridWrapLayout(fyne.NewSize(300, 150)))
+	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
 	for _, panel := range Panels {
 		BindedData.Append(generatePanelKey(panel, 0))
@@ -281,7 +281,7 @@ func generatePanel(panelKey string, index int) {
 		content := canvas.NewText(fmt.Sprintf("%s %s", tts, data.TargetSymbol), textColor)
 		content.Alignment = fyne.TextAlignCenter
 		content.TextStyle = fyne.TextStyle{Bold: true}
-		content.TextSize = 34
+		content.TextSize = 30
 
 		deleteBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 			removePanel(pi)
