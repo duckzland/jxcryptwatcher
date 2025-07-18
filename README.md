@@ -56,7 +56,7 @@ source ~/.bashrc
 Run the provided build script:
 
 ```bash
-./build.sh
+./build-linux.sh
 ```
 
 This will:
