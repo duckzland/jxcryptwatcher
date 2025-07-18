@@ -50,17 +50,15 @@ func main() {
 		generateEmptyPanel()
 	}
 
+	topLayout := &stretchLayout{Widths: []float32{0.85, 0.15}}
 	topBg := canvas.NewRectangle(panelBG)
-	topBg.SetMinSize(fyne.NewSize(820, 20))
-	topBar := container.NewHBox(
-		topBg,
-		widget.NewButton("Add Panel", func() {
-			generatePanelForm("new")
-		}),
-	)
+	topBg.SetMinSize(fyne.NewSize(860, 20))
+	topBar := container.New(topLayout, topBg, widget.NewButton("Add Panel", func() {
+		generatePanelForm("new")
+	}))
 
 	bg := canvas.NewRectangle(appBG)
-	bg.SetMinSize(fyne.NewSize(820, 400))
+	bg.SetMinSize(fyne.NewSize(920, 400))
 
 	Window.SetContent(container.NewStack(
 		bg,
@@ -72,12 +70,12 @@ func main() {
 		),
 	))
 
-	Window.Resize(fyne.NewSize(820, 400))
+	Window.Resize(fyne.NewSize(920, 400))
 
 	go func() {
 		for {
 			fyne.DoAndWait(func() {
-				updateData()
+				// updateData()
 			})
 
 			time.Sleep(time.Duration(Config.Delay) * time.Second)
