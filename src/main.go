@@ -75,7 +75,7 @@ func main() {
 	go func() {
 		for {
 			fyne.DoAndWait(func() {
-				// updateData()
+				updateData()
 			})
 
 			time.Sleep(time.Duration(Config.Delay) * time.Second)
