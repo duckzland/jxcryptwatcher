@@ -1,0 +1,11 @@
+{
+  // Endpoint for retrieving cryptocurrency symbols and metadata from CoinMarketCap
+  "data_endpoint": "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json",
+
+  // Endpoint for performing price conversion and exchange calculations
+  "exchange_endpoint": "https://api.coinmarketcap.com/data-api/v3/tools/price-conversion",
+
+  // Delay between ticker updates (in seconds).
+  // Please be considerate—CoinMarketCap enforces a 60-second rate limit on API requests.
+  "delay": 60
+}

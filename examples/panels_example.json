@@ -1,0 +1,23 @@
+[
+  {
+    // CoinMarketCap ID of the source cryptocurrency (integer)
+    "source": 20947,
+
+    // CoinMarketCap ID of the target cryptocurrency (integer)
+    "target": 5426,
+
+    // Exchange rate or reference value (float allowed)
+    "value": 18650,
+
+    // Number of decimal places to display
+    "decimals": 6
+  },
+
+  // You can define multiple panel entries
+  {
+    "source": 5426,
+    "target": 32684,
+    "value": 60,
+    "decimals": 6
+  }
+]

@@ -77,10 +77,17 @@ The app requires three configuration files for normal operation:
 These files are automatically generated on first launch and saved to:
 
 ```
-~/jxcryptwatcher/config.json
-~/jxcryptwatcher/panels.json
-~/jxcryptwatcher/cryptos.json
+~/.config/jxcryptwatcher/config.json
+~/.config/jxcryptwatcher/panels.json
+~/.config/jxcryptwatcher/cryptos.json
 ```
+> **Note:** The paths mentioned apply to **Ubuntu**. Other operating systems may use different locations for user-specific configuration files.  
+> 
+> - **Ubuntu/Linux**: `~/.config/jxcryptwatcher/`
+> - **macOS**: `/Users/<username>/jxcryptwatcher/`
+> - **Windows**: `C:\Users\<username>\jxcryptwatcher\`
+> 
+> Please adjust the paths accordingly based on your operating system and user environment.
 
 ### 📁 Example Configurations
 
@@ -97,7 +104,7 @@ The `cryptos.json` file is auto-generated using data from CoinMarketCap.
 To refresh the list of available cryptocurrencies, simply delete the file:
 
 ```bash
-rm ~/jxcryptwatcher/cryptos.json
+rm ~/.config/jxcryptwatcher/cryptos.json
 ```
 
 It will be re-created on the next app launch.
@@ -108,7 +115,6 @@ It will be re-created on the next app launch.
 
 - Internet connection is required to fetch live data from CoinMarketCap.
 - CoinMarketCap enforces rate limits on API requests. To avoid exceeding these limits, please configure a minimum delay of 60 seconds between each API call. Being considerate with request frequency helps ensure stable access and prevents temporary bans.
-
+- This application has been tested primarily on **Ubuntu**. While it may work on other operating systems, additional installation steps or adjustments might be required depending on your platform.
 
 ---
-
