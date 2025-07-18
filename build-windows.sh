@@ -2,18 +2,24 @@
 
 
 ## 
-## You must install windows additional build packet for ubuntu
-## apt install gcc-mingw-w64-x86-64-win32
-## 
-## or for windows 386
-## apt install gcc-mingw-w64-i686-win32
-## 
-## TODO: Figure out why windows build always firing console?
-## TODO: why -ldflags="-H=windowsgui" not honored?
+## You must install mingw for compiling go to windows binary
+## sudo apt install gcc-mingw-w64
+##
 
 cd ./build
 
 echo "Generating Windows binary"
-CGO_ENABLED=1 CC=/usr/bin/x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_LDFLAGS="-static-libgcc -static -H windowsgui" CGO_CFLAGS="-pthread" CGO_LDFLAGS="-pthread" go build -ldflags "-H windowsgui" -o jxwatcher.exe ../src/*
+
+## Setup the flags
+## -pthread will speed up the compile time
+## -w -s will create smallest file possible
+## -H=windowsgui is needed to fix windows showing terminal eventhough this is a GUI program
+GOOS=windows \
+GOARCH=amd64  \
+CGO_ENABLED=1 \
+CGO_CFLAGS="-pthread" \
+CGO_LDFLAGS="-pthread" \
+CC=/usr/bin/x86_64-w64-mingw32-gcc \
+go build -ldflags "-w -s -H=windowsgui" -o jxwatcher.exe ../src/*
 
 cd ../
