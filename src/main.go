@@ -24,6 +24,7 @@ import (
 var Grid *fyne.Container
 var BindedData binding.StringList
 var Window fyne.Window
+var NotificationBox *widget.Label
 
 // @todo Move these to theme
 var appBG color.RGBA = color.RGBA{R: 57, G: 62, B: 70, A: 255}
@@ -53,19 +54,28 @@ func main() {
 		generateEmptyPanel()
 	}
 
+	NotificationBox = widget.NewLabel("")
+
 	topBg := canvas.NewRectangle(panelBG)
 	topBg.SetMinSize(fyne.NewSize(860, 20))
 	topBar := container.New(
 		&stretchLayout{Widths: []float32{0.80, 0.05, 0.05, 0.05, 0.05}},
-		topBg,
+		container.NewStack(
+			topBg,
+			NotificationBox,
+		),
 		// Reload cryptos.json
 		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			refreshCryptos()
+			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
+				refreshCryptos()
+			})
 		}),
 
 		// Refresh data from exchange
 		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			updateData()
+			doActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", NotificationBox, func() {
+				updateData()
+			})
 		}),
 
 		// Open settings form
@@ -96,7 +106,7 @@ func main() {
 
 	go func() {
 		for {
-			fyne.DoAndWait(func() {
+			doActionWithNotification("Fetching exchange rate...", "Updating panel...", NotificationBox, func() {
 				updateData()
 			})
 
@@ -118,6 +128,7 @@ func generatePanelForm(panelKey string) {
 	targetEntry := NewCompletionEntry(CryptosOptions)
 	decimalsEntry := NewNumericalEntry(false)
 
+	title := "Adding New Panel"
 	if panelKey == "new" {
 		// Debug prefilled form
 		// valueEntry.SetText("123")
@@ -125,6 +136,8 @@ func generatePanelForm(panelKey string) {
 		// targetEntry.SetText("5426")
 		// decimalsEntry.SetText("6")
 	} else {
+		title = "Editing Panel"
+
 		pi := getPanelByKey(panelKey)
 		if pi != -1 {
 			panel := Panels[pi]
@@ -207,7 +220,7 @@ func generatePanelForm(panelKey string) {
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	d := NewExtendedFormDialog("New Panel Entry", formItems, func(b bool) {
+	d := NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 
 			source, _ := strconv.ParseInt(getTickerIdByDisplay(sourceEntry.Text), 10, 64)
@@ -237,7 +250,10 @@ func generatePanelForm(panelKey string) {
 			}
 
 			Grid.Refresh()
-			savePanels()
+
+			doActionWithNotification("Saving Panel...", "Panel data saved...", NotificationBox, func() {
+				savePanels()
+			})
 		}
 	}, Window)
 
@@ -316,7 +332,9 @@ func generateSettingsForm() {
 			Config.ExchangeEndpoint = exchangeEndPointEntry.Text
 			Config.Delay = delay
 
-			saveConfig()
+			doActionWithNotification("Saving configuration...", "Configuration data saved...", NotificationBox, func() {
+				saveConfig()
+			})
 		}
 	}, Window)
 
@@ -390,8 +408,10 @@ func generatePanel(panelKey string, index int) {
 				generatePanelForm(panelKey)
 			}),
 			NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
-				removePanel(pi)
-				savePanels()
+				doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
+					removePanel(pi)
+					savePanels()
+				})
 			}),
 		)
 
@@ -511,4 +531,25 @@ func removeAt(index int, list binding.StringList) {
 	// Remove item at index
 	updated := append(values[:index], values[index+1:]...)
 	list.Set(updated)
+}
+
+func doActionWithNotification(showText string, completeText string, box *widget.Label, callback func()) {
+	go func() {
+		fyne.Do(func() {
+			box.SetText(showText)
+		})
+
+		time.Sleep(3000 * time.Millisecond)
+
+		fyne.Do(func() {
+			callback()
+			box.SetText(completeText)
+		})
+
+		time.Sleep(10000 * time.Millisecond)
+
+		fyne.Do(func() {
+			box.SetText("")
+		})
+	}()
 }
