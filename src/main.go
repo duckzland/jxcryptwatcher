@@ -14,7 +14,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -208,7 +207,7 @@ func generatePanelForm(panelKey string) {
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	d := dialog.NewForm("New Panel Entry", "Save", "Cancel", formItems, func(b bool) {
+	d := NewExtendedFormDialog("New Panel Entry", formItems, func(b bool) {
 		if b {
 
 			source, _ := strconv.ParseInt(getTickerIdByDisplay(sourceEntry.Text), 10, 64)
@@ -308,7 +307,7 @@ func generateSettingsForm() {
 		widget.NewFormItem("Delay(seconds)", delayEntry),
 	}
 
-	d := dialog.NewForm("Settings", "Save", "Cancel", formItems, func(b bool) {
+	d := NewExtendedFormDialog("Settings", formItems, func(b bool) {
 		if b {
 
 			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
@@ -414,6 +413,7 @@ func generatePanel(panelKey string, index int) {
 					),
 				),
 				action,
+				false,
 			),
 			panelBG,
 			6,
