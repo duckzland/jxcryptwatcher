@@ -13,7 +13,9 @@ type HoverCursorIconButton struct {
 	tooltip.ToolTipWidgetExtend
 }
 
-// NewButtonWithIcon creates a new button widget with the specified label, themed icon and tap handler
+// NewButtonWithIcon creates a new button widget with the specified label, themed icon, tooltip text and tap handler
+// When no icon needed, just pass nil to it
+// When no label or tip needed, just pass empty string to it
 func NewHoverCursorIconButton(text string, icon fyne.Resource, tip string, onTapped func()) *HoverCursorIconButton {
 	b := &HoverCursorIconButton{
 		Button: widget.Button{
@@ -23,7 +25,9 @@ func NewHoverCursorIconButton(text string, icon fyne.Resource, tip string, onTap
 		},
 	}
 	b.ExtendBaseWidget(b)
-	b.SetToolTip(tip)
+	if tip != "" {
+		b.SetToolTip(tip)
+	}
 	return b
 }
 
@@ -47,27 +51,6 @@ func (b *HoverCursorIconButton) MouseMoved(e *desktop.MouseEvent) {
 	b.Button.MouseMoved(e)
 }
 
-// func NewHoverIconToolTipButton(label string, icon fyne.Resource, tip string,  tapped func()) *PointerButton {
-// 	btn := &HoverIconToolTipButton{}
-// 	btn.ExtendBaseWidget(btn)
-// 	btn.Text = label
-// 	btn.OnTapped = tapped
-// 	return btn
-// }
-
-// NewButtonWithIcon creates a new button widget with the specified label, themed icon and tap handler
-// func NewButtonWithIcon(text string, icon fyne.Resource, onTapped func()) *HoverCursorIconButton {
-// 	b := &HoverCursorIconButton{
-// 		Button: widget.Button{
-// 			Text:     text,
-// 			Icon:     icon,
-// 			OnTapped: onTapped,
-// 		},
-// 	}
-// 	b.ExtendBaseWidget(b)
-// 	return b
-// }
-
 // Implement desktop.Cursorable
 func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 	if !b.Disabled() {
@@ -75,16 +58,3 @@ func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 	}
 	return desktop.DefaultCursor
 }
-
-// func main() {
-// 	myApp := app.New()
-// 	myWindow := myApp.NewWindow("Custom Cursor")
-
-// 	btn := NewPointerButton("Hover Me", func() {
-// 		println("Clicked!")
-// 	})
-
-// 	myWindow.SetContent(btn)
-// 	myWindow.Resize(fyne.NewSize(200, 100))
-// 	myWindow.ShowAndRun()
-// }
