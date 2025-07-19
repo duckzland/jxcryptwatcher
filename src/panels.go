@@ -89,7 +89,7 @@ func getPanelByKey(panelKey string) int {
 	return -1
 }
 
-func savePanels() {
+func savePanels() bool {
 
 	jsonData, err := json.MarshalIndent(Panels, "", "  ")
 	if err != nil {
@@ -101,6 +101,8 @@ func savePanels() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	return true
 }
 
 func appendPanel(panel PanelType) {

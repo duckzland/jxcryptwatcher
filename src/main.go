@@ -76,7 +76,7 @@ func main() {
 		// Refresh data from exchange
 		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
 			doActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", NotificationBox, func() {
-				updateData()
+				updateData(true)
 			})
 		}),
 
@@ -109,7 +109,7 @@ func main() {
 	go func() {
 		for {
 			doActionWithNotification("Fetching exchange rate...", "Updating panel...", NotificationBox, func() {
-				updateData()
+				updateData(true)
 			})
 
 			time.Sleep(time.Duration(Config.Delay) * time.Second)
@@ -251,10 +251,13 @@ func generatePanelForm(panelKey string) {
 				}
 			}
 
-			Grid.Refresh()
-
 			doActionWithNotification("Saving Panel...", "Panel data saved...", NotificationBox, func() {
-				savePanels()
+				saved := savePanels()
+				if saved {
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
+				}
 			})
 		}
 	}, Window)
@@ -406,12 +409,19 @@ func generatePanel(panelKey string, index int) {
 		action := container.NewHBox(
 			layout.NewSpacer(),
 			NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
-				generatePanelForm(panelKey)
+				fyne.Do(func() {
+					generatePanelForm(panelKey)
+				})
 			}),
 			NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
 				doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
-					removePanel(pi)
-					savePanels()
+					// Async
+					saved := savePanels()
+					if saved {
+						fyne.Do(func() {
+							removePanel(pi)
+						})
+					}
 				})
 			}),
 		)
@@ -447,7 +457,7 @@ func generatePanel(panelKey string, index int) {
 /**
  * Helper for update the panels
  */
-func updateData() bool {
+func updateData(isAsync bool) bool {
 
 	updated := false
 
@@ -473,7 +483,13 @@ func updateData() bool {
 
 	if updated {
 		// Must refresh via grid, refreshing via individual panel or only relying on databind change will not work!
-		Grid.Refresh()
+		if isAsync {
+			fyne.Do(func() {
+				Grid.Refresh()
+			})
+		} else {
+			Grid.Refresh()
+		}
 	}
 
 	log.Print("Rate updated")
@@ -530,7 +546,11 @@ func removeAt(index int, list binding.StringList) {
 }
 
 func doActionWithNotification(showText string, completeText string, box *widget.Label, callback func()) {
+
 	go func() {
+
+		callback()
+
 		fyne.Do(func() {
 			box.SetText(showText)
 		})
@@ -538,7 +558,6 @@ func doActionWithNotification(showText string, completeText string, box *widget.
 		time.Sleep(3000 * time.Millisecond)
 
 		fyne.Do(func() {
-			callback()
 			box.SetText(completeText)
 		})
 

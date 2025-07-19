@@ -18,6 +18,7 @@ import (
 type CryptosType struct {
 	Values []CryptosValuesType `json:"values"`
 }
+
 type CryptosValuesType struct {
 	Id     int64
 	Name   string
@@ -162,19 +163,6 @@ func getTickerIdByDisplay(tk string) string {
 		_, ok := CryptosMap[ntk[0]]
 		if ok {
 			return ntk[0]
-		}
-	}
-
-	return ""
-}
-
-/**
- * Helper function for converting crypto symbol to CMC crypto id
- */
-func convertCryptoSymbolFromId(id int64) string {
-	for _, crypto := range Cryptos.Values {
-		if crypto.Id == id {
-			return crypto.Symbol
 		}
 	}
 
