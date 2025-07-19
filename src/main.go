@@ -17,6 +17,9 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 )
@@ -48,7 +51,6 @@ func main() {
 	BindedData = binding.NewStringList()
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
-
 	for _, panel := range Panels {
 		BindedData.Append(generatePanelKey(panel, 0))
 		generateEmptyPanel()
@@ -375,15 +377,14 @@ func generatePanel(panelKey string, index int) {
 		panel := Panels[pi]
 		data := getExchangeData(panel)
 
-		tvs := fmt.Sprintf("%s%d%s", "%.", panel.Decimals, "f")
-		evt := fmt.Sprintf(tvs, data.TargetAmount)
-
-		std := fmt.Sprintf("%s%d%s", "%.", NumDecPlaces(panel.Value), "f")
-		sts := fmt.Sprintf(std, panel.Value)
-
-		// ttd := fmt.Sprintf("%s%d%s", "%.", NumDecPlaces(panel.Value), "f")
-		ttd := fmt.Sprintf("%s%d%s", "%.", 2, "f")
-		tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount)
+		p := message.NewPrinter(language.English)
+		frac := int(NumDecPlaces(panel.Value))
+		if frac < 3 {
+			frac = 2
+		}
+		evt := p.Sprintf("%v", number.Decimal(data.TargetAmount, number.MaxFractionDigits(int(panel.Decimals))))
+		sts := p.Sprintf("%v", number.Decimal(panel.Value, number.MaxFractionDigits(frac)))
+		tts := p.Sprintf("%v", number.Decimal(panel.Value*data.TargetAmount, number.MaxFractionDigits(frac)))
 
 		// Debug
 		// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
@@ -415,14 +416,9 @@ func generatePanel(panelKey string, index int) {
 			}),
 		)
 
-		// This is hack to stretch the width
-		rect := canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0})
-		rect.SetMinSize(fyne.NewSize(270, 120))
-
-		panelDisplay := panelItem(
-			NewDoubleClickContainer(
+		panelDisplay := NewDoubleClickContainer(
+			panelItem(
 				container.NewStack(
-					rect,
 					container.NewVBox(
 						layout.NewSpacer(),
 						title, content, subtitle,
@@ -432,12 +428,12 @@ func generatePanel(panelKey string, index int) {
 						action,
 					),
 				),
-				action,
-				false,
+				panelBG,
+				6,
+				[4]float32{0, 5, 10, 5},
 			),
-			panelBG,
-			6,
-			[4]float32{0, 5, 10, 5},
+			action,
+			false,
 		)
 
 		if index == -1 {
@@ -499,7 +495,7 @@ func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius floa
 
 	item := container.NewStack(
 		background,
-		container.NewCenter(content),
+		content,
 	)
 
 	// Simulate padding using empty spacers
