@@ -84,6 +84,7 @@ func getTickerData() string {
  * Load CMC Crypto.json to memory
  */
 func loadCryptos() {
+	// PrintMemUsage("Start loading cryptos.json")
 	b := bytes.NewBuffer(nil)
 	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	io.Copy(b, f)
@@ -97,6 +98,7 @@ func loadCryptos() {
 	} else {
 		log.Print("Cryptos Loaded")
 	}
+	// PrintMemUsage("End loading cryptos.json")
 }
 
 /**

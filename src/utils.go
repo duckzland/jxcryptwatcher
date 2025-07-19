@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -105,4 +106,14 @@ func buildPathRelatedToUserDirectory(additionalPath []string) string {
 
 	path = append(path, additionalPath...)
 	return filepath.Join(path...)
+}
+
+func PrintMemUsage(title string) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Println(title)
+	fmt.Printf("Alloc = %v MiB", m.Alloc/1024/1024)
+	fmt.Printf("\tTotalAlloc = %v MiB", m.TotalAlloc/1024/1024)
+	fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
 }
