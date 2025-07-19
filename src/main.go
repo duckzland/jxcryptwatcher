@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"math"
 	"net/url"
 	"strconv"
@@ -17,6 +18,8 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	fynetooltip "github.com/dweymouth/fyne-tooltip"
 )
 
 var Grid *fyne.Container
@@ -54,12 +57,25 @@ func main() {
 	topBg := canvas.NewRectangle(panelBG)
 	topBg.SetMinSize(fyne.NewSize(860, 20))
 	topBar := container.New(
-		&stretchLayout{Widths: []float32{0.70, 0.15, 0.15}},
+		&stretchLayout{Widths: []float32{0.80, 0.05, 0.05, 0.05, 0.05}},
 		topBg,
-		widget.NewButton("Settings", func() {
+		// Reload cryptos.json
+		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
+			refreshCryptos()
+		}),
+
+		// Refresh data from exchange
+		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
+			updateData()
+		}),
+
+		// Open settings form
+		NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
 			generateSettingsForm()
 		}),
-		widget.NewButton("Add Panel", func() {
+
+		// Add new panel
+		NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
 			generatePanelForm("new")
 		}),
 	)
@@ -67,7 +83,7 @@ func main() {
 	bg := canvas.NewRectangle(appBG)
 	bg.SetMinSize(fyne.NewSize(920, 400))
 
-	Window.SetContent(container.NewStack(
+	Window.SetContent(fynetooltip.AddWindowToolTipLayer(container.NewStack(
 		bg,
 		container.NewPadded(
 			container.NewVBox(
@@ -75,7 +91,7 @@ func main() {
 				Grid,
 			),
 		),
-	))
+	), Window.Canvas()))
 
 	Window.Resize(fyne.NewSize(920, 400))
 
@@ -369,19 +385,15 @@ func generatePanel(panelKey string, index int) {
 		content.TextStyle = fyne.TextStyle{Bold: true}
 		content.TextSize = 30
 
-		deleteBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-			removePanel(pi)
-			savePanels()
-		})
-
-		editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), func() {
-			generatePanelForm(panelKey)
-		})
-
 		action := container.NewHBox(
 			layout.NewSpacer(),
-			editBtn,
-			deleteBtn,
+			NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+				generatePanelForm(panelKey)
+			}),
+			NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+				removePanel(pi)
+				savePanels()
+			}),
 		)
 
 		// This is hack to stretch the width
@@ -447,6 +459,8 @@ func updateData() bool {
 		// Must refresh via grid, refreshing via individual panel or only relying on databind change will not work!
 		Grid.Refresh()
 	}
+
+	log.Print("Rate updated")
 
 	return updated
 }

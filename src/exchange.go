@@ -77,7 +77,7 @@ func getExchangeData(Panel PanelType) ExchangeDataType {
 		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
 		log.Fatal(wrappedErr)
 	} else {
-		// log.Print("Fetched exchange data from CMC")
+		// log.Print("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)

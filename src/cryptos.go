@@ -116,6 +116,13 @@ func checkCryptos() {
 	populateCryptosMap()
 }
 
+func refreshCryptos() {
+	data := getTickerData()
+	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), data)
+	loadCryptos()
+	populateCryptosMap()
+}
+
 func populateCryptosMap() {
 	// Always reset map
 	CryptosMap = make(map[string]string)
