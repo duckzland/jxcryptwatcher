@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -109,7 +110,10 @@ func appendPanel(panel PanelType) {
 	Panels = append(Panels, panel)
 	pk := generatePanelKey(panel, 0)
 	BindedData.Append(pk)
-	generatePanel(pk, -1)
+
+	data := getExchangeData(panel)
+	Grid.Add(generatePanel(panel, data))
+
 }
 
 func insertPanel(panel PanelType, index int) {
@@ -117,16 +121,40 @@ func insertPanel(panel PanelType, index int) {
 		Panels[index] = panel
 		pk := generatePanelKey(panel, 0)
 		BindedData.SetValue(index, pk)
-		generatePanel(pk, index)
+
+		data := getExchangeData(panel)
+		Grid.Objects[index] = generatePanel(panel, data)
 	}
 }
 
-func updatePanel(panel PanelType, index int, pk string) {
-	if len(Panels) > index {
-		Panels[index] = panel
-		BindedData.SetValue(index, pk)
-		generatePanel(pk, index)
+func updatePanel(panel PanelType, pk string) bool {
+
+	pi := getPanelByKey(pk)
+
+	if pi != -1 && len(Panels) > pi {
+
+		data := getExchangeData(panel)
+		npk := generatePanelKey(panel, float32(data.TargetAmount))
+
+		if npk != pk {
+			Panels[pi] = panel
+			BindedData.SetValue(pi, pk)
+			data := getExchangeData(panel)
+			Grid.Objects[pi] = generatePanel(panel, data)
+
+			return true
+		}
 	}
+
+	return false
+}
+
+func updatePanelByKey(pk string) bool {
+	pi := getPanelByKey(pk)
+	if pi != -1 && len(Panels) > pi {
+		return updatePanel(Panels[pi], pk)
+	}
+	return false
 }
 
 func removePanel(index int) {
@@ -140,4 +168,56 @@ func removePanel(index int) {
 	}
 
 	removeAt(index, BindedData)
+}
+
+func createPanelObjectFromKey(panelKey string) PanelType {
+	panel := PanelType{}
+
+	pkv := strings.Split(panelKey, "|")
+	if len(pkv) != 2 {
+		return panel
+	}
+
+	pkt := strings.Split(pkv[0], "-")
+	if len(pkt) != 4 {
+		return panel
+	}
+
+	source, err := strconv.ParseInt(pkt[0], 10, 64)
+	if err == nil {
+		panel.Source = source
+	}
+
+	target, err := strconv.ParseInt(pkt[1], 10, 64)
+	if err == nil {
+		panel.Target = target
+	}
+
+	value, err := strconv.ParseFloat(pkt[2], 64)
+	if err == nil {
+		panel.Value = value
+	}
+
+	decimals, err := strconv.ParseInt(pkt[3], 10, 64)
+	if err == nil {
+		panel.Decimals = decimals
+	}
+
+	return panel
+}
+
+func validatePanel(panel PanelType) bool {
+	if panel == (PanelType{}) {
+		return false
+	}
+
+	if !validateCryptoId(panel.Source) {
+		return false
+	}
+
+	if !validateCryptoId(panel.Target) {
+		return false
+	}
+
+	return true
 }

@@ -34,6 +34,10 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v["data"] == nil {
+		return nil
+	}
+
 	sc := v["data"]
 	tc := v["data"].(map[string]interface{})["quote"].([]interface{})[0]
 

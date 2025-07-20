@@ -53,7 +53,7 @@ func main() {
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 	for _, panel := range Panels {
 		BindedData.Append(generatePanelKey(panel, 0))
-		generateEmptyPanel()
+		Grid.Add(generateEmptyPanel())
 	}
 
 	NotificationBox = widget.NewLabel("")
@@ -125,9 +125,11 @@ func main() {
  */
 func generatePanelForm(panelKey string) {
 
+	cm := getTickerOptions()
+
 	valueEntry := NewNumericalEntry(true)
-	sourceEntry := NewCompletionEntry(CryptosOptions)
-	targetEntry := NewCompletionEntry(CryptosOptions)
+	sourceEntry := NewCompletionEntry(cm)
+	targetEntry := NewCompletionEntry(cm)
 	decimalsEntry := NewNumericalEntry(false)
 
 	title := "Adding New Panel"
@@ -350,14 +352,14 @@ func generateSettingsForm() {
 /**
  * Helper function for generating empty panel
  */
-func generateEmptyPanel() {
+func generateEmptyPanel() fyne.CanvasObject {
 
 	content := canvas.NewText("Loading...", textColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 16
 
-	Grid.Add(panelItem(
+	return panelItem(
 		container.New(
 			layout.NewCustomPaddedVBoxLayout(6),
 			layout.NewSpacer(),
@@ -367,91 +369,133 @@ func generateEmptyPanel() {
 		panelBG,
 		6,
 		[4]float32{0, 5, 10, 5},
-	))
+	)
 }
 
 /**
  * Helper for generate a single panel
  */
-func generatePanel(panelKey string, index int) {
-	pi := getPanelByKey(panelKey)
+func generatePanel(panel PanelType, data ExchangeDataType) fyne.CanvasObject {
 
-	if pi != -1 && len(Panels) > pi {
-		panel := Panels[pi]
-		data := getExchangeData(panel)
+	pk := generatePanelKey(panel, float32(data.TargetAmount))
+	pi := getPanelByKey(pk)
 
-		p := message.NewPrinter(language.English)
-		frac := int(NumDecPlaces(panel.Value))
-		if frac < 3 {
-			frac = 2
-		}
-		evt := p.Sprintf("%v", number.Decimal(data.TargetAmount, number.MaxFractionDigits(int(panel.Decimals))))
-		sts := p.Sprintf("%v", number.Decimal(panel.Value, number.MaxFractionDigits(frac)))
-		tts := p.Sprintf("%v", number.Decimal(panel.Value*data.TargetAmount, number.MaxFractionDigits(frac)))
-
-		// Debug
-		// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
-
-		title := canvas.NewText(fmt.Sprintf("%s %s to %s", sts, data.SourceSymbol, data.TargetSymbol), textColor)
-		title.Alignment = fyne.TextAlignCenter
-		title.TextStyle = fyne.TextStyle{Bold: true}
-		title.TextSize = 16
-
-		subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", data.SourceSymbol, evt, data.TargetSymbol), textColor)
-		subtitle.Alignment = fyne.TextAlignCenter
-		subtitle.TextSize = 16
-
-		content := canvas.NewText(fmt.Sprintf("%s %s", tts, data.TargetSymbol), textColor)
-		content.Alignment = fyne.TextAlignCenter
-		content.TextStyle = fyne.TextStyle{Bold: true}
-		content.TextSize = 30
-
-		action := container.NewHBox(
-			layout.NewSpacer(),
-			NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
-				fyne.Do(func() {
-					generatePanelForm(panelKey)
-				})
-			}),
-			NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
-				doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
-					// Async
-					saved := savePanels()
-					if saved {
-						fyne.Do(func() {
-							removePanel(pi)
-						})
-					}
-				})
-			}),
-		)
-
-		panelDisplay := NewDoubleClickContainer(
-			panelItem(
-				container.NewStack(
-					container.NewVBox(
-						layout.NewSpacer(),
-						title, content, subtitle,
-						layout.NewSpacer(),
-					),
-					container.NewVBox(
-						action,
-					),
-				),
-				panelBG,
-				6,
-				[4]float32{0, 5, 10, 5},
-			),
-			action,
-			false,
-		)
-
-		if index == -1 {
-			Grid.Add(panelDisplay)
-		} else if len(Grid.Objects) > index {
-			Grid.Objects[index] = panelDisplay
-		}
+	p := message.NewPrinter(language.English)
+	frac := int(NumDecPlaces(panel.Value))
+	if frac < 3 {
+		frac = 2
 	}
+	evt := p.Sprintf("%v", number.Decimal(data.TargetAmount, number.MaxFractionDigits(int(panel.Decimals))))
+	sts := p.Sprintf("%v", number.Decimal(panel.Value, number.MaxFractionDigits(frac)))
+	tts := p.Sprintf("%v", number.Decimal(panel.Value*data.TargetAmount, number.MaxFractionDigits(frac)))
+
+	// Debug
+	// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
+
+	title := canvas.NewText(fmt.Sprintf("%s %s to %s", sts, data.SourceSymbol, data.TargetSymbol), textColor)
+	title.Alignment = fyne.TextAlignCenter
+	title.TextStyle = fyne.TextStyle{Bold: true}
+	title.TextSize = 16
+
+	subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", data.SourceSymbol, evt, data.TargetSymbol), textColor)
+	subtitle.Alignment = fyne.TextAlignCenter
+	subtitle.TextSize = 16
+
+	content := canvas.NewText(fmt.Sprintf("%s %s", tts, data.TargetSymbol), textColor)
+	content.Alignment = fyne.TextAlignCenter
+	content.TextStyle = fyne.TextStyle{Bold: true}
+	content.TextSize = 30
+
+	action := container.NewHBox(
+		layout.NewSpacer(),
+		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+			fyne.Do(func() {
+				generatePanelForm(pk)
+			})
+		}),
+		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
+				// Async
+				removePanel(pi)
+				saved := savePanels()
+				if saved {
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
+				}
+			})
+		}),
+	)
+	return NewDoubleClickContainer(
+		panelItem(
+			container.NewStack(
+				container.NewVBox(
+					layout.NewSpacer(),
+					title, content, subtitle,
+					layout.NewSpacer(),
+				),
+				container.NewVBox(
+					action,
+				),
+			),
+			panelBG,
+			6,
+			[4]float32{0, 5, 10, 5},
+		),
+		action,
+		false,
+	)
+}
+
+func generateInvalidPanel(pk string) fyne.CanvasObject {
+
+	pi := getPanelByKey(pk)
+
+	content := canvas.NewText("Invalid Panel", textColor)
+	content.Alignment = fyne.TextAlignCenter
+	content.TextStyle = fyne.TextStyle{Bold: true}
+	content.TextSize = 16
+
+	action := container.NewHBox(
+		layout.NewSpacer(),
+		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+			fyne.Do(func() {
+				generatePanelForm(pk)
+			})
+		}),
+		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
+				// Async
+				removePanel(pi)
+				saved := savePanels()
+				if saved {
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
+				}
+			})
+		}),
+	)
+
+	return NewDoubleClickContainer(
+		panelItem(
+			container.NewStack(
+				container.NewVBox(
+					layout.NewSpacer(),
+					content,
+					layout.NewSpacer(),
+				),
+				container.NewVBox(
+					action,
+				),
+			),
+			panelBG,
+			6,
+			[4]float32{0, 5, 10, 5},
+		),
+		action,
+		false,
+	)
 }
 
 /**
@@ -466,12 +510,11 @@ func updateData(isAsync bool) bool {
 		pi := getPanelByKey(val)
 
 		if pi != -1 && len(Panels) > pi {
-			panel := Panels[pi]
-			data := getExchangeData(panel)
-			tv := generatePanelKey(panel, float32(data.TargetAmount))
-
-			if tv != val {
-				updatePanel(panel, pi, tv)
+			panel := createPanelObjectFromKey(val)
+			if validatePanel(panel) {
+				updated = updatePanelByKey(val)
+			} else {
+				Grid.Objects[i] = generateInvalidPanel(val)
 				updated = true
 			}
 

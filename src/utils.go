@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const MemoryDebug = false
+
 /**
  * Function for extracting number of decimals from a float
  */
@@ -109,11 +111,13 @@ func buildPathRelatedToUserDirectory(additionalPath []string) string {
 }
 
 func PrintMemUsage(title string) {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	fmt.Println(title)
-	fmt.Printf("Alloc = %v MiB", m.Alloc/1024/1024)
-	fmt.Printf("\tTotalAlloc = %v MiB", m.TotalAlloc/1024/1024)
-	fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
-	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	if MemoryDebug {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		fmt.Println(title)
+		fmt.Printf("Alloc = %v MiB", m.Alloc/1024/1024)
+		fmt.Printf("\tTotalAlloc = %v MiB", m.TotalAlloc/1024/1024)
+		fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
+		fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	}
 }

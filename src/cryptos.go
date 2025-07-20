@@ -20,17 +20,17 @@ type CryptosType struct {
 }
 
 type CryptosValuesType struct {
-	Id     int64
-	Name   string
-	Symbol string
+	Id       int64
+	Name     string
+	Symbol   string
+	Status   int64
+	IsActive int64
 }
 
 /**
  * Global variables
  */
-var Cryptos CryptosType
 var CryptosMap map[string]string
-var CryptosOptions []string
 
 /**
  * Custom UnmarshalJSON for cryptos.json
@@ -43,9 +43,18 @@ func (cp *CryptosValuesType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	isActive := int64(v[4].(float64))
+	status := int64(v[5].(float64))
+
+	if isActive == 0 || status == 0 {
+		return nil
+	}
+
 	cp.Id = int64(v[0].(float64))
 	cp.Name = v[1].(string)
 	cp.Symbol = v[2].(string)
+	cp.IsActive = int64(v[4].(float64))
+	cp.Status = int64(v[5].(float64))
 
 	return nil
 }
@@ -81,16 +90,20 @@ func getTickerData() string {
 }
 
 /**
- * Load CMC Crypto.json to memory
+ * Load CMC Crypto.json
  */
-func loadCryptos() {
-	// PrintMemUsage("Start loading cryptos.json")
+func loadCryptos() CryptosType {
+
+	PrintMemUsage("Start loading cryptos.json")
+
 	b := bytes.NewBuffer(nil)
 	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	io.Copy(b, f)
 	f.Close()
 
-	err := json.Unmarshal(b.Bytes(), &Cryptos)
+	c := CryptosType{}
+
+	err := json.Unmarshal(b.Bytes(), &c)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load cryptos.json: %w", err)
@@ -98,7 +111,10 @@ func loadCryptos() {
 	} else {
 		log.Print("Cryptos Loaded")
 	}
-	// PrintMemUsage("End loading cryptos.json")
+
+	PrintMemUsage("End loading cryptos.json")
+
+	return c
 }
 
 /**
@@ -115,31 +131,44 @@ func checkCryptos() {
 		log.Fatalln(err)
 	}
 
-	loadCryptos()
 	populateCryptosMap()
 }
 
 func refreshCryptos() {
 	data := getTickerData()
 	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), data)
-	loadCryptos()
 	populateCryptosMap()
 }
 
 func populateCryptosMap() {
+	PrintMemUsage("Start populating cryptos")
 	// Always reset map
 	CryptosMap = make(map[string]string)
-	CryptosOptions = nil
+	c := loadCryptos()
 
-	for _, crypto := range Cryptos.Values {
-		tk := createTickerKey(crypto)
-		CryptosMap[strconv.FormatInt(crypto.Id, 10)] = tk
-		CryptosOptions = append(CryptosOptions, tk)
+	for _, crypto := range c.Values {
 
-		// log.Printf("count %d", len(CryptosOptions))
-		// Debug
-		// log.Printf(fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name))
+		// Only add crypto that is active at CMC
+		if crypto.Status != 0 || crypto.IsActive != 0 {
+			tk := createTickerKey(crypto)
+			CryptosMap[strconv.FormatInt(crypto.Id, 10)] = tk
+
+			// log.Printf("count %d", len(CryptosOptions))
+			// Debug
+			// log.Printf(fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name))
+		}
 	}
+	PrintMemUsage("End populating cryptos")
+}
+
+func getTickerOptions() []string {
+	m := []string{}
+
+	for _, tk := range CryptosMap {
+		m = append(m, tk)
+	}
+
+	return m
 }
 
 func createTickerKey(crypto CryptosValuesType) string {
@@ -172,11 +201,6 @@ func getTickerIdByDisplay(tk string) string {
 }
 
 func validateCryptoId(id int64) bool {
-	for _, crypto := range Cryptos.Values {
-		if crypto.Id == id {
-			return true
-		}
-	}
-
-	return false
+	_, ok := CryptosMap[strconv.FormatInt(id, 10)]
+	return ok
 }
