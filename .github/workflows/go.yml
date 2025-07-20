@@ -22,3 +22,32 @@ jobs:
 
     - name: Build
       run: ./build-linux.sh && ./build-windows.sh
+
+    - name: Create Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: jxwatcher-artifacts
+        path: |
+          ./build/jxwatcher
+          ./build/jxwatcher.exe
+
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: jxwatcher-artifacts
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/jxwatcher
+            artifacts/jxwatcher.exe
+          body: |
+            This release includes binaries for different platforms.
+          tag_name: ${{ github.ref }}
