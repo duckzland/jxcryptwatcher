@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -35,16 +36,22 @@ var textColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 const epsilon = 1e-9
 
 func main() {
+
+	ConfigInit()
+
+	CryptosInit()
+
 	a := app.New()
 	Window = a.NewWindow("JXCrypto Watcher")
-
-	checkConfig()
-	checkCryptos()
 
 	// Don't invoke this before app.New(), binding.StringList will crash
 	checkPanels()
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
+
+	// Experimental: Using binded data to trigger refresh
+	BindedData.AddListener(binding.NewDataListener(Grid.Refresh))
+
 	list, _ := BindedData.Get()
 	for range list {
 		Grid.Add(generateEmptyPanel())
@@ -63,14 +70,14 @@ func main() {
 		// Reload cryptos.json
 		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
 			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
-				refreshCryptos()
+				RefreshCryptos()
 			})
 		}),
 
 		// Refresh data from exchange
 		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
 			doActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", NotificationBox, func() {
-				updateData(true)
+				updateData()
 			})
 		}),
 
@@ -103,7 +110,7 @@ func main() {
 	go func() {
 		for {
 			doActionWithNotification("Fetching exchange rate...", "Updating panel...", NotificationBox, func() {
-				updateData(true)
+				updateData()
 			})
 
 			time.Sleep(time.Duration(Config.Delay) * time.Second)
@@ -170,6 +177,13 @@ func generatePanelForm(panelKey string) {
 		if err != nil || !validateCryptoId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
+
+		xid := getTickerIdByDisplay(targetEntry.Text)
+		bid, err := strconv.ParseInt(xid, 10, 64)
+		if err != nil && validateCryptoId(bid) && bid == id {
+			return fmt.Errorf("Cannot have the same coin for both source and target")
+		}
+
 		return nil
 	}
 
@@ -182,6 +196,12 @@ func generatePanelForm(panelKey string) {
 		id, err := strconv.ParseInt(tid, 10, 64)
 		if err != nil || !validateCryptoId(id) {
 			return fmt.Errorf("Invalid crypto selected")
+		}
+
+		xid := getTickerIdByDisplay(targetEntry.Text)
+		bid, err := strconv.ParseInt(xid, 10, 64)
+		if err != nil && validateCryptoId(bid) && bid == id {
+			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
 		return nil
@@ -227,7 +247,7 @@ func generatePanelForm(panelKey string) {
 				}, 0))
 
 			} else {
-				pi := getPanel(panelKey)
+				pi := getPanelIndex(panelKey)
 
 				if pi != -1 {
 					insertPanel(generatePanelKey(PanelType{
@@ -323,7 +343,7 @@ func generateSettingsForm() {
 			Config.Delay = delay
 
 			doActionWithNotification("Saving configuration...", "Configuration data saved...", NotificationBox, func() {
-				saveConfig()
+				Config.SaveFile()
 			})
 		}
 	}, Window)
@@ -354,7 +374,7 @@ func generateEmptyPanel() fyne.CanvasObject {
 
 func generatePanel(pk string) fyne.CanvasObject {
 
-	pi := getPanel(pk)
+	pi := getPanelIndex(pk)
 	p := message.NewPrinter(language.English)
 
 	decimals := getPanelDecimals(pk)
@@ -386,6 +406,10 @@ func generatePanel(pk string) fyne.CanvasObject {
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 16
+
+	BindedData.AddListener(binding.NewDataListener(func() {
+
+	}))
 
 	subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", sourceSymbol, evt, targetSymbol), textColor)
 	subtitle.Alignment = fyne.TextAlignCenter
@@ -439,7 +463,7 @@ func generatePanel(pk string) fyne.CanvasObject {
 
 func generateInvalidPanel(pk string) fyne.CanvasObject {
 
-	pi := getPanel(pk)
+	pi := getPanelIndex(pk)
 
 	content := canvas.NewText("Invalid Panel", textColor)
 	content.Alignment = fyne.TextAlignCenter
@@ -488,35 +512,18 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 	)
 }
 
-func updateData(isAsync bool) bool {
-
-	updated := false
+func updateData() {
 
 	list, _ := BindedData.Get()
 	for i, val := range list {
-
 		if validatePanel(val) {
-			updated = updatePanel(val)
+			updatePanel(val)
 		} else {
 			Grid.Objects[i] = generateInvalidPanel(val)
-			updated = true
-		}
-	}
-
-	if updated {
-		// Must refresh via grid, refreshing via individual panel or only relying on databind change will not work!
-		if isAsync {
-			fyne.Do(func() {
-				Grid.Refresh()
-			})
-		} else {
-			Grid.Refresh()
 		}
 	}
 
 	log.Print("Rate updated")
-
-	return updated
 }
 
 func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius float32, padding [4]float32) fyne.CanvasObject {

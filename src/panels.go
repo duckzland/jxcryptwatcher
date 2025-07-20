@@ -112,8 +112,8 @@ func appendPanel(pk string) bool {
 	if !validatePanel(pk) {
 		return false
 	}
-
-	data := getExchangeData(pk)
+	ex := ExchangeDataType{}
+	data := ex.GetRate(pk)
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
 	BindedData.Append(npk)
 	Grid.Add(generatePanel(npk))
@@ -127,10 +127,14 @@ func insertPanel(pk string, index int) bool {
 		return false
 	}
 
-	data := getExchangeData(pk)
+	ex := ExchangeDataType{}
+	data := ex.GetRate(pk)
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
-	BindedData.SetValue(index, npk)
-	Grid.Objects[index] = generatePanel(npk)
+
+	if npk != pk {
+		BindedData.SetValue(index, npk)
+		Grid.Objects[index] = generatePanel(npk)
+	}
 
 	return true
 }
@@ -141,11 +145,12 @@ func updatePanel(pk string) bool {
 		return false
 	}
 
-	pi := getPanel(pk)
+	pi := getPanelIndex(pk)
 
 	if pi != -1 {
 
-		data := getExchangeData(pk)
+		ex := ExchangeDataType{}
+		data := ex.GetRate(pk)
 		npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 		if npk != pk {
@@ -169,7 +174,7 @@ func updatePanelValue(pk string, rate float32) string {
 	return pk
 }
 
-func getPanel(panelKey string) int {
+func getPanelIndex(panelKey string) int {
 	list, _ := BindedData.Get()
 	for i, pk := range list {
 		if pk == panelKey {

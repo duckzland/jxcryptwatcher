@@ -47,10 +47,10 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func getExchangeData(pk string) ExchangeDataType {
+func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	if !validatePanel(pk) {
-		return ExchangeDataType{}
+		return ex
 	}
 
 	sid := getPanelSourceCoin(pk)
@@ -89,8 +89,7 @@ func getExchangeData(pk string) ExchangeDataType {
 	// fmt.Println(resp.Status)
 	// fmt.Println(string(respBody))
 
-	var Exchange ExchangeDataType
-	err = json.Unmarshal([]byte(string(respBody)), &Exchange)
+	err = json.Unmarshal([]byte(string(respBody)), ex)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to examine exchange data: %w", err)
@@ -98,7 +97,7 @@ func getExchangeData(pk string) ExchangeDataType {
 	}
 
 	// Debug to force display refresh!
-	// Exchange.TargetAmount = Exchange.TargetAmount * (rand.Float64() * 5)
+	// ex.TargetAmount = Exchange.TargetAmount * (rand.Float64() * 5)
 
-	return Exchange
+	return ex
 }

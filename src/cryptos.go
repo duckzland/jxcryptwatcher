@@ -16,40 +16,7 @@ type CryptosType struct {
 	Values []CryptosValuesType `json:"values"`
 }
 
-type CryptosValuesType struct {
-	Id       int64
-	Name     string
-	Symbol   string
-	Status   int64
-	IsActive int64
-}
-
-var CryptosMap map[string]string
-
-func (cp *CryptosValuesType) UnmarshalJSON(data []byte) error {
-	var v []interface{}
-	err := json.Unmarshal(data, &v)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	isActive := int64(v[4].(float64))
-	status := int64(v[5].(float64))
-
-	if isActive == 0 || status == 0 {
-		return nil
-	}
-
-	cp.Id = int64(v[0].(float64))
-	cp.Name = v[1].(string)
-	cp.Symbol = v[2].(string)
-	cp.IsActive = int64(v[4].(float64))
-	cp.Status = int64(v[5].(float64))
-
-	return nil
-}
-func loadCryptos() CryptosType {
+func (c *CryptosType) LoadFile() *CryptosType {
 
 	PrintMemUsage("Start loading cryptos.json")
 
@@ -58,9 +25,7 @@ func loadCryptos() CryptosType {
 	io.Copy(b, f)
 	f.Close()
 
-	c := CryptosType{}
-
-	err := json.Unmarshal(b.Bytes(), &c)
+	err := json.Unmarshal(b.Bytes(), c)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load cryptos.json: %w", err)
@@ -74,52 +39,43 @@ func loadCryptos() CryptosType {
 	return c
 }
 
-func checkCryptos() {
+func (c *CryptosType) CreateFile() *CryptosType {
+	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
+	return c
+}
+
+func (c *CryptosType) CheckFile() *CryptosType {
 	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	if !exists {
-		data := getTickerData()
-		createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), data)
+		c.CreateFile()
 	}
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	populateCryptosMap()
+	// populateCryptosMap()
+
+	return c
 }
 
-func refreshCryptos() {
-	data := getTickerData()
-	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), data)
-	populateCryptosMap()
-}
-
-func populateCryptosMap() {
+func (c *CryptosType) ConvertToMap() map[string]string {
 	PrintMemUsage("Start populating cryptos")
-	// Always reset map
-	CryptosMap = make(map[string]string)
-	c := loadCryptos()
+	CM := make(map[string]string)
 
 	for _, crypto := range c.Values {
 
 		// Only add crypto that is active at CMC
 		if crypto.Status != 0 || crypto.IsActive != 0 {
-			tk := createTickerKey(crypto)
-			CryptosMap[strconv.FormatInt(crypto.Id, 10)] = tk
-
-			// log.Printf("count %d", len(CryptosOptions))
-			// Debug
-			// log.Printf(fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name))
+			CM[strconv.FormatInt(crypto.Id, 10)] = crypto.CreateKey()
 		}
 	}
 	PrintMemUsage("End populating cryptos")
+
+	return CM
 }
 
-func createTickerKey(crypto CryptosValuesType) string {
-	return fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name)
-}
-
-func getTickerData() string {
+func (c *CryptosType) FetchData() string {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
@@ -144,6 +100,54 @@ func getTickerData() string {
 	}
 
 	return string(respBody)
+}
+
+type CryptosValuesType struct {
+	Id       int64
+	Name     string
+	Symbol   string
+	Status   int64
+	IsActive int64
+}
+
+func (cp *CryptosValuesType) UnmarshalJSON(data []byte) error {
+	var v []interface{}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	isActive := int64(v[4].(float64))
+	status := int64(v[5].(float64))
+
+	if isActive == 0 || status == 0 {
+		return nil
+	}
+
+	cp.Id = int64(v[0].(float64))
+	cp.Name = v[1].(string)
+	cp.Symbol = v[2].(string)
+	cp.IsActive = int64(v[4].(float64))
+	cp.Status = int64(v[5].(float64))
+
+	return nil
+}
+
+func (cp *CryptosValuesType) CreateKey() string {
+	return fmt.Sprintf("%d|%s - %s", cp.Id, cp.Symbol, cp.Name)
+}
+
+var CryptosMap map[string]string
+
+func CryptosInit() {
+	Cryptos := CryptosType{}
+	CryptosMap = Cryptos.CheckFile().LoadFile().ConvertToMap()
+}
+
+func RefreshCryptos() {
+	Cryptos := CryptosType{}
+	CryptosMap = Cryptos.CreateFile().CheckFile().LoadFile().ConvertToMap()
 }
 
 func getTickerOptions() []string {

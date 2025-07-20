@@ -15,15 +15,13 @@ type ConfigType struct {
 	Delay            int64  `json:"delay"`
 }
 
-var Config ConfigType
-
-func loadConfig() {
+func (c *ConfigType) LoadFile() *ConfigType {
 	b := bytes.NewBuffer(nil)
 	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	io.Copy(b, f)
 	f.Close()
 
-	err := json.Unmarshal(b.Bytes(), &Config)
+	err := json.Unmarshal(b.Bytes(), c)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load config.json: %w", err)
@@ -31,9 +29,11 @@ func loadConfig() {
 	} else {
 		log.Print("Configuration Loaded")
 	}
+
+	return c
 }
 
-func saveConfig() {
+func (c *ConfigType) SaveFile() *ConfigType {
 
 	jsonData, err := json.MarshalIndent(Config, "", "  ")
 	if err != nil {
@@ -45,9 +45,11 @@ func saveConfig() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	return c
 }
 
-func checkConfig() {
+func (c *ConfigType) CheckFile() *ConfigType {
 	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	if !exists {
 		data := ConfigType{
@@ -68,5 +70,12 @@ func checkConfig() {
 		log.Fatalln(err)
 	}
 
-	loadConfig()
+	return c
+}
+
+var Config ConfigType
+
+func ConfigInit() {
+	Config = ConfigType{}
+	Config.CheckFile().LoadFile()
 }
