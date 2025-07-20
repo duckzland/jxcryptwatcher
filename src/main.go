@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -25,7 +24,6 @@ import (
 )
 
 var Grid *fyne.Container
-var BindedData binding.StringList
 var Window fyne.Window
 var NotificationBox *widget.Label
 
@@ -36,23 +34,19 @@ var textColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 
 const epsilon = 1e-9
 
-/**
- * Main function
- */
 func main() {
-
-	checkConfig()
-	checkCryptos()
-	checkPanels()
-
 	a := app.New()
 	Window = a.NewWindow("JXCrypto Watcher")
 
-	BindedData = binding.NewStringList()
+	checkConfig()
+	checkCryptos()
+
+	// Don't invoke this before app.New(), binding.StringList will crash
+	checkPanels()
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
-	for _, panel := range Panels {
-		BindedData.Append(generatePanelKey(panel, 0))
+	list, _ := BindedData.Get()
+	for range list {
 		Grid.Add(generateEmptyPanel())
 	}
 
@@ -120,9 +114,6 @@ func main() {
 
 }
 
-/**
- * Helper function for generating panel config form
- */
 func generatePanelForm(panelKey string) {
 
 	cm := getTickerOptions()
@@ -141,20 +132,15 @@ func generatePanelForm(panelKey string) {
 		// decimalsEntry.SetText("6")
 	} else {
 		title = "Editing Panel"
+		source := getTickerDisplayById(strconv.FormatInt(getPanelSourceCoin(panelKey), 10))
+		target := getTickerDisplayById(strconv.FormatInt(getPanelTargetCoin(panelKey), 10))
+		value := strconv.FormatFloat(getPanelSourceValue(panelKey), 'f', NumDecPlaces(getPanelSourceValue(panelKey)), 64)
+		decimals := strconv.FormatInt(getPanelDecimals(panelKey), 10)
 
-		pi := getPanelByKey(panelKey)
-		if pi != -1 {
-			panel := Panels[pi]
-			source := getTickerDisplayById(strconv.FormatInt(panel.Source, 10))
-			target := getTickerDisplayById(strconv.FormatInt(panel.Target, 10))
-			value := strconv.FormatFloat(panel.Value, 'f', NumDecPlaces(panel.Value), 64)
-			decimals := strconv.FormatInt(panel.Decimals, 10)
-
-			valueEntry.SetDefaultValue(value)
-			sourceEntry.SetDefaultValue(source)
-			targetEntry.SetDefaultValue(target)
-			decimalsEntry.SetDefaultValue(decimals)
-		}
+		valueEntry.SetDefaultValue(value)
+		sourceEntry.SetDefaultValue(source)
+		targetEntry.SetDefaultValue(target)
+		decimalsEntry.SetDefaultValue(decimals)
 	}
 
 	valueEntry.Validator = func(s string) error {
@@ -233,23 +219,23 @@ func generatePanelForm(panelKey string) {
 			decimals, _ := strconv.ParseInt(decimalsEntry.Text, 10, 64)
 
 			if panelKey == "new" {
-				appendPanel(PanelType{
+				appendPanel(generatePanelKey(PanelType{
 					Source:   source,
 					Target:   target,
 					Value:    value,
 					Decimals: decimals,
-				})
+				}, 0))
 
 			} else {
-				pi := getPanelByKey(panelKey)
+				pi := getPanel(panelKey)
 
 				if pi != -1 {
-					insertPanel(PanelType{
+					insertPanel(generatePanelKey(PanelType{
 						Source:   source,
 						Target:   target,
 						Value:    value,
 						Decimals: decimals,
-					}, pi)
+					}, 0), pi)
 				}
 			}
 
@@ -268,9 +254,6 @@ func generatePanelForm(panelKey string) {
 	d.Resize(fyne.NewSize(400, 300))
 }
 
-/**
- * Helper function for generating settings form
- */
 func generateSettingsForm() {
 
 	delayEntry := NewNumericalEntry(false)
@@ -349,9 +332,6 @@ func generateSettingsForm() {
 	d.Resize(fyne.NewSize(800, 300))
 }
 
-/**
- * Helper function for generating empty panel
- */
 func generateEmptyPanel() fyne.CanvasObject {
 
 	content := canvas.NewText("Loading...", textColor)
@@ -372,36 +352,46 @@ func generateEmptyPanel() fyne.CanvasObject {
 	)
 }
 
-/**
- * Helper for generate a single panel
- */
-func generatePanel(panel PanelType, data ExchangeDataType) fyne.CanvasObject {
+func generatePanel(pk string) fyne.CanvasObject {
 
-	pk := generatePanelKey(panel, float32(data.TargetAmount))
-	pi := getPanelByKey(pk)
-
+	pi := getPanel(pk)
 	p := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(panel.Value))
+
+	decimals := getPanelDecimals(pk)
+	sourceValue := getPanelSourceValue(pk)
+	targetValue := getPanelValue(pk)
+
+	sourceCoin := getPanelSourceCoin(pk)
+	targetCoin := getPanelTargetCoin(pk)
+
+	sourceID := strconv.FormatInt(sourceCoin, 10)
+	sourceSymbol := getTickerSymbolById(sourceID)
+
+	targetID := strconv.FormatInt(targetCoin, 10)
+	targetSymbol := getTickerSymbolById(targetID)
+
+	frac := int(NumDecPlaces(sourceValue))
 	if frac < 3 {
 		frac = 2
 	}
-	evt := p.Sprintf("%v", number.Decimal(data.TargetAmount, number.MaxFractionDigits(int(panel.Decimals))))
-	sts := p.Sprintf("%v", number.Decimal(panel.Value, number.MaxFractionDigits(frac)))
-	tts := p.Sprintf("%v", number.Decimal(panel.Value*data.TargetAmount, number.MaxFractionDigits(frac)))
+
+	evt := p.Sprintf("%v", number.Decimal(targetValue, number.MaxFractionDigits(int(decimals))))
+	sts := p.Sprintf("%v", number.Decimal(sourceValue, number.MaxFractionDigits(frac)))
+	tts := p.Sprintf("%v", number.Decimal(sourceValue*float64(targetValue), number.MaxFractionDigits(frac)))
 
 	// Debug
 	// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
 
-	title := canvas.NewText(fmt.Sprintf("%s %s to %s", sts, data.SourceSymbol, data.TargetSymbol), textColor)
+	title := canvas.NewText(fmt.Sprintf("%s %s to %s", sts, sourceSymbol, targetSymbol), textColor)
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 16
 
-	subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", data.SourceSymbol, evt, data.TargetSymbol), textColor)
+	subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", sourceSymbol, evt, targetSymbol), textColor)
 	subtitle.Alignment = fyne.TextAlignCenter
 	subtitle.TextSize = 16
 
-	content := canvas.NewText(fmt.Sprintf("%s %s", tts, data.TargetSymbol), textColor)
+	content := canvas.NewText(fmt.Sprintf("%s %s", tts, targetSymbol), textColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 30
@@ -449,7 +439,7 @@ func generatePanel(panel PanelType, data ExchangeDataType) fyne.CanvasObject {
 
 func generateInvalidPanel(pk string) fyne.CanvasObject {
 
-	pi := getPanelByKey(pk)
+	pi := getPanel(pk)
 
 	content := canvas.NewText("Invalid Panel", textColor)
 	content.Alignment = fyne.TextAlignCenter
@@ -498,28 +488,17 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 	)
 }
 
-/**
- * Helper for update the panels
- */
 func updateData(isAsync bool) bool {
 
 	updated := false
 
 	list, _ := BindedData.Get()
 	for i, val := range list {
-		pi := getPanelByKey(val)
 
-		if pi != -1 && len(Panels) > pi {
-			panel := createPanelObjectFromKey(val)
-			if validatePanel(panel) {
-				updated = updatePanelByKey(val)
-			} else {
-				Grid.Objects[i] = generateInvalidPanel(val)
-				updated = true
-			}
-
+		if validatePanel(val) {
+			updated = updatePanel(val)
 		} else {
-			removePanel(i)
+			Grid.Objects[i] = generateInvalidPanel(val)
 			updated = true
 		}
 	}
@@ -540,9 +519,6 @@ func updateData(isAsync bool) bool {
 	return updated
 }
 
-/**
- * Helper function for decorating panel item with background, border radius and padding
- */
 func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius float32, padding [4]float32) fyne.CanvasObject {
 
 	background := canvas.NewRectangle(bgColor)
@@ -572,20 +548,6 @@ func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius floa
 	right.SetMinSize(fyne.NewSize(padding[3], 0)) // right padding
 
 	return container.NewBorder(top, bottom, left, right, item)
-}
-
-/**
- * Helper function for removing entry by its index
- */
-func removeAt(index int, list binding.StringList) {
-	values, _ := list.Get()
-	if index < 0 || index >= len(values) {
-		return // avoid out-of-bounds
-	}
-
-	// Remove item at index
-	updated := append(values[:index], values[index+1:]...)
-	list.Set(updated)
 }
 
 func doActionWithNotification(showText string, completeText string, box *widget.Label, callback func()) {

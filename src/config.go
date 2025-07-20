@@ -9,23 +9,14 @@ import (
 	"os"
 )
 
-/**
- * Defining Struct for config.json
- */
 type ConfigType struct {
 	DataEndpoint     string `json:"data_endpoint"`
 	ExchangeEndpoint string `json:"exchange_endpoint"`
 	Delay            int64  `json:"delay"`
 }
 
-/**
- * Global variables
- */
 var Config ConfigType
 
-/**
- * Load Configuration Json into memory
- */
 func loadConfig() {
 	b := bytes.NewBuffer(nil)
 	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
@@ -56,9 +47,6 @@ func saveConfig() {
 	}
 }
 
-/**
- * Helper function to check fo config.json and try to regenerate it when not found
- */
 func checkConfig() {
 	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	if !exists {

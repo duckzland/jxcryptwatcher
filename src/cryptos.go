@@ -12,9 +12,6 @@ import (
 	"strings"
 )
 
-/**
- * Defining struct for Endpoint cryptos.json
- */
 type CryptosType struct {
 	Values []CryptosValuesType `json:"values"`
 }
@@ -27,14 +24,8 @@ type CryptosValuesType struct {
 	IsActive int64
 }
 
-/**
- * Global variables
- */
 var CryptosMap map[string]string
 
-/**
- * Custom UnmarshalJSON for cryptos.json
- */
 func (cp *CryptosValuesType) UnmarshalJSON(data []byte) error {
 	var v []interface{}
 	err := json.Unmarshal(data, &v)
@@ -58,40 +49,6 @@ func (cp *CryptosValuesType) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
-/**
- * Loading cryptos.json from CMC
- */
-func getTickerData() string {
-
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to fetched cryptodata from CMC: %w", err)
-		log.Fatal(wrappedErr)
-	} else {
-		log.Print("Fetched cryptodata from CMC")
-	}
-
-	return string(respBody)
-}
-
-/**
- * Load CMC Crypto.json
- */
 func loadCryptos() CryptosType {
 
 	PrintMemUsage("Start loading cryptos.json")
@@ -117,9 +74,6 @@ func loadCryptos() CryptosType {
 	return c
 }
 
-/**
- * Helper function to check fo cryptos.json and try to regenerate it when not found
- */
 func checkCryptos() {
 	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	if !exists {
@@ -161,6 +115,37 @@ func populateCryptosMap() {
 	PrintMemUsage("End populating cryptos")
 }
 
+func createTickerKey(crypto CryptosValuesType) string {
+	return fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name)
+}
+
+func getTickerData() string {
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		wrappedErr := fmt.Errorf("Failed to fetched cryptodata from CMC: %w", err)
+		log.Fatal(wrappedErr)
+	} else {
+		log.Print("Fetched cryptodata from CMC")
+	}
+
+	return string(respBody)
+}
+
 func getTickerOptions() []string {
 	m := []string{}
 
@@ -169,10 +154,6 @@ func getTickerOptions() []string {
 	}
 
 	return m
-}
-
-func createTickerKey(crypto CryptosValuesType) string {
-	return fmt.Sprintf("%d|%s - %s", crypto.Id, crypto.Symbol, crypto.Name)
 }
 
 func getTickerDisplayById(id string) string {
@@ -198,6 +179,25 @@ func getTickerIdByDisplay(tk string) string {
 	}
 
 	return ""
+}
+
+func getTickerSymbolById(id string) string {
+	tid, ok := CryptosMap[id]
+	if !ok {
+		return ""
+	}
+
+	ss := strings.Split(tid, "|")
+	if len(ss) != 2 {
+		return ""
+	}
+
+	sss := strings.Split(ss[1], " - ")
+	if len(sss) < 2 {
+		return ""
+	}
+
+	return sss[0]
 }
 
 func validateCryptoId(id int64) bool {

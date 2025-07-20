@@ -9,11 +9,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"fyne.io/fyne/v2/data/binding"
 )
 
-/**
- * Defining Struct for panels.json
- */
 type PanelsType []PanelType
 type PanelType struct {
 	Source   int64   `json:"source"`
@@ -22,22 +21,28 @@ type PanelType struct {
 	Decimals int64   `json:"decimals"`
 }
 
-/**
- * Global variables
- */
-var Panels PanelsType
+var BindedData binding.StringList
 
-/**
- * Load Configuration Json into memory
- */
-func loadPanels() {
+func removeAt(index int, list binding.StringList) {
+	values, _ := list.Get()
+	if index < 0 || index >= len(values) {
+		return // avoid out-of-bounds
+	}
+
+	// Remove item at index
+	updated := append(values[:index], values[index+1:]...)
+	list.Set(updated)
+}
+
+func loadPanels() PanelsType {
 
 	b := bytes.NewBuffer(nil)
 	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
 	io.Copy(b, f)
 	f.Close()
 
-	err := json.Unmarshal(b.Bytes(), &Panels)
+	panels := PanelsType{}
+	err := json.Unmarshal(b.Bytes(), &panels)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load panels.json: %w", err)
@@ -45,11 +50,10 @@ func loadPanels() {
 	} else {
 		log.Print("Panels Loaded")
 	}
+
+	return panels
 }
 
-/**
- * Helper function to check fo panels.json and try to regenerate it with empty array when not found
- */
 func checkPanels() {
 	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
 	if !exists {
@@ -61,38 +65,35 @@ func checkPanels() {
 		log.Fatalln(err)
 	}
 
-	loadPanels()
+	initPanels(loadPanels())
 }
 
-/**
- * Helper function for converting PanelType values into a string
- */
+func initPanels(panels PanelsType) {
+	BindedData = binding.NewStringList()
+
+	for _, panel := range panels {
+		BindedData.Append(generatePanelKey(panel, 0))
+	}
+}
+
 func generatePanelKey(panel PanelType, rate float32) string {
 	return fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate)
 }
 
-/**
- * Helper function for retrieving registered panels using its panel key
- * This will return -1 if no panel found
- */
-func getPanelByKey(panelKey string) int {
-	pk := strings.Split(panelKey, "|")
-
-	for i, panel := range Panels {
-		pkt := generatePanelKey(panel, 0)
-		pkk := strings.Split(pkt, "|")
-
-		if pkk[0] == pk[0] {
-			return i
-		}
-	}
-
-	return -1
-}
-
 func savePanels() bool {
 
-	jsonData, err := json.MarshalIndent(Panels, "", "  ")
+	panels := PanelsType{}
+	list, _ := BindedData.Get()
+	for _, val := range list {
+		panels = append(panels, PanelType{
+			Source:   getPanelSourceCoin(val),
+			Target:   getPanelTargetCoin(val),
+			Value:    getPanelSourceValue(val),
+			Decimals: getPanelDecimals(val),
+		})
+	}
+
+	jsonData, err := json.MarshalIndent(panels, "", "  ")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -106,41 +107,50 @@ func savePanels() bool {
 	return true
 }
 
-func appendPanel(panel PanelType) {
-	Panels = append(Panels, panel)
-	pk := generatePanelKey(panel, 0)
-	BindedData.Append(pk)
+func appendPanel(pk string) bool {
 
-	data := getExchangeData(panel)
-	Grid.Add(generatePanel(panel, data))
-
-}
-
-func insertPanel(panel PanelType, index int) {
-	if len(Panels) > index {
-		Panels[index] = panel
-		pk := generatePanelKey(panel, 0)
-		BindedData.SetValue(index, pk)
-
-		data := getExchangeData(panel)
-		Grid.Objects[index] = generatePanel(panel, data)
+	if !validatePanel(pk) {
+		return false
 	}
+
+	data := getExchangeData(pk)
+	npk := updatePanelValue(pk, float32(data.TargetAmount))
+	BindedData.Append(npk)
+	Grid.Add(generatePanel(npk))
+
+	return true
+
 }
 
-func updatePanel(panel PanelType, pk string) bool {
+func insertPanel(pk string, index int) bool {
+	if !validatePanel(pk) {
+		return false
+	}
 
-	pi := getPanelByKey(pk)
+	data := getExchangeData(pk)
+	npk := updatePanelValue(pk, float32(data.TargetAmount))
+	BindedData.SetValue(index, npk)
+	Grid.Objects[index] = generatePanel(npk)
 
-	if pi != -1 && len(Panels) > pi {
+	return true
+}
 
-		data := getExchangeData(panel)
-		npk := generatePanelKey(panel, float32(data.TargetAmount))
+func updatePanel(pk string) bool {
+
+	if !validatePanel(pk) {
+		return false
+	}
+
+	pi := getPanel(pk)
+
+	if pi != -1 {
+
+		data := getExchangeData(pk)
+		npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 		if npk != pk {
-			Panels[pi] = panel
-			BindedData.SetValue(pi, pk)
-			data := getExchangeData(panel)
-			Grid.Objects[pi] = generatePanel(panel, data)
+			BindedData.SetValue(pi, npk)
+			Grid.Objects[pi] = generatePanel(npk)
 
 			return true
 		}
@@ -149,19 +159,95 @@ func updatePanel(panel PanelType, pk string) bool {
 	return false
 }
 
-func updatePanelByKey(pk string) bool {
-	pi := getPanelByKey(pk)
-	if pi != -1 && len(Panels) > pi {
-		return updatePanel(Panels[pi], pk)
+func updatePanelValue(pk string, rate float32) string {
+
+	if validatePanelKey(pk) {
+		pkk := strings.Split(pk, "|")
+		return fmt.Sprintf("%s|%f", pkk[0], rate)
 	}
-	return false
+
+	return pk
+}
+
+func getPanel(panelKey string) int {
+	list, _ := BindedData.Get()
+	for i, pk := range list {
+		if pk == panelKey {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func getPanelValue(pk string) float64 {
+
+	if validatePanelKey(pk) {
+		pkv := strings.Split(pk, "|")
+		value, err := strconv.ParseFloat(pkv[1], 64)
+		if err == nil {
+			return value
+		}
+	}
+	return 0
+}
+
+func getPanelSourceCoin(pk string) int64 {
+	if validatePanelKey(pk) {
+		pkm := strings.Split(pk, "|")
+		pkv := strings.Split(pkm[0], "-")
+
+		source, err := strconv.ParseInt(pkv[0], 10, 64)
+		if err == nil {
+			return source
+		}
+	}
+	return 0
+}
+
+func getPanelTargetCoin(pk string) int64 {
+	if validatePanelKey(pk) {
+		pkm := strings.Split(pk, "|")
+		pkv := strings.Split(pkm[0], "-")
+
+		target, err := strconv.ParseInt(pkv[1], 10, 64)
+		if err == nil {
+			return target
+		}
+	}
+
+	return 0
+}
+
+func getPanelSourceValue(pk string) float64 {
+	if validatePanelKey(pk) {
+		pkm := strings.Split(pk, "|")
+		pkv := strings.Split(pkm[0], "-")
+
+		value, err := strconv.ParseFloat(pkv[2], 64)
+		if err == nil {
+			return value
+		}
+	}
+
+	return 0
+}
+
+func getPanelDecimals(pk string) int64 {
+	if validatePanelKey(pk) {
+		pkm := strings.Split(pk, "|")
+		pkv := strings.Split(pkm[0], "-")
+
+		decimals, err := strconv.ParseInt(pkv[3], 10, 64)
+		if err == nil {
+			return decimals
+		}
+	}
+
+	return 0
 }
 
 func removePanel(index int) {
-
-	if index >= 0 && index < len(Panels) {
-		Panels = append(Panels[:index], Panels[index+1:]...)
-	}
 
 	if index >= 0 && index < len(Grid.Objects) {
 		Grid.Objects = append(Grid.Objects[:index], Grid.Objects[index+1:]...)
@@ -170,52 +256,33 @@ func removePanel(index int) {
 	removeAt(index, BindedData)
 }
 
-func createPanelObjectFromKey(panelKey string) PanelType {
-	panel := PanelType{}
-
-	pkv := strings.Split(panelKey, "|")
+func validatePanelKey(pk string) bool {
+	pkv := strings.Split(pk, "|")
 	if len(pkv) != 2 {
-		return panel
+		return false
 	}
 
 	pkt := strings.Split(pkv[0], "-")
 	if len(pkt) != 4 {
-		return panel
+		return false
 	}
 
-	source, err := strconv.ParseInt(pkt[0], 10, 64)
-	if err == nil {
-		panel.Source = source
-	}
-
-	target, err := strconv.ParseInt(pkt[1], 10, 64)
-	if err == nil {
-		panel.Target = target
-	}
-
-	value, err := strconv.ParseFloat(pkt[2], 64)
-	if err == nil {
-		panel.Value = value
-	}
-
-	decimals, err := strconv.ParseInt(pkt[3], 10, 64)
-	if err == nil {
-		panel.Decimals = decimals
-	}
-
-	return panel
+	return true
 }
 
-func validatePanel(panel PanelType) bool {
-	if panel == (PanelType{}) {
+func validatePanel(pk string) bool {
+	if !validatePanelKey(pk) {
 		return false
 	}
 
-	if !validateCryptoId(panel.Source) {
+	sid := getPanelSourceCoin(pk)
+	tid := getPanelTargetCoin(pk)
+
+	if !validateCryptoId(sid) {
 		return false
 	}
 
-	if !validateCryptoId(panel.Target) {
+	if !validateCryptoId(tid) {
 		return false
 	}
 

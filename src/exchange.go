@@ -10,9 +10,6 @@ import (
 	"strconv"
 )
 
-/**
- * Defining struct for endpoint exhange data
- */
 type ExchangeDataType struct {
 	SourceSymbol string
 	SourceId     int64
@@ -22,9 +19,6 @@ type ExchangeDataType struct {
 	TargetAmount float64
 }
 
-/**
- * Custom UnmarshalJSON for CMC Exchange sjon
- */
 func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 
 	var v map[string]interface{}
@@ -53,10 +47,14 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-/**
- * Get the exchange data from CMC
- */
-func getExchangeData(Panel PanelType) ExchangeDataType {
+func getExchangeData(pk string) ExchangeDataType {
+
+	if !validatePanel(pk) {
+		return ExchangeDataType{}
+	}
+
+	sid := getPanelSourceCoin(pk)
+	tid := getPanelTargetCoin(pk)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.ExchangeEndpoint, nil)
@@ -68,8 +66,8 @@ func getExchangeData(Panel PanelType) ExchangeDataType {
 	q := url.Values{}
 	q.Add("amount", "1") // always get 1 exchange value then we can multiply later.
 	// q.Add("amount", strconv.FormatFloat(Panel.Value, 'f', 4, 64))
-	q.Add("id", strconv.FormatInt(Panel.Source, 10))
-	q.Add("convert_id", strconv.FormatInt(Panel.Target, 10))
+	q.Add("id", strconv.FormatInt(sid, 10))
+	q.Add("convert_id", strconv.FormatInt(tid, 10))
 
 	req.URL.RawQuery = q.Encode()
 
