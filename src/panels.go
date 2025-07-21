@@ -450,13 +450,29 @@ func formatKeyAsPanelContent(pk string) string {
 	return fmt.Sprintf("%s %s", tts, targetSymbol)
 }
 
-func isPanelValueIncrease(a, b string) bool {
-	numA, errA := strconv.ParseFloat(a, 64)
-	numB, errB := strconv.ParseFloat(b, 64)
+func isPanelValueIncrease(a, b string) int {
 
-	if errA != nil || errB != nil || numA < numB {
-		return false
+	if a == b {
+		return 0
 	}
 
-	return true
+	numA, errA := strconv.ParseFloat(a, 32)
+	numB, errB := strconv.ParseFloat(b, 32)
+
+	if errA != nil || errB != nil {
+		// fmt.Printf("Error formatting")
+		return 0
+	}
+
+	if numA > numB {
+		// fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		return -1
+	}
+
+	if numA < numB {
+		// fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		return 1
+	}
+
+	return 0
 }

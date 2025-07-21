@@ -19,6 +19,9 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 )
@@ -400,18 +403,34 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 
 	str.AddListener(binding.NewDataListener(func() {
 
+		pk, _ := str.Get()
 		ovx := strings.Split(content.Text, " ")
 		if len(ovx) > 0 {
-			nv := strconv.FormatFloat(getPanelValue(pk), 'f', -1, 64)
+			p := message.NewPrinter(language.English)
 
-			if isPanelValueIncrease(ovx[0], nv) {
+			ov := strings.ReplaceAll(ovx[0], ",", "")
+			sv := getPanelSourceValue(pk)
+			tv := getPanelValue(pk)
+
+			frac := int(NumDecPlaces(sv))
+			if frac < 3 {
+				frac = 2
+			}
+
+			nx := strings.ReplaceAll(p.Sprintf("%v", number.Decimal(sv*float64(tv), number.MaxFractionDigits(frac))), ",", "")
+			ns := isPanelValueIncrease(ov, nx)
+
+			if ns == 1 {
 				background.FillColor = greenColor
-			} else {
+				background.Refresh()
+			}
+
+			if ns == -1 {
 				background.FillColor = redColor
+				background.Refresh()
 			}
 		}
 
-		pk, _ := str.Get()
 		title.Text = formatKeyAsPanelTitle(pk)
 		subtitle.Text = formatKeyAsPanelSubtitle(pk)
 		content.Text = formatKeyAsPanelContent(pk)
