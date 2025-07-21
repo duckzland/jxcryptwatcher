@@ -21,7 +21,7 @@ type PanelType struct {
 	Decimals int64   `json:"decimals"`
 }
 
-var BindedData binding.StringList
+var BindedData binding.UntypedList
 
 func removeAt(index int, list binding.StringList) {
 	values, _ := list.Get()
@@ -69,7 +69,8 @@ func checkPanels() {
 }
 
 func initPanels(panels PanelsType) {
-	BindedData = binding.NewStringList()
+	// BindedData = binding.NewStringList()
+	BindedData = binding.NewUntypedList()
 
 	for _, panel := range panels {
 		BindedData.Append(generatePanelKey(panel, 0))
