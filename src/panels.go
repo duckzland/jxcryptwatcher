@@ -266,7 +266,7 @@ func getPanelIndex(panelKey string) int {
 		}
 
 		pk, err := str.Get()
-		if err == nil {
+		if err != nil {
 			continue
 		}
 
