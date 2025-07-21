@@ -60,7 +60,8 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	req, err := http.NewRequest("GET", Config.ExchangeEndpoint, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error encountered:", err)
+		return ex
 	}
 
 	q := url.Values{}
@@ -77,7 +78,8 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	resp, err := client.Do(req)
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
+		return ex
 	} else {
 		// log.Print("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
@@ -93,11 +95,12 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to examine exchange data: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
+		return ex
 	}
 
 	// Debug to force display refresh!
-	// ex.TargetAmount = Exchange.TargetAmount * (rand.Float64() * 5)
+	// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
 	return ex
 }

@@ -10,6 +10,7 @@ import (
 
 type DoubleClickContainer struct {
 	widget.BaseWidget
+	tag         string
 	content     fyne.CanvasObject
 	child       fyne.CanvasObject
 	lastClick   time.Time
@@ -17,9 +18,10 @@ type DoubleClickContainer struct {
 	doubleClick bool
 }
 
-func NewDoubleClickContainer(content, child fyne.CanvasObject, doubleClick bool) *DoubleClickContainer {
+func NewDoubleClickContainer(tag string, content, child fyne.CanvasObject, doubleClick bool) *DoubleClickContainer {
 	child.Hide()
 	wrapper := &DoubleClickContainer{
+		tag:         tag,
 		content:     content,
 		child:       child,
 		visible:     false,
@@ -27,6 +29,10 @@ func NewDoubleClickContainer(content, child fyne.CanvasObject, doubleClick bool)
 	}
 	wrapper.ExtendBaseWidget(wrapper)
 	return wrapper
+}
+
+func (h *DoubleClickContainer) getTag() string {
+	return h.tag
 }
 
 func (h *DoubleClickContainer) CreateRenderer() fyne.WidgetRenderer {

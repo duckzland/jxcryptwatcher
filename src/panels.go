@@ -7,10 +7,14 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2/data/binding"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
 )
 
 type PanelsType []PanelType
@@ -23,7 +27,7 @@ type PanelType struct {
 
 var BindedData binding.UntypedList
 
-func removeAt(index int, list binding.StringList) {
+func removeAt(index int, list binding.UntypedList) {
 	values, _ := list.Get()
 	if index < 0 || index >= len(values) {
 		return // avoid out-of-bounds
@@ -69,11 +73,12 @@ func checkPanels() {
 }
 
 func initPanels(panels PanelsType) {
-	// BindedData = binding.NewStringList()
 	BindedData = binding.NewUntypedList()
 
 	for _, panel := range panels {
-		BindedData.Append(generatePanelKey(panel, 0))
+		str := binding.NewString()
+		str.Set(generatePanelKey(panel, 0))
+		BindedData.Append(str)
 	}
 }
 
@@ -85,7 +90,17 @@ func savePanels() bool {
 
 	panels := PanelsType{}
 	list, _ := BindedData.Get()
-	for _, val := range list {
+	for _, x := range list {
+		str, ok := x.(binding.String)
+		if !ok {
+			continue
+		}
+
+		val, err := str.Get()
+		if err != nil {
+			continue
+		}
+
 		panels = append(panels, PanelType{
 			Source:   getPanelSourceCoin(val),
 			Target:   getPanelTargetCoin(val),
@@ -116,25 +131,52 @@ func appendPanel(pk string) bool {
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
-	BindedData.Append(npk)
-	Grid.Add(generatePanel(npk))
+
+	str := binding.NewString()
+	str.Set(npk)
+
+	BindedData.Append(str)
+	Grid.Add(generatePanel(str))
 
 	return true
 
 }
 
 func insertPanel(pk string, index int) bool {
-	if !validatePanel(pk) {
+
+	// Trying to insert to invalid index, exit
+	sval, err := BindedData.GetValue(index)
+	if err != nil {
 		return false
 	}
 
+	// Failed to get binded string at index, exit
+	str, ok := sval.(binding.String)
+	if !ok {
+		return false
+	}
+
+	// the new pk is invalid, throw invalid panel and exit
+	if !validatePanel(pk) {
+		str.Set(pk)
+		Grid.Objects[index] = generateInvalidPanel(pk)
+		return false
+	}
+
+	// The old pk is invalid, mutate to valid panel
+	opk, _ := str.Get()
+	if !validatePanel(opk) {
+		Grid.Objects[index] = generatePanel(str)
+	}
+
+	// Refresh the panel value from exchange
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
+	// Update the panel with new value from exchange
 	if npk != pk {
-		BindedData.SetValue(index, npk)
-		Grid.Objects[index] = generatePanel(npk)
+		str.Set(npk)
 	}
 
 	return true
@@ -142,24 +184,64 @@ func insertPanel(pk string, index int) bool {
 
 func updatePanel(pk string) bool {
 
-	if !validatePanel(pk) {
+	if !validatePanelKey(pk) {
 		return false
 	}
 
 	pi := getPanelIndex(pk)
 
-	if pi != -1 {
+	// Maybe we need better detection?
+	if pi == -1 {
+		return false
+	}
 
-		ex := ExchangeDataType{}
-		data := ex.GetRate(pk)
-		npk := updatePanelValue(pk, float32(data.TargetAmount))
+	// Change the panel into an invalid panel
+	if !validatePanel(pk) {
+		Grid.Objects[pi] = generateInvalidPanel(pk)
+		return true
+	}
 
-		if npk != pk {
-			BindedData.SetValue(pi, npk)
-			Grid.Objects[pi] = generatePanel(npk)
+	ex := ExchangeDataType{}
+	data := ex.GetRate(pk)
+	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
-			return true
+	if npk == pk {
+		return false
+	}
+
+	sval, err := BindedData.GetValue(pi)
+	if err != nil {
+		return false
+	}
+
+	str, ok := sval.(binding.String)
+	if !ok {
+		return false
+	}
+
+	str.Set(npk)
+
+	doPanel := pi > len(Grid.Objects)
+
+	if !doPanel {
+		obj := Grid.Objects[pi]
+		vobj := reflect.ValueOf(obj).Elem()
+		if !vobj.FieldByName("tag").IsValid() {
+			doPanel = true
 		}
+	}
+
+	if !doPanel {
+		obj := Grid.Objects[pi]
+		xobj, ok := obj.(*DoubleClickContainer)
+		if ok && xobj.getTag() != "ValidPanel" {
+			doPanel = true
+		}
+	}
+
+	// Build proper panel
+	if doPanel {
+		Grid.Objects[pi] = generatePanel(str)
 	}
 
 	return false
@@ -177,7 +259,17 @@ func updatePanelValue(pk string, rate float32) string {
 
 func getPanelIndex(panelKey string) int {
 	list, _ := BindedData.Get()
-	for i, pk := range list {
+	for i, x := range list {
+		str, ok := x.(binding.String)
+		if !ok {
+			continue
+		}
+
+		pk, err := str.Get()
+		if err == nil {
+			continue
+		}
+
 		if pk == panelKey {
 			return i
 		}
@@ -293,4 +385,67 @@ func validatePanel(pk string) bool {
 	}
 
 	return true
+}
+
+func formatKeyAsPanelTitle(pk string) string {
+	p := message.NewPrinter(language.English)
+
+	sourceValue := getPanelSourceValue(pk)
+	sourceCoin := getPanelSourceCoin(pk)
+	targetCoin := getPanelTargetCoin(pk)
+	sourceID := strconv.FormatInt(sourceCoin, 10)
+	sourceSymbol := getTickerSymbolById(sourceID)
+	targetID := strconv.FormatInt(targetCoin, 10)
+	targetSymbol := getTickerSymbolById(targetID)
+
+	frac := int(NumDecPlaces(sourceValue))
+	if frac < 3 {
+		frac = 2
+	}
+
+	sts := p.Sprintf("%v", number.Decimal(sourceValue, number.MaxFractionDigits(frac)))
+
+	return fmt.Sprintf("%s %s to %s", sts, sourceSymbol, targetSymbol)
+}
+
+func formatKeyAsPanelSubtitle(pk string) string {
+	p := message.NewPrinter(language.English)
+
+	decimals := getPanelDecimals(pk)
+	sourceValue := getPanelSourceValue(pk)
+	targetValue := getPanelValue(pk)
+	sourceCoin := getPanelSourceCoin(pk)
+	targetCoin := getPanelTargetCoin(pk)
+	sourceID := strconv.FormatInt(sourceCoin, 10)
+	sourceSymbol := getTickerSymbolById(sourceID)
+	targetID := strconv.FormatInt(targetCoin, 10)
+	targetSymbol := getTickerSymbolById(targetID)
+
+	frac := int(NumDecPlaces(sourceValue))
+	if frac < 3 {
+		frac = 2
+	}
+
+	evt := p.Sprintf("%v", number.Decimal(targetValue, number.MaxFractionDigits(int(decimals))))
+
+	return fmt.Sprintf("%s %s = %s %s", "1", sourceSymbol, evt, targetSymbol)
+}
+
+func formatKeyAsPanelContent(pk string) string {
+	p := message.NewPrinter(language.English)
+
+	sourceValue := getPanelSourceValue(pk)
+	targetValue := getPanelValue(pk)
+	targetCoin := getPanelTargetCoin(pk)
+	targetID := strconv.FormatInt(targetCoin, 10)
+	targetSymbol := getTickerSymbolById(targetID)
+
+	frac := int(NumDecPlaces(sourceValue))
+	if frac < 3 {
+		frac = 2
+	}
+
+	tts := p.Sprintf("%v", number.Decimal(sourceValue*float64(targetValue), number.MaxFractionDigits(frac)))
+
+	return fmt.Sprintf("%s %s", tts, targetSymbol)
 }
