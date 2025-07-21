@@ -31,8 +31,8 @@ var NotificationBox *widget.Label
 var appBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
 var panelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var textColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
-var redColor color.RGBA = color.RGBA{R: 234, G: 57, B: 67, A: 255}
-var greenColor color.RGBA = color.RGBA{R: 22, G: 199, B: 132, A: 255}
+var redColor color.RGBA = color.RGBA{R: 191, G: 8, B: 8, A: 255}
+var greenColor color.RGBA = color.RGBA{R: 2, G: 115, B: 78, A: 255}
 
 const epsilon = 1e-9
 
