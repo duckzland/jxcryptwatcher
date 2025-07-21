@@ -407,10 +407,6 @@ func generatePanel(pk string) fyne.CanvasObject {
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 16
 
-	BindedData.AddListener(binding.NewDataListener(func() {
-
-	}))
-
 	subtitle := canvas.NewText(fmt.Sprintf("%s %s = %s %s", "1", sourceSymbol, evt, targetSymbol), textColor)
 	subtitle.Alignment = fyne.TextAlignCenter
 	subtitle.TextSize = 16
