@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -34,11 +35,14 @@ const epsilon = 1e-9
 
 func main() {
 
+	os.Setenv("FYNE_THEME", "light")
+
 	ConfigInit()
 
 	CryptosInit()
 
 	a := app.New()
+	a.Settings().SetTheme(&CustomDarkTheme{})
 	Window = a.NewWindow("JXCrypto Watcher")
 
 	// Don't invoke this before app.New(), binding.UntypedList will crash
