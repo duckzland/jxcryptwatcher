@@ -54,6 +54,8 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		return
 	}
 
+	results = reorderByMatch(results, s)
+
 	// then show them
 	c.SetOptions(results)
 	c.ShowCompletion()

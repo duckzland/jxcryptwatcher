@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -120,4 +122,28 @@ func PrintMemUsage(title string) {
 		fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
 		fmt.Printf("\tNumGC = %v\n", m.NumGC)
 	}
+}
+
+func extractLeadingNumber(s string) int {
+	re := regexp.MustCompile(`^\d+`)
+	match := re.FindString(s)
+	if match == "" {
+		return -1 // or any fallback value
+	}
+	num, _ := strconv.Atoi(match)
+	return num
+}
+
+func reorderByMatch(arr []string, searchKey string) []string {
+	sort.SliceStable(arr, func(i, j int) bool {
+		iMatch := strings.Contains(strings.ToLower(arr[i]), strings.ToLower(searchKey))
+		jMatch := strings.Contains(strings.ToLower(arr[j]), strings.ToLower(searchKey))
+		return iMatch && !jMatch
+	})
+
+	sort.SliceStable(arr, func(i, j int) bool {
+		return extractLeadingNumber(arr[i]) < extractLeadingNumber(arr[j])
+	})
+
+	return arr
 }
