@@ -96,9 +96,8 @@ func main() {
 	Window.SetContent(fynetooltip.AddWindowToolTipLayer(container.NewStack(
 		bg,
 		container.NewPadded(
-			container.NewVBox(
-				topBar,
-				Grid,
+			container.NewBorder(
+				topBar, nil, nil, nil, container.NewVScroll(Grid),
 			),
 		),
 	), Window.Canvas()))
