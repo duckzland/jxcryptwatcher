@@ -42,7 +42,7 @@ func main() {
 	CryptosInit()
 
 	a := app.New()
-	a.Settings().SetTheme(&CustomDarkTheme{})
+	a.Settings().SetTheme(theme.DarkTheme())
 	Window = a.NewWindow("JXCrypto Watcher")
 
 	// Don't invoke this before app.New(), binding.UntypedList will crash
@@ -91,7 +91,7 @@ func main() {
 	)
 
 	bg := canvas.NewRectangle(appBG)
-	bg.SetMinSize(fyne.NewSize(920, 400))
+	bg.SetMinSize(fyne.NewSize(920, 600))
 
 	Window.SetContent(fynetooltip.AddWindowToolTipLayer(container.NewStack(
 		bg,
