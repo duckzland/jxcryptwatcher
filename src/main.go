@@ -61,19 +61,23 @@ func main() {
 	NotificationBox = widget.NewLabel("")
 
 	topBg := canvas.NewRectangle(panelBG)
+	topBg.CornerRadius = 4
 	topBg.SetMinSize(fyne.NewSize(860, 20))
 	topBar := container.New(
-		&stretchLayout{Widths: []float32{0.80, 0.05, 0.05, 0.05, 0.05}},
+		&stretchLayout{Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048}},
 		container.NewStack(
 			topBg,
 			NotificationBox,
 		),
+		layout.NewSpacer(),
+
 		// Reload cryptos.json
 		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
 			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
 				RefreshCryptos()
 			})
 		}),
+		layout.NewSpacer(),
 
 		// Refresh data from exchange
 		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
@@ -81,11 +85,13 @@ func main() {
 				updateData()
 			})
 		}),
+		layout.NewSpacer(),
 
 		// Open settings form
 		NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
 			generateSettingsForm()
 		}),
+		layout.NewSpacer(),
 
 		// Add new panel
 		NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
