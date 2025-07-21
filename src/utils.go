@@ -135,11 +135,11 @@ func extractLeadingNumber(s string) int {
 }
 
 func reorderByMatch(arr []string, searchKey string) []string {
-	sort.SliceStable(arr, func(i, j int) bool {
-		iMatch := strings.Contains(strings.ToLower(arr[i]), strings.ToLower(searchKey))
-		jMatch := strings.Contains(strings.ToLower(arr[j]), strings.ToLower(searchKey))
-		return iMatch && !jMatch
-	})
+	// sort.SliceStable(arr, func(i, j int) bool {
+	// 	iMatch := strings.Contains(strings.ToLower(arr[i]), strings.ToLower(searchKey))
+	// 	jMatch := strings.Contains(strings.ToLower(arr[j]), strings.ToLower(searchKey))
+	// 	return iMatch && !jMatch
+	// })
 
 	sort.SliceStable(arr, func(i, j int) bool {
 		return extractLeadingNumber(arr[i]) < extractLeadingNumber(arr[j])

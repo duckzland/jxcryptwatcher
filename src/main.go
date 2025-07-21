@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -27,9 +28,11 @@ var Window fyne.Window
 var NotificationBox *widget.Label
 
 // @todo Move these to theme
-var appBG color.RGBA = color.RGBA{R: 57, G: 62, B: 70, A: 255}
-var panelBG color.RGBA = color.RGBA{R: 34, G: 40, B: 49, A: 255}
+var appBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
+var panelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var textColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+var redColor color.RGBA = color.RGBA{R: 234, G: 57, B: 67, A: 255}
+var greenColor color.RGBA = color.RGBA{R: 22, G: 199, B: 132, A: 255}
 
 const epsilon = 1e-9
 
@@ -385,11 +388,29 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 30
 
+	background := canvas.NewRectangle(panelBG)
+	background.SetMinSize(fyne.NewSize(100, 100))
+	background.CornerRadius = 6
+
 	str.AddListener(binding.NewDataListener(func() {
+
+		ovx := strings.Split(content.Text, " ")
+		if len(ovx) > 0 {
+			nv := strconv.FormatFloat(getPanelValue(pk), 'f', -1, 64)
+
+			if isPanelValueIncrease(ovx[0], nv) {
+				background.FillColor = greenColor
+			} else {
+				background.FillColor = redColor
+			}
+		}
+
 		pk, _ := str.Get()
 		title.Text = formatKeyAsPanelTitle(pk)
 		subtitle.Text = formatKeyAsPanelSubtitle(pk)
 		content.Text = formatKeyAsPanelContent(pk)
+
+		StartFlashingText(content, 50*time.Millisecond, textColor, 1)
 	}))
 
 	action := container.NewHBox(
@@ -415,6 +436,7 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 		"ValidPanel",
 		panelItem(
 			container.NewStack(
+				background,
 				container.NewVBox(
 					layout.NewSpacer(),
 					title, content, subtitle,
@@ -524,7 +546,6 @@ func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius floa
 	)
 
 	// Simulate padding using empty spacers
-
 	top := canvas.NewRectangle(color.Transparent)
 	top.SetMinSize(fyne.NewSize(0, padding[0])) // top padding
 
@@ -562,4 +583,34 @@ func doActionWithNotification(showText string, completeText string, box *widget.
 			box.SetText("")
 		})
 	}()
+}
+
+func StartFlashingText(text *canvas.Text, interval time.Duration, visibleColor color.Color, flashes int) {
+	go func() {
+		for i := 0; i < flashes*2; i++ { // 2 toggles per flash
+			time.Sleep(interval)
+			if i%2 == 0 {
+				SetTextAlpha(text, 200)
+			} else {
+				SetTextAlpha(text, 255)
+			}
+			fyne.Do(func() {
+				text.Refresh()
+			})
+		}
+	}()
+}
+
+func SetTextAlpha(text *canvas.Text, alpha uint8) {
+	switch c := text.Color.(type) {
+	case color.RGBA:
+		c.A = alpha
+		text.Color = c
+	case color.NRGBA:
+		c.A = alpha
+		text.Color = c
+	default:
+		// fallback to white with new alpha if type is unknown
+		text.Color = color.RGBA{R: 255, G: 255, B: 255, A: alpha}
+	}
 }
