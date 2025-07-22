@@ -181,10 +181,7 @@ func insertPanel(pk string, index int) bool {
 		npk = updatePanelValue(pk, float32(data.TargetAmount))
 	}
 
-	// Update the panel with new value from exchange
-	if npk != pk {
-		str.Set(npk)
-	}
+	str.Set(npk)
 
 	return true
 }
@@ -215,10 +212,6 @@ func updatePanel(pk string) bool {
 		npk = updatePanelValue(pk, float32(data.TargetAmount))
 	}
 
-	if npk == pk {
-		return false
-	}
-
 	sval, err := BindedData.GetValue(pi)
 	if err != nil {
 		return false
@@ -229,7 +222,9 @@ func updatePanel(pk string) bool {
 		return false
 	}
 
-	str.Set(npk)
+	if npk != pk {
+		str.Set(npk)
+	}
 
 	doPanel := pi > len(Grid.Objects)
 
@@ -481,17 +476,17 @@ func isPanelValueIncrease(a, b string) int {
 	numB, errB := strconv.ParseFloat(b, 32)
 
 	if errA != nil || errB != nil {
-		fmt.Printf("Error formatting")
+		// fmt.Printf("Error formatting")
 		return 0
 	}
 
 	if numA > numB {
-		fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		// fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
 		return -1
 	}
 
 	if numA < numB {
-		fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		// fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
 		return 1
 	}
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -60,13 +59,8 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	// Try to use cached data
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)
 	if ExchangeCache.Has(ck) {
-		cex := ExchangeCache.Get(ck)
-
-		// Debug to force display refresh!
-		cex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 		// log.Println("Using cached data for:", ck)
-
-		return cex
+		return ExchangeCache.Get(ck)
 	}
 
 	client := &http.Client{}
@@ -113,7 +107,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	}
 
 	// Debug to force display refresh!
-	ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+	// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
 	// Cache the result
 	ExchangeCache.Insert(ex)
