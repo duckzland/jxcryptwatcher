@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -41,7 +40,8 @@ const epsilon = 1e-9
 
 func main() {
 
-	os.Setenv("FYNE_THEME", "light")
+	ExchangeCache.Reset()
+	// ExchangeCache.data = make(map[string]*ExchangeDataType)
 
 	ConfigInit()
 
@@ -533,6 +533,9 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 }
 
 func updateData() {
+
+	// Clear cached rates
+	ExchangeCache.Reset()
 
 	list, _ := BindedData.Get()
 	for i, v := range list {

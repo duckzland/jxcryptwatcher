@@ -56,6 +56,24 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	sid := getPanelSourceCoin(pk)
 	tid := getPanelTargetCoin(pk)
 
+	// Try to use cached data
+	ck := ExchangeCache.CreateKeyFromInt(sid, tid)
+	if ExchangeCache.Has(ck) {
+		cex := ExchangeCache.Get(ck)
+		ex.SourceAmount = cex.SourceAmount
+		ex.SourceId = cex.SourceId
+		ex.SourceSymbol = cex.SourceSymbol
+		ex.TargetAmount = cex.TargetAmount
+		ex.TargetId = cex.TargetId
+		ex.TargetSymbol = cex.TargetSymbol
+
+		// Debug to force display refresh!
+		// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+		// log.Println("Using cached data for:", ck)
+
+		return ex
+	}
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.ExchangeEndpoint, nil)
 
@@ -101,6 +119,9 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	// Debug to force display refresh!
 	// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+
+	// Cache the result
+	ExchangeCache.Insert(ex)
 
 	return ex
 }
