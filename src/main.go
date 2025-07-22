@@ -144,11 +144,14 @@ func generatePanelForm(panelKey string) {
 		// Default entry for decimals use 6 decimals!
 		decimalsEntry.SetText("6")
 	} else {
+		pi := BP.GetIndex(panelKey)
+		pkt := BP.GetDataByIndex(pi)
+
 		title = "Editing Panel"
-		source := BP.GetDisplayById(strconv.FormatInt(BP.GetSourceCoin(panelKey), 10))
-		target := BP.GetDisplayById(strconv.FormatInt(BP.GetTargetCoin(panelKey), 10))
-		value := strconv.FormatFloat(BP.GetSourceValue(panelKey), 'f', NumDecPlaces(BP.GetSourceValue(panelKey)), 64)
-		decimals := strconv.FormatInt(BP.GetDecimals(panelKey), 10)
+		source := BP.GetDisplayById(strconv.FormatInt(pkt.GetSourceCoin(), 10))
+		target := BP.GetDisplayById(strconv.FormatInt(pkt.GetTargetCoin(), 10))
+		value := strconv.FormatFloat(pkt.GetSourceValue(), 'f', NumDecPlaces(pkt.GetSourceValue()), 64)
+		decimals := strconv.FormatInt(pkt.GetDecimals(), 10)
 
 		valueEntry.SetDefaultValue(value)
 		sourceEntry.SetDefaultValue(source)
@@ -238,19 +241,14 @@ func generatePanelForm(panelKey string) {
 
 	d := NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
-
-			source, _ := strconv.ParseInt(BP.GetIdByDisplay(sourceEntry.Text), 10, 64)
-			target, _ := strconv.ParseInt(BP.GetIdByDisplay(targetEntry.Text), 10, 64)
-			value, _ := strconv.ParseFloat(valueEntry.Text, 64)
-			decimals, _ := strconv.ParseInt(decimalsEntry.Text, 10, 64)
-
 			if panelKey == "new" {
-				ns := BP.AppendPanel(PanelType{
-					Source:   source,
-					Target:   target,
-					Value:    value,
-					Decimals: decimals,
-				}, 0)
+				ns := BP.Append(BP.GenerateKey(
+					BP.GetIdByDisplay(sourceEntry.Text),
+					BP.GetIdByDisplay(targetEntry.Text),
+					valueEntry.Text,
+					decimalsEntry.Text,
+					0,
+				))
 
 				if ns != nil {
 					Grid.Add(generatePanel(*ns))
@@ -259,16 +257,22 @@ func generatePanelForm(panelKey string) {
 			} else {
 				pi := BP.GetIndex(panelKey)
 				if pi != -1 {
-					ns, op := BP.InsertPanel(PanelType{
-						Source:   source,
-						Target:   target,
-						Value:    value,
-						Decimals: decimals,
-					}, 0, pi)
-					switch op {
-					case 0:
+					ns := BP.Insert(BP.GenerateKey(
+						BP.GetIdByDisplay(sourceEntry.Text),
+						BP.GetIdByDisplay(targetEntry.Text),
+						valueEntry.Text,
+						decimalsEntry.Text,
+						0,
+					), pi)
+
+					npk := ns.Get()
+
+					// Logic for switching the panel type when data change
+					if !BP.ValidatePanel(npk) {
 						Grid.Objects[pi] = generateInvalidPanel(panelKey)
-					case 1:
+					}
+
+					if !BP.ValidatePanel(panelKey) && BP.ValidatePanel(npk) {
 						Grid.Objects[pi] = generatePanel(*ns)
 					}
 				}
@@ -386,23 +390,23 @@ func generateEmptyPanel() fyne.CanvasObject {
 	)
 }
 
-func generatePanel(str binding.String) fyne.CanvasObject {
+func generatePanel(pdt PanelDataType) fyne.CanvasObject {
 
-	pk, _ := str.Get()
+	pk := pdt.Get()
 
 	// Debug
 	// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
 
-	title := canvas.NewText(BP.FormatPanelTitle(pk), textColor)
+	title := canvas.NewText(pdt.FormatTitle(), textColor)
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 16
 
-	subtitle := canvas.NewText(BP.FormatPanelSubtitle(pk), textColor)
+	subtitle := canvas.NewText(pdt.FormatSubtitle(), textColor)
 	subtitle.Alignment = fyne.TextAlignCenter
 	subtitle.TextSize = 16
 
-	content := canvas.NewText(BP.FormatPanelContent(pk), textColor)
+	content := canvas.NewText(pdt.FormatContent(), textColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 30
@@ -411,20 +415,19 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 	background.SetMinSize(fyne.NewSize(100, 100))
 	background.CornerRadius = 6
 
+	str := pdt.GetData()
 	str.AddListener(binding.NewDataListener(func() {
 
 		// Get old pk
 		opk := pk
+		pdt.oldKey = pk
 
 		// Get the new pk
-		npk, _ := str.Get()
+		npk := pdt.Get()
 		pk = npk
 
 		if BP.ValidateKey(opk) {
-			ns := BP.IsValueIncrease(
-				BP.GetStringValue(opk),
-				BP.GetStringValue(pk),
-			)
+			ns := pdt.IsValueIncrease()
 
 			if ns == 1 {
 				background.FillColor = greenColor
@@ -437,9 +440,9 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 			}
 		}
 
-		title.Text = BP.FormatPanelTitle(pk)
-		subtitle.Text = BP.FormatPanelSubtitle(pk)
-		content.Text = BP.FormatPanelContent(pk)
+		title.Text = pdt.FormatTitle()
+		subtitle.Text = pdt.FormatSubtitle()
+		content.Text = pdt.FormatContent()
 
 		StartFlashingText(content, 50*time.Millisecond, textColor, 1)
 	}))
@@ -541,23 +544,17 @@ func updateData() {
 
 	list, _ := BP.Get()
 	for i, v := range list {
-		c, ok := v.(binding.String)
+		pkt, ok := v.(PanelDataType)
 		if !ok {
 			continue
 		}
-		val, err := c.Get()
-
-		if err != nil {
-			continue
-		}
+		val := pkt.Get()
 
 		if BP.ValidatePanel(val) {
-			str, op := BP.Update(val)
-			switch op {
-			case -1:
-				Grid.Objects[i] = generateInvalidPanel(val)
-			case 1:
+			if pkt.Update(val) {
 
+				// Logic for populating the panel markup for the first time!
+				// @todo: improve this
 				doPanel := i > len(Grid.Objects)
 				if !doPanel {
 					obj := Grid.Objects[i]
@@ -577,9 +574,8 @@ func updateData() {
 
 				// Build proper panel
 				if doPanel {
-					Grid.Objects[i] = generatePanel(*str)
+					Grid.Objects[i] = generatePanel(pkt)
 				}
-
 			}
 		} else {
 			Grid.Objects[i] = generateInvalidPanel(val)

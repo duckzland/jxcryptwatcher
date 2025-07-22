@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -107,10 +108,10 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	}
 
 	// Debug to force display refresh!
-	// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+	ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
 	// Cache the result
-	ExchangeCache.Insert(ex)
+	// ExchangeCache.Insert(ex)
 
 	return ex
 }

@@ -5,15 +5,15 @@ import (
 	"strings"
 )
 
-type CryptosMap struct {
+type CryptosMapType struct {
 	data map[string]string
 }
 
-func (cm *CryptosMap) Init() {
+func (cm *CryptosMapType) Init() {
 	cm.data = make(map[string]string)
 }
 
-func (cm *CryptosMap) GetOptions() []string {
+func (cm *CryptosMapType) GetOptions() []string {
 	m := []string{}
 
 	for _, tk := range cm.data {
@@ -23,7 +23,7 @@ func (cm *CryptosMap) GetOptions() []string {
 	return m
 }
 
-func (cm *CryptosMap) GetDisplayById(id string) string {
+func (cm *CryptosMapType) GetDisplayById(id string) string {
 	tid, ok := cm.data[id]
 	if !ok {
 		return ""
@@ -32,7 +32,7 @@ func (cm *CryptosMap) GetDisplayById(id string) string {
 	return tid
 }
 
-func (cm *CryptosMap) GetIdByDisplay(tk string) string {
+func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
 	if isNumeric(tk) {
 		return tk
 	}
@@ -48,7 +48,7 @@ func (cm *CryptosMap) GetIdByDisplay(tk string) string {
 	return ""
 }
 
-func (cm *CryptosMap) GetSymbolById(id string) string {
+func (cm *CryptosMapType) GetSymbolById(id string) string {
 	tid, ok := cm.data[id]
 	if !ok {
 		return ""
@@ -67,7 +67,7 @@ func (cm *CryptosMap) GetSymbolById(id string) string {
 	return sss[0]
 }
 
-func (cm *CryptosMap) ValidateId(id int64) bool {
+func (cm *CryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data[strconv.FormatInt(id, 10)]
 	return ok
 }

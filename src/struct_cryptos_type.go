@@ -56,9 +56,9 @@ func (c *CryptosType) CheckFile() *CryptosType {
 	return c
 }
 
-func (c *CryptosType) ConvertToMap() CryptosMap {
+func (c *CryptosType) ConvertToMap() CryptosMapType {
 	PrintMemUsage("Start populating cryptos")
-	CM := CryptosMap{}
+	CM := CryptosMapType{}
 	CM.Init()
 
 	for _, crypto := range c.Values {

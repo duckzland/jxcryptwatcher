@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/data/binding"
 )
 
 type PanelsType []PanelType
@@ -35,24 +34,18 @@ func (p *PanelsType) LoadFile() *PanelsType {
 func (p *PanelsType) SaveFile(maps PanelsMap) bool {
 
 	np := []PanelType{}
-	//list, _ := BindedData.Get()
 	list, _ := maps.Get()
 	for _, x := range list {
-		str, ok := x.(binding.String)
+		pdt, ok := x.(PanelDataType)
 		if !ok {
 			continue
 		}
 
-		val, err := str.Get()
-		if err != nil {
-			continue
-		}
-
 		np = append(np, PanelType{
-			Source:   BP.GetSourceCoin(val),
-			Target:   BP.GetTargetCoin(val),
-			Value:    BP.GetSourceValue(val),
-			Decimals: BP.GetDecimals(val),
+			Source:   pdt.GetSourceCoin(),
+			Target:   pdt.GetTargetCoin(),
+			Value:    pdt.GetSourceValue(),
+			Decimals: pdt.GetDecimals(),
 		})
 	}
 
@@ -90,7 +83,8 @@ func (p *PanelsType) CheckFile() *PanelsType {
 
 func (p *PanelsType) ConvertToMap(maps PanelsMap) {
 	for _, panel := range *p {
-		maps.CreatePanel(panel, 0)
+		pk := maps.GenerateKeyFromPanel(panel, 0)
+		maps.Append(pk)
 	}
 }
 
