@@ -128,8 +128,13 @@ func appendPanel(pk string) bool {
 	if !validatePanel(pk) {
 		return false
 	}
+
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
+	if data == nil {
+		return false
+	}
+
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	str := binding.NewString()
@@ -172,6 +177,10 @@ func insertPanel(pk string, index int) bool {
 	// Refresh the panel value from exchange
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
+	if data == nil {
+		return false
+	}
+
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	// Update the panel with new value from exchange
@@ -203,6 +212,10 @@ func updatePanel(pk string) bool {
 
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
+	if data == nil {
+		return false
+	}
+
 	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	if npk == pk {

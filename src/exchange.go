@@ -50,7 +50,7 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	if !validatePanel(pk) {
-		return ex
+		return nil
 	}
 
 	sid := getPanelSourceCoin(pk)
@@ -73,7 +73,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	if err != nil {
 		log.Println("Error encountered:", err)
-		return ex
+		return nil
 	}
 
 	q := url.Values{}
@@ -91,7 +91,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
 		log.Println(wrappedErr)
-		return ex
+		return nil
 	} else {
 		// log.Print("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
@@ -108,7 +108,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to examine exchange data: %w", err)
 		log.Println(wrappedErr)
-		return ex
+		return nil
 	}
 
 	// Debug to force display refresh!
