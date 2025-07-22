@@ -15,6 +15,7 @@ type PanelDataType struct {
 	data   binding.String
 	oldKey string
 	parent *PanelsMap
+	index  int
 }
 
 func (p *PanelDataType) Init() {
@@ -27,10 +28,8 @@ func (p *PanelDataType) Insert(panel PanelType, rate float32) {
 }
 
 func (p *PanelDataType) Set(pk string) {
-	// if p.parent.ValidateKey(pk) {
 	p.oldKey = p.Get()
 	p.data.Set(pk)
-	//}
 }
 
 func (p *PanelDataType) Get() string {
@@ -79,13 +78,10 @@ func (p *PanelDataType) GetValueFloat() float64 {
 	return 0
 }
 
-func (p *PanelDataType) GetSourceCoin() int64 {
+func (p *PanelDataType) GetSourceCoinInt() int64 {
 
-	pk := p.Get()
-	pkm := strings.Split(pk, "|")
-	pkv := strings.Split(pkm[0], "-")
-
-	source, err := strconv.ParseInt(pkv[0], 10, 64)
+	pk := p.GetSourceCoinString()
+	source, err := strconv.ParseInt(pk, 10, 64)
 	if err == nil {
 		return source
 	}
@@ -93,12 +89,22 @@ func (p *PanelDataType) GetSourceCoin() int64 {
 	return 0
 }
 
-func (p *PanelDataType) GetTargetCoin() int64 {
+func (p *PanelDataType) GetSourceCoinString() string {
+
 	pk := p.Get()
 	pkm := strings.Split(pk, "|")
 	pkv := strings.Split(pkm[0], "-")
 
-	target, err := strconv.ParseInt(pkv[1], 10, 64)
+	if len(pkv) > 0 {
+		return pkv[0]
+	}
+
+	return ""
+}
+
+func (p *PanelDataType) GetTargetCoinInt() int64 {
+	pk := p.GetTargetCoinString()
+	target, err := strconv.ParseInt(pk, 10, 64)
 	if err == nil {
 		return target
 	}
@@ -106,12 +112,21 @@ func (p *PanelDataType) GetTargetCoin() int64 {
 	return 0
 }
 
-func (p *PanelDataType) GetSourceValue() float64 {
+func (p *PanelDataType) GetTargetCoinString() string {
 	pk := p.Get()
 	pkm := strings.Split(pk, "|")
 	pkv := strings.Split(pkm[0], "-")
 
-	value, err := strconv.ParseFloat(pkv[2], 64)
+	if len(pkv) > 1 {
+		return pkv[1]
+	}
+
+	return ""
+}
+
+func (p *PanelDataType) GetSourceValueFloat() float64 {
+	pk := p.GetSourceValueString()
+	value, err := strconv.ParseFloat(pk, 64)
 	if err == nil {
 		return value
 	}
@@ -119,17 +134,38 @@ func (p *PanelDataType) GetSourceValue() float64 {
 	return 0
 }
 
-func (p *PanelDataType) GetDecimals() int64 {
+func (p *PanelDataType) GetSourceValueString() string {
 	pk := p.Get()
 	pkm := strings.Split(pk, "|")
 	pkv := strings.Split(pkm[0], "-")
 
-	decimals, err := strconv.ParseInt(pkv[3], 10, 64)
+	if len(pkv) > 1 {
+		return pkv[2]
+	}
+
+	return ""
+}
+
+func (p *PanelDataType) GetDecimalsInt() int64 {
+	pk := p.GetDecimalsString()
+	decimals, err := strconv.ParseInt(pk, 10, 64)
 	if err == nil {
 		return decimals
 	}
 
 	return 0
+}
+
+func (p *PanelDataType) GetDecimalsString() string {
+	pk := p.Get()
+	pkm := strings.Split(pk, "|")
+	pkv := strings.Split(pkm[0], "-")
+
+	if len(pkv) > 2 {
+		return pkv[3]
+	}
+
+	return ""
 }
 
 func (p *PanelDataType) Update(pk string) bool {
@@ -171,64 +207,49 @@ func (p *PanelDataType) Validate() bool {
 func (p *PanelDataType) FormatTitle() string {
 	pr := message.NewPrinter(language.English)
 
-	sourceValue := p.GetSourceValue()
-	sourceCoin := p.GetSourceCoin()
-	targetCoin := p.GetTargetCoin()
-	sourceID := strconv.FormatInt(sourceCoin, 10)
-	sourceSymbol := p.parent.GetSymbolById(sourceID)
-	targetID := strconv.FormatInt(targetCoin, 10)
-	targetSymbol := p.parent.GetSymbolById(targetID)
-
-	frac := int(NumDecPlaces(sourceValue))
+	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
-	sts := pr.Sprintf("%v", number.Decimal(sourceValue, number.MaxFractionDigits(frac)))
-
-	return fmt.Sprintf("%s %s to %s", sts, sourceSymbol, targetSymbol)
+	return fmt.Sprintf(
+		"%s %s to %s",
+		pr.Sprintf("%v", number.Decimal(p.GetSourceValueFloat(), number.MaxFractionDigits(frac))),
+		p.parent.GetSymbolById(p.GetSourceCoinString()),
+		p.parent.GetSymbolById(p.GetTargetCoinString()),
+	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
 	pr := message.NewPrinter(language.English)
-
-	decimals := p.GetDecimals()
-	sourceValue := p.GetSourceValue()
-	targetValue := p.GetValueFloat()
-	sourceCoin := p.GetSourceCoin()
-	targetCoin := p.GetTargetCoin()
-	sourceID := strconv.FormatInt(sourceCoin, 10)
-	sourceSymbol := p.parent.GetSymbolById(sourceID)
-	targetID := strconv.FormatInt(targetCoin, 10)
-	targetSymbol := p.parent.GetSymbolById(targetID)
-
-	frac := int(NumDecPlaces(sourceValue))
+	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
-	evt := pr.Sprintf("%v", number.Decimal(targetValue, number.MaxFractionDigits(int(decimals))))
-
-	return fmt.Sprintf("%s %s = %s %s", "1", sourceSymbol, evt, targetSymbol)
+	return fmt.Sprintf(
+		"%s %s = %s %s", "1",
+		p.parent.GetSymbolById(p.GetSourceCoinString()),
+		pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt())))),
+		p.parent.GetSymbolById(p.GetTargetCoinString()),
+	)
 }
 
 func (p *PanelDataType) FormatContent() string {
 	pr := message.NewPrinter(language.English)
-
-	sourceValue := p.GetSourceValue()
-	targetValue := p.GetValueFloat()
-	targetCoin := p.GetTargetCoin()
-	targetID := strconv.FormatInt(targetCoin, 10)
-	targetSymbol := p.parent.GetSymbolById(targetID)
-
-	frac := int(NumDecPlaces(sourceValue))
+	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
-	tts := pr.Sprintf("%v", number.Decimal(sourceValue*float64(targetValue), number.MaxFractionDigits(frac)))
-
-	return fmt.Sprintf("%s %s", tts, targetSymbol)
+	return fmt.Sprintf(
+		"%s %s",
+		pr.Sprintf("%v", number.Decimal(
+			p.GetSourceValueFloat()*float64(p.GetValueFloat()),
+			number.MaxFractionDigits(frac),
+		)),
+		p.parent.GetSymbolById(p.GetTargetCoinString()),
+	)
 }
 
 func (p *PanelDataType) IsValueIncrease() int {

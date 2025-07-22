@@ -34,18 +34,13 @@ func (p *PanelsType) LoadFile() *PanelsType {
 func (p *PanelsType) SaveFile(maps PanelsMap) bool {
 
 	np := []PanelType{}
-	list, _ := maps.Get()
-	for _, x := range list {
-		pdt, ok := x.(PanelDataType)
-		if !ok {
-			continue
-		}
-
+	list := *maps.Get()
+	for _, pdt := range list {
 		np = append(np, PanelType{
-			Source:   pdt.GetSourceCoin(),
-			Target:   pdt.GetTargetCoin(),
-			Value:    pdt.GetSourceValue(),
-			Decimals: pdt.GetDecimals(),
+			Source:   pdt.GetSourceCoinInt(),
+			Target:   pdt.GetTargetCoinInt(),
+			Value:    pdt.GetSourceValueFloat(),
+			Decimals: pdt.GetDecimalsInt(),
 		})
 	}
 

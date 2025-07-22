@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"net/url"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -51,7 +50,7 @@ func main() {
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
-	list, _ := BP.data.Get()
+	list := *BP.Get()
 	for range list {
 		Grid.Add(generateEmptyPanel())
 	}
@@ -148,10 +147,10 @@ func generatePanelForm(panelKey string) {
 		pkt := BP.GetDataByIndex(pi)
 
 		title = "Editing Panel"
-		source := BP.GetDisplayById(strconv.FormatInt(pkt.GetSourceCoin(), 10))
-		target := BP.GetDisplayById(strconv.FormatInt(pkt.GetTargetCoin(), 10))
-		value := strconv.FormatFloat(pkt.GetSourceValue(), 'f', NumDecPlaces(pkt.GetSourceValue()), 64)
-		decimals := strconv.FormatInt(pkt.GetDecimals(), 10)
+		source := BP.GetDisplayById(pkt.GetSourceCoinString())
+		target := BP.GetDisplayById(pkt.GetTargetCoinString())
+		value := strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64)
+		decimals := strconv.FormatInt(pkt.GetDecimalsInt(), 10)
 
 		valueEntry.SetDefaultValue(value)
 		sourceEntry.SetDefaultValue(source)
@@ -252,6 +251,7 @@ func generatePanelForm(panelKey string) {
 
 				if ns != nil {
 					Grid.Add(generatePanel(*ns))
+					ns.index = len(Grid.Objects)
 				}
 
 			} else {
@@ -542,43 +542,27 @@ func updateData() {
 	// Clear cached rates
 	ExchangeCache.Reset()
 
-	list, _ := BP.Get()
-	for i, v := range list {
-		pkt, ok := v.(PanelDataType)
-		if !ok {
-			continue
-		}
-		val := pkt.Get()
+	list := *BP.Get()
+	for i, pkt := range list {
+		pk := pkt.Get()
 
-		if BP.ValidatePanel(val) {
-			if pkt.Update(val) {
+		if BP.ValidatePanel(pk) {
+			if pkt.Update(pk) {
+				if pkt.index == -1 {
+					npk := pkt.Get()
 
-				// Logic for populating the panel markup for the first time!
-				// @todo: improve this
-				doPanel := i > len(Grid.Objects)
-				if !doPanel {
-					obj := Grid.Objects[i]
-					vobj := reflect.ValueOf(obj).Elem()
-					if !vobj.FieldByName("tag").IsValid() {
-						doPanel = true
+					// This panel hasnt been generated yet, create the markup!
+					if BP.ValidatePanel(npk) {
+						Grid.Objects[i] = generatePanel(pkt)
+						pkt.index = i
+					} else {
+						Grid.Objects[i] = generateInvalidPanel(pk)
+						pkt.index = i
 					}
-				}
-
-				if !doPanel {
-					obj := Grid.Objects[i]
-					xobj, ok := obj.(*DoubleClickContainer)
-					if ok && xobj.getTag() != "ValidPanel" {
-						doPanel = true
-					}
-				}
-
-				// Build proper panel
-				if doPanel {
-					Grid.Objects[i] = generatePanel(pkt)
 				}
 			}
 		} else {
-			Grid.Objects[i] = generateInvalidPanel(val)
+			Grid.Objects[i] = generateInvalidPanel(pk)
 		}
 	}
 
