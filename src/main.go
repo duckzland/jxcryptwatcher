@@ -149,8 +149,10 @@ func generatePanelForm(panelKey string) {
 		title = "Editing Panel"
 		source := BP.GetDisplayById(pkt.GetSourceCoinString())
 		target := BP.GetDisplayById(pkt.GetTargetCoinString())
-		value := strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64)
-		decimals := strconv.FormatInt(pkt.GetDecimalsInt(), 10)
+		value := pkt.GetSourceValueString()
+		decimals := pkt.GetDecimalsString()
+		// value := strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64)
+		// decimals := strconv.FormatInt(pkt.GetDecimalsInt(), 10)
 
 		valueEntry.SetDefaultValue(value)
 		sourceEntry.SetDefaultValue(source)
