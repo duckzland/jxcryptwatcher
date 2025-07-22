@@ -131,11 +131,10 @@ func appendPanel(pk string) bool {
 
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
-	if data == nil {
-		return false
+	npk := pk
+	if data != nil {
+		npk = updatePanelValue(pk, float32(data.TargetAmount))
 	}
-
-	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	str := binding.NewString()
 	str.Set(npk)
@@ -177,11 +176,10 @@ func insertPanel(pk string, index int) bool {
 	// Refresh the panel value from exchange
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
-	if data == nil {
-		return false
+	npk := pk
+	if data != nil {
+		npk = updatePanelValue(pk, float32(data.TargetAmount))
 	}
-
-	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	// Update the panel with new value from exchange
 	if npk != pk {
@@ -212,11 +210,10 @@ func updatePanel(pk string) bool {
 
 	ex := ExchangeDataType{}
 	data := ex.GetRate(pk)
-	if data == nil {
-		return false
+	npk := pk
+	if data != nil {
+		npk = updatePanelValue(pk, float32(data.TargetAmount))
 	}
-
-	npk := updatePanelValue(pk, float32(data.TargetAmount))
 
 	if npk == pk {
 		return false
@@ -301,6 +298,17 @@ func getPanelValue(pk string) float64 {
 		}
 	}
 	return 0
+}
+
+func getPanelStringValue(pk string) string {
+
+	if validatePanelKey(pk) {
+		pkv := strings.Split(pk, "|")
+		if len(pkv) > 0 {
+			return pkv[1]
+		}
+	}
+	return "0"
 }
 
 func getPanelSourceCoin(pk string) int64 {
@@ -473,17 +481,17 @@ func isPanelValueIncrease(a, b string) int {
 	numB, errB := strconv.ParseFloat(b, 32)
 
 	if errA != nil || errB != nil {
-		// fmt.Printf("Error formatting")
+		fmt.Printf("Error formatting")
 		return 0
 	}
 
 	if numA > numB {
-		// fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
 		return -1
 	}
 
 	if numA < numB {
-		// fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
 		return 1
 	}
 

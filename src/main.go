@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -18,9 +17,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 )
@@ -404,22 +400,18 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 
 	str.AddListener(binding.NewDataListener(func() {
 
-		pk, _ := str.Get()
-		ovx := strings.Split(content.Text, " ")
-		if len(ovx) > 0 {
-			p := message.NewPrinter(language.English)
+		// Get old pk
+		opk := pk
 
-			ov := strings.ReplaceAll(ovx[0], ",", "")
-			sv := getPanelSourceValue(pk)
-			tv := getPanelValue(pk)
+		// Get the new pk
+		npk, _ := str.Get()
+		pk = npk
 
-			frac := int(NumDecPlaces(sv))
-			if frac < 3 {
-				frac = 2
-			}
-
-			nx := strings.ReplaceAll(p.Sprintf("%v", number.Decimal(sv*float64(tv), number.MaxFractionDigits(frac))), ",", "")
-			ns := isPanelValueIncrease(ov, nx)
+		if validatePanelKey(opk) {
+			ns := isPanelValueIncrease(
+				getPanelStringValue(opk),
+				getPanelStringValue(pk),
+			)
 
 			if ns == 1 {
 				background.FillColor = greenColor
