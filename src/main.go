@@ -50,7 +50,7 @@ func main() {
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
-	list := *BP.Get()
+	list := BP.Get()
 	for range list {
 		Grid.Add(generateEmptyPanel())
 	}
@@ -147,17 +147,19 @@ func generatePanelForm(panelKey string) {
 		pkt := BP.GetDataByIndex(pi)
 
 		title = "Editing Panel"
-		source := BP.GetDisplayById(pkt.GetSourceCoinString())
-		target := BP.GetDisplayById(pkt.GetTargetCoinString())
-		value := pkt.GetSourceValueString()
-		decimals := pkt.GetDecimalsString()
-		// value := strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64)
-		// decimals := strconv.FormatInt(pkt.GetDecimalsInt(), 10)
 
-		valueEntry.SetDefaultValue(value)
-		sourceEntry.SetDefaultValue(source)
-		targetEntry.SetDefaultValue(target)
-		decimalsEntry.SetDefaultValue(decimals)
+		valueEntry.SetDefaultValue(
+			strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64),
+		)
+		sourceEntry.SetDefaultValue(
+			BP.GetDisplayById(pkt.GetSourceCoinString()),
+		)
+		targetEntry.SetDefaultValue(
+			BP.GetDisplayById(pkt.GetTargetCoinString()),
+		)
+		decimalsEntry.SetDefaultValue(
+			pkt.GetDecimalsString(),
+		)
 	}
 
 	valueEntry.Validator = func(s string) error {
@@ -544,7 +546,7 @@ func updateData() {
 	// Clear cached rates
 	ExchangeCache.Reset()
 
-	list := *BP.Get()
+	list := BP.Get()
 	for i, pkt := range list {
 		pk := pkt.Get()
 

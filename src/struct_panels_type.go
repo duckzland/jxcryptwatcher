@@ -34,7 +34,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 func (p *PanelsType) SaveFile(maps PanelsMap) bool {
 
 	np := []PanelType{}
-	list := *maps.Get()
+	list := maps.Get()
 	for _, pdt := range list {
 		np = append(np, PanelType{
 			Source:   pdt.GetSourceCoinInt(),
@@ -76,7 +76,7 @@ func (p *PanelsType) CheckFile() *PanelsType {
 	return p
 }
 
-func (p *PanelsType) ConvertToMap(maps PanelsMap) {
+func (p *PanelsType) ConvertToMap(maps *PanelsMap) {
 	for _, panel := range *p {
 		pk := maps.GenerateKeyFromPanel(panel, 0)
 		maps.Append(pk)
@@ -93,7 +93,7 @@ func PanelsInit() {
 
 	BP.SetMaps(Cryptos.CheckFile().LoadFile().ConvertToMap())
 	Panels := PanelsType{}
-	Panels.CheckFile().LoadFile().ConvertToMap(BP)
+	Panels.CheckFile().LoadFile().ConvertToMap(&BP)
 }
 
 func SavePanels() bool {

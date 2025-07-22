@@ -9,16 +9,15 @@ import (
 )
 
 type PanelsMap struct {
-	data *[]PanelDataType
+	data []PanelDataType
 	maps CryptosMapType
 }
 
 func (pc *PanelsMap) Init() {
-	arr := []PanelDataType{}
-	pc.data = &arr
+	pc.data = []PanelDataType{}
 }
 
-func (pc *PanelsMap) Set(data *[]PanelDataType) {
+func (pc *PanelsMap) Set(data []PanelDataType) {
 	pc.data = data
 }
 
@@ -27,14 +26,15 @@ func (pc *PanelsMap) SetMaps(maps CryptosMapType) {
 }
 
 func (pc *PanelsMap) Remove(index int) bool {
-	values := *pc.data
+	values := pc.data
 	if index < 0 || index >= len(values) {
 		return false // avoid out-of-bounds
 	}
 
 	// Remove item at index
-	*pc.data = append(values[:index], values[index+1:]...)
+	// *pc.data = append(values[:index], values[index+1:]...)
 	// pc.data = &updated
+	pc.data = append(values[:index], values[index+1:]...)
 
 	return true
 }
@@ -49,6 +49,10 @@ func (pc *PanelsMap) Append(pk string) *PanelDataType {
 		return nil
 	}
 
+	if pc.data == nil {
+		pc.data = []PanelDataType{}
+	}
+
 	pn := PanelDataType{
 		data:   binding.NewString(),
 		oldKey: pk,
@@ -59,26 +63,27 @@ func (pc *PanelsMap) Append(pk string) *PanelDataType {
 	pn.Set(pk)
 	pn.Update(pk)
 	// *data := *pc.data
-	*pc.data = append(*pc.data, pn)
+	//*pc.data = append(*pc.data, pn)
 	//pc.data = *data
+	pc.data = append(pc.data, pn)
+
 	return &pn
 }
 
 func (pc *PanelsMap) Insert(pk string, index int) *PanelDataType {
 
-	// Trying to insert to invalid index, exit
-	if index >= 0 && index < len(*pc.data) {
+	if index < 0 || index >= len(pc.data) {
 		return nil
 	}
 
-	pdt := &(*pc.data)[index]
+	pdt := pc.data[index]
 
 	pdt.Update(pk)
 
-	return pdt
+	return &pdt
 }
 
-func (pc *PanelsMap) Get() *[]PanelDataType {
+func (pc *PanelsMap) Get() []PanelDataType {
 	return pc.data
 }
 
@@ -91,7 +96,7 @@ func (pc *PanelsMap) GenerateKeyFromPanel(panel PanelType, rate float32) string 
 }
 
 func (pc *PanelsMap) GetIndex(pk string) int {
-	list := *pc.data
+	list := pc.data
 	for i, pdt := range list {
 		if pdt.IsEqualContentString(pk) {
 			return i
@@ -102,14 +107,12 @@ func (pc *PanelsMap) GetIndex(pk string) int {
 }
 
 func (pc *PanelsMap) GetDataByIndex(index int) *PanelDataType {
-	// Trying to insert to invalid index, exit
-	if index >= 0 && index < len(*pc.data) {
+	// If index is out of bounds, return nil
+	if index < 0 || index >= len(pc.data) {
 		return nil
 	}
 
-	pdt := &(*pc.data)[index]
-
-	return pdt
+	return &pc.data[index]
 }
 
 func (pc *PanelsMap) GetSourceCoin(pk string) int64 {

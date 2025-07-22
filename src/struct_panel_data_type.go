@@ -33,6 +33,9 @@ func (p *PanelDataType) Set(pk string) {
 }
 
 func (p *PanelDataType) Get() string {
+	if p.data == nil {
+		return ""
+	}
 	pk, err := p.data.Get()
 	if err == nil {
 		return pk
@@ -284,5 +287,4 @@ func (p *PanelDataType) IsValueIncrease() int {
 
 func (p *PanelDataType) IsEqualContentString(pk string) bool {
 	return p.Get() == pk
-
 }
