@@ -41,7 +41,6 @@ const epsilon = 1e-9
 func main() {
 
 	ExchangeCache.Reset()
-	// ExchangeCache.data = make(map[string]*ExchangeDataType)
 
 	ConfigInit()
 
@@ -49,6 +48,7 @@ func main() {
 
 	a := app.New()
 	a.Settings().SetTheme(theme.DarkTheme())
+
 	Window = a.NewWindow("JXCrypto Watcher")
 
 	// Don't invoke this before app.New(), binding.UntypedList will crash
@@ -145,7 +145,8 @@ func generatePanelForm(panelKey string) {
 		// valueEntry.SetText("123")
 		// sourceEntry.SetText("35626")
 		// targetEntry.SetText("5426")
-		// decimalsEntry.SetText("6")
+		// Default entry for decimals use 6 decimals!
+		decimalsEntry.SetText("6")
 	} else {
 		title = "Editing Panel"
 		source := getTickerDisplayById(strconv.FormatInt(getPanelSourceCoin(panelKey), 10))
