@@ -49,12 +49,12 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 
 func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
-	if !validatePanel(pk) {
+	if !BP.ValidatePanel(pk) {
 		return nil
 	}
 
-	sid := getPanelSourceCoin(pk)
-	tid := getPanelTargetCoin(pk)
+	sid := BP.GetSourceCoin(pk)
+	tid := BP.GetTargetCoin(pk)
 
 	// Try to use cached data
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)

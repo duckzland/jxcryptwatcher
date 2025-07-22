@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"net/url"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -40,19 +41,17 @@ func main() {
 
 	ConfigInit()
 
-	CryptosInit()
-
 	a := app.New()
 	a.Settings().SetTheme(theme.DarkTheme())
 
-	Window = a.NewWindow("JXCrypto Watcher")
-
 	// Don't invoke this before app.New(), binding.UntypedList will crash
-	checkPanels()
+	PanelsInit()
+
+	Window = a.NewWindow("JXCrypto Watcher")
 
 	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
-	list, _ := BindedData.Get()
+	list, _ := BP.data.Get()
 	for range list {
 		Grid.Add(generateEmptyPanel())
 	}
@@ -73,7 +72,8 @@ func main() {
 		// Reload cryptos.json
 		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
 			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
-				RefreshCryptos()
+				Cryptos := CryptosType{}
+				BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 			})
 		}),
 		layout.NewSpacer(),
@@ -128,7 +128,7 @@ func main() {
 
 func generatePanelForm(panelKey string) {
 
-	cm := getTickerOptions()
+	cm := BP.GetOptions()
 
 	valueEntry := NewNumericalEntry(true)
 	sourceEntry := NewCompletionEntry(cm)
@@ -145,10 +145,10 @@ func generatePanelForm(panelKey string) {
 		decimalsEntry.SetText("6")
 	} else {
 		title = "Editing Panel"
-		source := getTickerDisplayById(strconv.FormatInt(getPanelSourceCoin(panelKey), 10))
-		target := getTickerDisplayById(strconv.FormatInt(getPanelTargetCoin(panelKey), 10))
-		value := strconv.FormatFloat(getPanelSourceValue(panelKey), 'f', NumDecPlaces(getPanelSourceValue(panelKey)), 64)
-		decimals := strconv.FormatInt(getPanelDecimals(panelKey), 10)
+		source := BP.GetDisplayById(strconv.FormatInt(BP.GetSourceCoin(panelKey), 10))
+		target := BP.GetDisplayById(strconv.FormatInt(BP.GetTargetCoin(panelKey), 10))
+		value := strconv.FormatFloat(BP.GetSourceValue(panelKey), 'f', NumDecPlaces(BP.GetSourceValue(panelKey)), 64)
+		decimals := strconv.FormatInt(BP.GetDecimals(panelKey), 10)
 
 		valueEntry.SetDefaultValue(value)
 		sourceEntry.SetDefaultValue(source)
@@ -178,15 +178,15 @@ func generatePanelForm(panelKey string) {
 			return fmt.Errorf("This field cannot be empty")
 		}
 
-		tid := getTickerIdByDisplay(s)
+		tid := BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !validateCryptoId(id) {
+		if err != nil || !BP.ValidateId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
 
-		xid := getTickerIdByDisplay(targetEntry.Text)
+		xid := BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err != nil && validateCryptoId(bid) && bid == id {
+		if err != nil && BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
@@ -198,15 +198,15 @@ func generatePanelForm(panelKey string) {
 			return fmt.Errorf("This field cannot be empty")
 		}
 
-		tid := getTickerIdByDisplay(s)
+		tid := BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !validateCryptoId(id) {
+		if err != nil || !BP.ValidateId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
 
-		xid := getTickerIdByDisplay(targetEntry.Text)
+		xid := BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err != nil && validateCryptoId(bid) && bid == id {
+		if err != nil && BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
@@ -239,34 +239,47 @@ func generatePanelForm(panelKey string) {
 	d := NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 
-			source, _ := strconv.ParseInt(getTickerIdByDisplay(sourceEntry.Text), 10, 64)
-			target, _ := strconv.ParseInt(getTickerIdByDisplay(targetEntry.Text), 10, 64)
+			source, _ := strconv.ParseInt(BP.GetIdByDisplay(sourceEntry.Text), 10, 64)
+			target, _ := strconv.ParseInt(BP.GetIdByDisplay(targetEntry.Text), 10, 64)
 			value, _ := strconv.ParseFloat(valueEntry.Text, 64)
 			decimals, _ := strconv.ParseInt(decimalsEntry.Text, 10, 64)
 
 			if panelKey == "new" {
-				appendPanel(generatePanelKey(PanelType{
+				ns := BP.AppendPanel(PanelType{
 					Source:   source,
 					Target:   target,
 					Value:    value,
 					Decimals: decimals,
-				}, 0))
+				}, 0)
+
+				if ns != nil {
+					Grid.Add(generatePanel(*ns))
+				}
 
 			} else {
-				pi := getPanelIndex(panelKey)
-
+				pi := BP.GetIndex(panelKey)
 				if pi != -1 {
-					insertPanel(generatePanelKey(PanelType{
+					ns, op := BP.InsertPanel(PanelType{
 						Source:   source,
 						Target:   target,
 						Value:    value,
 						Decimals: decimals,
-					}, 0), pi)
+					}, 0, pi)
+					switch op {
+					case 0:
+						Grid.Objects[pi] = generateInvalidPanel(panelKey)
+					case 1:
+						Grid.Objects[pi] = generatePanel(*ns)
+					}
 				}
 			}
 
 			doActionWithNotification("Saving Panel...", "Panel data saved...", NotificationBox, func() {
-				savePanels()
+				if SavePanels() {
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
+				}
 			})
 		}
 	}, Window)
@@ -380,16 +393,16 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 	// Debug
 	// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
 
-	title := canvas.NewText(formatKeyAsPanelTitle(pk), textColor)
+	title := canvas.NewText(BP.FormatPanelTitle(pk), textColor)
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.TextSize = 16
 
-	subtitle := canvas.NewText(formatKeyAsPanelSubtitle(pk), textColor)
+	subtitle := canvas.NewText(BP.FormatPanelSubtitle(pk), textColor)
 	subtitle.Alignment = fyne.TextAlignCenter
 	subtitle.TextSize = 16
 
-	content := canvas.NewText(formatKeyAsPanelContent(pk), textColor)
+	content := canvas.NewText(BP.FormatPanelContent(pk), textColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 30
@@ -407,10 +420,10 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 		npk, _ := str.Get()
 		pk = npk
 
-		if validatePanelKey(opk) {
-			ns := isPanelValueIncrease(
-				getPanelStringValue(opk),
-				getPanelStringValue(pk),
+		if BP.ValidateKey(opk) {
+			ns := BP.IsValueIncrease(
+				BP.GetStringValue(opk),
+				BP.GetStringValue(pk),
 			)
 
 			if ns == 1 {
@@ -424,9 +437,9 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 			}
 		}
 
-		title.Text = formatKeyAsPanelTitle(pk)
-		subtitle.Text = formatKeyAsPanelSubtitle(pk)
-		content.Text = formatKeyAsPanelContent(pk)
+		title.Text = BP.FormatPanelTitle(pk)
+		subtitle.Text = BP.FormatPanelSubtitle(pk)
+		content.Text = BP.FormatPanelContent(pk)
 
 		StartFlashingText(content, 50*time.Millisecond, textColor, 1)
 	}))
@@ -443,10 +456,10 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
 
 				dynpk, _ := str.Get()
-				dynpi := getPanelIndex(dynpk)
+				dynpi := BP.GetIndex(dynpk)
 
-				removePanel(dynpi)
-				savePanels()
+				RemovePanel(dynpi)
+				SavePanels()
 			})
 		}),
 	)
@@ -475,7 +488,7 @@ func generatePanel(str binding.String) fyne.CanvasObject {
 
 func generateInvalidPanel(pk string) fyne.CanvasObject {
 
-	pi := getPanelIndex(pk)
+	pi := BP.GetIndex(pk)
 
 	content := canvas.NewText("Invalid Panel", textColor)
 	content.Alignment = fyne.TextAlignCenter
@@ -491,14 +504,10 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 		}),
 		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
 			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
-				// Async
-				removePanel(pi)
-				saved := savePanels()
-				if saved {
-					fyne.Do(func() {
-						Grid.Refresh()
-					})
-				}
+
+				RemovePanel(pi)
+
+				SavePanels()
 			})
 		}),
 	)
@@ -530,7 +539,7 @@ func updateData() {
 	// Clear cached rates
 	ExchangeCache.Reset()
 
-	list, _ := BindedData.Get()
+	list, _ := BP.Get()
 	for i, v := range list {
 		c, ok := v.(binding.String)
 		if !ok {
@@ -542,8 +551,36 @@ func updateData() {
 			continue
 		}
 
-		if validatePanel(val) {
-			updatePanel(val)
+		if BP.ValidatePanel(val) {
+			str, op := BP.Update(val)
+			switch op {
+			case -1:
+				Grid.Objects[i] = generateInvalidPanel(val)
+			case 1:
+
+				doPanel := i > len(Grid.Objects)
+				if !doPanel {
+					obj := Grid.Objects[i]
+					vobj := reflect.ValueOf(obj).Elem()
+					if !vobj.FieldByName("tag").IsValid() {
+						doPanel = true
+					}
+				}
+
+				if !doPanel {
+					obj := Grid.Objects[i]
+					xobj, ok := obj.(*DoubleClickContainer)
+					if ok && xobj.getTag() != "ValidPanel" {
+						doPanel = true
+					}
+				}
+
+				// Build proper panel
+				if doPanel {
+					Grid.Objects[i] = generatePanel(*str)
+				}
+
+			}
 		} else {
 			Grid.Objects[i] = generateInvalidPanel(val)
 		}
