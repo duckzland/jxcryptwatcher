@@ -572,9 +572,6 @@ func updateDisplay() {
 		pkt := BP.GetDataByIndex(i)
 		pk := pkt.Get()
 
-		// if pkt.index != -1 {
-		// 	continue
-		// }
 		if BP.ValidatePanel(pk) {
 			if pkt.Update(pk) {
 				if pkt.index == -1 {
