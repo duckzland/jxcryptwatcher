@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"jxwatcher/core"
+	JC "jxwatcher/core"
 )
 
 type PanelKeyType struct {
@@ -24,7 +24,7 @@ func (p *PanelKeyType) GenerateKey(source, target, value, decimals string, rate 
 }
 
 func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float32) string {
-	p.value = fmt.Sprintf("%d-%d-%s-%d|%f", panel.Source, panel.Target, core.DynamicFormatFloatToString(panel.Value), panel.Decimals, rate)
+	p.value = fmt.Sprintf("%d-%d-%s-%d|%f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.Decimals, rate)
 	return p.value
 }
 

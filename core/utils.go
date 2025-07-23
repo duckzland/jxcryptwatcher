@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"os"
 	"os/user"
@@ -11,6 +12,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"fyne.io/fyne/v2/canvas"
 )
 
 const MemoryDebug = false
@@ -150,4 +153,18 @@ func ReorderByMatch(arr []string, searchKey string) []string {
 
 func DynamicFormatFloatToString(f float64) string {
 	return strconv.FormatFloat(f, 'f', NumDecPlaces(f), 64)
+}
+
+func SetTextAlpha(text *canvas.Text, alpha uint8) {
+	switch c := text.Color.(type) {
+	case color.RGBA:
+		c.A = alpha
+		text.Color = c
+	case color.NRGBA:
+		c.A = alpha
+		text.Color = c
+	default:
+		// fallback to white with new alpha if type is unknown
+		text.Color = color.RGBA{R: 255, G: 255, B: 255, A: alpha}
+	}
 }
