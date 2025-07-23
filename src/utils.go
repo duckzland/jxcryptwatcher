@@ -147,3 +147,7 @@ func reorderByMatch(arr []string, searchKey string) []string {
 
 	return arr
 }
+
+func dynamicFormatFloatToString(f float64) string {
+	return strconv.FormatFloat(f, 'f', NumDecPlaces(f), 64)
+}

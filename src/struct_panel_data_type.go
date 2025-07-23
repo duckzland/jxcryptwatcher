@@ -62,7 +62,7 @@ func (p *PanelDataType) GetOldValueString() string {
 
 	pk := p.oldKey
 	pkv := strings.Split(pk, "|")
-	if len(pkv) > 0 {
+	if len(pkv) > 1 {
 		return pkv[1]
 	}
 
@@ -173,12 +173,21 @@ func (p *PanelDataType) GetDecimalsString() string {
 
 func (p *PanelDataType) Update(pk string) bool {
 
-	p.Set(pk)
+	opk := p.Get()
+	p.oldKey = opk
+	npk := pk
+	ck := ExchangeCache.CreateKeyFromInt(p.GetSourceCoinInt(), p.GetTargetCoinInt())
 
-	ex := ExchangeDataType{}
-	data := ex.GetRate(pk)
-	if data != nil {
-		p.UpdateValue(float32(data.TargetAmount))
+	if ExchangeCache.Has(ck) {
+		data := ExchangeCache.Get(ck)
+		npk = p.UpdateValue(float32(data.TargetAmount))
+
+		// Debug: Make the value always change
+		// npk = p.UpdateValue(float32(data.TargetAmount * (rand.Float64() * 5)))
+	}
+
+	if npk != opk {
+		p.Set(npk)
 	}
 
 	return true
@@ -188,7 +197,6 @@ func (p *PanelDataType) UpdateValue(rate float32) string {
 	pk := p.Get()
 	pkk := strings.Split(pk, "|")
 	npk := fmt.Sprintf("%s|%f", pkk[0], rate)
-	p.Set(npk)
 	return npk
 }
 
@@ -253,6 +261,10 @@ func (p *PanelDataType) FormatContent() string {
 		)),
 		p.parent.GetSymbolById(p.GetTargetCoinString()),
 	)
+}
+
+func (p *PanelDataType) DidChange() bool {
+	return p.oldKey != p.Get()
 }
 
 func (p *PanelDataType) IsValueIncrease() int {

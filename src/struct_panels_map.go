@@ -28,12 +28,9 @@ func (pc *PanelsMap) SetMaps(maps CryptosMapType) {
 func (pc *PanelsMap) Remove(index int) bool {
 	values := pc.data
 	if index < 0 || index >= len(values) {
-		return false // avoid out-of-bounds
+		return false
 	}
 
-	// Remove item at index
-	// *pc.data = append(values[:index], values[index+1:]...)
-	// pc.data = &updated
 	pc.data = append(values[:index], values[index+1:]...)
 
 	return true
@@ -45,42 +42,34 @@ func (pc *PanelsMap) RemoveByKey(pk string) bool {
 
 func (pc *PanelsMap) Append(pk string) *PanelDataType {
 
-	if !pc.ValidateKey(pk) {
-		return nil
-	}
-
 	if pc.data == nil {
 		pc.data = []PanelDataType{}
 	}
 
 	pn := PanelDataType{
-		data:   binding.NewString(),
-		oldKey: pk,
+		data: binding.NewString(),
+		// oldKey: pk,
 		parent: pc,
 		index:  -1,
 	}
 
-	pn.Set(pk)
 	pn.Update(pk)
-	// *data := *pc.data
-	//*pc.data = append(*pc.data, pn)
-	//pc.data = *data
 	pc.data = append(pc.data, pn)
 
 	return &pn
 }
 
-func (pc *PanelsMap) Insert(pk string, index int) *PanelDataType {
+func (pc *PanelsMap) Update(pk string, index int) *PanelDataType {
 
 	if index < 0 || index >= len(pc.data) {
 		return nil
 	}
 
-	pdt := pc.data[index]
+	pdt := &pc.data[index]
 
 	pdt.Update(pk)
 
-	return &pdt
+	return pdt
 }
 
 func (pc *PanelsMap) Get() []PanelDataType {
@@ -92,7 +81,7 @@ func (pc *PanelsMap) GenerateKey(source, target, value, decimals string, rate fl
 }
 
 func (pc *PanelsMap) GenerateKeyFromPanel(panel PanelType, rate float32) string {
-	return fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate)
+	return fmt.Sprintf("%d-%d-%s-%d|%f", panel.Source, panel.Target, dynamicFormatFloatToString(panel.Value), panel.Decimals, rate)
 }
 
 func (pc *PanelsMap) GetIndex(pk string) int {

@@ -80,7 +80,8 @@ func main() {
 		// Refresh data from exchange
 		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
 			doActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", NotificationBox, func() {
-				updateData()
+				updateRates()
+				updateDisplay()
 			})
 		}),
 		layout.NewSpacer(),
@@ -113,8 +114,21 @@ func main() {
 
 	go func() {
 		for {
-			doActionWithNotification("Fetching exchange rate...", "Updating panel...", NotificationBox, func() {
-				updateData()
+			fyne.Do(func() {
+				updateDisplay()
+			})
+			time.Sleep(3 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			doActionWithNotification("Fetching exchange rate...", "Fetching rates from exchange...", NotificationBox, func() {
+				if updateRates() {
+					fyne.Do(func() {
+						updateDisplay()
+					})
+				}
 			})
 
 			time.Sleep(time.Duration(Config.Delay) * time.Second)
@@ -254,30 +268,40 @@ func generatePanelForm(panelKey string) {
 				))
 
 				if ns != nil {
-					Grid.Add(generatePanel(*ns))
+					Grid.Add(generatePanel(ns))
 					ns.index = len(Grid.Objects)
 				}
 
 			} else {
 				pi := BP.GetIndex(panelKey)
 				if pi != -1 {
-					ns := BP.Insert(BP.GenerateKey(
+					npk := BP.GenerateKey(
 						BP.GetIdByDisplay(sourceEntry.Text),
 						BP.GetIdByDisplay(targetEntry.Text),
 						valueEntry.Text,
 						decimalsEntry.Text,
 						0,
-					), pi)
+					)
+					ns := BP.GetDataByIndex(pi)
 
-					npk := ns.Get()
+					if ns != nil {
+						opk := ns.oldKey
 
-					// Logic for switching the panel type when data change
-					if !BP.ValidatePanel(npk) {
-						Grid.Objects[pi] = generateInvalidPanel(panelKey)
-					}
+						// BugFix: Use set directly, don't use Update! to force update key
+						ns.Set(npk)
 
-					if !BP.ValidatePanel(panelKey) && BP.ValidatePanel(npk) {
-						Grid.Objects[pi] = generatePanel(*ns)
+						// Now we try to update, this can fail to set update!
+						ns.Update(npk)
+
+						nnpk := ns.Get()
+
+						if BP.ValidatePanel(opk) && !BP.ValidatePanel(nnpk) {
+							ns.index = -1
+						}
+
+						if !BP.ValidatePanel(opk) && BP.ValidatePanel(nnpk) {
+							ns.index = -1
+						}
 					}
 				}
 			}
@@ -287,6 +311,12 @@ func generatePanelForm(panelKey string) {
 					fyne.Do(func() {
 						Grid.Refresh()
 					})
+
+					if updateRates() {
+						fyne.Do(func() {
+							updateDisplay()
+						})
+					}
 				}
 			})
 		}
@@ -394,12 +424,7 @@ func generateEmptyPanel() fyne.CanvasObject {
 	)
 }
 
-func generatePanel(pdt PanelDataType) fyne.CanvasObject {
-
-	pk := pdt.Get()
-
-	// Debug
-	// tts := fmt.Sprintf(ttd, panel.Value*data.TargetAmount+(rand.Float64()*5))
+func generatePanel(pdt *PanelDataType) fyne.CanvasObject {
 
 	title := canvas.NewText(pdt.FormatTitle(), textColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -422,26 +447,21 @@ func generatePanel(pdt PanelDataType) fyne.CanvasObject {
 	str := pdt.GetData()
 	str.AddListener(binding.NewDataListener(func() {
 
-		// Get old pk
-		opk := pk
-		pdt.oldKey = pk
+		// No change needed
+		if !pdt.DidChange() {
+			return
+		}
 
-		// Get the new pk
-		npk := pdt.Get()
-		pk = npk
+		ns := pdt.IsValueIncrease()
 
-		if BP.ValidateKey(opk) {
-			ns := pdt.IsValueIncrease()
+		if ns == 1 {
+			background.FillColor = greenColor
+			background.Refresh()
+		}
 
-			if ns == 1 {
-				background.FillColor = greenColor
-				background.Refresh()
-			}
-
-			if ns == -1 {
-				background.FillColor = redColor
-				background.Refresh()
-			}
+		if ns == -1 {
+			background.FillColor = redColor
+			background.Refresh()
 		}
 
 		title.Text = pdt.FormatTitle()
@@ -470,6 +490,7 @@ func generatePanel(pdt PanelDataType) fyne.CanvasObject {
 			})
 		}),
 	)
+
 	return NewDoubleClickContainer(
 		"ValidPanel",
 		panelItem(
@@ -541,36 +562,58 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 	)
 }
 
-func updateData() {
-
-	// Clear cached rates
-	ExchangeCache.Reset()
+func updateDisplay() {
 
 	list := BP.Get()
-	for i, pkt := range list {
+	for i := range list {
+		// Always get linked data! do not use the copied
+		pkt := BP.GetDataByIndex(i)
 		pk := pkt.Get()
 
+		if pkt.index != -1 {
+			// continue
+		}
 		if BP.ValidatePanel(pk) {
 			if pkt.Update(pk) {
 				if pkt.index == -1 {
 					npk := pkt.Get()
-
 					// This panel hasnt been generated yet, create the markup!
 					if BP.ValidatePanel(npk) {
+						pkt.index = i
 						Grid.Objects[i] = generatePanel(pkt)
-						pkt.index = i
 					} else {
-						Grid.Objects[i] = generateInvalidPanel(pk)
 						pkt.index = i
+						Grid.Objects[i] = generateInvalidPanel(pk)
 					}
 				}
 			}
 		} else {
-			Grid.Objects[i] = generateInvalidPanel(pk)
+			if pkt.index == -1 {
+				pkt.index = i
+				Grid.Objects[i] = generateInvalidPanel(pk)
+			}
 		}
 	}
 
-	log.Print("Rate updated")
+	// log.Print("Display Refreshed")
+}
+
+func updateRates() bool {
+
+	// Clear cached rates
+	ExchangeCache.Reset()
+	ex := ExchangeDataType{}
+	list := BP.Get()
+	for i := range list {
+		// Always get linked data! do not use the copied
+		pkt := BP.GetDataByIndex(i)
+		pk := pkt.Get()
+		ex.GetRate(pk)
+	}
+
+	log.Print("Exchange Rate updated")
+
+	return true
 }
 
 func panelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius float32, padding [4]float32) fyne.CanvasObject {

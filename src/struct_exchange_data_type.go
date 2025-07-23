@@ -59,7 +59,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	// Try to use cached data
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)
 	if ExchangeCache.Has(ck) {
-		// log.Println("Using cached data for:", ck)
+		log.Println("Using cached data for:", ck)
 		return ExchangeCache.Get(ck)
 	}
 

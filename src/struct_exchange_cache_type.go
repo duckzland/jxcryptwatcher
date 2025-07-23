@@ -7,12 +7,13 @@ import (
 var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
 
 type ExchangeDataCacheType struct {
-	data map[string]*ExchangeDataType
+	data map[string]ExchangeDataType
 }
 
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
 	if ec.Has(ck) {
-		return ec.data[ck]
+		ex := ec.data[ck]
+		return &ex
 	}
 	return nil
 }
@@ -24,7 +25,7 @@ func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCache
 	}
 
 	ck := ec.CreateKeyFromExchangeData(ex)
-	ec.data[ck] = ex
+	ec.data[ck] = *ex
 
 	return ec
 }
@@ -37,7 +38,7 @@ func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
 }
 
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
-	ec.data = make(map[string]*ExchangeDataType)
+	ec.data = make(map[string]ExchangeDataType)
 	return ec
 }
 
