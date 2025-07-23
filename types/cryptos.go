@@ -30,7 +30,7 @@ func (c *CryptosType) LoadFile() *CryptosType {
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load cryptos.json: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
 	} else {
 		log.Print("Cryptos Loaded")
 	}
@@ -52,7 +52,7 @@ func (c *CryptosType) CheckFile() *CryptosType {
 	}
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	return c
@@ -81,20 +81,20 @@ func (c *CryptosType) FetchData() string {
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetched cryptodata from CMC: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
 	} else {
 		log.Print("Fetched cryptodata from CMC")
 	}

@@ -5,6 +5,7 @@ import (
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 	"log"
+	"time"
 
 	"fyne.io/fyne/v2"
 )
@@ -45,13 +46,30 @@ func UpdateRates() bool {
 
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
+
 	ex := JT.ExchangeDataType{}
+	jb := make(map[string]string)
 	list := JT.BP.Get()
-	for i := range list {
-		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetDataByIndex(i)
-		pk := pkt.Get()
+
+	// Prune data first, remove duplicate calls
+	for _, pk := range list {
+		ck := JT.ExchangeCache.CreateKeyFromString(
+			pk.UsePanelKey().GetSourceCoinString(),
+			pk.UsePanelKey().GetTargetCoinString(),
+		)
+
+		_, exists := jb[ck]
+		if !exists {
+			jb[ck] = pk.Get()
+		}
+	}
+
+	// Fetching with delay
+	for _, pk := range jb {
 		ex.GetRate(pk)
+
+		// Give pause to prevent too many connection open at once
+		time.Sleep(200 * time.Millisecond)
 	}
 
 	log.Print("Exchange Rate updated")
