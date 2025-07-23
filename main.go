@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -42,51 +41,6 @@ func main() {
 
 	JC.NotificationBox = widget.NewLabel("")
 
-	topBg := canvas.NewRectangle(JC.PanelBG)
-	topBg.CornerRadius = 4
-	topBg.SetMinSize(fyne.NewSize(860, 20))
-	topBar := container.New(
-		&JL.StretchLayout{Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048}},
-		container.NewStack(
-			topBg,
-			JC.NotificationBox,
-		),
-		layout.NewSpacer(),
-
-		// Reload cryptos.json
-		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			JW.DoActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", JC.NotificationBox, func() {
-				Cryptos := JT.CryptosType{}
-				JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-				JT.BP.InvalidatePanels()
-				UpdateDisplay()
-			})
-		}),
-		layout.NewSpacer(),
-
-		// Refresh data from exchange
-		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			JW.DoActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", JC.NotificationBox, func() {
-				UpdateRates()
-				UpdateDisplay()
-			})
-		}),
-		layout.NewSpacer(),
-
-		// Open settings form
-		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
-			JW.NewSettingsForm(func() {
-				JT.Config.SaveFile()
-			})
-		}),
-		layout.NewSpacer(),
-
-		// Add new panel
-		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
-			OpenNewPanelForm()
-		}),
-	)
-
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(fyne.NewSize(920, 600))
 
@@ -94,13 +48,41 @@ func main() {
 		bg,
 		container.NewPadded(
 			container.NewBorder(
-				topBar, nil, nil, nil, container.NewVScroll(JC.Grid),
+				// Top action bar
+				JW.NewTopBar(
+					// Refreshing cryptos.json callback
+					func() {
+						Cryptos := JT.CryptosType{}
+						JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+						JT.BP.InvalidatePanels()
+						UpdateDisplay()
+					},
+					// Refreshing rates from exchange callbck
+					func() {
+						UpdateRates()
+						UpdateDisplay()
+					},
+					// Saving configuration form callback
+					func() {
+						JW.NewSettingsForm(func() {
+							JT.Config.SaveFile()
+						})
+					},
+					// Open the new panel creation form callback
+					func() {
+						OpenNewPanelForm()
+					},
+				),
+				nil, nil, nil,
+				// The panel grid
+				container.NewVScroll(JC.Grid),
 			),
 		),
 	), JC.Window.Canvas()))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
+	// Worker to attempt to refresh the ui for every 3 seconds
 	go func() {
 		for {
 			fyne.Do(func() {
@@ -110,6 +92,7 @@ func main() {
 		}
 	}()
 
+	// Worker to update the exchange rates data
 	go func() {
 		for {
 			JW.DoActionWithNotification("Fetching exchange rate...", "Fetching rates from exchange...", JC.NotificationBox, func() {

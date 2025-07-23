@@ -5,7 +5,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/theme"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -19,20 +18,14 @@ func NewInvalidPanel(pk string, onEdit func(pk string), onDelete func(index int)
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = 16
 
-	action := container.NewHBox(
-		layout.NewSpacer(),
-		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
-			if onEdit != nil {
-				onEdit(pk)
-			}
-		}),
-		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
-			DoActionWithNotification("Removing Panel...", "Panel removed...", JC.NotificationBox, func() {
-				if onEdit != nil {
-					onDelete(pi)
-				}
-			})
-		}),
+	action := NewPanelActionBar(
+		func() {
+			pko := JT.BP.GetDataByIndex(pi)
+			onEdit(pko.Get())
+		},
+		func() {
+			onDelete(pi)
+		},
 	)
 
 	return NewDoubleClickContainer(

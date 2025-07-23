@@ -127,7 +127,7 @@ func PrintMemUsage(title string) {
 	}
 }
 
-func extractLeadingNumber(s string) int {
+func ExtractLeadingNumber(s string) int {
 	re := regexp.MustCompile(`^\d+`)
 	match := re.FindString(s)
 	if match == "" {
@@ -145,7 +145,7 @@ func ReorderByMatch(arr []string, searchKey string) []string {
 	// })
 
 	sort.SliceStable(arr, func(i, j int) bool {
-		return extractLeadingNumber(arr[i]) < extractLeadingNumber(arr[j])
+		return ExtractLeadingNumber(arr[i]) < ExtractLeadingNumber(arr[j])
 	})
 
 	return arr

@@ -12,6 +12,7 @@ import (
 )
 
 func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataType)) *ExtendedFormDialog {
+
 	cm := JT.BP.GetOptions()
 
 	valueEntry := NewNumericalEntry(true)
@@ -21,47 +22,61 @@ func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataTy
 
 	title := "Adding New Panel"
 	if panelKey != "new" {
+
 		pi := JT.BP.GetIndex(panelKey)
 		pkt := JT.BP.GetDataByIndex(pi)
 		title = "Editing Panel"
 
 		valueEntry.SetDefaultValue(strconv.FormatFloat(pkt.UsePanelKey().GetSourceValueFloat(), 'f',
 			JC.NumDecPlaces(pkt.UsePanelKey().GetSourceValueFloat()), 64))
+
 		sourceEntry.SetDefaultValue(JT.BP.GetDisplayById(pkt.UsePanelKey().GetSourceCoinString()))
+
 		targetEntry.SetDefaultValue(JT.BP.GetDisplayById(pkt.UsePanelKey().GetTargetCoinString()))
+
 		decimalsEntry.SetDefaultValue(pkt.UsePanelKey().GetDecimalsString())
+
 	} else {
 		decimalsEntry.SetText("6")
 	}
 
 	valueEntry.Validator = func(s string) error {
+
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
 		}
+
 		value, err := strconv.ParseFloat(s, 64)
+
 		if err != nil {
 			return fmt.Errorf("Only numerical number with decimals allowed")
 		}
+
 		if math.Abs(value) < JC.Epsilon || value <= 0 {
 			return fmt.Errorf("Only number larger than zero allowed")
 		}
+
 		return nil
 	}
 
 	sourceEntry.Validator = func(s string) error {
+
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
 		}
+
 		tid := JT.BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
 		if err != nil || !JT.BP.ValidateId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
+
 		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err != nil && JT.BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
+
 		return nil
 	}
 
@@ -71,13 +86,16 @@ func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataTy
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
 		}
+
 		x, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
 			return fmt.Errorf("Only numerical value without decimals allowed")
 		}
+
 		if x < 0 {
 			return fmt.Errorf("Only number larger than zero allowed")
 		}
+
 		return nil
 	}
 

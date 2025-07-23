@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/theme"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -54,27 +53,21 @@ func NewPanel(pdt *JT.PanelDataType, onEdit func(pk string), onDelete func(index
 		StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	action := container.NewHBox(
-		layout.NewSpacer(),
-		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
-
+	action := NewPanelActionBar(
+		func() {
 			dynpk, _ := str.Get()
-
 			if onEdit != nil {
 				onEdit(dynpk)
 			}
-		}),
-		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
-			DoActionWithNotification("Removing Panel...", "Panel removed...", JC.NotificationBox, func() {
+		},
+		func() {
+			dynpk, _ := str.Get()
+			dynpi := JT.BP.GetIndex(dynpk)
 
-				dynpk, _ := str.Get()
-				dynpi := JT.BP.GetIndex(dynpk)
-
-				if onEdit != nil {
-					onDelete(dynpi)
-				}
-			})
-		}),
+			if onEdit != nil {
+				onDelete(dynpi)
+			}
+		},
 	)
 
 	return NewDoubleClickContainer(
