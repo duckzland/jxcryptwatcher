@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"bytes"
@@ -7,7 +7,11 @@ import (
 	"io"
 	"log"
 	"os"
+
+	JC "jxwatcher/core"
 )
+
+var Config ConfigType
 
 type ConfigType struct {
 	DataEndpoint     string `json:"data_endpoint"`
@@ -17,7 +21,7 @@ type ConfigType struct {
 
 func (c *ConfigType) LoadFile() *ConfigType {
 	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
+	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	io.Copy(b, f)
 	f.Close()
 
@@ -41,7 +45,7 @@ func (c *ConfigType) SaveFile() *ConfigType {
 	}
 
 	// Save to file
-	err = os.WriteFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), jsonData, 0644)
+	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), jsonData, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -50,7 +54,7 @@ func (c *ConfigType) SaveFile() *ConfigType {
 }
 
 func (c *ConfigType) CheckFile() *ConfigType {
-	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	if !exists {
 		data := ConfigType{
 			DataEndpoint:     "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json",
@@ -63,7 +67,7 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			log.Fatalln(err)
 		}
 
-		createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), string(jsonData))
+		JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), string(jsonData))
 	}
 
 	if err != nil {
@@ -72,8 +76,6 @@ func (c *ConfigType) CheckFile() *ConfigType {
 
 	return c
 }
-
-var Config ConfigType
 
 func ConfigInit() {
 	Config = ConfigType{}

@@ -109,6 +109,7 @@ rm ~/.config/jxcryptwatcher/cryptos.json
 
 It will be re-created on the next app launch.
 
+Or you can use the Reload button at top of the app to reset and refetch the file.
 ---
 
 ## 🧩 Notes

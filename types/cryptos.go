@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"bytes"
@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
+	"jxwatcher/core"
 )
 
 type CryptosType struct {
@@ -17,10 +19,10 @@ type CryptosType struct {
 
 func (c *CryptosType) LoadFile() *CryptosType {
 
-	PrintMemUsage("Start loading cryptos.json")
+	core.PrintMemUsage("Start loading cryptos.json")
 
 	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	f, _ := os.Open(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	io.Copy(b, f)
 	f.Close()
 
@@ -33,18 +35,18 @@ func (c *CryptosType) LoadFile() *CryptosType {
 		log.Print("Cryptos Loaded")
 	}
 
-	PrintMemUsage("End loading cryptos.json")
+	core.PrintMemUsage("End loading cryptos.json")
 
 	return c
 }
 
 func (c *CryptosType) CreateFile() *CryptosType {
-	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
+	core.CreateFile(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
 	return c
 }
 
 func (c *CryptosType) CheckFile() *CryptosType {
-	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	exists, err := core.FileExists(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	if !exists {
 		c.CreateFile()
 	}
@@ -57,7 +59,7 @@ func (c *CryptosType) CheckFile() *CryptosType {
 }
 
 func (c *CryptosType) ConvertToMap() CryptosMapType {
-	PrintMemUsage("Start populating cryptos")
+	core.PrintMemUsage("Start populating cryptos")
 	CM := CryptosMapType{}
 	CM.Init()
 
@@ -68,7 +70,7 @@ func (c *CryptosType) ConvertToMap() CryptosMapType {
 			CM.data[strconv.FormatInt(crypto.Id, 10)] = crypto.CreateKey()
 		}
 	}
-	PrintMemUsage("End populating cryptos")
+	core.PrintMemUsage("End populating cryptos")
 
 	return CM
 }

@@ -1,4 +1,4 @@
-package main
+package types
 
 type PanelType struct {
 	Source   int64   `json:"source"`

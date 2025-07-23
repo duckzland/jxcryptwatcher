@@ -19,6 +19,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
+
+	JC "jxwatcher/core"
+	JL "jxwatcher/layouts"
+	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
 var Grid *fyne.Container
@@ -36,21 +41,21 @@ const epsilon = 1e-9
 
 func main() {
 
-	ExchangeCache.Reset()
+	JT.ExchangeCache.Reset()
 
-	ConfigInit()
+	JT.ConfigInit()
 
 	a := app.New()
 	a.Settings().SetTheme(theme.DarkTheme())
 
 	// Don't invoke this before app.New(), binding.UntypedList will crash
-	PanelsInit()
+	JT.PanelsInit()
 
 	Window = a.NewWindow("JXCrypto Watcher")
 
-	Grid = container.New(NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
+	Grid = container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
-	list := BP.Get()
+	list := JT.BP.Get()
 	for range list {
 		Grid.Add(generateEmptyPanel())
 	}
@@ -61,7 +66,7 @@ func main() {
 	topBg.CornerRadius = 4
 	topBg.SetMinSize(fyne.NewSize(860, 20))
 	topBar := container.New(
-		&stretchLayout{Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048}},
+		&JL.StretchLayout{Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048}},
 		container.NewStack(
 			topBg,
 			NotificationBox,
@@ -69,18 +74,18 @@ func main() {
 		layout.NewSpacer(),
 
 		// Reload cryptos.json
-		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
+		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
 			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
-				Cryptos := CryptosType{}
-				BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-				BP.InvalidatePanels()
+				Cryptos := JT.CryptosType{}
+				JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+				JT.BP.InvalidatePanels()
 				updateDisplay()
 			})
 		}),
 		layout.NewSpacer(),
 
 		// Refresh data from exchange
-		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
+		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
 			doActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", NotificationBox, func() {
 				updateRates()
 				updateDisplay()
@@ -89,13 +94,13 @@ func main() {
 		layout.NewSpacer(),
 
 		// Open settings form
-		NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
+		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
 			generateSettingsForm()
 		}),
 		layout.NewSpacer(),
 
 		// Add new panel
-		NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
+		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
 			generatePanelForm("new")
 		}),
 	)
@@ -133,7 +138,7 @@ func main() {
 				}
 			})
 
-			time.Sleep(time.Duration(Config.Delay) * time.Second)
+			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
 
@@ -143,12 +148,12 @@ func main() {
 
 func generatePanelForm(panelKey string) {
 
-	cm := BP.GetOptions()
+	cm := JT.BP.GetOptions()
 
-	valueEntry := NewNumericalEntry(true)
-	sourceEntry := NewCompletionEntry(cm)
-	targetEntry := NewCompletionEntry(cm)
-	decimalsEntry := NewNumericalEntry(false)
+	valueEntry := JW.NewNumericalEntry(true)
+	sourceEntry := JW.NewCompletionEntry(cm)
+	targetEntry := JW.NewCompletionEntry(cm)
+	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
 	if panelKey == "new" {
@@ -159,19 +164,19 @@ func generatePanelForm(panelKey string) {
 		// Default entry for decimals use 6 decimals!
 		decimalsEntry.SetText("6")
 	} else {
-		pi := BP.GetIndex(panelKey)
-		pkt := BP.GetDataByIndex(pi)
+		pi := JT.BP.GetIndex(panelKey)
+		pkt := JT.BP.GetDataByIndex(pi)
 
 		title = "Editing Panel"
 
 		valueEntry.SetDefaultValue(
-			strconv.FormatFloat(pkt.UsePanelKey().GetSourceValueFloat(), 'f', NumDecPlaces(pkt.UsePanelKey().GetSourceValueFloat()), 64),
+			strconv.FormatFloat(pkt.UsePanelKey().GetSourceValueFloat(), 'f', JC.NumDecPlaces(pkt.UsePanelKey().GetSourceValueFloat()), 64),
 		)
 		sourceEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.UsePanelKey().GetSourceCoinString()),
+			JT.BP.GetDisplayById(pkt.UsePanelKey().GetSourceCoinString()),
 		)
 		targetEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.UsePanelKey().GetTargetCoinString()),
+			JT.BP.GetDisplayById(pkt.UsePanelKey().GetTargetCoinString()),
 		)
 		decimalsEntry.SetDefaultValue(
 			pkt.UsePanelKey().GetDecimalsString(),
@@ -200,15 +205,15 @@ func generatePanelForm(panelKey string) {
 			return fmt.Errorf("This field cannot be empty")
 		}
 
-		tid := BP.GetIdByDisplay(s)
+		tid := JT.BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !BP.ValidateId(id) {
+		if err != nil || !JT.BP.ValidateId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
 
-		xid := BP.GetIdByDisplay(targetEntry.Text)
+		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err != nil && BP.ValidateId(bid) && bid == id {
+		if err != nil && JT.BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
@@ -220,15 +225,15 @@ func generatePanelForm(panelKey string) {
 			return fmt.Errorf("This field cannot be empty")
 		}
 
-		tid := BP.GetIdByDisplay(s)
+		tid := JT.BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !BP.ValidateId(id) {
+		if err != nil || !JT.BP.ValidateId(id) {
 			return fmt.Errorf("Invalid crypto selected")
 		}
 
-		xid := BP.GetIdByDisplay(targetEntry.Text)
+		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err != nil && BP.ValidateId(bid) && bid == id {
+		if err != nil && JT.BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
@@ -258,13 +263,13 @@ func generatePanelForm(panelKey string) {
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	d := NewExtendedFormDialog(title, formItems, func(b bool) {
+	d := JL.NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 			if panelKey == "new" {
-				pko := PanelKeyType{}
-				ns := BP.Append(pko.GenerateKey(
-					BP.GetIdByDisplay(sourceEntry.Text),
-					BP.GetIdByDisplay(targetEntry.Text),
+				pko := JT.PanelKeyType{}
+				ns := JT.BP.Append(pko.GenerateKey(
+					JT.BP.GetIdByDisplay(sourceEntry.Text),
+					JT.BP.GetIdByDisplay(targetEntry.Text),
 					valueEntry.Text,
 					decimalsEntry.Text,
 					0,
@@ -272,24 +277,24 @@ func generatePanelForm(panelKey string) {
 
 				if ns != nil {
 					Grid.Add(generatePanel(ns))
-					ns.index = len(Grid.Objects)
+					ns.Index = len(Grid.Objects)
 				}
 
 			} else {
-				pi := BP.GetIndex(panelKey)
+				pi := JT.BP.GetIndex(panelKey)
 				if pi != -1 {
-					pko := PanelKeyType{}
+					pko := JT.PanelKeyType{}
 					npk := pko.GenerateKey(
-						BP.GetIdByDisplay(sourceEntry.Text),
-						BP.GetIdByDisplay(targetEntry.Text),
+						JT.BP.GetIdByDisplay(sourceEntry.Text),
+						JT.BP.GetIdByDisplay(targetEntry.Text),
 						valueEntry.Text,
 						decimalsEntry.Text,
 						0,
 					)
-					ns := BP.GetDataByIndex(pi)
+					ns := JT.BP.GetDataByIndex(pi)
 
 					if ns != nil {
-						opk := ns.oldKey
+						opk := ns.OldKey
 
 						// BugFix: Use set directly, don't use Update! to force update key
 						ns.Set(npk)
@@ -299,19 +304,19 @@ func generatePanelForm(panelKey string) {
 
 						nnpk := ns.Get()
 
-						if BP.ValidatePanel(opk) && !BP.ValidatePanel(nnpk) {
-							ns.index = -1
+						if JT.BP.ValidatePanel(opk) && !JT.BP.ValidatePanel(nnpk) {
+							ns.Index = -1
 						}
 
-						if !BP.ValidatePanel(opk) && BP.ValidatePanel(nnpk) {
-							ns.index = -1
+						if !JT.BP.ValidatePanel(opk) && JT.BP.ValidatePanel(nnpk) {
+							ns.Index = -1
 						}
 					}
 				}
 			}
 
 			doActionWithNotification("Saving Panel...", "Panel data saved...", NotificationBox, func() {
-				if SavePanels() {
+				if JT.SavePanels() {
 					fyne.Do(func() {
 						Grid.Refresh()
 					})
@@ -332,13 +337,13 @@ func generatePanelForm(panelKey string) {
 
 func generateSettingsForm() {
 
-	delayEntry := NewNumericalEntry(false)
+	delayEntry := JW.NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()
 	exchangeEndPointEntry := widget.NewEntry()
 
-	delayEntry.SetDefaultValue(strconv.FormatInt(Config.Delay, 10))
-	dataEndPointEntry.SetText(Config.DataEndpoint)
-	exchangeEndPointEntry.SetText(Config.ExchangeEndpoint)
+	delayEntry.SetDefaultValue(strconv.FormatInt(JT.Config.Delay, 10))
+	dataEndPointEntry.SetText(JT.Config.DataEndpoint)
+	exchangeEndPointEntry.SetText(JT.Config.ExchangeEndpoint)
 
 	delayEntry.Validator = func(s string) error {
 		if len(s) == 0 {
@@ -389,17 +394,17 @@ func generateSettingsForm() {
 		widget.NewFormItem("Delay(seconds)", delayEntry),
 	}
 
-	d := NewExtendedFormDialog("Settings", formItems, func(b bool) {
+	d := JL.NewExtendedFormDialog("Settings", formItems, func(b bool) {
 		if b {
 
 			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 
-			Config.DataEndpoint = dataEndPointEntry.Text
-			Config.ExchangeEndpoint = exchangeEndPointEntry.Text
-			Config.Delay = delay
+			JT.Config.DataEndpoint = dataEndPointEntry.Text
+			JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
+			JT.Config.Delay = delay
 
 			doActionWithNotification("Saving configuration...", "Configuration data saved...", NotificationBox, func() {
-				Config.SaveFile()
+				JT.Config.SaveFile()
 			})
 		}
 	}, Window)
@@ -428,7 +433,7 @@ func generateEmptyPanel() fyne.CanvasObject {
 	)
 }
 
-func generatePanel(pdt *PanelDataType) fyne.CanvasObject {
+func generatePanel(pdt *JT.PanelDataType) fyne.CanvasObject {
 
 	title := canvas.NewText(pdt.FormatTitle(), textColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -477,25 +482,34 @@ func generatePanel(pdt *PanelDataType) fyne.CanvasObject {
 
 	action := container.NewHBox(
 		layout.NewSpacer(),
-		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+		JW.NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
 			fyne.Do(func() {
 				dynpk, _ := str.Get()
 				generatePanelForm(dynpk)
 			})
 		}),
-		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+		JW.NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
 			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
 
 				dynpk, _ := str.Get()
-				dynpi := BP.GetIndex(dynpk)
+				dynpi := JT.BP.GetIndex(dynpk)
 
-				RemovePanel(dynpi)
-				SavePanels()
+				if JT.RemovePanel(dynpi) {
+					if dynpi >= 0 && dynpi < len(Grid.Objects) {
+						Grid.Objects = append(Grid.Objects[:dynpi], Grid.Objects[dynpi+1:]...)
+					}
+
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
+
+					JT.SavePanels()
+				}
 			})
 		}),
 	)
 
-	return NewDoubleClickContainer(
+	return JW.NewDoubleClickContainer(
 		"ValidPanel",
 		panelItem(
 			container.NewStack(
@@ -520,7 +534,7 @@ func generatePanel(pdt *PanelDataType) fyne.CanvasObject {
 
 func generateInvalidPanel(pk string) fyne.CanvasObject {
 
-	pi := BP.GetIndex(pk)
+	pi := JT.BP.GetIndex(pk)
 
 	content := canvas.NewText("Invalid Panel", textColor)
 	content.Alignment = fyne.TextAlignCenter
@@ -529,22 +543,29 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 
 	action := container.NewHBox(
 		layout.NewSpacer(),
-		NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+		JW.NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
 			fyne.Do(func() {
 				generatePanelForm(pk)
 			})
 		}),
-		NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+		JW.NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
 			doActionWithNotification("Removing Panel...", "Panel removed...", NotificationBox, func() {
+				if JT.RemovePanel(pi) {
+					if pi >= 0 && pi < len(Grid.Objects) {
+						Grid.Objects = append(Grid.Objects[:pi], Grid.Objects[pi+1:]...)
+					}
 
-				RemovePanel(pi)
+					fyne.Do(func() {
+						Grid.Refresh()
+					})
 
-				SavePanels()
+					JT.SavePanels()
+				}
 			})
 		}),
 	)
 
-	return NewDoubleClickContainer(
+	return JW.NewDoubleClickContainer(
 		"InvalidPanel",
 		panelItem(
 			container.NewStack(
@@ -568,18 +589,18 @@ func generateInvalidPanel(pk string) fyne.CanvasObject {
 
 func updateDisplay() {
 
-	list := BP.Get()
+	list := JT.BP.Get()
 	for i := range list {
 		// Always get linked data! do not use the copied
-		pkt := BP.GetDataByIndex(i)
+		pkt := JT.BP.GetDataByIndex(i)
 		pk := pkt.Get()
 
-		if BP.ValidatePanel(pk) {
+		if JT.BP.ValidatePanel(pk) {
 			if pkt.Update(pk) {
-				if pkt.index == -1 {
+				if pkt.Index == -1 {
 					npk := pkt.Get()
 					// This panel hasnt been generated yet, create the markup!
-					if BP.ValidatePanel(npk) {
+					if JT.BP.ValidatePanel(npk) {
 						Grid.Objects[i] = generatePanel(pkt)
 					} else {
 						Grid.Objects[i] = generateInvalidPanel(pk)
@@ -587,12 +608,12 @@ func updateDisplay() {
 				}
 			}
 		} else {
-			if pkt.index == -1 {
+			if pkt.Index == -1 {
 				Grid.Objects[i] = generateInvalidPanel(pk)
 			}
 		}
 
-		pkt.index = i
+		pkt.Index = i
 	}
 
 	// log.Print("Display Refreshed")
@@ -601,12 +622,12 @@ func updateDisplay() {
 func updateRates() bool {
 
 	// Clear cached rates
-	ExchangeCache.Reset()
-	ex := ExchangeDataType{}
-	list := BP.Get()
+	JT.ExchangeCache.Reset()
+	ex := JT.ExchangeDataType{}
+	list := JT.BP.Get()
 	for i := range list {
 		// Always get linked data! do not use the copied
-		pkt := BP.GetDataByIndex(i)
+		pkt := JT.BP.GetDataByIndex(i)
 		pk := pkt.Get()
 		ex.GetRate(pk)
 	}

@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"log"
 	"os"
 
-	"fyne.io/fyne/v2"
+	JC "jxwatcher/core"
 )
 
 type PanelsType []PanelType
 
 func (p *PanelsType) LoadFile() *PanelsType {
 	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
+	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
 	io.Copy(b, f)
 	f.Close()
 
@@ -50,7 +50,7 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 	}
 
 	// Save to file
-	err = os.WriteFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), jsonData, 0644)
+	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), jsonData, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -59,12 +59,12 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 }
 
 func (p *PanelsType) CreateFile() *PanelsType {
-	createFile(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), "[]")
+	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), "[]")
 	return p
 }
 
 func (p *PanelsType) CheckFile() *PanelsType {
-	exists, err := fileExists(buildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
 	if !exists {
 		p.CreateFile()
 	}
@@ -83,8 +83,6 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 	}
 }
 
-var BP PanelsMapType
-
 func PanelsInit() {
 	BP = PanelsMapType{}
 	BP.Init()
@@ -101,14 +99,6 @@ func SavePanels() bool {
 	return Panels.SaveFile(BP)
 }
 
-func RemovePanel(i int) {
-	BP.Remove(i)
-
-	if i >= 0 && i < len(Grid.Objects) {
-		Grid.Objects = append(Grid.Objects[:i], Grid.Objects[i+1:]...)
-	}
-
-	fyne.Do(func() {
-		Grid.Refresh()
-	})
+func RemovePanel(i int) bool {
+	return BP.Remove(i)
 }

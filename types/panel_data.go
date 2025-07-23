@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"fmt"
@@ -8,34 +8,36 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/number"
+
+	JC "jxwatcher/core"
 )
 
 type PanelDataType struct {
-	data   binding.String
-	oldKey string
-	parent *PanelsMapType
-	index  int
+	Data   binding.String
+	OldKey string
+	Parent *PanelsMapType
+	Index  int
 }
 
 func (p *PanelDataType) Init() {
-	p.data = binding.NewString()
+	p.Data = binding.NewString()
 }
 
 func (p *PanelDataType) Insert(panel PanelType, rate float32) {
-	p.oldKey = p.Get()
-	p.data.Set(fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate))
+	p.OldKey = p.Get()
+	p.Data.Set(fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate))
 }
 
 func (p *PanelDataType) Set(pk string) {
-	p.oldKey = p.Get()
-	p.data.Set(pk)
+	p.OldKey = p.Get()
+	p.Data.Set(pk)
 }
 
 func (p *PanelDataType) Get() string {
-	if p.data == nil {
+	if p.Data == nil {
 		return ""
 	}
-	pk, err := p.data.Get()
+	pk, err := p.Data.Get()
 	if err == nil {
 		return pk
 	}
@@ -43,7 +45,7 @@ func (p *PanelDataType) Get() string {
 }
 
 func (p *PanelDataType) GetData() binding.String {
-	return p.data
+	return p.Data
 }
 
 func (p *PanelDataType) GetValueString() string {
@@ -51,7 +53,7 @@ func (p *PanelDataType) GetValueString() string {
 }
 
 func (p *PanelDataType) GetOldValueString() string {
-	pko := PanelKeyType{value: p.oldKey}
+	pko := PanelKeyType{value: p.OldKey}
 	return pko.GetValueString()
 }
 
@@ -63,17 +65,17 @@ func (p *PanelDataType) UsePanelKey() *PanelKeyType {
 func (p *PanelDataType) Update(pk string) bool {
 
 	opk := p.Get()
-	p.oldKey = opk
+	p.OldKey = opk
 	npk := pk
 	ck := ExchangeCache.CreateKeyFromInt(p.UsePanelKey().GetSourceCoinInt(), p.UsePanelKey().GetTargetCoinInt())
 
 	if ExchangeCache.Has(ck) {
-		data := ExchangeCache.Get(ck)
+		Data := ExchangeCache.Get(ck)
 		pko := PanelKeyType{value: npk}
-		npk = pko.UpdateValue(float32(data.TargetAmount))
+		npk = pko.UpdateValue(float32(Data.TargetAmount))
 
 		// Debug: Make the value always change
-		// npk = pko.UpdateValue(float32(data.TargetAmount * (rand.Float64() * 5)))
+		// npk = pko.UpdateValue(float32(Data.TargetAmount * (rand.Float64() * 5)))
 	}
 
 	if npk != opk {
@@ -86,7 +88,7 @@ func (p *PanelDataType) Update(pk string) bool {
 func (p *PanelDataType) FormatTitle() string {
 	pr := message.NewPrinter(language.English)
 
-	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
+	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
@@ -94,29 +96,29 @@ func (p *PanelDataType) FormatTitle() string {
 	return fmt.Sprintf(
 		"%s %s to %s",
 		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetSourceValueFloat(), number.MaxFractionDigits(frac))),
-		p.parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
-		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		p.Parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
+		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
+	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
 	return fmt.Sprintf(
 		"%s %s = %s %s", "1",
-		p.parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
+		p.Parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
 		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetValueFloat(), number.MaxFractionDigits(int(p.UsePanelKey().GetDecimalsInt())))),
-		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatContent() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
+	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
@@ -127,12 +129,12 @@ func (p *PanelDataType) FormatContent() string {
 			p.UsePanelKey().GetSourceValueFloat()*float64(p.UsePanelKey().GetValueFloat()),
 			number.MaxFractionDigits(frac),
 		)),
-		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) DidChange() bool {
-	return p.oldKey != p.Get()
+	return p.OldKey != p.Get()
 }
 
 func (p *PanelDataType) IsValueIncrease() int {

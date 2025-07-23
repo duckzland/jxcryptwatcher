@@ -1,14 +1,14 @@
-package main
+package layouts
 
 import (
 	"fyne.io/fyne/v2"
 )
 
-type stretchLayout struct {
+type StretchLayout struct {
 	Widths []float32
 }
 
-func (s *stretchLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (s *StretchLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	count := len(objects)
 	if count == 0 {
 		return
@@ -28,7 +28,7 @@ func (s *stretchLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-func (s *stretchLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (s *StretchLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	var maxHeight float32
 	for _, obj := range objects {
 		h := obj.MinSize().Height

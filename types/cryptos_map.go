@@ -1,6 +1,7 @@
-package main
+package types
 
 import (
+	"jxwatcher/core"
 	"strconv"
 	"strings"
 )
@@ -33,12 +34,12 @@ func (cm *CryptosMapType) GetDisplayById(id string) string {
 }
 
 func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
-	if isNumeric(tk) {
+	if core.IsNumeric(tk) {
 		return tk
 	}
 
 	ntk := strings.Split(tk, "|")
-	if len(ntk) > 0 && isNumeric(ntk[0]) {
+	if len(ntk) > 0 && core.IsNumeric(ntk[0]) {
 		_, ok := cm.data[ntk[0]]
 		if ok {
 			return ntk[0]

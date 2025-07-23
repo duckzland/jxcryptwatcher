@@ -1,16 +1,18 @@
-package main
+package layouts
 
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	JW "jxwatcher/widgets"
 )
 
 type ExtendedFormDialog struct {
 	dialog   *dialog.CustomDialog
-	confirm  *HoverCursorIconButton
-	cancel   *HoverCursorIconButton
+	confirm  *JW.HoverCursorIconButton
+	cancel   *JW.HoverCursorIconButton
 	items    []*widget.FormItem
 	callback func(bool)
 	form     *widget.Form
@@ -23,10 +25,10 @@ func NewExtendedFormDialog(title string, items []*widget.FormItem, callback func
 
 	formDialog = &ExtendedFormDialog{
 		dialog: dialog.NewCustomWithoutButtons(title, form, parent),
-		confirm: NewHoverCursorIconButton("Save", theme.ConfirmIcon(), "", func() {
+		confirm: JW.NewHoverCursorIconButton("Save", theme.ConfirmIcon(), "", func() {
 			formDialog.hideWithResponse(true)
 		}),
-		cancel: NewHoverCursorIconButton("Cancel", theme.CancelIcon(), "", func() {
+		cancel: JW.NewHoverCursorIconButton("Cancel", theme.CancelIcon(), "", func() {
 			formDialog.dialog.Hide()
 		}),
 		items:    items,

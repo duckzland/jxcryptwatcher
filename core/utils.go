@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func NumDecPlaces(v float64) int {
 /**
  * Helper function for creating file
  */
-func createFile(fileName string, textString string) {
+func CreateFile(fileName string, textString string) {
 
 	dirPath := filepath.Dir(fileName)
 	err := os.MkdirAll(dirPath, 0755)
@@ -64,7 +64,7 @@ func createFile(fileName string, textString string) {
 /**
  * Helper function for checking if file exists
  */
-func fileExists(path string) (bool, error) {
+func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
@@ -77,12 +77,12 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func isNumeric(val string) bool {
+func IsNumeric(val string) bool {
 	_, err := strconv.Atoi(val)
 	return err == nil
 }
 
-func buildPathRelatedToUserDirectory(additionalPath []string) string {
+func BuildPathRelatedToUserDirectory(additionalPath []string) string {
 	path := []string{}
 
 	// Try using config directory
@@ -134,7 +134,7 @@ func extractLeadingNumber(s string) int {
 	return num
 }
 
-func reorderByMatch(arr []string, searchKey string) []string {
+func ReorderByMatch(arr []string, searchKey string) []string {
 	// sort.SliceStable(arr, func(i, j int) bool {
 	// 	iMatch := strings.Contains(strings.ToLower(arr[i]), strings.ToLower(searchKey))
 	// 	jMatch := strings.Contains(strings.ToLower(arr[j]), strings.ToLower(searchKey))
@@ -148,6 +148,6 @@ func reorderByMatch(arr []string, searchKey string) []string {
 	return arr
 }
 
-func dynamicFormatFloatToString(f float64) string {
+func DynamicFormatFloatToString(f float64) string {
 	return strconv.FormatFloat(f, 'f', NumDecPlaces(f), 64)
 }

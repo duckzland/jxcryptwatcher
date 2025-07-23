@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ func (ex *ExchangeDataType) UnmarshalJSON(data []byte) error {
 	var v map[string]interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
 		return err
 	}
 

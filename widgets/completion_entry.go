@@ -1,4 +1,4 @@
-package main
+package widgets
 
 import (
 	"strings"
@@ -6,6 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	JC "jxwatcher/core"
 )
 
 // CompletionEntry is an Entry with options displayed in a PopUpMenu.
@@ -54,7 +56,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		return
 	}
 
-	results = reorderByMatch(results, s)
+	results = JC.ReorderByMatch(results, s)
 
 	// then show them
 	c.SetOptions(results)
