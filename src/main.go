@@ -73,6 +73,8 @@ func main() {
 			doActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", NotificationBox, func() {
 				Cryptos := CryptosType{}
 				BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+				BP.InvalidatePanels()
+				updateDisplay()
 			})
 		}),
 		layout.NewSpacer(),
@@ -570,29 +572,28 @@ func updateDisplay() {
 		pkt := BP.GetDataByIndex(i)
 		pk := pkt.Get()
 
-		if pkt.index != -1 {
-			// continue
-		}
+		// if pkt.index != -1 {
+		// 	continue
+		// }
 		if BP.ValidatePanel(pk) {
 			if pkt.Update(pk) {
 				if pkt.index == -1 {
 					npk := pkt.Get()
 					// This panel hasnt been generated yet, create the markup!
 					if BP.ValidatePanel(npk) {
-						pkt.index = i
 						Grid.Objects[i] = generatePanel(pkt)
 					} else {
-						pkt.index = i
 						Grid.Objects[i] = generateInvalidPanel(pk)
 					}
 				}
 			}
 		} else {
 			if pkt.index == -1 {
-				pkt.index = i
 				Grid.Objects[i] = generateInvalidPanel(pk)
 			}
 		}
+
+		pkt.index = i
 	}
 
 	// log.Print("Display Refreshed")

@@ -153,12 +153,10 @@ func (pc *PanelsMap) ValidatePanel(pk string) bool {
 	sid := pc.GetSourceCoin(pk)
 	tid := pc.GetTargetCoin(pk)
 
-	// @todo when cryptos got method use that!
 	if !pc.maps.ValidateId(sid) {
 		return false
 	}
 
-	// @todo when cryptos got method use that!
 	if !pc.maps.ValidateId(tid) {
 		return false
 	}
@@ -168,6 +166,13 @@ func (pc *PanelsMap) ValidatePanel(pk string) bool {
 
 func (pc *PanelsMap) ValidateId(id int64) bool {
 	return pc.maps.ValidateId(id)
+}
+
+func (pc *PanelsMap) InvalidatePanels() {
+	for i := range pc.data {
+		p := pc.GetDataByIndex(i)
+		p.index = -1
+	}
 }
 
 func (pc *PanelsMap) GetOptions() []string {
