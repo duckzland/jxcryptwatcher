@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"fyne.io/fyne/v2/data/binding"
 	"golang.org/x/text/language"
@@ -14,7 +13,7 @@ import (
 type PanelDataType struct {
 	data   binding.String
 	oldKey string
-	parent *PanelsMap
+	parent *PanelsMapType
 	index  int
 }
 
@@ -48,127 +47,17 @@ func (p *PanelDataType) GetData() binding.String {
 }
 
 func (p *PanelDataType) GetValueString() string {
-
-	pk := p.Get()
-	pkv := strings.Split(pk, "|")
-	if len(pkv) > 0 {
-		return pkv[1]
-	}
-
-	return "0"
+	return p.PanelKey().GetValueString()
 }
 
 func (p *PanelDataType) GetOldValueString() string {
-
-	pk := p.oldKey
-	pkv := strings.Split(pk, "|")
-	if len(pkv) > 1 {
-		return pkv[1]
-	}
-
-	return "0"
+	pko := PanelKeyType{value: p.oldKey}
+	return pko.GetValueString()
 }
 
-func (p *PanelDataType) GetValueFloat() float64 {
-
-	pk := p.Get()
-	pkv := strings.Split(pk, "|")
-	value, err := strconv.ParseFloat(pkv[1], 64)
-	if err == nil {
-		return value
-	}
-
-	return 0
-}
-
-func (p *PanelDataType) GetSourceCoinInt() int64 {
-
-	pk := p.GetSourceCoinString()
-	source, err := strconv.ParseInt(pk, 10, 64)
-	if err == nil {
-		return source
-	}
-
-	return 0
-}
-
-func (p *PanelDataType) GetSourceCoinString() string {
-
-	pk := p.Get()
-	pkm := strings.Split(pk, "|")
-	pkv := strings.Split(pkm[0], "-")
-
-	if len(pkv) > 0 {
-		return pkv[0]
-	}
-
-	return ""
-}
-
-func (p *PanelDataType) GetTargetCoinInt() int64 {
-	pk := p.GetTargetCoinString()
-	target, err := strconv.ParseInt(pk, 10, 64)
-	if err == nil {
-		return target
-	}
-
-	return 0
-}
-
-func (p *PanelDataType) GetTargetCoinString() string {
-	pk := p.Get()
-	pkm := strings.Split(pk, "|")
-	pkv := strings.Split(pkm[0], "-")
-
-	if len(pkv) > 1 {
-		return pkv[1]
-	}
-
-	return ""
-}
-
-func (p *PanelDataType) GetSourceValueFloat() float64 {
-	pk := p.GetSourceValueString()
-	value, err := strconv.ParseFloat(pk, 64)
-	if err == nil {
-		return value
-	}
-
-	return 0
-}
-
-func (p *PanelDataType) GetSourceValueString() string {
-	pk := p.Get()
-	pkm := strings.Split(pk, "|")
-	pkv := strings.Split(pkm[0], "-")
-
-	if len(pkv) > 1 {
-		return pkv[2]
-	}
-
-	return ""
-}
-
-func (p *PanelDataType) GetDecimalsInt() int64 {
-	pk := p.GetDecimalsString()
-	decimals, err := strconv.ParseInt(pk, 10, 64)
-	if err == nil {
-		return decimals
-	}
-
-	return 0
-}
-
-func (p *PanelDataType) GetDecimalsString() string {
-	pk := p.Get()
-	pkm := strings.Split(pk, "|")
-	pkv := strings.Split(pkm[0], "-")
-
-	if len(pkv) > 2 {
-		return pkv[3]
-	}
-
-	return ""
+func (p *PanelDataType) PanelKey() *PanelKeyType {
+	pko := PanelKeyType{value: p.Get()}
+	return &pko
 }
 
 func (p *PanelDataType) Update(pk string) bool {
@@ -176,14 +65,15 @@ func (p *PanelDataType) Update(pk string) bool {
 	opk := p.Get()
 	p.oldKey = opk
 	npk := pk
-	ck := ExchangeCache.CreateKeyFromInt(p.GetSourceCoinInt(), p.GetTargetCoinInt())
+	ck := ExchangeCache.CreateKeyFromInt(p.PanelKey().GetSourceCoinInt(), p.PanelKey().GetTargetCoinInt())
 
 	if ExchangeCache.Has(ck) {
 		data := ExchangeCache.Get(ck)
-		npk = p.UpdateValue(float32(data.TargetAmount))
+		pko := PanelKeyType{value: npk}
+		npk = pko.UpdateValue(float32(data.TargetAmount))
 
 		// Debug: Make the value always change
-		// npk = p.UpdateValue(float32(data.TargetAmount * (rand.Float64() * 5)))
+		// npk = pko.UpdateValue(float32(data.TargetAmount * (rand.Float64() * 5)))
 	}
 
 	if npk != opk {
@@ -193,62 +83,40 @@ func (p *PanelDataType) Update(pk string) bool {
 	return true
 }
 
-func (p *PanelDataType) UpdateValue(rate float32) string {
-	pk := p.Get()
-	pkk := strings.Split(pk, "|")
-	npk := fmt.Sprintf("%s|%f", pkk[0], rate)
-	return npk
-}
-
-func (p *PanelDataType) Validate() bool {
-	pk := p.Get()
-	pkv := strings.Split(pk, "|")
-	if len(pkv) != 2 {
-		return false
-	}
-
-	pkt := strings.Split(pkv[0], "-")
-	if len(pkt) != 4 {
-		return false
-	}
-
-	return true
-}
-
 func (p *PanelDataType) FormatTitle() string {
 	pr := message.NewPrinter(language.English)
 
-	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
 	return fmt.Sprintf(
 		"%s %s to %s",
-		pr.Sprintf("%v", number.Decimal(p.GetSourceValueFloat(), number.MaxFractionDigits(frac))),
-		p.parent.GetSymbolById(p.GetSourceCoinString()),
-		p.parent.GetSymbolById(p.GetTargetCoinString()),
+		pr.Sprintf("%v", number.Decimal(p.PanelKey().GetSourceValueFloat(), number.MaxFractionDigits(frac))),
+		p.parent.GetSymbolById(p.PanelKey().GetSourceCoinString()),
+		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
 	return fmt.Sprintf(
 		"%s %s = %s %s", "1",
-		p.parent.GetSymbolById(p.GetSourceCoinString()),
-		pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt())))),
-		p.parent.GetSymbolById(p.GetTargetCoinString()),
+		p.parent.GetSymbolById(p.PanelKey().GetSourceCoinString()),
+		pr.Sprintf("%v", number.Decimal(p.PanelKey().GetValueFloat(), number.MaxFractionDigits(int(p.PanelKey().GetDecimalsInt())))),
+		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatContent() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
@@ -256,10 +124,10 @@ func (p *PanelDataType) FormatContent() string {
 	return fmt.Sprintf(
 		"%s %s",
 		pr.Sprintf("%v", number.Decimal(
-			p.GetSourceValueFloat()*float64(p.GetValueFloat()),
+			p.PanelKey().GetSourceValueFloat()*float64(p.PanelKey().GetValueFloat()),
 			number.MaxFractionDigits(frac),
 		)),
-		p.parent.GetSymbolById(p.GetTargetCoinString()),
+		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
 	)
 }
 

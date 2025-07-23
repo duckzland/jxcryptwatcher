@@ -165,16 +165,16 @@ func generatePanelForm(panelKey string) {
 		title = "Editing Panel"
 
 		valueEntry.SetDefaultValue(
-			strconv.FormatFloat(pkt.GetSourceValueFloat(), 'f', NumDecPlaces(pkt.GetSourceValueFloat()), 64),
+			strconv.FormatFloat(pkt.PanelKey().GetSourceValueFloat(), 'f', NumDecPlaces(pkt.PanelKey().GetSourceValueFloat()), 64),
 		)
 		sourceEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.GetSourceCoinString()),
+			BP.GetDisplayById(pkt.PanelKey().GetSourceCoinString()),
 		)
 		targetEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.GetTargetCoinString()),
+			BP.GetDisplayById(pkt.PanelKey().GetTargetCoinString()),
 		)
 		decimalsEntry.SetDefaultValue(
-			pkt.GetDecimalsString(),
+			pkt.PanelKey().GetDecimalsString(),
 		)
 	}
 
@@ -261,7 +261,8 @@ func generatePanelForm(panelKey string) {
 	d := NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 			if panelKey == "new" {
-				ns := BP.Append(BP.GenerateKey(
+				pko := PanelKeyType{}
+				ns := BP.Append(pko.GenerateKey(
 					BP.GetIdByDisplay(sourceEntry.Text),
 					BP.GetIdByDisplay(targetEntry.Text),
 					valueEntry.Text,
@@ -277,7 +278,8 @@ func generatePanelForm(panelKey string) {
 			} else {
 				pi := BP.GetIndex(panelKey)
 				if pi != -1 {
-					npk := BP.GenerateKey(
+					pko := PanelKeyType{}
+					npk := pko.GenerateKey(
 						BP.GetIdByDisplay(sourceEntry.Text),
 						BP.GetIdByDisplay(targetEntry.Text),
 						valueEntry.Text,

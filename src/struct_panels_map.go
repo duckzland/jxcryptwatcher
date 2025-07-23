@@ -1,31 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2/data/binding"
 )
 
-type PanelsMap struct {
+type PanelsMapType struct {
 	data []PanelDataType
 	maps CryptosMapType
 }
 
-func (pc *PanelsMap) Init() {
+func (pc *PanelsMapType) Init() {
 	pc.data = []PanelDataType{}
 }
 
-func (pc *PanelsMap) Set(data []PanelDataType) {
+func (pc *PanelsMapType) Set(data []PanelDataType) {
 	pc.data = data
 }
 
-func (pc *PanelsMap) SetMaps(maps CryptosMapType) {
+func (pc *PanelsMapType) SetMaps(maps CryptosMapType) {
 	pc.maps = maps
 }
 
-func (pc *PanelsMap) Remove(index int) bool {
+func (pc *PanelsMapType) Remove(index int) bool {
 	values := pc.data
 	if index < 0 || index >= len(values) {
 		return false
@@ -36,11 +35,11 @@ func (pc *PanelsMap) Remove(index int) bool {
 	return true
 }
 
-func (pc *PanelsMap) RemoveByKey(pk string) bool {
+func (pc *PanelsMapType) RemoveByKey(pk string) bool {
 	return pc.Remove(pc.GetIndex(pk))
 }
 
-func (pc *PanelsMap) Append(pk string) *PanelDataType {
+func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 
 	if pc.data == nil {
 		pc.data = []PanelDataType{}
@@ -59,7 +58,7 @@ func (pc *PanelsMap) Append(pk string) *PanelDataType {
 	return &pn
 }
 
-func (pc *PanelsMap) Update(pk string, index int) *PanelDataType {
+func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 
 	if index < 0 || index >= len(pc.data) {
 		return nil
@@ -72,19 +71,11 @@ func (pc *PanelsMap) Update(pk string, index int) *PanelDataType {
 	return pdt
 }
 
-func (pc *PanelsMap) Get() []PanelDataType {
+func (pc *PanelsMapType) Get() []PanelDataType {
 	return pc.data
 }
 
-func (pc *PanelsMap) GenerateKey(source, target, value, decimals string, rate float32) string {
-	return fmt.Sprintf("%s-%s-%s-%s|%f", source, target, value, decimals, rate)
-}
-
-func (pc *PanelsMap) GenerateKeyFromPanel(panel PanelType, rate float32) string {
-	return fmt.Sprintf("%d-%d-%s-%d|%f", panel.Source, panel.Target, dynamicFormatFloatToString(panel.Value), panel.Decimals, rate)
-}
-
-func (pc *PanelsMap) GetIndex(pk string) int {
+func (pc *PanelsMapType) GetIndex(pk string) int {
 	list := pc.data
 	for i, pdt := range list {
 		if pdt.IsEqualContentString(pk) {
@@ -95,7 +86,7 @@ func (pc *PanelsMap) GetIndex(pk string) int {
 	return -1
 }
 
-func (pc *PanelsMap) GetDataByIndex(index int) *PanelDataType {
+func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	// If index is out of bounds, return nil
 	if index < 0 || index >= len(pc.data) {
 		return nil
@@ -104,7 +95,7 @@ func (pc *PanelsMap) GetDataByIndex(index int) *PanelDataType {
 	return &pc.data[index]
 }
 
-func (pc *PanelsMap) GetSourceCoin(pk string) int64 {
+func (pc *PanelsMapType) GetSourceCoin(pk string) int64 {
 	if pc.ValidateKey(pk) {
 		pkm := strings.Split(pk, "|")
 		pkv := strings.Split(pkm[0], "-")
@@ -117,7 +108,7 @@ func (pc *PanelsMap) GetSourceCoin(pk string) int64 {
 	return 0
 }
 
-func (pc *PanelsMap) GetTargetCoin(pk string) int64 {
+func (pc *PanelsMapType) GetTargetCoin(pk string) int64 {
 	if pc.ValidateKey(pk) {
 		pkm := strings.Split(pk, "|")
 		pkv := strings.Split(pkm[0], "-")
@@ -131,21 +122,12 @@ func (pc *PanelsMap) GetTargetCoin(pk string) int64 {
 	return 0
 }
 
-func (pc *PanelsMap) ValidateKey(pk string) bool {
-	pkv := strings.Split(pk, "|")
-	if len(pkv) != 2 {
-		return false
-	}
-
-	pkt := strings.Split(pkv[0], "-")
-	if len(pkt) != 4 {
-		return false
-	}
-
-	return true
+func (pc *PanelsMapType) ValidateKey(pk string) bool {
+	pko := PanelKeyType{value: pk}
+	return pko.Validate()
 }
 
-func (pc *PanelsMap) ValidatePanel(pk string) bool {
+func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 	if !pc.ValidateKey(pk) {
 		return false
 	}
@@ -164,29 +146,29 @@ func (pc *PanelsMap) ValidatePanel(pk string) bool {
 	return true
 }
 
-func (pc *PanelsMap) ValidateId(id int64) bool {
+func (pc *PanelsMapType) ValidateId(id int64) bool {
 	return pc.maps.ValidateId(id)
 }
 
-func (pc *PanelsMap) InvalidatePanels() {
+func (pc *PanelsMapType) InvalidatePanels() {
 	for i := range pc.data {
 		p := pc.GetDataByIndex(i)
 		p.index = -1
 	}
 }
 
-func (pc *PanelsMap) GetOptions() []string {
+func (pc *PanelsMapType) GetOptions() []string {
 	return pc.maps.GetOptions()
 }
 
-func (pc *PanelsMap) GetDisplayById(id string) string {
+func (pc *PanelsMapType) GetDisplayById(id string) string {
 	return pc.maps.GetDisplayById(id)
 }
 
-func (pc *PanelsMap) GetIdByDisplay(id string) string {
+func (pc *PanelsMapType) GetIdByDisplay(id string) string {
 	return pc.maps.GetIdByDisplay(id)
 }
 
-func (pc *PanelsMap) GetSymbolById(id string) string {
+func (pc *PanelsMapType) GetSymbolById(id string) string {
 	return pc.maps.GetSymbolById(id)
 }
