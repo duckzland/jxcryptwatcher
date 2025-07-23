@@ -53,8 +53,8 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 		return nil
 	}
 
-	sid := BP.GetSourceCoin(pk)
-	tid := BP.GetTargetCoin(pk)
+	sid := BP.UsePanelKey(pk).GetSourceCoinInt()
+	tid := BP.UsePanelKey(pk).GetTargetCoinInt()
 
 	// Try to use cached data
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)

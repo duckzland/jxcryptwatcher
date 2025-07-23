@@ -165,16 +165,16 @@ func generatePanelForm(panelKey string) {
 		title = "Editing Panel"
 
 		valueEntry.SetDefaultValue(
-			strconv.FormatFloat(pkt.PanelKey().GetSourceValueFloat(), 'f', NumDecPlaces(pkt.PanelKey().GetSourceValueFloat()), 64),
+			strconv.FormatFloat(pkt.UsePanelKey().GetSourceValueFloat(), 'f', NumDecPlaces(pkt.UsePanelKey().GetSourceValueFloat()), 64),
 		)
 		sourceEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.PanelKey().GetSourceCoinString()),
+			BP.GetDisplayById(pkt.UsePanelKey().GetSourceCoinString()),
 		)
 		targetEntry.SetDefaultValue(
-			BP.GetDisplayById(pkt.PanelKey().GetTargetCoinString()),
+			BP.GetDisplayById(pkt.UsePanelKey().GetTargetCoinString()),
 		)
 		decimalsEntry.SetDefaultValue(
-			pkt.PanelKey().GetDecimalsString(),
+			pkt.UsePanelKey().GetDecimalsString(),
 		)
 	}
 

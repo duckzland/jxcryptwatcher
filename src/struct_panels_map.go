@@ -1,9 +1,6 @@
 package main
 
 import (
-	"strconv"
-	"strings"
-
 	"fyne.io/fyne/v2/data/binding"
 )
 
@@ -95,31 +92,9 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	return &pc.data[index]
 }
 
-func (pc *PanelsMapType) GetSourceCoin(pk string) int64 {
-	if pc.ValidateKey(pk) {
-		pkm := strings.Split(pk, "|")
-		pkv := strings.Split(pkm[0], "-")
-
-		source, err := strconv.ParseInt(pkv[0], 10, 64)
-		if err == nil {
-			return source
-		}
-	}
-	return 0
-}
-
-func (pc *PanelsMapType) GetTargetCoin(pk string) int64 {
-	if pc.ValidateKey(pk) {
-		pkm := strings.Split(pk, "|")
-		pkv := strings.Split(pkm[0], "-")
-
-		target, err := strconv.ParseInt(pkv[1], 10, 64)
-		if err == nil {
-			return target
-		}
-	}
-
-	return 0
+func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {
+	pko := PanelKeyType{value: pk}
+	return &pko
 }
 
 func (pc *PanelsMapType) ValidateKey(pk string) bool {
@@ -132,14 +107,15 @@ func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 		return false
 	}
 
-	sid := pc.GetSourceCoin(pk)
-	tid := pc.GetTargetCoin(pk)
+	pko := PanelKeyType{value: pk}
+	sid := pko.GetSourceCoinInt()
+	tid := pko.GetTargetCoinInt()
 
-	if !pc.maps.ValidateId(sid) {
+	if !pc.ValidateId(sid) {
 		return false
 	}
 
-	if !pc.maps.ValidateId(tid) {
+	if !pc.ValidateId(tid) {
 		return false
 	}
 

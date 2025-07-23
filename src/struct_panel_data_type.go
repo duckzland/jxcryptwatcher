@@ -47,7 +47,7 @@ func (p *PanelDataType) GetData() binding.String {
 }
 
 func (p *PanelDataType) GetValueString() string {
-	return p.PanelKey().GetValueString()
+	return p.UsePanelKey().GetValueString()
 }
 
 func (p *PanelDataType) GetOldValueString() string {
@@ -55,7 +55,7 @@ func (p *PanelDataType) GetOldValueString() string {
 	return pko.GetValueString()
 }
 
-func (p *PanelDataType) PanelKey() *PanelKeyType {
+func (p *PanelDataType) UsePanelKey() *PanelKeyType {
 	pko := PanelKeyType{value: p.Get()}
 	return &pko
 }
@@ -65,7 +65,7 @@ func (p *PanelDataType) Update(pk string) bool {
 	opk := p.Get()
 	p.oldKey = opk
 	npk := pk
-	ck := ExchangeCache.CreateKeyFromInt(p.PanelKey().GetSourceCoinInt(), p.PanelKey().GetTargetCoinInt())
+	ck := ExchangeCache.CreateKeyFromInt(p.UsePanelKey().GetSourceCoinInt(), p.UsePanelKey().GetTargetCoinInt())
 
 	if ExchangeCache.Has(ck) {
 		data := ExchangeCache.Get(ck)
@@ -86,37 +86,37 @@ func (p *PanelDataType) Update(pk string) bool {
 func (p *PanelDataType) FormatTitle() string {
 	pr := message.NewPrinter(language.English)
 
-	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
 	return fmt.Sprintf(
 		"%s %s to %s",
-		pr.Sprintf("%v", number.Decimal(p.PanelKey().GetSourceValueFloat(), number.MaxFractionDigits(frac))),
-		p.parent.GetSymbolById(p.PanelKey().GetSourceCoinString()),
-		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
+		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetSourceValueFloat(), number.MaxFractionDigits(frac))),
+		p.parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
+		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
 	return fmt.Sprintf(
 		"%s %s = %s %s", "1",
-		p.parent.GetSymbolById(p.PanelKey().GetSourceCoinString()),
-		pr.Sprintf("%v", number.Decimal(p.PanelKey().GetValueFloat(), number.MaxFractionDigits(int(p.PanelKey().GetDecimalsInt())))),
-		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
+		p.parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
+		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetValueFloat(), number.MaxFractionDigits(int(p.UsePanelKey().GetDecimalsInt())))),
+		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 
 func (p *PanelDataType) FormatContent() string {
 	pr := message.NewPrinter(language.English)
-	frac := int(NumDecPlaces(p.PanelKey().GetSourceValueFloat()))
+	frac := int(NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
@@ -124,10 +124,10 @@ func (p *PanelDataType) FormatContent() string {
 	return fmt.Sprintf(
 		"%s %s",
 		pr.Sprintf("%v", number.Decimal(
-			p.PanelKey().GetSourceValueFloat()*float64(p.PanelKey().GetValueFloat()),
+			p.UsePanelKey().GetSourceValueFloat()*float64(p.UsePanelKey().GetValueFloat()),
 			number.MaxFractionDigits(frac),
 		)),
-		p.parent.GetSymbolById(p.PanelKey().GetTargetCoinString()),
+		p.parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
 	)
 }
 

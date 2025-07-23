@@ -37,10 +37,10 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 	list := maps.Get()
 	for _, pdt := range list {
 		np = append(np, PanelType{
-			Source:   pdt.PanelKey().GetSourceCoinInt(),
-			Target:   pdt.PanelKey().GetTargetCoinInt(),
-			Value:    pdt.PanelKey().GetSourceValueFloat(),
-			Decimals: pdt.PanelKey().GetDecimalsInt(),
+			Source:   pdt.UsePanelKey().GetSourceCoinInt(),
+			Target:   pdt.UsePanelKey().GetTargetCoinInt(),
+			Value:    pdt.UsePanelKey().GetSourceValueFloat(),
+			Decimals: pdt.UsePanelKey().GetDecimalsInt(),
 		})
 	}
 
