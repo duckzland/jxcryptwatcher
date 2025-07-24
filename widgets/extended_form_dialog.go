@@ -16,29 +16,34 @@ type ExtendedFormDialog struct {
 	form     *widget.Form
 }
 
-func NewExtendedFormDialog(title string, items []*widget.FormItem, callback func(bool), parent fyne.Window) *ExtendedFormDialog {
+func NewExtendedFormDialog(
+	title string,
+	items []*widget.FormItem,
+	callback func(bool),
+	parent fyne.Window,
+) *ExtendedFormDialog {
 
-	var formDialog *ExtendedFormDialog
+	var fd *ExtendedFormDialog
 	form := widget.NewForm(items...)
 
-	formDialog = &ExtendedFormDialog{
+	fd = &ExtendedFormDialog{
 		dialog: dialog.NewCustomWithoutButtons(title, form, parent),
 		confirm: NewHoverCursorIconButton("Save", theme.ConfirmIcon(), "", func() {
-			formDialog.hideWithResponse(true)
+			fd.hideWithResponse(true)
 		}),
 		cancel: NewHoverCursorIconButton("Cancel", theme.CancelIcon(), "", func() {
-			formDialog.dialog.Hide()
+			fd.dialog.Hide()
 		}),
 		items:    items,
 		callback: func(resp bool) { callback(resp) },
 		form:     form,
 	}
 
-	formDialog.dialog.SetButtons([]fyne.CanvasObject{formDialog.cancel, formDialog.confirm})
-	formDialog.setSubmitState(formDialog.form.Validate())
-	formDialog.form.SetOnValidationChanged(formDialog.setSubmitState)
+	fd.dialog.SetButtons([]fyne.CanvasObject{fd.cancel, fd.confirm})
+	fd.setSubmitState(fd.form.Validate())
+	fd.form.SetOnValidationChanged(fd.setSubmitState)
 
-	return formDialog
+	return fd
 }
 
 func (d *ExtendedFormDialog) setSubmitState(err error) {

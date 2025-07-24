@@ -10,7 +10,12 @@ import (
 	JT "jxwatcher/types"
 )
 
-func NewInvalidPanel(pk string, onEdit func(pk string), onDelete func(index int)) fyne.CanvasObject {
+func NewInvalidPanel(
+	pk string,
+	onEdit func(pk string),
+	onDelete func(index int),
+) fyne.CanvasObject {
+
 	pi := JT.BP.GetIndex(pk)
 
 	content := canvas.NewText("Invalid Panel", JC.TextColor)

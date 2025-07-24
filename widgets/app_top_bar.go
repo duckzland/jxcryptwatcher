@@ -23,11 +23,15 @@ func NewTopBar(
 	topBg.SetMinSize(fyne.NewSize(860, 20))
 
 	return container.New(
-		&JL.StretchLayout{Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048}},
+		&JL.StretchLayout{
+			Widths: []float32{0.798, 0.004, 0.048, 0.002, 0.048, 0.002, 0.048, 0.002, 0.048},
+		},
+
 		container.NewStack(
 			topBg,
 			JC.NotificationBox,
 		),
+
 		layout.NewSpacer(),
 
 		// Refresh ticker data
@@ -38,6 +42,7 @@ func NewTopBar(
 				}
 			})
 		}),
+
 		layout.NewSpacer(),
 
 		// Refresh exchange rates
@@ -48,6 +53,7 @@ func NewTopBar(
 				}
 			})
 		}),
+
 		layout.NewSpacer(),
 
 		// Open settings
@@ -56,6 +62,7 @@ func NewTopBar(
 				onSettingSave()
 			}
 		}),
+
 		layout.NewSpacer(),
 
 		// Add new panel

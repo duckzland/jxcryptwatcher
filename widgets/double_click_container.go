@@ -18,7 +18,13 @@ type DoubleClickContainer struct {
 	doubleClick bool
 }
 
-func NewDoubleClickContainer(tag string, content, child fyne.CanvasObject, doubleClick bool) *DoubleClickContainer {
+func NewDoubleClickContainer(
+	tag string,
+	content fyne.CanvasObject,
+	child fyne.CanvasObject,
+	doubleClick bool,
+) *DoubleClickContainer {
+
 	child.Hide()
 	wrapper := &DoubleClickContainer{
 		tag:         tag,
@@ -31,7 +37,7 @@ func NewDoubleClickContainer(tag string, content, child fyne.CanvasObject, doubl
 	return wrapper
 }
 
-func (h *DoubleClickContainer) getTag() string {
+func (h *DoubleClickContainer) GetTag() string {
 	return h.tag
 }
 
@@ -52,9 +58,10 @@ func (h *DoubleClickContainer) Tapped(_ *fyne.PointEvent) {
 			}
 		}
 		h.lastClick = now
+	}
 
-		// Single Click mode
-	} else {
+	// Single Click mode
+	if !h.doubleClick {
 		if h.visible {
 			h.HideTarget()
 		} else {
@@ -75,7 +82,6 @@ func (h *DoubleClickContainer) HideTarget() {
 	h.Refresh()
 }
 
-// Implement desktop.Cursorable
 func (b *DoubleClickContainer) Cursor() desktop.Cursor {
-	return desktop.PointerCursor // Shows hand icon
+	return desktop.PointerCursor
 }

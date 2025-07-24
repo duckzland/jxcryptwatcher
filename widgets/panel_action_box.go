@@ -9,7 +9,10 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-func NewPanelActionBar(onEdit func(), onDelete func()) fyne.CanvasObject {
+func NewPanelActionBar(
+	onEdit func(),
+	onDelete func(),
+) fyne.CanvasObject {
 
 	editBtn := NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
 		if onEdit != nil {

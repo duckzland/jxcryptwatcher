@@ -11,7 +11,11 @@ import (
 	JT "jxwatcher/types"
 )
 
-func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataType)) *ExtendedFormDialog {
+func NewPanelForm(
+	panelKey string,
+	onSave func(),
+	onNew func(pdt *JT.PanelDataType),
+) *ExtendedFormDialog {
 
 	cm := JT.BP.GetOptions()
 
@@ -106,7 +110,7 @@ func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataTy
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	d := NewExtendedFormDialog(title, formItems, func(b bool) {
+	return NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 			var npk JT.PanelKeyType
 			newKey := npk.GenerateKey(
@@ -152,6 +156,4 @@ func NewPanelForm(panelKey string, onSave func(), onNew func(pdt *JT.PanelDataTy
 			})
 		}
 	}, JC.Window)
-
-	return d
 }

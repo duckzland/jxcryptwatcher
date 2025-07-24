@@ -13,7 +13,12 @@ import (
 	JT "jxwatcher/types"
 )
 
-func NewPanel(pdt *JT.PanelDataType, onEdit func(pk string), onDelete func(index int)) fyne.CanvasObject {
+func NewPanel(
+	pdt *JT.PanelDataType,
+	onEdit func(pk string),
+	onDelete func(index int),
+) fyne.CanvasObject {
+
 	title := canvas.NewText(pdt.FormatTitle(), JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}

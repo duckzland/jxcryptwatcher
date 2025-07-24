@@ -7,9 +7,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// DoActionWithNotification shows progress and completion messages
-// with a timed reset, while performing the given callback asynchronously.
-func DoActionWithNotification(showText string, completeText string, box *widget.Label, callback func()) {
+func DoActionWithNotification(
+	showText string,
+	completeText string,
+	box *widget.Label,
+	callback func(),
+) {
+
 	go func() {
 		callback()
 

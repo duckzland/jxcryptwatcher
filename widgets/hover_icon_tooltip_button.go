@@ -13,10 +13,13 @@ type HoverCursorIconButton struct {
 	tooltip.ToolTipWidgetExtend
 }
 
-// NewButtonWithIcon creates a new button widget with the specified label, themed icon, tooltip text and tap handler
-// When no icon needed, just pass nil to it
-// When no label or tip needed, just pass empty string to it
-func NewHoverCursorIconButton(text string, icon fyne.Resource, tip string, onTapped func()) *HoverCursorIconButton {
+func NewHoverCursorIconButton(
+	text string,
+	icon fyne.Resource,
+	tip string,
+	onTapped func(),
+) *HoverCursorIconButton {
+
 	b := &HoverCursorIconButton{
 		Button: widget.Button{
 			Text:     text,
@@ -24,10 +27,12 @@ func NewHoverCursorIconButton(text string, icon fyne.Resource, tip string, onTap
 			OnTapped: onTapped,
 		},
 	}
+
 	b.ExtendBaseWidget(b)
 	if tip != "" {
 		b.SetToolTip(tip)
 	}
+
 	return b
 }
 
@@ -51,10 +56,9 @@ func (b *HoverCursorIconButton) MouseMoved(e *desktop.MouseEvent) {
 	b.Button.MouseMoved(e)
 }
 
-// Implement desktop.Cursorable
 func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 	if !b.Disabled() {
-		return desktop.PointerCursor // Shows hand icon
+		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
 }

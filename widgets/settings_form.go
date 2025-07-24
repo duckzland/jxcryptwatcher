@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -13,6 +12,7 @@ import (
 )
 
 func NewSettingsForm(onSave func()) *ExtendedFormDialog {
+
 	delayEntry := NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()
 	exchangeEndPointEntry := widget.NewEntry()
@@ -64,7 +64,7 @@ func NewSettingsForm(onSave func()) *ExtendedFormDialog {
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
-	d := NewExtendedFormDialog("Settings", formItems, func(b bool) {
+	return NewExtendedFormDialog("Settings", formItems, func(b bool) {
 		if b {
 			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 			JT.Config.DataEndpoint = dataEndPointEntry.Text
@@ -78,8 +78,4 @@ func NewSettingsForm(onSave func()) *ExtendedFormDialog {
 			})
 		}
 	}, JC.Window)
-
-	d.Resize(fyne.NewSize(800, 300))
-
-	return d
 }

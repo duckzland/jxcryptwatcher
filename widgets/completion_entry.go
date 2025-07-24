@@ -10,7 +10,6 @@ import (
 	JC "jxwatcher/core"
 )
 
-// CompletionEntry is an Entry with options displayed in a PopUpMenu.
 type CompletionEntry struct {
 	widget.Entry
 	popupMenu     *widget.PopUp
@@ -23,8 +22,10 @@ type CompletionEntry struct {
 	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
 }
 
-// NewCompletionEntry creates a new CompletionEntry which creates a popup menu that responds to keystrokes to navigate through the items without losing the editing ability of the text input.
-func NewCompletionEntry(options []string) *CompletionEntry {
+func NewCompletionEntry(
+	options []string,
+) *CompletionEntry {
+
 	c := &CompletionEntry{Suggestions: options}
 	c.ExtendBaseWidget(c)
 
@@ -74,9 +75,6 @@ func (c *CompletionEntry) HideCompletion() {
 	}
 }
 
-// Move changes the relative position of the select entry.
-//
-// Implements: fyne.Widget
 func (c *CompletionEntry) Move(pos fyne.Position) {
 	c.Entry.Move(pos)
 	if c.popupMenu != nil {
@@ -85,7 +83,6 @@ func (c *CompletionEntry) Move(pos fyne.Position) {
 	}
 }
 
-// Refresh the list to update the options to display.
 func (c *CompletionEntry) Refresh() {
 	c.Entry.Refresh()
 	if c.navigableList != nil {
@@ -93,8 +90,6 @@ func (c *CompletionEntry) Refresh() {
 	}
 }
 
-// Resize sets a new size for a widget.
-// Note this should not be used if the widget is being managed by a Layout within a Container.
 func (c *CompletionEntry) Resize(size fyne.Size) {
 	c.Entry.Resize(size)
 	if c.popupMenu != nil {
@@ -102,13 +97,11 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 	}
 }
 
-// SetOptions set the completion list with itemList and update the view.
 func (c *CompletionEntry) SetOptions(itemList []string) {
 	c.Options = itemList
 	c.Refresh()
 }
 
-// ShowCompletion displays the completion menu
 func (c *CompletionEntry) ShowCompletion() {
 	if c.pause {
 		return
@@ -119,8 +112,14 @@ func (c *CompletionEntry) ShowCompletion() {
 	}
 
 	if c.navigableList == nil {
-		c.navigableList = newNavigableList(c.Options, &c.Entry, c.setTextFromMenu, c.HideCompletion,
-			c.CustomCreate, c.CustomUpdate)
+		c.navigableList = newNavigableList(
+			c.Options,
+			&c.Entry,
+			c.setTextFromMenu,
+			c.HideCompletion,
+			c.CustomCreate,
+			c.CustomUpdate,
+		)
 	} else {
 		c.navigableList.UnselectAll()
 		c.navigableList.selected = -1
@@ -135,7 +134,6 @@ func (c *CompletionEntry) ShowCompletion() {
 	holder.Focus(c.navigableList)
 }
 
-// calculate the max size to make the popup to cover everything below the entry
 func (c *CompletionEntry) maxSize() fyne.Size {
 	cnv := fyne.CurrentApp().Driver().CanvasForObject(c)
 
@@ -144,7 +142,6 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	}
 
 	if c.itemHeight == 0 {
-		// set item height to cache
 		c.itemHeight = c.navigableList.CreateItem().MinSize().Height
 	}
 
@@ -190,8 +187,15 @@ type navigableList struct {
 	customUpdate func(id widget.ListItemID, object fyne.CanvasObject)
 }
 
-func newNavigableList(items []string, entry *widget.Entry, setTextFromMenu func(string), hide func(),
-	create func() fyne.CanvasObject, update func(id widget.ListItemID, object fyne.CanvasObject)) *navigableList {
+func newNavigableList(
+	items []string,
+	entry *widget.Entry,
+	setTextFromMenu func(string),
+	hide func(),
+	create func() fyne.CanvasObject,
+	update func(id widget.ListItemID, object fyne.CanvasObject),
+) *navigableList {
+
 	n := &navigableList{
 		entry:           entry,
 		selected:        -1,
@@ -230,11 +234,9 @@ func newNavigableList(items []string, entry *widget.Entry, setTextFromMenu func(
 	return n
 }
 
-// Implements: fyne.Focusable
 func (n *navigableList) FocusGained() {
 }
 
-// Implements: fyne.Focusable
 func (n *navigableList) FocusLost() {
 }
 
