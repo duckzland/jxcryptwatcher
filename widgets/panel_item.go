@@ -6,17 +6,18 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+
+	JC "jxwatcher/core"
 )
 
-func NewPanelItem(content fyne.CanvasObject, bgColor color.Color, borderRadius float32, padding [4]float32) fyne.CanvasObject {
-	background := canvas.NewRectangle(bgColor)
-	background.SetMinSize(fyne.NewSize(100, 100))
+func NewPanelItem(content fyne.CanvasObject) fyne.CanvasObject {
 
-	if borderRadius != 0 {
-		background.CornerRadius = borderRadius
-	}
+	background := canvas.NewRectangle(JC.PanelBG)
+	background.SetMinSize(fyne.NewSize(100, 100))
+	background.CornerRadius = JC.PanelBorderRadius
 
 	item := container.NewStack(background, content)
+	padding := JC.PanelPadding
 
 	// Simulate padding using transparent spacers
 	top := canvas.NewRectangle(color.Transparent)

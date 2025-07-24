@@ -13,7 +13,7 @@ func NewEmptyPanel() fyne.CanvasObject {
 	content := canvas.NewText("Loading...", JC.TextColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
-	content.TextSize = 16
+	content.TextSize = JC.PanelTitleSize
 
 	return NewPanelItem(
 		container.New(
@@ -22,8 +22,5 @@ func NewEmptyPanel() fyne.CanvasObject {
 			content,
 			layout.NewSpacer(),
 		),
-		JC.PanelBG,
-		6,
-		[4]float32{0, 5, 10, 5},
 	)
 }

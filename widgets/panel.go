@@ -17,20 +17,20 @@ func NewPanel(pdt *JT.PanelDataType, onEdit func(pk string), onDelete func(index
 	title := canvas.NewText(pdt.FormatTitle(), JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
 	title.TextStyle = fyne.TextStyle{Bold: true}
-	title.TextSize = 16
+	title.TextSize = JC.PanelTitleSize
 
 	subtitle := canvas.NewText(pdt.FormatSubtitle(), JC.TextColor)
 	subtitle.Alignment = fyne.TextAlignCenter
-	subtitle.TextSize = 16
+	subtitle.TextSize = JC.PanelSubTitleSize
 
 	content := canvas.NewText(pdt.FormatContent(), JC.TextColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
-	content.TextSize = 30
+	content.TextSize = JC.PanelContentSize
 
 	background := canvas.NewRectangle(JC.PanelBG)
 	background.SetMinSize(fyne.NewSize(100, 100))
-	background.CornerRadius = 6
+	background.CornerRadius = JC.PanelBorderRadius
 
 	str := pdt.GetData()
 	str.AddListener(binding.NewDataListener(func() {
@@ -41,10 +41,11 @@ func NewPanel(pdt *JT.PanelDataType, onEdit func(pk string), onDelete func(index
 		switch pdt.IsValueIncrease() {
 		case 1:
 			background.FillColor = JC.GreenColor
+			background.Refresh()
 		case -1:
 			background.FillColor = JC.RedColor
+			background.Refresh()
 		}
-		background.Refresh()
 
 		title.Text = pdt.FormatTitle()
 		subtitle.Text = pdt.FormatSubtitle()
@@ -82,9 +83,6 @@ func NewPanel(pdt *JT.PanelDataType, onEdit func(pk string), onDelete func(index
 				),
 				container.NewVBox(action),
 			),
-			JC.PanelBG,
-			6,
-			[4]float32{0, 5, 10, 5},
 		),
 		action,
 		false,

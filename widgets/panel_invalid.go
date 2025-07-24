@@ -16,12 +16,14 @@ func NewInvalidPanel(pk string, onEdit func(pk string), onDelete func(index int)
 	content := canvas.NewText("Invalid Panel", JC.TextColor)
 	content.Alignment = fyne.TextAlignCenter
 	content.TextStyle = fyne.TextStyle{Bold: true}
-	content.TextSize = 16
+	content.TextSize = JC.PanelTitleSize
 
 	action := NewPanelActionBar(
 		func() {
 			pko := JT.BP.GetDataByIndex(pi)
-			onEdit(pko.Get())
+			if pko != nil {
+				onEdit(pko.Get())
+			}
 		},
 		func() {
 			onDelete(pi)
@@ -39,9 +41,6 @@ func NewInvalidPanel(pk string, onEdit func(pk string), onDelete func(index int)
 				),
 				container.NewVBox(action),
 			),
-			JC.PanelBG,
-			6,
-			[4]float32{0, 5, 10, 5},
 		),
 		action,
 		false,
