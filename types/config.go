@@ -58,6 +58,8 @@ func (c *ConfigType) SaveFile() *ConfigType {
 		return nil
 	}
 
+	log.Println("Configuration File Saved")
+
 	return c
 }
 
