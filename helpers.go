@@ -33,34 +33,35 @@ func UpdateRates() bool {
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
-	ex := JT.ExchangeDataType{}
+	ex := JT.ExchangeResults{}
 	jb := make(map[string]string)
 	list := JT.BP.Get()
 
-	// Prune data first, remove duplicate calls
+	// Prune data first, remove duplicate calls, merge into single call wheneveer possible
 	for i := range list {
 		pk := JT.BP.GetDataByIndex(i)
 		pkt := pk.UsePanelKey()
-		ck := JT.ExchangeCache.CreateKeyFromString(
-			pkt.GetSourceCoinString(),
-			pkt.GetTargetCoinString(),
-		)
+		sid := pkt.GetSourceCoinString()
+		tid := pkt.GetTargetCoinString()
 
-		_, exists := jb[ck]
+		_, exists := jb[sid]
 		if !exists {
-			jb[ck] = pk.Get()
+			jb[sid] = sid + "|" + tid
+		} else {
+			jb[sid] += "," + tid
+
 		}
 	}
 
 	// Fetching with delay
-	for _, pk := range jb {
-		ex.GetRate(pk)
+	for _, rk := range jb {
+		ex.GetRate(rk)
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	log.Print("Exchange Rate updated")
+	log.Printf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
 	return true
 }
