@@ -117,6 +117,8 @@ func NewPanelForm(
 				JT.BP.GetIdByDisplay(sourceEntry.Text),
 				JT.BP.GetIdByDisplay(targetEntry.Text),
 				valueEntry.Text,
+				JT.BP.GetSymbolByDisplay(sourceEntry.Text),
+				JT.BP.GetSymbolByDisplay(targetEntry.Text),
 				decimalsEntry.Text,
 				0,
 			)

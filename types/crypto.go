@@ -18,7 +18,7 @@ func (cp *CryptoType) UnmarshalJSON(data []byte) error {
 	var v []interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 

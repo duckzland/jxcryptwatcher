@@ -150,3 +150,7 @@ func (pc *PanelsMapType) GetIdByDisplay(id string) string {
 func (pc *PanelsMapType) GetSymbolById(id string) string {
 	return pc.Maps.GetSymbolById(id)
 }
+
+func (pc *PanelsMapType) GetSymbolByDisplay(id string) string {
+	return pc.Maps.GetSymbolByDisplay(id)
+}

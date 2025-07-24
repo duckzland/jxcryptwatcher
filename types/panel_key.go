@@ -6,6 +6,10 @@ import (
 	"strings"
 
 	JC "jxwatcher/core"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
 )
 
 type PanelKeyType struct {
@@ -18,13 +22,13 @@ func (p *PanelKeyType) UpdateValue(rate float32) string {
 	return p.value
 }
 
-func (p *PanelKeyType) GenerateKey(source, target, value, decimals string, rate float32) string {
-	p.value = fmt.Sprintf("%s-%s-%s-%s|%f", source, target, value, decimals, rate)
+func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float32) string {
+	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 	return p.value
 }
 
 func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float32) string {
-	p.value = fmt.Sprintf("%d-%d-%s-%d|%f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.Decimals, rate)
+	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
 	return p.value
 }
 
@@ -35,7 +39,7 @@ func (p *PanelKeyType) Validate() bool {
 	}
 
 	pkt := strings.Split(pkv[0], "-")
-	if len(pkt) != 4 {
+	if len(pkt) != 6 {
 		return false
 	}
 
@@ -60,6 +64,18 @@ func (p *PanelKeyType) GetValueString() string {
 	}
 
 	return ""
+}
+
+func (p *PanelKeyType) GetValueFormattedString() string {
+
+	pr := message.NewPrinter(language.English)
+	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	if frac < 3 {
+		frac = 2
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt()))))
+
 }
 
 func (p *PanelKeyType) GetSourceCoinInt() int64 {
@@ -127,6 +143,42 @@ func (p *PanelKeyType) GetSourceValueString() string {
 	return ""
 }
 
+func (p *PanelKeyType) GetSourceValueFormattedString() string {
+	pr := message.NewPrinter(language.English)
+
+	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	if frac < 3 {
+		frac = 2
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetSourceValueFloat(), number.MaxFractionDigits(frac)))
+
+}
+
+func (p *PanelKeyType) GetSourceSymbolString() string {
+
+	pkm := strings.Split(p.value, "|")
+	pkv := strings.Split(pkm[0], "-")
+
+	if len(pkv) > 2 {
+		return pkv[3]
+	}
+
+	return ""
+}
+
+func (p *PanelKeyType) GetTargetSymbolString() string {
+
+	pkm := strings.Split(p.value, "|")
+	pkv := strings.Split(pkm[0], "-")
+
+	if len(pkv) > 3 {
+		return pkv[4]
+	}
+
+	return ""
+}
+
 func (p *PanelKeyType) GetDecimalsInt() int64 {
 	decimals, err := strconv.ParseInt(p.GetDecimalsString(), 10, 64)
 	if err == nil {
@@ -141,8 +193,8 @@ func (p *PanelKeyType) GetDecimalsString() string {
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
 
-	if len(pkv) > 2 {
-		return pkv[3]
+	if len(pkv) > 4 {
+		return pkv[5]
 	}
 
 	return ""

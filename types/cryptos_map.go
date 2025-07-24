@@ -68,6 +68,21 @@ func (cm *CryptosMapType) GetSymbolById(id string) string {
 	return sss[0]
 }
 
+func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
+
+	ss := strings.Split(tk, "|")
+	if len(ss) != 2 {
+		return ""
+	}
+
+	sss := strings.Split(ss[1], " - ")
+	if len(sss) < 2 {
+		return ""
+	}
+
+	return sss[0]
+}
+
 func (cm *CryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data[strconv.FormatInt(id, 10)]
 	return ok

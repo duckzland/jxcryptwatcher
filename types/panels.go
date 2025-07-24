@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 
 	JC "jxwatcher/core"
 )
@@ -36,11 +37,12 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 	np := []PanelType{}
 	list := maps.Get()
 	for _, pdt := range list {
+		pk := pdt.UsePanelKey()
 		np = append(np, PanelType{
-			Source:   pdt.UsePanelKey().GetSourceCoinInt(),
-			Target:   pdt.UsePanelKey().GetTargetCoinInt(),
-			Value:    pdt.UsePanelKey().GetSourceValueFloat(),
-			Decimals: pdt.UsePanelKey().GetDecimalsInt(),
+			Source:   pk.GetSourceCoinInt(),
+			Target:   pk.GetTargetCoinInt(),
+			Value:    pk.GetSourceValueFloat(),
+			Decimals: pk.GetDecimalsInt(),
 		})
 	}
 
@@ -79,9 +81,14 @@ func (p *PanelsType) CheckFile() *PanelsType {
 }
 
 func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
-	for _, panel := range *p {
+	for i := range *p {
+		pp := &(*p)[i] // Get pointer to the actual element
+
+		pp.SourceSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Source, 10))
+		pp.TargetSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Target, 10))
+
 		pko := PanelKeyType{}
-		maps.Append(pko.GenerateKeyFromPanel(panel, 0))
+		maps.Append(pko.GenerateKeyFromPanel(*pp, 0))
 	}
 }
 

@@ -5,9 +5,6 @@ import (
 	"strconv"
 
 	"fyne.io/fyne/v2/data/binding"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
 
 	JC "jxwatcher/core"
 )
@@ -86,50 +83,42 @@ func (p *PanelDataType) Update(pk string) bool {
 }
 
 func (p *PanelDataType) FormatTitle() string {
-	pr := message.NewPrinter(language.English)
-
 	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
+	pk := p.UsePanelKey()
+
 	return fmt.Sprintf(
 		"%s %s to %s",
-		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetSourceValueFloat(), number.MaxFractionDigits(frac))),
-		p.Parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
-		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		pk.GetSourceValueFormattedString(),
+		pk.GetSourceSymbolString(),
+		pk.GetTargetSymbolString(),
 	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
-	pr := message.NewPrinter(language.English)
-	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
-	if frac < 3 {
-		frac = 2
-	}
+
+	pk := p.UsePanelKey()
 
 	return fmt.Sprintf(
-		"%s %s = %s %s", "1",
-		p.Parent.GetSymbolById(p.UsePanelKey().GetSourceCoinString()),
-		pr.Sprintf("%v", number.Decimal(p.UsePanelKey().GetValueFloat(), number.MaxFractionDigits(int(p.UsePanelKey().GetDecimalsInt())))),
-		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		"%s %s = %s %s",
+		"1",
+		pk.GetSourceSymbolString(),
+		pk.GetValueFormattedString(),
+		pk.GetTargetSymbolString(),
 	)
 }
 
 func (p *PanelDataType) FormatContent() string {
-	pr := message.NewPrinter(language.English)
-	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
-	if frac < 3 {
-		frac = 2
-	}
+
+	pk := p.UsePanelKey()
 
 	return fmt.Sprintf(
 		"%s %s",
-		pr.Sprintf("%v", number.Decimal(
-			p.UsePanelKey().GetSourceValueFloat()*float64(p.UsePanelKey().GetValueFloat()),
-			number.MaxFractionDigits(frac),
-		)),
-		p.Parent.GetSymbolById(p.UsePanelKey().GetTargetCoinString()),
+		pk.GetValueFormattedString(),
+		pk.GetTargetSymbolString(),
 	)
 }
 
