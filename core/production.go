@@ -8,6 +8,8 @@ import (
 	"log"
 )
 
+const MemoryDebug = false
+
 func InitLogger() {
-	log.SetOutput(io.Discard) // Disable all logs
+	log.SetOutput(io.Discard)
 }

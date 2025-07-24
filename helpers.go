@@ -155,7 +155,6 @@ func OpenSettingForm() {
 
 	d.Show()
 	d.Resize(fyne.NewSize(400, 300))
-	log.Printf("Triggered", d)
 }
 
 func CreateInvalidPanel(pk string) fyne.CanvasObject {

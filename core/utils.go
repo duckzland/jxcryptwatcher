@@ -16,8 +16,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 )
 
-const MemoryDebug = false
-
 /**
  * Function for extracting number of decimals from a float
  */
@@ -119,11 +117,14 @@ func PrintMemUsage(title string) {
 	if MemoryDebug {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
-		fmt.Println(title)
-		fmt.Printf("Alloc = %v MiB", m.Alloc/1024/1024)
-		fmt.Printf("\tTotalAlloc = %v MiB", m.TotalAlloc/1024/1024)
-		fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
-		fmt.Printf("\tNumGC = %v\n", m.NumGC)
+		log.Printf(
+			"%s | Alloc = %v MiB TotalAlloc = %v MiB Sys = %v MiB NumGC = %v",
+			title,
+			m.Alloc/1024/1024,
+			m.TotalAlloc/1024/1024,
+			m.Sys/1024/1024,
+			m.NumGC,
+		)
 	}
 }
 
