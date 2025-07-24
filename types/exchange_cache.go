@@ -2,48 +2,53 @@ package types
 
 import (
 	"fmt"
+	"sync"
 )
 
 var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
 
 type ExchangeDataCacheType struct {
-	data map[string]ExchangeDataType
+	data sync.Map
+	wg   sync.WaitGroup
 }
 
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
-	if ec.Has(ck) {
-		ex := ec.data[ck]
+	if val, ok := ec.data.Load(ck); ok {
+		ex := val.(ExchangeDataType)
 		return &ex
 	}
+
 	return nil
 }
 
 func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCacheType {
-
-	if ec.data == nil {
-		ec.Reset()
-	}
-
 	ck := ec.CreateKeyFromExchangeData(ex)
-	ec.data[ck] = *ex
+
+	ec.wg.Add(1)
+	go func() {
+		defer ec.wg.Done()
+		ec.data.Store(ck, *ex)
+	}()
 
 	return ec
 }
 
+func (ec *ExchangeDataCacheType) WaitForInserts() {
+	ec.wg.Wait()
+}
+
 func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
-	if ec.Has(ck) {
-		delete(ec.data, ck)
-	}
+	ec.data.Delete(ck)
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
-	ec.data = make(map[string]ExchangeDataType)
+	ec.data = sync.Map{}
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Has(ck string) bool {
-	_, ok := ec.data[ck]
+	_, ok := ec.data.Load(ck)
 	return ok
 }
 

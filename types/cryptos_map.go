@@ -3,21 +3,36 @@ package types
 import (
 	"strconv"
 	"strings"
+	"sync"
 
 	JC "jxwatcher/core"
 )
 
 type CryptosMapType struct {
-	data map[string]string
+	data sync.Map
 	maps []string
+	wg   sync.WaitGroup
 }
 
 func (cm *CryptosMapType) Init() {
-	cm.data = make(map[string]string)
+	cm.data = sync.Map{}
+	cm.maps = []string{}
+}
+
+func (cm *CryptosMapType) Insert(id string, display string) {
+	cm.wg.Add(1)
+
+	go func() {
+		defer cm.wg.Done()
+		cm.data.Store(id, display)
+	}()
+}
+
+func (cm *CryptosMapType) WaitForInserts() {
+	cm.wg.Wait()
 }
 
 func (cm *CryptosMapType) GetOptions() []string {
-
 	JC.PrintMemUsage("Start generating available crypto options")
 
 	if len(cm.maps) != 0 {
@@ -25,22 +40,25 @@ func (cm *CryptosMapType) GetOptions() []string {
 		return cm.maps
 	}
 
-	for _, tk := range cm.data {
-		cm.maps = append(cm.maps, tk)
-	}
+	var options []string
+
+	cm.data.Range(func(_, val any) bool {
+		options = append(options, val.(string))
+		return true
+	})
+
+	cm.maps = options
 
 	JC.PrintMemUsage("End generating available crypto options")
-
 	return cm.maps
 }
 
 func (cm *CryptosMapType) GetDisplayById(id string) string {
-	tid, ok := cm.data[id]
-	if !ok {
-		return ""
+	if val, ok := cm.data.Load(id); ok {
+		return val.(string)
 	}
 
-	return tid
+	return ""
 }
 
 func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
@@ -49,9 +67,9 @@ func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
 	}
 
 	ntk := strings.Split(tk, "|")
+
 	if len(ntk) > 0 && JC.IsNumeric(ntk[0]) {
-		_, ok := cm.data[ntk[0]]
-		if ok {
+		if _, ok := cm.data.Load(ntk[0]); ok {
 			return ntk[0]
 		}
 	}
@@ -60,41 +78,37 @@ func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
 }
 
 func (cm *CryptosMapType) GetSymbolById(id string) string {
-	tid, ok := cm.data[id]
-	if !ok {
-		return ""
+	if val, ok := cm.data.Load(id); ok {
+		parts := strings.Split(val.(string), "|")
+
+		if len(parts) == 2 {
+			subs := strings.Split(parts[1], " - ")
+
+			if len(subs) >= 2 {
+				return subs[0]
+			}
+		}
 	}
 
-	ss := strings.Split(tid, "|")
-	if len(ss) != 2 {
-		return ""
-	}
-
-	sss := strings.Split(ss[1], " - ")
-	if len(sss) < 2 {
-		return ""
-	}
-
-	return sss[0]
+	return ""
 }
 
 func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
+	parts := strings.Split(tk, "|")
 
-	ss := strings.Split(tk, "|")
-	if len(ss) != 2 {
-		return ""
+	if len(parts) == 2 {
+		subs := strings.Split(parts[1], " - ")
+
+		if len(subs) >= 2 {
+			return subs[0]
+		}
 	}
 
-	sss := strings.Split(ss[1], " - ")
-	if len(sss) < 2 {
-		return ""
-	}
-
-	return sss[0]
+	return ""
 }
 
 func (cm *CryptosMapType) ValidateId(id int64) bool {
-	_, ok := cm.data[strconv.FormatInt(id, 10)]
+	_, ok := cm.data.Load(strconv.FormatInt(id, 10))
 	return ok
 }
 

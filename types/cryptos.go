@@ -65,7 +65,8 @@ func (c *CryptosType) ConvertToMap() CryptosMapType {
 
 		// Only add crypto that is active at CMC
 		if crypto.Status != 0 || crypto.IsActive != 0 {
-			CM.data[strconv.FormatInt(crypto.Id, 10)] = crypto.CreateKey()
+			CM.Insert(strconv.FormatInt(crypto.Id, 10), crypto.CreateKey())
+			// CM.data[strconv.FormatInt(crypto.Id, 10)] = crypto.CreateKey()
 		}
 	}
 	JC.PrintMemUsage("End populating cryptos")
