@@ -78,6 +78,18 @@ func (p *PanelKeyType) GetValueFormattedString() string {
 
 }
 
+func (p *PanelKeyType) GetCalculatedValueFormattedString() string {
+
+	pr := message.NewPrinter(language.English)
+	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	if frac < 3 {
+		frac = 2
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat()*p.GetSourceValueFloat(), number.MaxFractionDigits(int(frac))))
+
+}
+
 func (p *PanelKeyType) GetSourceCoinInt() int64 {
 
 	source, err := strconv.ParseInt(p.GetSourceCoinString(), 10, 64)

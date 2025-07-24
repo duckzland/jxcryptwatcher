@@ -117,7 +117,7 @@ func (p *PanelDataType) FormatContent() string {
 
 	return fmt.Sprintf(
 		"%s %s",
-		pk.GetValueFormattedString(),
+		pk.GetCalculatedValueFormattedString(),
 		pk.GetTargetSymbolString(),
 	)
 }
