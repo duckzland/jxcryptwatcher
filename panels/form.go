@@ -129,7 +129,7 @@ func NewPanelForm(
 				JT.BP.GetSymbolByDisplay(sourceEntry.Text),
 				JT.BP.GetSymbolByDisplay(targetEntry.Text),
 				decimalsEntry.Text,
-				0,
+				-1,
 			)
 
 			if panelKey == "new" {
@@ -138,7 +138,8 @@ func NewPanelForm(
 					if onNew != nil {
 						onNew(ns)
 					}
-					ns.Index = len(JC.Grid.Objects)
+					// ns.Index = len(JC.Grid.Objects)
+					ns.Index = -1
 				}
 			} else {
 				pi := JT.BP.GetIndex(panelKey)

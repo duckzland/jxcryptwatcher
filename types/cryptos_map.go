@@ -9,6 +9,7 @@ import (
 
 type CryptosMapType struct {
 	data map[string]string
+	maps []string
 }
 
 func (cm *CryptosMapType) Init() {
@@ -19,15 +20,19 @@ func (cm *CryptosMapType) GetOptions() []string {
 
 	JC.PrintMemUsage("Start generating available crypto options")
 
-	m := []string{}
+	if len(cm.maps) != 0 {
+		JC.PrintMemUsage("End using cached crypto options")
+		return cm.maps
+	}
 
+	JC.CryptoOptions = []string{}
 	for _, tk := range cm.data {
-		m = append(m, tk)
+		cm.maps = append(cm.maps, tk)
 	}
 
 	JC.PrintMemUsage("End generating available crypto options")
 
-	return m
+	return cm.maps
 }
 
 func (cm *CryptosMapType) GetDisplayById(id string) string {

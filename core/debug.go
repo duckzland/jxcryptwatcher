@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-const MemoryDebug = true
+const MemoryDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout) // Disable all logs

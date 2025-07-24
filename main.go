@@ -38,12 +38,14 @@ func main() {
 
 	JC.Grid = container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
+	JC.PrintMemUsage("Start building panels")
 	list := JT.BP.Get()
 	for i := range list {
 		pkt := JT.BP.GetDataByIndex(i)
 		pkt.Index = i
 		JC.Grid.Add(CreatePanel(pkt))
 	}
+	JC.PrintMemUsage("End building panels")
 
 	JC.NotificationBox = widget.NewLabel("")
 

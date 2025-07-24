@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	JC "jxwatcher/core"
 	"log"
 	"net/http"
@@ -56,14 +55,15 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	JC.PrintMemUsage("Start fetching exchange rates")
 
-	sid := BP.UsePanelKey(pk).GetSourceCoinInt()
-	tid := BP.UsePanelKey(pk).GetTargetCoinInt()
+	pko := BP.UsePanelKey(pk)
+	sid := pko.GetSourceCoinInt()
+	tid := pko.GetTargetCoinInt()
 
 	// Try to use cached data
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)
 	if ExchangeCache.Has(ck) {
 		log.Println("Using cached data for:", ck)
-		JC.PrintMemUsage("End generating available crypto options")
+		JC.PrintMemUsage("End fetching exchange rates, using cached data instead")
 		return ExchangeCache.Get(ck)
 	}
 
@@ -94,8 +94,14 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 		// log.Print("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
 
-	respBody, _ := io.ReadAll(resp.Body)
-	err = json.Unmarshal([]byte(string(respBody)), ex)
+	defer resp.Body.Close()
+
+	// Decode JSON directly from response body to save memory
+	decoder := json.NewDecoder(resp.Body)
+	if err := decoder.Decode(ex); err != nil {
+		log.Println(fmt.Errorf("Failed to examine exchange data: %w", err))
+		return nil
+	}
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to examine exchange data: %w", err)
@@ -108,6 +114,6 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	// Cache the result
 	ExchangeCache.Insert(ex)
-	JC.PrintMemUsage("End generating available crypto options")
+	JC.PrintMemUsage("End fetching exchange rates")
 	return ex
 }
