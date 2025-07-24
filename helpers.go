@@ -78,6 +78,7 @@ func RemovePanelByIndex(di int) {
 }
 
 func SavePanelForm() {
+
 	fyne.Do(func() {
 		JC.Grid.Refresh()
 		UpdateDisplay()
