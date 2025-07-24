@@ -16,9 +16,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 )
 
-/**
- * Function for extracting number of decimals from a float
- */
 func NumDecPlaces(v float64) int {
 	s := strconv.FormatFloat(v, 'f', -1, 64)
 	i := strings.IndexByte(s, '.')
@@ -28,9 +25,6 @@ func NumDecPlaces(v float64) int {
 	return 0
 }
 
-/**
- * Helper function for creating file
- */
 func CreateFile(fileName string, textString string) {
 
 	dirPath := filepath.Dir(fileName)
@@ -62,9 +56,6 @@ func CreateFile(fileName string, textString string) {
 
 }
 
-/**
- * Helper function for checking if file exists
- */
 func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
