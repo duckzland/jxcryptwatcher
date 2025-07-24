@@ -97,9 +97,7 @@ func SavePanelForm() {
 func OpenNewPanelForm() {
 	d := JP.NewPanelForm(
 		"new",
-		func() {
-			SavePanelForm()
-		},
+		SavePanelForm,
 		func(npdt *JT.PanelDataType) {
 			JC.Grid.Add(JP.NewPanelDisplay(
 				npdt,
@@ -109,9 +107,7 @@ func OpenNewPanelForm() {
 					JP.NewPanelForm(
 						dynpk,
 						// Save panel form callback
-						func() {
-							SavePanelForm()
-						},
+						SavePanelForm,
 						// No new panel callback
 						nil,
 					)

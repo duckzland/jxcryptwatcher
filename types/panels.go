@@ -93,7 +93,7 @@ func (p *PanelsType) CheckFile() *PanelsType {
 
 func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 	for i := range *p {
-		pp := &(*p)[i] // Get pointer to the actual element
+		pp := &(*p)[i]
 
 		pp.SourceSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Source, 10))
 		pp.TargetSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Target, 10))

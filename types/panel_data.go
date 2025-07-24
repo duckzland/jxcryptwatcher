@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"sync"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2/data/binding"
+
+	JC "jxwatcher/core"
 )
 
 type PanelDataType struct {
@@ -105,38 +105,44 @@ func (p *PanelDataType) Update(pk string) bool {
 }
 
 func (p *PanelDataType) FormatTitle() string {
-	frac := int(JC.NumDecPlaces(p.UsePanelKey().GetSourceValueFloat()))
+	pk := p.UsePanelKey()
+
+	frac := int(JC.NumDecPlaces(pk.GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
 
-	pk := p.UsePanelKey()
-
-	return fmt.Sprintf("%s %s to %s",
+	return fmt.Sprintf(
+		"%s %s to %s",
 		pk.GetSourceValueFormattedString(),
 		pk.GetSourceSymbolString(),
-		pk.GetTargetSymbolString())
+		pk.GetTargetSymbolString(),
+	)
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
 	pk := p.UsePanelKey()
 
-	return fmt.Sprintf("1 %s = %s %s",
+	return fmt.Sprintf(
+		"1 %s = %s %s",
 		pk.GetSourceSymbolString(),
 		pk.GetValueFormattedString(),
-		pk.GetTargetSymbolString())
+		pk.GetTargetSymbolString(),
+	)
 }
 
 func (p *PanelDataType) FormatContent() string {
 	pk := p.UsePanelKey()
 
-	return fmt.Sprintf("%s %s",
+	return fmt.Sprintf(
+		"%s %s",
 		pk.GetCalculatedValueFormattedString(),
-		pk.GetTargetSymbolString())
+		pk.GetTargetSymbolString(),
+	)
 }
 
 func (p *PanelDataType) DidChange() bool {
-	return p.OldKey != p.Get()
+	return p.OldKey != p.GetWithoutLock()
 }
 
 func (p *PanelDataType) IsValueIncrease() int {
@@ -169,5 +175,5 @@ func (p *PanelDataType) IsValueIncrease() int {
 }
 
 func (p *PanelDataType) IsEqualContentString(pk string) bool {
-	return p.Get() == pk
+	return p.GetWithoutLock() == pk
 }
