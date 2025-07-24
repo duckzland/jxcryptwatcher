@@ -8,4 +8,4 @@
 
 
 echo "Generating Linux binary"
-go build -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher .
+go build -tags production -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher .
