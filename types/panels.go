@@ -23,7 +23,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load panels.json: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
 	} else {
 		log.Print("Panels Loaded")
 	}
@@ -46,13 +46,15 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 
 	jsonData, err := json.MarshalIndent(np, "", "  ")
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false
 	}
 
 	// Save to file
 	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), jsonData, 0644)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return false
 	}
 
 	return true
@@ -70,7 +72,7 @@ func (p *PanelsType) CheckFile() *PanelsType {
 	}
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	return p

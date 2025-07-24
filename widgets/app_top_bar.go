@@ -52,11 +52,9 @@ func NewTopBar(
 
 		// Open settings
 		NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
-			NewSettingsForm(func() {
-				if onSettingSave != nil {
-					onSettingSave()
-				}
-			})
+			if onSettingSave != nil {
+				onSettingSave()
+			}
 		}),
 		layout.NewSpacer(),
 

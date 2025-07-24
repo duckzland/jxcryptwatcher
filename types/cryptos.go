@@ -82,12 +82,14 @@ func (c *CryptosType) FetchData() string {
 
 	if err != nil {
 		log.Println(err)
+		return ""
 	}
 
 	resp, err := client.Do(req)
 
 	if err != nil {
 		log.Println(err)
+		return ""
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -95,6 +97,7 @@ func (c *CryptosType) FetchData() string {
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetched cryptodata from CMC: %w", err)
 		log.Println(wrappedErr)
+		return ""
 	} else {
 		log.Print("Fetched cryptodata from CMC")
 	}

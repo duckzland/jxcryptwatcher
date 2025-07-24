@@ -146,6 +146,16 @@ func OpenPanelEditForm(pk string) {
 	d.Resize(fyne.NewSize(400, 300))
 }
 
+func OpenSettingForm() {
+	d := JW.NewSettingsForm(func() {
+		JT.Config.SaveFile()
+	})
+
+	d.Show()
+	d.Resize(fyne.NewSize(400, 300))
+	log.Printf("Triggered", d)
+}
+
 func CreateInvalidPanel(pk string) fyne.CanvasObject {
 	return JW.NewInvalidPanel(
 		pk,

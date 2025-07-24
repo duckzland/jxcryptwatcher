@@ -29,7 +29,7 @@ func (c *ConfigType) LoadFile() *ConfigType {
 
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to load config.json: %w", err)
-		log.Fatal(wrappedErr)
+		log.Println(wrappedErr)
 	} else {
 		log.Print("Configuration Loaded")
 	}
@@ -41,13 +41,15 @@ func (c *ConfigType) SaveFile() *ConfigType {
 
 	jsonData, err := json.MarshalIndent(Config, "", "  ")
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return nil
 	}
 
 	// Save to file
 	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), jsonData, 0644)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return nil
 	}
 
 	return c
@@ -64,14 +66,15 @@ func (c *ConfigType) CheckFile() *ConfigType {
 
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return c
 		}
 
 		JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), string(jsonData))
 	}
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	return c
