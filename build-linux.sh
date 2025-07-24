@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ##
 ## This is the minimal build script that will generate linux binary at /build folder
@@ -8,4 +8,4 @@
 
 
 echo "Generating Linux binary"
-go build -tags production -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher .
+go build -tags production -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher-linux-amd64 .
