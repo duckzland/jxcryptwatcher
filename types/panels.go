@@ -88,7 +88,7 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 		pp.TargetSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Target, 10))
 
 		pko := PanelKeyType{}
-		maps.Append(pko.GenerateKeyFromPanel(*pp, 0))
+		maps.Append(pko.GenerateKeyFromPanel(*pp, -1))
 	}
 }
 

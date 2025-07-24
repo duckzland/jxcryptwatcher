@@ -16,7 +16,6 @@ import (
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JL "jxwatcher/layouts"
-	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
@@ -40,8 +39,10 @@ func main() {
 	JC.Grid = container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
 
 	list := JT.BP.Get()
-	for range list {
-		JC.Grid.Add(JP.NewEmptyPanel())
+	for i := range list {
+		pkt := JT.BP.GetDataByIndex(i)
+		pkt.Index = i
+		JC.Grid.Add(CreatePanel(pkt))
 	}
 
 	JC.NotificationBox = widget.NewLabel("")
@@ -59,7 +60,6 @@ func main() {
 					func() {
 						Cryptos := JT.CryptosType{}
 						JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-						JT.BP.InvalidatePanels()
 						UpdateDisplay()
 					},
 					// Refreshing rates from exchange callbck

@@ -16,6 +16,7 @@ type DoubleClickContainer struct {
 	lastClick   time.Time
 	visible     bool
 	doubleClick bool
+	disabled    bool
 }
 
 func NewDoubleClickContainer(
@@ -32,6 +33,7 @@ func NewDoubleClickContainer(
 		child:       child,
 		visible:     false,
 		doubleClick: doubleClick,
+		disabled:    false,
 	}
 	wrapper.ExtendBaseWidget(wrapper)
 	return wrapper
@@ -46,6 +48,10 @@ func (h *DoubleClickContainer) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *DoubleClickContainer) Tapped(_ *fyne.PointEvent) {
+
+	if h.disabled {
+		return
+	}
 
 	// Double Click mode
 	if h.doubleClick {
@@ -82,6 +88,14 @@ func (h *DoubleClickContainer) HideTarget() {
 	h.Refresh()
 }
 
-func (b *DoubleClickContainer) Cursor() desktop.Cursor {
+func (h *DoubleClickContainer) Cursor() desktop.Cursor {
 	return desktop.PointerCursor
+}
+
+func (h *DoubleClickContainer) DisableClick() {
+	h.disabled = true
+}
+
+func (h *DoubleClickContainer) EnableClick() {
+	h.disabled = false
 }

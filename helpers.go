@@ -19,26 +19,7 @@ func UpdateDisplay() {
 		// Always get linked data! do not use the copied
 		pkt := JT.BP.GetDataByIndex(i)
 		pk := pkt.Get()
-
-		if JT.BP.ValidatePanel(pk) {
-			if pkt.Update(pk) {
-				if pkt.Index == -1 {
-					npk := pkt.Get()
-					// This panel hasnt been generated yet, create the markup!
-					if JT.BP.ValidatePanel(npk) {
-						JC.Grid.Objects[i] = CreateNormalPanel(pkt)
-					} else {
-						JC.Grid.Objects[i] = CreateInvalidPanel(pk)
-					}
-				}
-			}
-		} else {
-			if pkt.Index == -1 {
-				JC.Grid.Objects[i] = CreateInvalidPanel(pk)
-			}
-		}
-
-		pkt.Index = i
+		pkt.Update(pk)
 	}
 
 	// log.Print("Display Refreshed")
@@ -92,10 +73,12 @@ func RemovePanelByIndex(di int) {
 }
 
 func SavePanelForm() {
+	fyne.Do(func() {
+		JC.Grid.Refresh()
+		UpdateDisplay()
+	})
+
 	if JT.SavePanels() {
-		fyne.Do(func() {
-			JC.Grid.Refresh()
-		})
 		if UpdateRates() {
 			fyne.Do(func() {
 				UpdateDisplay()
@@ -157,19 +140,7 @@ func OpenSettingForm() {
 	d.Resize(fyne.NewSize(400, 300))
 }
 
-func CreateInvalidPanel(pk string) fyne.CanvasObject {
-	return JP.NewInvalidPanel(
-		pk,
-		func(dpk string) {
-			OpenPanelEditForm(dpk)
-		},
-		func(di int) {
-			RemovePanelByIndex(di)
-		},
-	)
-}
-
-func CreateNormalPanel(pkt *JT.PanelDataType) fyne.CanvasObject {
+func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelNormal(
 		pkt,
 		func(dynpk string) {

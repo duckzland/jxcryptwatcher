@@ -30,16 +30,24 @@ func NewPanelForm(
 
 		pi := JT.BP.GetIndex(panelKey)
 		pkt := JT.BP.GetDataByIndex(pi)
+		pko := pkt.UsePanelKey()
+
 		title = "Editing Panel"
 
-		valueEntry.SetDefaultValue(strconv.FormatFloat(pkt.UsePanelKey().GetSourceValueFloat(), 'f',
-			JC.NumDecPlaces(pkt.UsePanelKey().GetSourceValueFloat()), 64))
+		valueEntry.SetDefaultValue(
+			strconv.FormatFloat(
+				pko.GetSourceValueFloat(),
+				'f',
+				JC.NumDecPlaces(pko.GetSourceValueFloat()),
+				64,
+			),
+		)
 
-		sourceEntry.SetDefaultValue(JT.BP.GetDisplayById(pkt.UsePanelKey().GetSourceCoinString()))
+		sourceEntry.SetDefaultValue(JT.BP.GetDisplayById(pko.GetSourceCoinString()))
 
-		targetEntry.SetDefaultValue(JT.BP.GetDisplayById(pkt.UsePanelKey().GetTargetCoinString()))
+		targetEntry.SetDefaultValue(JT.BP.GetDisplayById(pko.GetTargetCoinString()))
 
-		decimalsEntry.SetDefaultValue(pkt.UsePanelKey().GetDecimalsString())
+		decimalsEntry.SetDefaultValue(pko.GetDecimalsString())
 
 	} else {
 		decimalsEntry.SetText("6")
@@ -137,17 +145,8 @@ func NewPanelForm(
 				if pi != -1 {
 					ns := JT.BP.GetDataByIndex(pi)
 					if ns != nil {
-						opk := ns.OldKey
 						ns.Set(newKey)
 						ns.Update(newKey)
-						nnpk := ns.Get()
-
-						if JT.BP.ValidatePanel(opk) && !JT.BP.ValidatePanel(nnpk) {
-							ns.Index = -1
-						}
-						if !JT.BP.ValidatePanel(opk) && JT.BP.ValidatePanel(nnpk) {
-							ns.Index = -1
-						}
 					}
 				}
 			}
