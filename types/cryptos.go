@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,25 +17,24 @@ type CryptosType struct {
 }
 
 func (c *CryptosType) LoadFile() *CryptosType {
-
 	JC.PrintMemUsage("Start loading cryptos.json")
 
-	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
-	io.Copy(b, f)
-	f.Close()
-
-	err := json.Unmarshal(b.Bytes(), &c)
-
+	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to load cryptos.json: %w", err)
+		log.Println("Failed to open cryptos.json:", err)
+		return c
+	}
+	defer f.Close()
+
+	decoder := json.NewDecoder(f)
+	if err := decoder.Decode(c); err != nil {
+		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
 		log.Println(wrappedErr)
 	} else {
 		log.Println("Cryptos Loaded")
 	}
 
 	JC.PrintMemUsage("End loading cryptos.json")
-
 	return c
 }
 
@@ -77,31 +75,28 @@ func (c *CryptosType) ConvertToMap() CryptosMapType {
 
 func (c *CryptosType) FetchData() string {
 	JC.PrintMemUsage("Start fetching cryptos data")
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
-
 	if err != nil {
-		log.Println(err)
+		log.Println("Error creating request:", err)
 		return ""
 	}
 
 	resp, err := client.Do(req)
-
 	if err != nil {
-		log.Println(err)
+		log.Println("Error performing request:", err)
 		return ""
 	}
+	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
-
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to fetched cryptodata from CMC: %w", err)
-		log.Println(wrappedErr)
+		log.Println("Failed to read response body:", err)
 		return ""
-	} else {
-		log.Println("Fetched cryptodata from CMC")
 	}
 
+	log.Println("Fetched cryptodata from CMC")
 	JC.PrintMemUsage("End fetching cryptos data")
 
 	return string(respBody)

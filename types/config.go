@@ -20,18 +20,24 @@ type ConfigType struct {
 }
 
 func (c *ConfigType) LoadFile() *ConfigType {
-	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
-	io.Copy(b, f)
-	f.Close()
-
-	err := json.Unmarshal(b.Bytes(), c)
-
+	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
 	if err != nil {
+		log.Println("Failed to open config.json:", err)
+		return c
+	}
+	defer f.Close()
+
+	b := bytes.NewBuffer(nil)
+	if _, err := io.Copy(b, f); err != nil {
+		log.Println("Failed to copy file contents:", err)
+		return c
+	}
+
+	if err := json.Unmarshal(b.Bytes(), c); err != nil {
 		wrappedErr := fmt.Errorf("Failed to load config.json: %w", err)
 		log.Println(wrappedErr)
 	} else {
-		log.Print("Configuration Loaded")
+		log.Println("Configuration Loaded")
 	}
 
 	return c

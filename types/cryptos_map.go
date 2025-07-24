@@ -25,7 +25,6 @@ func (cm *CryptosMapType) GetOptions() []string {
 		return cm.maps
 	}
 
-	JC.CryptoOptions = []string{}
 	for _, tk := range cm.data {
 		cm.maps = append(cm.maps, tk)
 	}
@@ -97,4 +96,8 @@ func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
 func (cm *CryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data[strconv.FormatInt(id, 10)]
 	return ok
+}
+
+func (cm *CryptosMapType) ClearMapCache() {
+	cm.maps = []string{}
 }

@@ -1,10 +1,8 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
@@ -15,18 +13,18 @@ import (
 type PanelsType []PanelType
 
 func (p *PanelsType) LoadFile() *PanelsType {
-	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
-	io.Copy(b, f)
-	f.Close()
-
-	err := json.Unmarshal(b.Bytes(), p)
-
+	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to load panels.json: %w", err)
-		log.Println(wrappedErr)
+		log.Println("Failed to open panels.json:", err)
+		return p
+	}
+	defer f.Close()
+
+	decoder := json.NewDecoder(f)
+	if err := decoder.Decode(p); err != nil {
+		log.Println(fmt.Errorf("Failed to decode panels.json: %w", err))
 	} else {
-		log.Print("Panels Loaded")
+		log.Println("Panels Loaded")
 	}
 
 	return p

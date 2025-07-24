@@ -61,6 +61,7 @@ func main() {
 					func() {
 						Cryptos := JT.CryptosType{}
 						JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+						JT.BP.Maps.ClearMapCache()
 						UpdateDisplay()
 					},
 					// Refreshing rates from exchange callbck
