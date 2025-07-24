@@ -1,4 +1,4 @@
-package widgets
+package panels
 
 import (
 	"fyne.io/fyne/v2"
@@ -15,7 +15,7 @@ func NewEmptyPanel() fyne.CanvasObject {
 	content.TextStyle = fyne.TextStyle{Bold: true}
 	content.TextSize = JC.PanelTitleSize
 
-	return NewPanelItem(
+	return NewPanelContainer(
 		container.New(
 			layout.NewCustomPaddedVBoxLayout(6),
 			layout.NewSpacer(),

@@ -13,8 +13,10 @@ import (
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JL "jxwatcher/layouts"
+	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
@@ -37,7 +39,7 @@ func main() {
 
 	list := JT.BP.Get()
 	for range list {
-		JC.Grid.Add(JW.NewEmptyPanel())
+		JC.Grid.Add(JP.NewEmptyPanel())
 	}
 
 	JC.NotificationBox = widget.NewLabel("")
@@ -50,7 +52,7 @@ func main() {
 		container.NewPadded(
 			container.NewBorder(
 				// Top action bar
-				JW.NewTopBar(
+				JA.NewTopBar(
 					// Refreshing cryptos.json callback
 					func() {
 						Cryptos := JT.CryptosType{}

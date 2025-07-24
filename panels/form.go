@@ -1,4 +1,4 @@
-package widgets
+package panels
 
 import (
 	"fmt"
@@ -9,20 +9,21 @@ import (
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
 func NewPanelForm(
 	panelKey string,
 	onSave func(),
 	onNew func(pdt *JT.PanelDataType),
-) *ExtendedFormDialog {
+) *JW.ExtendedFormDialog {
 
 	cm := JT.BP.GetOptions()
 
-	valueEntry := NewNumericalEntry(true)
-	sourceEntry := NewCompletionEntry(cm)
-	targetEntry := NewCompletionEntry(cm)
-	decimalsEntry := NewNumericalEntry(false)
+	valueEntry := JW.NewNumericalEntry(true)
+	sourceEntry := JW.NewCompletionEntry(cm)
+	targetEntry := JW.NewCompletionEntry(cm)
+	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
 	if panelKey != "new" {
@@ -110,7 +111,7 @@ func NewPanelForm(
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	return NewExtendedFormDialog(title, formItems, func(b bool) {
+	return JW.NewExtendedFormDialog(title, formItems, func(b bool) {
 		if b {
 			var npk JT.PanelKeyType
 			newKey := npk.GenerateKey(
@@ -151,7 +152,7 @@ func NewPanelForm(
 				}
 			}
 
-			DoActionWithNotification("Saving Panel...", "Panel data saved...", JC.NotificationBox, func() {
+			JW.DoActionWithNotification("Saving Panel...", "Panel data saved...", JC.NotificationBox, func() {
 				if onSave != nil {
 					onSave()
 				}

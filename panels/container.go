@@ -1,4 +1,4 @@
-package widgets
+package panels
 
 import (
 	"image/color"
@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-func NewPanelItem(content fyne.CanvasObject) fyne.CanvasObject {
+func NewPanelContainer(content fyne.CanvasObject) fyne.CanvasObject {
 
 	background := canvas.NewRectangle(JC.PanelBG)
 	background.SetMinSize(fyne.NewSize(100, 100))

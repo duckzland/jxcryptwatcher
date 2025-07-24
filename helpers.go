@@ -1,13 +1,15 @@
 package main
 
 import (
-	JC "jxwatcher/core"
-	JT "jxwatcher/types"
-	JW "jxwatcher/widgets"
 	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
+
+	JA "jxwatcher/apps"
+	JC "jxwatcher/core"
+	JP "jxwatcher/panels"
+	JT "jxwatcher/types"
 )
 
 func UpdateDisplay() {
@@ -103,18 +105,18 @@ func SavePanelForm() {
 }
 
 func OpenNewPanelForm() {
-	d := JW.NewPanelForm(
+	d := JP.NewPanelForm(
 		"new",
 		func() {
 			SavePanelForm()
 		},
 		func(npdt *JT.PanelDataType) {
-			JC.Grid.Add(JW.NewPanel(
+			JC.Grid.Add(JP.NewPanelNormal(
 				npdt,
 
 				// Open the panel edit callback
 				func(dynpk string) {
-					JW.NewPanelForm(
+					JP.NewPanelForm(
 						dynpk,
 						// Save panel form callback
 						func() {
@@ -138,7 +140,7 @@ func OpenNewPanelForm() {
 }
 
 func OpenPanelEditForm(pk string) {
-	d := JW.NewPanelForm(pk, func() {
+	d := JP.NewPanelForm(pk, func() {
 		SavePanelForm()
 	}, nil)
 
@@ -147,7 +149,7 @@ func OpenPanelEditForm(pk string) {
 }
 
 func OpenSettingForm() {
-	d := JW.NewSettingsForm(func() {
+	d := JA.NewSettingsForm(func() {
 		JT.Config.SaveFile()
 	})
 
@@ -157,7 +159,7 @@ func OpenSettingForm() {
 }
 
 func CreateInvalidPanel(pk string) fyne.CanvasObject {
-	return JW.NewInvalidPanel(
+	return JP.NewInvalidPanel(
 		pk,
 		func(dpk string) {
 			OpenPanelEditForm(dpk)
@@ -169,7 +171,7 @@ func CreateInvalidPanel(pk string) fyne.CanvasObject {
 }
 
 func CreateNormalPanel(pkt *JT.PanelDataType) fyne.CanvasObject {
-	return JW.NewPanel(
+	return JP.NewPanelNormal(
 		pkt,
 		func(dynpk string) {
 			OpenPanelEditForm(dynpk)

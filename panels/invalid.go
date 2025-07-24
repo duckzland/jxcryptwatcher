@@ -1,4 +1,4 @@
-package widgets
+package panels
 
 import (
 	"fyne.io/fyne/v2"
@@ -8,6 +8,7 @@ import (
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
 func NewInvalidPanel(
@@ -35,9 +36,9 @@ func NewInvalidPanel(
 		},
 	)
 
-	return NewDoubleClickContainer(
+	return JW.NewDoubleClickContainer(
 		"InvalidPanel",
-		NewPanelItem(
+		NewPanelContainer(
 			container.NewStack(
 				container.NewVBox(
 					layout.NewSpacer(),

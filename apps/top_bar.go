@@ -1,4 +1,4 @@
-package widgets
+package apps
 
 import (
 	"fyne.io/fyne/v2"
@@ -9,6 +9,7 @@ import (
 
 	JC "jxwatcher/core"
 	JL "jxwatcher/layouts"
+	JW "jxwatcher/widgets"
 )
 
 func NewTopBar(
@@ -35,8 +36,8 @@ func NewTopBar(
 		layout.NewSpacer(),
 
 		// Refresh ticker data
-		NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			DoActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", JC.NotificationBox, func() {
+		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
+			JW.DoActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", JC.NotificationBox, func() {
 				if onCryptosRefresh != nil {
 					onCryptosRefresh()
 				}
@@ -46,8 +47,8 @@ func NewTopBar(
 		layout.NewSpacer(),
 
 		// Refresh exchange rates
-		NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			DoActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", JC.NotificationBox, func() {
+		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
+			JW.DoActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", JC.NotificationBox, func() {
 				if onRatesRefresh != nil {
 					onRatesRefresh()
 				}
@@ -57,7 +58,7 @@ func NewTopBar(
 		layout.NewSpacer(),
 
 		// Open settings
-		NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
+		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
 			if onSettingSave != nil {
 				onSettingSave()
 			}
@@ -66,7 +67,7 @@ func NewTopBar(
 		layout.NewSpacer(),
 
 		// Add new panel
-		NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
+		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
 			if onAddNewPanel != nil {
 				onAddNewPanel()
 			}

@@ -1,4 +1,4 @@
-package widgets
+package panels
 
 import (
 	"time"
@@ -11,9 +11,10 @@ import (
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
-func NewPanel(
+func NewPanelNormal(
 	pdt *JT.PanelDataType,
 	onEdit func(pk string),
 	onDelete func(index int),
@@ -56,7 +57,7 @@ func NewPanel(
 		subtitle.Text = pdt.FormatSubtitle()
 		content.Text = pdt.FormatContent()
 
-		StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
+		JW.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	action := NewPanelActionBar(
@@ -76,9 +77,9 @@ func NewPanel(
 		},
 	)
 
-	return NewDoubleClickContainer(
+	return JW.NewDoubleClickContainer(
 		"ValidPanel",
-		NewPanelItem(
+		NewPanelContainer(
 			container.NewStack(
 				background,
 				container.NewVBox(

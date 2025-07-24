@@ -1,4 +1,4 @@
-package widgets
+package apps
 
 import (
 	"fmt"
@@ -9,11 +9,12 @@ import (
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
-func NewSettingsForm(onSave func()) *ExtendedFormDialog {
+func NewSettingsForm(onSave func()) *JW.ExtendedFormDialog {
 
-	delayEntry := NewNumericalEntry(false)
+	delayEntry := JW.NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()
 	exchangeEndPointEntry := widget.NewEntry()
 
@@ -64,14 +65,14 @@ func NewSettingsForm(onSave func()) *ExtendedFormDialog {
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
-	return NewExtendedFormDialog("Settings", formItems, func(b bool) {
+	return JW.NewExtendedFormDialog("Settings", formItems, func(b bool) {
 		if b {
 			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 			JT.Config.DataEndpoint = dataEndPointEntry.Text
 			JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
 			JT.Config.Delay = delay
 
-			DoActionWithNotification("Saving configuration...", "Configuration data saved...", JC.NotificationBox, func() {
+			JW.DoActionWithNotification("Saving configuration...", "Configuration data saved...", JC.NotificationBox, func() {
 				if onSave != nil {
 					onSave()
 				}
