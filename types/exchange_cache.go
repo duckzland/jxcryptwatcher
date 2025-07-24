@@ -9,7 +9,6 @@ var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
 
 type ExchangeDataCacheType struct {
 	data sync.Map
-	wg   sync.WaitGroup
 }
 
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
@@ -24,31 +23,26 @@ func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
 func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCacheType {
 	ck := ec.CreateKeyFromExchangeData(ex)
 
-	ec.wg.Add(1)
-	go func() {
-		defer ec.wg.Done()
-		ec.data.Store(ck, *ex)
-	}()
+	ec.data.Store(ck, *ex)
 
 	return ec
 }
 
-func (ec *ExchangeDataCacheType) WaitForInserts() {
-	ec.wg.Wait()
-}
-
 func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
 	ec.data.Delete(ck)
+
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 	ec.data = sync.Map{}
+
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Has(ck string) bool {
 	_, ok := ec.data.Load(ck)
+
 	return ok
 }
 

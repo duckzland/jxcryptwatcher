@@ -20,6 +20,9 @@ func UpdateDisplay() {
 		pkt := JT.BP.GetDataByIndex(i)
 		pk := pkt.Get()
 		pkt.Update(pk)
+
+		// Give pause to prevent race condition
+		time.Sleep(1 * time.Millisecond)
 	}
 
 	// log.Print("Display Refreshed")
@@ -35,10 +38,12 @@ func UpdateRates() bool {
 	list := JT.BP.Get()
 
 	// Prune data first, remove duplicate calls
-	for _, pk := range list {
+	for i := range list {
+		pk := JT.BP.GetDataByIndex(i)
+		pkt := pk.UsePanelKey()
 		ck := JT.ExchangeCache.CreateKeyFromString(
-			pk.UsePanelKey().GetSourceCoinString(),
-			pk.UsePanelKey().GetTargetCoinString(),
+			pkt.GetSourceCoinString(),
+			pkt.GetTargetCoinString(),
 		)
 
 		_, exists := jb[ck]

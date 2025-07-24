@@ -11,7 +11,6 @@ import (
 type CryptosMapType struct {
 	data sync.Map
 	maps []string
-	wg   sync.WaitGroup
 }
 
 func (cm *CryptosMapType) Init() {
@@ -20,16 +19,7 @@ func (cm *CryptosMapType) Init() {
 }
 
 func (cm *CryptosMapType) Insert(id string, display string) {
-	cm.wg.Add(1)
-
-	go func() {
-		defer cm.wg.Done()
-		cm.data.Store(id, display)
-	}()
-}
-
-func (cm *CryptosMapType) WaitForInserts() {
-	cm.wg.Wait()
+	cm.data.Store(id, display)
 }
 
 func (cm *CryptosMapType) GetOptions() []string {
@@ -50,6 +40,7 @@ func (cm *CryptosMapType) GetOptions() []string {
 	cm.maps = options
 
 	JC.PrintMemUsage("End generating available crypto options")
+
 	return cm.maps
 }
 
@@ -109,6 +100,7 @@ func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
 
 func (cm *CryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data.Load(strconv.FormatInt(id, 10))
+
 	return ok
 }
 

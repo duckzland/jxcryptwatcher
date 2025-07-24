@@ -30,18 +30,28 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	return p
 }
 
-func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
+func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
+
+	// It is ok to just copy the object as we are going
+	// to write the data to file
+	maps.mu.Lock()
+	localData := make([]PanelDataType, len(maps.Data))
+	copy(localData, maps.Data)
+	maps.mu.Unlock()
 
 	np := []PanelType{}
-	list := maps.Get()
-	for _, pdt := range list {
+	for i := range maps.Data {
+		pdt := maps.GetDataByIndex(i)
 		pk := pdt.UsePanelKey()
-		np = append(np, PanelType{
+
+		panel := PanelType{
 			Source:   pk.GetSourceCoinInt(),
 			Target:   pk.GetTargetCoinInt(),
 			Value:    pk.GetSourceValueFloat(),
 			Decimals: pk.GetDecimalsInt(),
-		})
+		}
+
+		np = append(np, panel)
 	}
 
 	jsonData, err := json.MarshalIndent(np, "", "  ")
@@ -50,8 +60,11 @@ func (p *PanelsType) SaveFile(maps PanelsMapType) bool {
 		return false
 	}
 
-	// Save to file
-	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), jsonData, 0644)
+	err = os.WriteFile(
+		JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}),
+		jsonData,
+		0644,
+	)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -94,16 +107,18 @@ func PanelsInit() {
 	BP = PanelsMapType{}
 	BP.Init()
 
-	Cryptos := CryptosType{}
+	Cryptos := &CryptosType{}
+	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
 
-	BP.SetMaps(Cryptos.CheckFile().LoadFile().ConvertToMap())
+	BP.SetMaps(CM)
+
 	Panels := PanelsType{}
 	Panels.CheckFile().LoadFile().ConvertToMap(&BP)
 }
 
 func SavePanels() bool {
 	Panels := PanelsType{}
-	return Panels.SaveFile(BP)
+	return Panels.SaveFile(&BP)
 }
 
 func RemovePanel(i int) bool {

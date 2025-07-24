@@ -1,30 +1,51 @@
 package types
 
 import (
-	"fyne.io/fyne/v2/data/binding"
+	"sync"
 )
 
 var BP PanelsMapType
 
 type PanelsMapType struct {
+	mu   sync.Mutex
 	Data []PanelDataType
-	Maps CryptosMapType
+	Maps *CryptosMapType
 }
 
 func (pc *PanelsMapType) Init() {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	pc.Data = []PanelDataType{}
 }
 
 func (pc *PanelsMapType) Set(data []PanelDataType) {
-	pc.Data = data
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	pc.Data = make([]PanelDataType, len(data))
+
+	for i := range data {
+		pc.Data[i].Init()
+		pc.Data[i].Set(data[i].Get())
+		pc.Data[i].Parent = pc
+		pc.Data[i].Index = i
+	}
 }
 
-func (pc *PanelsMapType) SetMaps(maps CryptosMapType) {
+func (pc *PanelsMapType) SetMaps(maps *CryptosMapType) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	pc.Maps = maps
 }
 
 func (pc *PanelsMapType) Remove(index int) bool {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	values := pc.Data
+
 	if index < 0 || index >= len(values) {
 		return false
 	}
@@ -39,25 +60,27 @@ func (pc *PanelsMapType) RemoveByKey(pk string) bool {
 }
 
 func (pc *PanelsMapType) Append(pk string) *PanelDataType {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
 
 	if pc.Data == nil {
 		pc.Data = []PanelDataType{}
 	}
 
-	pn := PanelDataType{
-		Data: binding.NewString(),
-		// OldKey: pk,
-		Parent: pc,
-		Index:  -1,
-	}
+	pc.Data = append(pc.Data, PanelDataType{})
+	ref := &pc.Data[len(pc.Data)-1]
 
-	pn.Update(pk)
-	pc.Data = append(pc.Data, pn)
+	ref.Init()
+	ref.Update(pk)
+	ref.Parent = pc
+	ref.Index = len(pc.Data) - 1
 
-	return &pn
+	return ref
 }
 
 func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
 
 	if index < 0 || index >= len(pc.Data) {
 		return nil
@@ -71,13 +94,18 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 }
 
 func (pc *PanelsMapType) Get() []PanelDataType {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	return pc.Data
 }
 
 func (pc *PanelsMapType) GetIndex(pk string) int {
-	list := pc.Data
-	for i, pdt := range list {
-		if pdt.IsEqualContentString(pk) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for i := range pc.Data {
+		if pc.Data[i].IsEqualContentString(pk) {
 			return i
 		}
 	}
@@ -86,7 +114,9 @@ func (pc *PanelsMapType) GetIndex(pk string) int {
 }
 
 func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
-	// If index is out of bounds, return nil
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	if index < 0 || index >= len(pc.Data) {
 		return nil
 	}
@@ -96,11 +126,13 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {
 	pko := PanelKeyType{value: pk}
+
 	return &pko
 }
 
 func (pc *PanelsMapType) ValidateKey(pk string) bool {
 	pko := PanelKeyType{value: pk}
+
 	return pko.Validate()
 }
 
@@ -110,6 +142,7 @@ func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 	}
 
 	pko := PanelKeyType{value: pk}
+
 	sid := pko.GetSourceCoinInt()
 	tid := pko.GetTargetCoinInt()
 
@@ -129,9 +162,11 @@ func (pc *PanelsMapType) ValidateId(id int64) bool {
 }
 
 func (pc *PanelsMapType) InvalidatePanels() {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	for i := range pc.Data {
-		p := pc.GetDataByIndex(i)
-		p.Index = -1
+		pc.Data[i].Index = -1
 	}
 }
 

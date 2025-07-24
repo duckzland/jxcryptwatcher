@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-
-	"fyne.io/fyne/v2/data/binding"
+	"sync"
 
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2/data/binding"
 )
 
 type PanelDataType struct {
@@ -15,34 +16,56 @@ type PanelDataType struct {
 	OldKey string
 	Parent *PanelsMapType
 	Index  int
+	mu     sync.Mutex
 }
 
 func (p *PanelDataType) Init() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	p.Data = binding.NewString()
 }
 
 func (p *PanelDataType) Insert(panel PanelType, rate float32) {
-	p.OldKey = p.Get()
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.OldKey = p.GetWithoutLock()
 	p.Data.Set(fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate))
 }
 
 func (p *PanelDataType) Set(pk string) {
-	p.OldKey = p.Get()
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.OldKey = p.GetWithoutLock()
 	p.Data.Set(pk)
 }
 
 func (p *PanelDataType) Get() string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.GetWithoutLock()
+}
+
+func (p *PanelDataType) GetWithoutLock() string {
 	if p.Data == nil {
 		return ""
 	}
+
 	pk, err := p.Data.Get()
 	if err == nil {
 		return pk
 	}
+
 	return ""
 }
 
 func (p *PanelDataType) GetData() binding.String {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	return p.Data
 }
 
@@ -56,24 +79,21 @@ func (p *PanelDataType) GetOldValueString() string {
 }
 
 func (p *PanelDataType) UsePanelKey() *PanelKeyType {
-	pko := PanelKeyType{value: p.Get()}
+	pko := PanelKeyType{value: p.GetWithoutLock()}
 	return &pko
 }
 
 func (p *PanelDataType) Update(pk string) bool {
-
 	opk := p.Get()
 	p.OldKey = opk
 	npk := pk
+
 	ck := ExchangeCache.CreateKeyFromInt(p.UsePanelKey().GetSourceCoinInt(), p.UsePanelKey().GetTargetCoinInt())
 
 	if ExchangeCache.Has(ck) {
 		Data := ExchangeCache.Get(ck)
 		pko := PanelKeyType{value: npk}
 		npk = pko.UpdateValue(float32(Data.TargetAmount))
-
-		// Debug: Make the value always change
-		// npk = pko.UpdateValue(float32(Data.TargetAmount * (rand.Float64() * 5)))
 	}
 
 	if npk != opk {
@@ -91,36 +111,27 @@ func (p *PanelDataType) FormatTitle() string {
 
 	pk := p.UsePanelKey()
 
-	return fmt.Sprintf(
-		"%s %s to %s",
+	return fmt.Sprintf("%s %s to %s",
 		pk.GetSourceValueFormattedString(),
 		pk.GetSourceSymbolString(),
-		pk.GetTargetSymbolString(),
-	)
+		pk.GetTargetSymbolString())
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
-
 	pk := p.UsePanelKey()
 
-	return fmt.Sprintf(
-		"%s %s = %s %s",
-		"1",
+	return fmt.Sprintf("1 %s = %s %s",
 		pk.GetSourceSymbolString(),
 		pk.GetValueFormattedString(),
-		pk.GetTargetSymbolString(),
-	)
+		pk.GetTargetSymbolString())
 }
 
 func (p *PanelDataType) FormatContent() string {
-
 	pk := p.UsePanelKey()
 
-	return fmt.Sprintf(
-		"%s %s",
+	return fmt.Sprintf("%s %s",
 		pk.GetCalculatedValueFormattedString(),
-		pk.GetTargetSymbolString(),
-	)
+		pk.GetTargetSymbolString())
 }
 
 func (p *PanelDataType) DidChange() bool {
@@ -128,7 +139,6 @@ func (p *PanelDataType) DidChange() bool {
 }
 
 func (p *PanelDataType) IsValueIncrease() int {
-
 	b := p.GetValueString()
 	a := p.GetOldValueString()
 
