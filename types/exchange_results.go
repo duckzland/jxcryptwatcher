@@ -3,12 +3,13 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	JC "jxwatcher/core"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	JC "jxwatcher/core"
 )
 
 type ExchangeResults struct {

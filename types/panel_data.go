@@ -87,8 +87,9 @@ func (p *PanelDataType) Update(pk string) bool {
 	opk := p.Get()
 	p.OldKey = opk
 	npk := pk
+	pks := p.UsePanelKey()
 
-	ck := ExchangeCache.CreateKeyFromInt(p.UsePanelKey().GetSourceCoinInt(), p.UsePanelKey().GetTargetCoinInt())
+	ck := ExchangeCache.CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 
 	if ExchangeCache.Has(ck) {
 		Data := ExchangeCache.Get(ck)
