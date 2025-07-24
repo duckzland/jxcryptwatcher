@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 
-	"jxwatcher/core"
+	JC "jxwatcher/core"
 )
 
 type CryptosType struct {
@@ -19,10 +19,10 @@ type CryptosType struct {
 
 func (c *CryptosType) LoadFile() *CryptosType {
 
-	core.PrintMemUsage("Start loading cryptos.json")
+	JC.PrintMemUsage("Start loading cryptos.json")
 
 	b := bytes.NewBuffer(nil)
-	f, _ := os.Open(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	f, _ := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	io.Copy(b, f)
 	f.Close()
 
@@ -32,21 +32,21 @@ func (c *CryptosType) LoadFile() *CryptosType {
 		wrappedErr := fmt.Errorf("Failed to load cryptos.json: %w", err)
 		log.Println(wrappedErr)
 	} else {
-		log.Print("Cryptos Loaded")
+		log.Println("Cryptos Loaded")
 	}
 
-	core.PrintMemUsage("End loading cryptos.json")
+	JC.PrintMemUsage("End loading cryptos.json")
 
 	return c
 }
 
 func (c *CryptosType) CreateFile() *CryptosType {
-	core.CreateFile(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
+	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
 	return c
 }
 
 func (c *CryptosType) CheckFile() *CryptosType {
-	exists, err := core.FileExists(core.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
 	if !exists {
 		c.CreateFile()
 	}
@@ -59,7 +59,7 @@ func (c *CryptosType) CheckFile() *CryptosType {
 }
 
 func (c *CryptosType) ConvertToMap() CryptosMapType {
-	core.PrintMemUsage("Start populating cryptos")
+	JC.PrintMemUsage("Start populating cryptos")
 	CM := CryptosMapType{}
 	CM.Init()
 
@@ -70,13 +70,13 @@ func (c *CryptosType) ConvertToMap() CryptosMapType {
 			CM.data[strconv.FormatInt(crypto.Id, 10)] = crypto.CreateKey()
 		}
 	}
-	core.PrintMemUsage("End populating cryptos")
+	JC.PrintMemUsage("End populating cryptos")
 
 	return CM
 }
 
 func (c *CryptosType) FetchData() string {
-
+	JC.PrintMemUsage("Start fetching cryptos data")
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
 
@@ -99,8 +99,10 @@ func (c *CryptosType) FetchData() string {
 		log.Println(wrappedErr)
 		return ""
 	} else {
-		log.Print("Fetched cryptodata from CMC")
+		log.Println("Fetched cryptodata from CMC")
 	}
+
+	JC.PrintMemUsage("End fetching cryptos data")
 
 	return string(respBody)
 }

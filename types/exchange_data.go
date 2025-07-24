@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	JC "jxwatcher/core"
 	"log"
 	"net/http"
 	"net/url"
@@ -53,6 +54,8 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 		return nil
 	}
 
+	JC.PrintMemUsage("Start fetching exchange rates")
+
 	sid := BP.UsePanelKey(pk).GetSourceCoinInt()
 	tid := BP.UsePanelKey(pk).GetTargetCoinInt()
 
@@ -60,6 +63,7 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	ck := ExchangeCache.CreateKeyFromInt(sid, tid)
 	if ExchangeCache.Has(ck) {
 		log.Println("Using cached data for:", ck)
+		JC.PrintMemUsage("End generating available crypto options")
 		return ExchangeCache.Get(ck)
 	}
 
@@ -72,15 +76,14 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	}
 
 	q := url.Values{}
-	q.Add("amount", "1") // always get 1 exchange value then we can multiply later.
-	// q.Add("amount", strconv.FormatFloat(Panel.Value, 'f', 4, 64))
+	q.Add("amount", "1")
 	q.Add("id", strconv.FormatInt(sid, 10))
 	q.Add("convert_id", strconv.FormatInt(tid, 10))
 
 	req.URL.RawQuery = q.Encode()
 
 	// Debug
-	// fmt.Println(req.URL.RawQuery)
+	log.Printf("Fetching data from %v", req.URL.RawQuery)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -92,12 +95,6 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 	}
 
 	respBody, _ := io.ReadAll(resp.Body)
-
-	// @todo better error reporting, check the response http status
-	// and CMC error status as well
-	// fmt.Println(resp.Status)
-	// fmt.Println(string(respBody))
-
 	err = json.Unmarshal([]byte(string(respBody)), ex)
 
 	if err != nil {
@@ -111,6 +108,6 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 
 	// Cache the result
 	ExchangeCache.Insert(ex)
-
+	JC.PrintMemUsage("End generating available crypto options")
 	return ex
 }

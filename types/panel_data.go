@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"fyne.io/fyne/v2/data/binding"
@@ -139,17 +140,17 @@ func (p *PanelDataType) IsValueIncrease() int {
 	numB, errB := strconv.ParseFloat(b, 32)
 
 	if errA != nil || errB != nil {
-		// fmt.Printf("Error Formatting")
+		log.Printf("Error Formatting")
 		return 0
 	}
 
 	if numA > numB {
-		// fmt.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		log.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
 		return -1
 	}
 
 	if numA < numB {
-		// fmt.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		log.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
 		return 1
 	}
 

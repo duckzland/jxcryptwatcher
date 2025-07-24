@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-// Declare conformity with Layout interface
 var _ fyne.Layout = (*dynamicGridWrapLayout)(nil)
 
 type dynamicGridWrapLayout struct {
@@ -17,14 +16,10 @@ type dynamicGridWrapLayout struct {
 	rowCount    int
 }
 
-// NewdynamicGridWrapLayout returns a new dynamicGridWrapLayout instance
 func NewDynamicGridWrapLayout(size fyne.Size) fyne.Layout {
 	return &dynamicGridWrapLayout{size, size, 1, 1}
 }
 
-// Layout is called to pack all child objects into a specified size.
-// For a dynamicGridWrapLayout this will attempt to lay all the child objects in a row
-// and wrap to a new row if the size is not large enough.
 func (g *dynamicGridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	padding := theme.Padding()
 	g.colCount = 1
@@ -66,10 +61,6 @@ func (g *dynamicGridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Si
 	}
 }
 
-// MinSize finds the smallest size that satisfies all the child objects.
-// For a dynamicGridWrapLayout this is simply the specified MinCellSize as a single column
-// layout has no padding. The returned size does not take into account the number
-// of columns as this layout re-flows dynamically.
 func (g *dynamicGridWrapLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	rows := g.rowCount
 	if rows < 1 {

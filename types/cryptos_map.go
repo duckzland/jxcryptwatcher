@@ -1,9 +1,10 @@
 package types
 
 import (
-	"jxwatcher/core"
 	"strconv"
 	"strings"
+
+	JC "jxwatcher/core"
 )
 
 type CryptosMapType struct {
@@ -15,11 +16,16 @@ func (cm *CryptosMapType) Init() {
 }
 
 func (cm *CryptosMapType) GetOptions() []string {
+
+	JC.PrintMemUsage("Start generating available crypto options")
+
 	m := []string{}
 
 	for _, tk := range cm.data {
 		m = append(m, tk)
 	}
+
+	JC.PrintMemUsage("End generating available crypto options")
 
 	return m
 }
@@ -34,12 +40,12 @@ func (cm *CryptosMapType) GetDisplayById(id string) string {
 }
 
 func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
-	if core.IsNumeric(tk) {
+	if JC.IsNumeric(tk) {
 		return tk
 	}
 
 	ntk := strings.Split(tk, "|")
-	if len(ntk) > 0 && core.IsNumeric(ntk[0]) {
+	if len(ntk) > 0 && JC.IsNumeric(ntk[0]) {
 		_, ok := cm.data[ntk[0]]
 		if ok {
 			return ntk[0]

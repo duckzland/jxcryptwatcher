@@ -123,19 +123,13 @@ func ExtractLeadingNumber(s string) int {
 	re := regexp.MustCompile(`^\d+`)
 	match := re.FindString(s)
 	if match == "" {
-		return -1 // or any fallback value
+		return -1
 	}
 	num, _ := strconv.Atoi(match)
 	return num
 }
 
 func ReorderByMatch(arr []string, searchKey string) []string {
-	// sort.SliceStable(arr, func(i, j int) bool {
-	// 	iMatch := strings.Contains(strings.ToLower(arr[i]), strings.ToLower(searchKey))
-	// 	jMatch := strings.Contains(strings.ToLower(arr[j]), strings.ToLower(searchKey))
-	// 	return iMatch && !jMatch
-	// })
-
 	sort.SliceStable(arr, func(i, j int) bool {
 		return ExtractLeadingNumber(arr[i]) < ExtractLeadingNumber(arr[j])
 	})

@@ -68,7 +68,6 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 	c.Text = s
 }
 
-// HideCompletion hides the completion menu.
 func (c *CompletionEntry) HideCompletion() {
 	if c.popupMenu != nil {
 		c.popupMenu.Hide()
@@ -158,13 +157,11 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	return fyne.NewSize(entrySize.Width, listHeight)
 }
 
-// calculate where the popup should appear
 func (c *CompletionEntry) popUpPos() fyne.Position {
 	entryPos := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
 	return entryPos.Add(fyne.NewPos(0, c.Size().Height))
 }
 
-// Prevent the menu to open when the user validate value from the menu.
 func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.pause = true
 	c.Entry.SetText(s)
