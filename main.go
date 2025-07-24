@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -71,7 +70,6 @@ func main() {
 					},
 					// Saving configuration form callback
 					func() {
-						log.Printf("Triggered")
 						OpenSettingForm()
 					},
 					// Open the new panel creation form callback
