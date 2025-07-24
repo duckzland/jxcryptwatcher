@@ -94,7 +94,7 @@ func OpenNewPanelForm() {
 			SavePanelForm()
 		},
 		func(npdt *JT.PanelDataType) {
-			JC.Grid.Add(JP.NewPanelNormal(
+			JC.Grid.Add(JP.NewPanelDisplay(
 				npdt,
 
 				// Open the panel edit callback
@@ -141,7 +141,7 @@ func OpenSettingForm() {
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
-	return JP.NewPanelNormal(
+	return JP.NewPanelDisplay(
 		pkt,
 		func(dynpk string) {
 			OpenPanelEditForm(dynpk)
