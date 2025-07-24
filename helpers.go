@@ -29,10 +29,6 @@ func UpdateDisplay() {
 }
 
 func UpdateRates() bool {
-
-	// Clear cached rates
-	JT.ExchangeCache.Reset()
-
 	ex := JT.ExchangeResults{}
 	jb := make(map[string]string)
 	list := JT.BP.Get()
@@ -64,6 +60,15 @@ func UpdateRates() bool {
 	log.Printf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
 	return true
+}
+
+func RefreshRates() {
+	// Clear cached rates
+	JT.ExchangeCache.Reset()
+
+	if UpdateRates() {
+		fyne.Do(UpdateDisplay)
+	}
 }
 
 func RemovePanelByIndex(di int) {
@@ -132,10 +137,4 @@ func ResetCryptosMap() {
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 	UpdateDisplay()
-}
-
-func RefreshRates() {
-	if UpdateRates() {
-		fyne.Do(UpdateDisplay)
-	}
 }
