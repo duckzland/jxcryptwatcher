@@ -103,12 +103,6 @@ func (ex *ExchangeDataType) GetRate(pk string) *ExchangeDataType {
 		return nil
 	}
 
-	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to examine exchange data: %w", err)
-		log.Println(wrappedErr)
-		return nil
-	}
-
 	// Debug to force display refresh!
 	// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
