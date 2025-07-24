@@ -12,7 +12,7 @@ import (
 )
 
 type ExchangeResults struct {
-	Rates []ExchangeDataType `json:"data"`
+	Rates []ExchangeDataType
 }
 
 func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
