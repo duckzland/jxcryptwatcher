@@ -58,25 +58,13 @@ func main() {
 				// Top action bar
 				JA.NewTopBar(
 					// Refreshing cryptos.json callback
-					func() {
-						Cryptos := JT.CryptosType{}
-						JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-						JT.BP.Maps.ClearMapCache()
-						UpdateDisplay()
-					},
+					ResetCryptosMap,
 					// Refreshing rates from exchange callbck
-					func() {
-						UpdateRates()
-						UpdateDisplay()
-					},
+					RefreshRates,
 					// Saving configuration form callback
-					func() {
-						OpenSettingForm()
-					},
+					OpenSettingForm,
 					// Open the new panel creation form callback
-					func() {
-						OpenNewPanelForm()
-					},
+					OpenNewPanelForm,
 				),
 				nil, nil, nil,
 				// The panel grid
@@ -90,9 +78,7 @@ func main() {
 	// Worker to attempt to refresh the ui for every 3 seconds
 	go func() {
 		for {
-			fyne.Do(func() {
-				UpdateDisplay()
-			})
+			fyne.Do(UpdateDisplay)
 			time.Sleep(3 * time.Second)
 		}
 	}()
@@ -100,13 +86,12 @@ func main() {
 	// Worker to update the exchange rates data
 	go func() {
 		for {
-			JW.DoActionWithNotification("Fetching exchange rate...", "Fetching rates from exchange...", JC.NotificationBox, func() {
-				if UpdateRates() {
-					fyne.Do(func() {
-						UpdateDisplay()
-					})
-				}
-			})
+			JW.DoActionWithNotification(
+				"Fetching exchange rate...",
+				"Fetching rates from exchange...",
+				JC.NotificationBox,
+				RefreshRates,
+			)
 
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}

@@ -99,25 +99,7 @@ func OpenNewPanelForm() {
 		"new",
 		SavePanelForm,
 		func(npdt *JT.PanelDataType) {
-			JC.Grid.Add(JP.NewPanelDisplay(
-				npdt,
-
-				// Open the panel edit callback
-				func(dynpk string) {
-					JP.NewPanelForm(
-						dynpk,
-						// Save panel form callback
-						SavePanelForm,
-						// No new panel callback
-						nil,
-					)
-				},
-
-				// Delete Callback
-				func(dynpi int) {
-					RemovePanelByIndex(dynpi)
-				},
-			))
+			JC.Grid.Add(CreatePanel(npdt))
 		},
 	)
 
@@ -126,9 +108,7 @@ func OpenNewPanelForm() {
 }
 
 func OpenPanelEditForm(pk string) {
-	d := JP.NewPanelForm(pk, func() {
-		SavePanelForm()
-	}, nil)
+	d := JP.NewPanelForm(pk, SavePanelForm, nil)
 
 	d.Show()
 	d.Resize(fyne.NewSize(400, 300))
@@ -144,13 +124,18 @@ func OpenSettingForm() {
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
-	return JP.NewPanelDisplay(
-		pkt,
-		func(dynpk string) {
-			OpenPanelEditForm(dynpk)
-		},
-		func(dynpi int) {
-			RemovePanelByIndex(dynpi)
-		},
-	)
+	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanelByIndex)
+}
+
+func ResetCryptosMap() {
+	Cryptos := JT.CryptosType{}
+	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+	JT.BP.Maps.ClearMapCache()
+	UpdateDisplay()
+}
+
+func RefreshRates() {
+	if UpdateRates() {
+		fyne.Do(UpdateDisplay)
+	}
 }
