@@ -58,7 +58,7 @@ func NewPanelDisplay(
 	)
 
 	panel := JW.NewDoubleClickContainer(
-		"ValidPanel",
+		"PanelObject",
 		NewPanelContainer(
 			container.NewStack(
 				background,
