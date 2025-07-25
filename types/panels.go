@@ -34,10 +34,10 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 
 	// It is ok to just copy the object as we are going
 	// to write the data to file
-	maps.mu.Lock()
+	maps.mu.RLock()
 	data := make([]PanelDataType, len(maps.Data))
 	copy(data, maps.Data)
-	maps.mu.Unlock()
+	maps.mu.RUnlock()
 
 	np := []PanelType{}
 	for i := range data {
