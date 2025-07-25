@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
-	"jxwatcher/widgets"
+	JW "jxwatcher/widgets"
 )
 
 func UpdateDisplay() {
@@ -140,7 +140,7 @@ func ResetCryptosMap() {
 	UpdateDisplay()
 }
 
-func startWorkers() {
+func StartWorkers() {
 	go func() {
 		for range JC.UpdateDisplayChan {
 			fyne.Do(UpdateDisplay)
@@ -148,12 +148,30 @@ func startWorkers() {
 	}()
 	go func() {
 		for range JC.UpdateRatesChan {
-			widgets.DoActionWithNotification(
+			JW.DoActionWithNotification(
 				"Fetching exchange rate...",
 				"Fetching rates from exchange...",
 				JC.NotificationBox,
 				RefreshRates,
 			)
+		}
+	}()
+}
+
+func StartUpdateDisplayWorker() {
+	go func() {
+		for {
+			JC.UpdateDisplayChan <- struct{}{}
+			time.Sleep(3 * time.Second)
+		}
+	}()
+}
+
+func StartUpdateRatesWorker() {
+	go func() {
+		for {
+			JC.UpdateRatesChan <- struct{}{}
+			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
 }
