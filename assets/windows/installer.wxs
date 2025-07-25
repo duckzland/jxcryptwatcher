@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="JXWatcher" Language="1033" Version="1.0.1"
+           Manufacturer="duckzland" UpgradeCode="46b498ff-278b-4ab5-baaf-396091c29966">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="JXWatcher">
+          <Component Id="MainBinary" Guid="93faf1f6-e880-490e-9bb4-9aa4b6e36ccd">
+            <File Id="AppBinary"
+                  Source="jxwatcher.exe"
+                  Name="jxwatcher.exe"
+                  KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="DefaultFeature" Level="1">
+      <ComponentRef Id="MainBinary" />
+    </Feature>
+  </Product>
+</Wix>

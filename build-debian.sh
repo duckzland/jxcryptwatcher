@@ -1,29 +1,57 @@
 #!/bin/bash
 
-##
-## This is the minimal build script that will generate debian package at /build folder
-##
-## requires the following dependencies:
-## - dpkg-deb
-##
-## sudo apt install dpkg-dev
-## 
+## ================================================================
+## JXWatcher Debian Package Build Script Overview
+## ================================================================
 
+## Description:
+## This script builds a Debian (.deb) package and places the output
+## in the /build directory.
 
-echo "Generating Debian Package"
+## Dependencies:
+## - dpkg-deb             : Used to build the Debian package
+## - Go                   : Must be installed and available in PATH
+## - Assets directory     : Required; must be present
+## - version.txt file     : Required; must contain version info
 
-mkdir -p build/jxwatcher_1.0.0/DEBIAN
-mkdir -p build/jxwatcher_1.0.0/usr/bin
-mkdir -p build/jxwatcher_1.0.0/usr/share/applications
-mkdir -p build/jxwatcher_1.0.0/usr/share/icons/hicolor/scalable/apps
-mkdir -p build/jxwatcher_1.0.0/usr/share/icons/hicolor/32x32/apps
+set -euo pipefail
 
-go build -tags production -ldflags "-w -s" -gcflags="-l" -o build/jxwatcher_1.0.0/usr/bin/jxwatcher .
+echo "Generating Debian Package..."
+
+# Extract version
+if [[ ! -f version.txt ]]; then
+    echo "version.txt not found."
+    exit 1
+fi
+
+version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
+if [[ -z "$version" ]]; then
+    echo "Version not found in version.txt"
+    exit 1
+fi
+
+# Define paths
+pkg_dir="build/jxwatcher-${version}"
+bin_path="${pkg_dir}/usr/bin"
+icons_path="${pkg_dir}/usr/share/icons/hicolor"
+desktop_path="${pkg_dir}/usr/share/applications"
+deb_output="build/jxwatcher_${version}_amd64.deb"
+
+# Create necessary directories
+mkdir -p "${pkg_dir}/DEBIAN" \
+         "${bin_path}" \
+         "${desktop_path}" \
+         "${icons_path}/scalable/apps" \
+         "${icons_path}/32x32/apps"
+
+# Build the Go binary
+echo "Building Go binary..."
+go build -tags production -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
 
 # Create control file
-cat <<EOF > build/jxwatcher_1.0.0/DEBIAN/control
-Package: JXWatcher
-Version: 1.0.0
+cat > "${pkg_dir}/DEBIAN/control" <<EOF
+Package: jxwatcher
+Version: ${version}
 Section: base
 Priority: optional
 Architecture: amd64
@@ -31,8 +59,8 @@ Maintainer: JXWatcher <nobody@example.com>
 Description: JXWatcher is a cryptocurrency watcher application that provides real-time updates and monitoring of various cryptocurrencies.
 EOF
 
-# Create Desktop file
-cat <<EOF > build/jxwatcher_1.0.0/usr/share/applications/jxwatcher.desktop
+# Create desktop entry
+cat > "${desktop_path}/jxwatcher.desktop" <<EOF
 [Desktop Entry]
 Name=JXWatcher
 Exec=/usr/bin/jxwatcher
@@ -42,20 +70,17 @@ Categories=Utility;
 Terminal=false
 EOF
 
-# Copy the assets
-cp assets/scalable/jxwatcher.svg build/jxwatcher_1.0.0/usr/share/icons/hicolor/scalable/apps/
-cp assets/32x32/jxwatcher.png build/jxwatcher_1.0.0/usr/share/icons/hicolor/32x32/apps/
+# Copy assets
+echo "Copying assets..."
+cp assets/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
+cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 
+# Build the Debian package
+echo "Building Debian package..."
+dpkg-deb --build "${pkg_dir}" "${deb_output}"
 
-# Build the package
-dpkg-deb --build build/jxwatcher_1.0.0 build/jxwatcher_1.0.0.deb
+echo "Package created successfully: ${deb_output}"
 
-if [ $? -eq 0 ]; then
-    echo "Debian package created successfully: build/jxwatcher_1.0.0.deb"
-else
-    echo "Failed to create Debian package."
-fi
-
-# Clean up the build directory
-rm -rf build/jxwatcher_1.0.0/
-
+# Clean up
+echo "Cleaning up..."
+rm -rf "${pkg_dir}"
