@@ -75,19 +75,19 @@ func NewPanelForm(
 	sourceEntry.Validator = func(s string) error {
 
 		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
+			return fmt.Errorf("Please select a cryptocurrency.")
 		}
 
 		tid := JT.BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
 		if err != nil || !JT.BP.ValidateId(id) {
-			return fmt.Errorf("Invalid crypto selected")
+			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
 		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err == nil && JT.BP.ValidateId(bid) && bid == id {
-			return fmt.Errorf("Cannot have the same coin for both source and target")
+			return fmt.Errorf("Source and target cryptocurrencies must be different.")
 		}
 
 		return nil
@@ -96,19 +96,19 @@ func NewPanelForm(
 	targetEntry.Validator = func(s string) error {
 
 		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
+			return fmt.Errorf("Please select a cryptocurrency.")
 		}
 
 		tid := JT.BP.GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
 		if err != nil || !JT.BP.ValidateId(id) {
-			return fmt.Errorf("Invalid crypto selected")
+			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
 		xid := JT.BP.GetIdByDisplay(sourceEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err == nil && JT.BP.ValidateId(bid) && bid == id {
-			return fmt.Errorf("Cannot have the same coin for both source and target")
+			return fmt.Errorf("Source and target cryptocurrencies must be different.")
 		}
 
 		return nil
@@ -153,22 +153,27 @@ func NewPanelForm(
 
 			if panelKey == "new" {
 				ns := JT.BP.Append(newKey)
-				if ns != nil {
-					if onNew != nil {
-						onNew(ns)
-					}
-					// ns.Index = len(JC.Grid.Objects)
-					ns.Index = -1
+				if ns == nil {
+					JW.DoActionWithNotification("Error", "Failed to add new panel.", JC.NotificationBox, nil)
+					return
 				}
+				if onNew != nil {
+					onNew(ns)
+				}
+				ns.Index = -1
 			} else {
 				pi := JT.BP.GetIndex(panelKey)
-				if pi != -1 {
-					ns := JT.BP.GetDataByIndex(pi)
-					if ns != nil {
-						ns.Set(newKey)
-						ns.Update(newKey)
-					}
+				if pi == -1 {
+					JW.DoActionWithNotification("Error", "Panel not found for update.", JC.NotificationBox, nil)
+					return
 				}
+				ns := JT.BP.GetDataByIndex(pi)
+				if ns == nil {
+					JW.DoActionWithNotification("Error", "Failed to update panel.", JC.NotificationBox, nil)
+					return
+				}
+				ns.Set(newKey)
+				ns.Update(newKey)
 			}
 
 			JW.DoActionWithNotification("Saving Panel...", "Panel data saved...", JC.NotificationBox, func() {
