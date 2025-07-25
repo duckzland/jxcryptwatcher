@@ -10,6 +10,7 @@ import (
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
+	"jxwatcher/widgets"
 )
 
 func UpdateDisplay() {
@@ -137,4 +138,22 @@ func ResetCryptosMap() {
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 	UpdateDisplay()
+}
+
+func startWorkers() {
+	go func() {
+		for range JC.UpdateDisplayChan {
+			fyne.Do(UpdateDisplay)
+		}
+	}()
+	go func() {
+		for range JC.UpdateRatesChan {
+			widgets.DoActionWithNotification(
+				"Fetching exchange rate...",
+				"Fetching rates from exchange...",
+				JC.NotificationBox,
+				RefreshRates,
+			)
+		}
+	}()
 }
