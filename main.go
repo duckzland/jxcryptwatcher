@@ -1,95 +1,49 @@
 package main
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	fynetooltip "github.com/dweymouth/fyne-tooltip"
-
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
-	JL "jxwatcher/layouts"
+	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
 )
 
 func main() {
-
 	JC.InitLogger()
-
 	JT.ExchangeCache.Reset()
-
 	JT.ConfigInit()
 
 	a := app.New()
 	a.Settings().SetTheme(theme.DarkTheme())
 
-	// Don't invoke this before app.New(), binding.UntypedList will crash
 	JT.PanelsInit()
-
 	JC.Window = a.NewWindow("JXCrypto Watcher")
 
-	JC.Grid = container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
-
-	JC.PrintMemUsage("Start building panels")
-	list := JT.BP.Get()
-	for i := range list {
-		pkt := JT.BP.GetDataByIndex(i)
-		pkt.Index = i
-		JC.Grid.Add(CreatePanel(pkt))
-	}
-	JC.PrintMemUsage("End building panels")
+	JC.Grid = JP.NewPanelGrid(CreatePanel)
 
 	JC.NotificationBox = widget.NewLabel("")
-
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(fyne.NewSize(920, 600))
 
-	JC.Window.SetContent(fynetooltip.AddWindowToolTipLayer(container.NewStack(
-		bg,
-		container.NewPadded(
-			container.NewBorder(
-				// Top action bar
-				JA.NewTopBar(
-					// Refreshing cryptos.json callback
-					ResetCryptosMap,
-					// Refreshing rates from exchange callbck
-					RefreshRates,
-					// Saving configuration form callback
-					OpenSettingForm,
-					// Open the new panel creation form callback
-					OpenNewPanelForm,
-				),
-				nil, nil, nil,
-				// The panel grid
-				container.NewVScroll(JC.Grid),
-			),
-		),
-	), JC.Window.Canvas()))
+	topBar := JA.NewTopBar(
+		ResetCryptosMap,
+		RefreshRates,
+		OpenSettingForm,
+		OpenNewPanelForm,
+	)
+
+	JC.Window.SetContent(JA.NewAppLayout(bg, &topBar, JC.Grid))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
-	startWorkers()
-
-	go func() {
-		for {
-			JC.UpdateDisplayChan <- struct{}{}
-			time.Sleep(3 * time.Second)
-		}
-	}()
-
-	go func() {
-		for {
-			JC.UpdateRatesChan <- struct{}{}
-			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
-		}
-	}()
+	StartWorkers()
+	StartUpdateDisplayWorker()
+	StartUpdateRatesWorker()
 
 	JC.Window.ShowAndRun()
-
 }
