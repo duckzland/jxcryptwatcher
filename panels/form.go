@@ -86,14 +86,33 @@ func NewPanelForm(
 
 		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err != nil && JT.BP.ValidateId(bid) && bid == id {
+		if err == nil && JT.BP.ValidateId(bid) && bid == id {
 			return fmt.Errorf("Cannot have the same coin for both source and target")
 		}
 
 		return nil
 	}
 
-	targetEntry.Validator = sourceEntry.Validator
+	targetEntry.Validator = func(s string) error {
+
+		if len(s) == 0 {
+			return fmt.Errorf("This field cannot be empty")
+		}
+
+		tid := JT.BP.GetIdByDisplay(s)
+		id, err := strconv.ParseInt(tid, 10, 64)
+		if err != nil || !JT.BP.ValidateId(id) {
+			return fmt.Errorf("Invalid crypto selected")
+		}
+
+		xid := JT.BP.GetIdByDisplay(sourceEntry.Text)
+		bid, err := strconv.ParseInt(xid, 10, 64)
+		if err == nil && JT.BP.ValidateId(bid) && bid == id {
+			return fmt.Errorf("Cannot have the same coin for both source and target")
+		}
+
+		return nil
+	}
 
 	decimalsEntry.Validator = func(s string) error {
 		if len(s) == 0 {
