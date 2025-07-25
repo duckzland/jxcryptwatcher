@@ -18,7 +18,7 @@ type ExchangeResults struct {
 
 func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 
-	var v map[string]interface{}
+	var v map[string]any
 	err := json.Unmarshal(data, &v)
 	if err != nil {
 		return err
@@ -29,20 +29,20 @@ func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 	}
 
 	sc := v["data"]
-	tc := v["data"].(map[string]interface{})["quote"].([]interface{})
+	tc := v["data"].(map[string]any)["quote"].([]any)
 
 	for _, rate := range tc {
 
 		ex := ExchangeDataType{}
 
 		// CMC Json data is weird the the id is in string while cryptoId is in int64 (but golang cast this as float64)
-		ex.SourceSymbol = sc.(map[string]interface{})["symbol"].(string)
-		ex.SourceId, _ = strconv.ParseInt(sc.(map[string]interface{})["id"].(string), 10, 64)
-		ex.SourceAmount = sc.(map[string]interface{})["amount"].(float64)
+		ex.SourceSymbol = sc.(map[string]any)["symbol"].(string)
+		ex.SourceId, _ = strconv.ParseInt(sc.(map[string]any)["id"].(string), 10, 64)
+		ex.SourceAmount = sc.(map[string]any)["amount"].(float64)
 
-		ex.TargetSymbol = rate.(map[string]interface{})["symbol"].(string)
-		ex.TargetId = int64(rate.(map[string]interface{})["cryptoId"].(float64))
-		ex.TargetAmount = rate.(map[string]interface{})["price"].(float64)
+		ex.TargetSymbol = rate.(map[string]any)["symbol"].(string)
+		ex.TargetId = int64(rate.(map[string]any)["cryptoId"].(float64))
+		ex.TargetAmount = rate.(map[string]any)["price"].(float64)
 
 		er.Rates = append(er.Rates, ex)
 	}
