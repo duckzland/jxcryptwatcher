@@ -24,3 +24,6 @@ var PanelSubTitleSize float32 = 16
 var PanelContentSize float32 = 30
 
 const Epsilon = 1e-9
+
+var UpdateDisplayChan = make(chan struct{})
+var UpdateRatesChan = make(chan struct{})
