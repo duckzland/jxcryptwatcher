@@ -7,15 +7,12 @@ import (
 var BP PanelsMapType
 
 type PanelsMapType struct {
-	mu   sync.Mutex
+	mu   sync.RWMutex
 	Data []PanelDataType
 	Maps *CryptosMapType
 }
 
 func (pc *PanelsMapType) Init() {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
-
 	pc.Data = []PanelDataType{}
 }
 
@@ -94,18 +91,17 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 }
 
 func (pc *PanelsMapType) Get() []PanelDataType {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
 
-	// Return a copy of the slice to avoid concurrency issues
 	dataCopy := make([]PanelDataType, len(pc.Data))
 	copy(dataCopy, pc.Data)
 	return dataCopy
 }
 
 func (pc *PanelsMapType) GetIndex(pk string) int {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
 
 	for i := range pc.Data {
 		if pc.Data[i].IsEqualContentString(pk) {
@@ -117,8 +113,8 @@ func (pc *PanelsMapType) GetIndex(pk string) int {
 }
 
 func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
 
 	if index < 0 || index >= len(pc.Data) {
 		return nil
@@ -162,15 +158,6 @@ func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 
 func (pc *PanelsMapType) ValidateId(id int64) bool {
 	return pc.Maps.ValidateId(id)
-}
-
-func (pc *PanelsMapType) InvalidatePanels() {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
-
-	for i := range pc.Data {
-		pc.Data[i].Index = -1
-	}
 }
 
 func (pc *PanelsMapType) GetOptions() []string {
