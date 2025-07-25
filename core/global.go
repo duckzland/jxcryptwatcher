@@ -7,6 +7,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+const Epsilon = 1e-9
+
 var Grid *fyne.Container
 var Window fyne.Window
 var NotificationBox *widget.Label
@@ -22,8 +24,6 @@ var PanelPadding [4]float32 = [4]float32{0, 5, 10, 5}
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
 var PanelContentSize float32 = 30
-
-const Epsilon = 1e-9
 
 var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
