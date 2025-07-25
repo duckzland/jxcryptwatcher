@@ -20,9 +20,6 @@ type PanelDataType struct {
 }
 
 func (p *PanelDataType) Init() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	p.Data = binding.NewString()
 }
 
@@ -30,7 +27,7 @@ func (p *PanelDataType) Insert(panel PanelType, rate float32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.GetWithoutLock()
+	p.OldKey = p.Get()
 	p.Data.Set(fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate))
 }
 
@@ -38,18 +35,11 @@ func (p *PanelDataType) Set(pk string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.GetWithoutLock()
+	p.OldKey = p.Get()
 	p.Data.Set(pk)
 }
 
 func (p *PanelDataType) Get() string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	return p.GetWithoutLock()
-}
-
-func (p *PanelDataType) GetWithoutLock() string {
 	if p.Data == nil {
 		return ""
 	}
@@ -63,9 +53,6 @@ func (p *PanelDataType) GetWithoutLock() string {
 }
 
 func (p *PanelDataType) GetData() binding.String {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	return p.Data
 }
 
@@ -79,11 +66,12 @@ func (p *PanelDataType) GetOldValueString() string {
 }
 
 func (p *PanelDataType) UsePanelKey() *PanelKeyType {
-	pko := PanelKeyType{value: p.GetWithoutLock()}
+	pko := PanelKeyType{value: p.Get()}
 	return &pko
 }
 
 func (p *PanelDataType) Update(pk string) bool {
+
 	opk := p.Get()
 	p.OldKey = opk
 	npk := pk
@@ -105,6 +93,7 @@ func (p *PanelDataType) Update(pk string) bool {
 }
 
 func (p *PanelDataType) FormatTitle() string {
+
 	pk := p.UsePanelKey()
 
 	frac := int(JC.NumDecPlaces(pk.GetSourceValueFloat()))
@@ -121,6 +110,7 @@ func (p *PanelDataType) FormatTitle() string {
 }
 
 func (p *PanelDataType) FormatSubtitle() string {
+
 	pk := p.UsePanelKey()
 
 	return fmt.Sprintf(
@@ -132,6 +122,7 @@ func (p *PanelDataType) FormatSubtitle() string {
 }
 
 func (p *PanelDataType) FormatContent() string {
+
 	pk := p.UsePanelKey()
 
 	return fmt.Sprintf(
@@ -142,10 +133,11 @@ func (p *PanelDataType) FormatContent() string {
 }
 
 func (p *PanelDataType) DidChange() bool {
-	return p.OldKey != p.GetWithoutLock()
+	return p.OldKey != p.Get()
 }
 
 func (p *PanelDataType) IsValueIncrease() int {
+
 	b := p.GetValueString()
 	a := p.GetOldValueString()
 
@@ -175,5 +167,5 @@ func (p *PanelDataType) IsValueIncrease() int {
 }
 
 func (p *PanelDataType) IsEqualContentString(pk string) bool {
-	return p.GetWithoutLock() == pk
+	return p.Get() == pk
 }
