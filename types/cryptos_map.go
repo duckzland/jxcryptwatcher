@@ -23,6 +23,7 @@ func (cm *CryptosMapType) Insert(id string, display string) {
 }
 
 func (cm *CryptosMapType) GetOptions() []string {
+
 	JC.PrintMemUsage("Start generating available crypto options")
 
 	if len(cm.maps) != 0 {
