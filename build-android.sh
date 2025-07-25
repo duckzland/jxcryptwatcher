@@ -39,6 +39,8 @@
 ## - Default user path for SDK will be:
 ##     $HOME/Android/Sdk
 
+echo "Eventhough the compilation and apk build completed, seems it is producing invalid apk. so not supported yet!"
+exit 1
 set -e
 
 echo "Generating android arm64 binary..."
