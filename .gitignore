@@ -8,3 +8,6 @@ panels.json
 main
 jxcryptowatcher
 build/*
+assets/windows/rsrc_windows*
+assets/rsrc_windows*
+rsrc_windows*

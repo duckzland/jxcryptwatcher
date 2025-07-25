@@ -116,10 +116,6 @@ component_guid=$(uuidgen)
 
 # Copy Windows resource file
 rsrc_file="assets/windows/rsrc_windows_amd64.syso"
-if [[ ! -f "$rsrc_file" ]]; then
-    echo "Error: Resource file not found: $rsrc_file"
-    exit 1
-fi
 
 # Update the syso file
 cd assets/windows/
@@ -127,6 +123,7 @@ go-winres simply --icon jxwatcher.ico --product-version $version --file-version 
 cd ../../
 
 cp "$rsrc_file" rsrc_windows_amd64.syso
+rm assets/windows/rsrc_windows*
 
 
 # Build Go binary
@@ -169,10 +166,6 @@ cat > "$wxs_file" <<EOF
   </Product>
 </Wix>
 EOF
-
-echo "Installer source generated: ${wxs_file}"
-echo "Upgrade GUID: ${upgrade_guid}"
-echo "Component GUID: ${component_guid}"
 
 # Verify wixl availability
 if ! command -v wixl &> /dev/null; then
