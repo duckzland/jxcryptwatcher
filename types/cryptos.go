@@ -17,6 +17,7 @@ type CryptosType struct {
 }
 
 func (c *CryptosType) LoadFile() *CryptosType {
+
 	JC.PrintMemUsage("Start loading cryptos.json")
 
 	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
@@ -80,6 +81,7 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 }
 
 func (c *CryptosType) FetchData() string {
+
 	JC.PrintMemUsage("Start fetching cryptos data")
 
 	client := &http.Client{}
