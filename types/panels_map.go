@@ -97,7 +97,10 @@ func (pc *PanelsMapType) Get() []PanelDataType {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	return pc.Data
+	// Return a copy of the slice to avoid concurrency issues
+	dataCopy := make([]PanelDataType, len(pc.Data))
+	copy(dataCopy, pc.Data)
+	return dataCopy
 }
 
 func (pc *PanelsMapType) GetIndex(pk string) int {
