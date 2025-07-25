@@ -16,7 +16,6 @@ import (
 	JC "jxwatcher/core"
 	JL "jxwatcher/layouts"
 	JT "jxwatcher/types"
-	JW "jxwatcher/widgets"
 )
 
 func main() {
@@ -75,24 +74,18 @@ func main() {
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
-	// Worker to attempt to refresh the ui for every 3 seconds
+	startWorkers()
+
 	go func() {
 		for {
-			fyne.Do(UpdateDisplay)
+			JC.UpdateDisplayChan <- struct{}{}
 			time.Sleep(3 * time.Second)
 		}
 	}()
 
-	// Worker to update the exchange rates data
 	go func() {
 		for {
-			JW.DoActionWithNotification(
-				"Fetching exchange rate...",
-				"Fetching rates from exchange...",
-				JC.NotificationBox,
-				RefreshRates,
-			)
-
+			JC.UpdateRatesChan <- struct{}{}
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
