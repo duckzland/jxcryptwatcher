@@ -25,17 +25,12 @@ func main() {
 	JC.Window = a.NewWindow("JXCrypto Watcher")
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)
-
 	JC.NotificationBox = widget.NewLabel("")
+
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(fyne.NewSize(920, 600))
 
-	topBar := JA.NewTopBar(
-		ResetCryptosMap,
-		RefreshRates,
-		OpenSettingForm,
-		OpenNewPanelForm,
-	)
+	topBar := JA.NewTopBar(ResetCryptosMap, RefreshRates, OpenSettingForm, OpenNewPanelForm)
 
 	JC.Window.SetContent(JA.NewAppLayout(bg, &topBar, JC.Grid))
 
