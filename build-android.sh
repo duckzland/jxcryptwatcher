@@ -54,8 +54,8 @@ clang="$ndk_root/bin/clang"
 [[ -d "$lib_dir" ]] || { echo "Missing lib dir: $lib_dir"; exit 1; }
 [[ -x "$clang" ]] || { echo "Clang not executable: $clang"; exit 1; }
 
-# Seems we dont need this?
-#extldflags="-extldflags="'"'"-B$lib_dir -fuse-ld=lld -Wl,--gc-sections"'"'
+## The literal string used for building
+#GOOS=android GOARCH=arm64 CGO_ENABLED=1 CGO_CFLAGS="--sysroot=/usr/lib/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot -pthread" CGO_LDFLAGS="-L/usr/lib/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -pthread"  CC="/usr/lib/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-linux-android26"  go build -tags production -ldflags="-w -s -linkmode=external -extldflags="-fuse-ld=lld"" -o build/jxwatcher-android-arm64
 
 GOOS=android \
 GOARCH=arm64 \
@@ -64,8 +64,8 @@ CGO_CFLAGS="--sysroot=${sys_root} -pthread" \
 CGO_LDFLAGS="-L${lib_dir} -pthread" \
 CC="${clang} --target=aarch64-linux-android26" \
 go build -tags production \
--ldflags="-w -s -linkmode=external" \
--o "build/jxwatcher-android-arm64"
+-ldflags="-w -s -linkmode=external -extldflags="-fuse-ld=lld"" \
+-o build/jxwatcher-android-arm64
 
 ##
 ## Build the APK
