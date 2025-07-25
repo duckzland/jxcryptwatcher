@@ -1,5 +1,7 @@
 .history
 .history*
+.vscode
+.vscode/*
 config.json
 cryptos.json
 panels.json
