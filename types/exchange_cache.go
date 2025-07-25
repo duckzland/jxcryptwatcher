@@ -47,7 +47,7 @@ func (ec *ExchangeDataCacheType) Has(ck string) bool {
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {
-	return fmt.Sprintf("%d-%d", ex.SourceId, ex.TargetId)
+	return ec.CreateKeyFromInt(ex.SourceId, ex.TargetId)
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromString(sid, tid string) string {
