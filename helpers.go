@@ -88,14 +88,12 @@ func SavePanelForm() {
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
-		UpdateDisplay()
+		JC.UpdateDisplayChan <- struct{}{}
 	})
 
 	if JT.SavePanels() {
 		if UpdateRates() {
-			fyne.Do(func() {
-				UpdateDisplay()
-			})
+			JC.UpdateDisplayChan <- struct{}{}
 		}
 	}
 }
@@ -137,7 +135,7 @@ func ResetCryptosMap() {
 	Cryptos := JT.CryptosType{}
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
-	UpdateDisplay()
+	JC.UpdateDisplayChan <- struct{}{}
 }
 
 func StartWorkers() {
