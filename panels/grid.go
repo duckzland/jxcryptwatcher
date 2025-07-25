@@ -12,6 +12,7 @@ import (
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
 
 func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
+
 	JC.PrintMemUsage("Start building panels")
 
 	grid := container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(300, 150)))
