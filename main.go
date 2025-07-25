@@ -15,6 +15,7 @@ import (
 
 func main() {
 	JC.InitLogger()
+
 	JT.ExchangeCache.Reset()
 	JT.ConfigInit()
 
