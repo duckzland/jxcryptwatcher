@@ -14,6 +14,7 @@ import (
 
 func NewPanelForm(
 	panelKey string,
+	uuid string,
 	onSave func(),
 	onNew func(pdt *JT.PanelDataType),
 ) *JW.ExtendedFormDialog {
@@ -28,8 +29,7 @@ func NewPanelForm(
 	title := "Adding New Panel"
 	if panelKey != "new" {
 
-		pi := JT.BP.GetIndex(panelKey)
-		pkt := JT.BP.GetDataByIndex(pi)
+		pkt := JT.BP.GetData(uuid)
 		pko := pkt.UsePanelKey()
 
 		title = "Editing Panel"
@@ -162,12 +162,7 @@ func NewPanelForm(
 				}
 				ns.Index = -1
 			} else {
-				pi := JT.BP.GetIndex(panelKey)
-				if pi == -1 {
-					JW.DoActionWithNotification("Error", "Panel not found for update.", JC.NotificationBox, nil)
-					return
-				}
-				ns := JT.BP.GetDataByIndex(pi)
+				ns := JT.BP.GetData(uuid)
 				if ns == nil {
 					JW.DoActionWithNotification("Error", "Failed to update panel.", JC.NotificationBox, nil)
 					return

@@ -37,23 +37,22 @@ func (pc *PanelsMapType) SetMaps(maps *CryptosMapType) {
 	pc.Maps = maps
 }
 
-func (pc *PanelsMapType) Remove(index int) bool {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
+func (pc *PanelsMapType) Remove(uuid string) bool {
 
+	index := pc.GetIndex(uuid)
 	values := pc.Data
 
 	if index < 0 || index >= len(values) {
 		return false
 	}
 
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	pc.Data = append(values[:index], values[index+1:]...)
 
 	return true
-}
 
-func (pc *PanelsMapType) RemoveByKey(pk string) bool {
-	return pc.Remove(pc.GetIndex(pk))
 }
 
 func (pc *PanelsMapType) Append(pk string) *PanelDataType {
@@ -99,12 +98,13 @@ func (pc *PanelsMapType) Get() []PanelDataType {
 	return dataCopy
 }
 
-func (pc *PanelsMapType) GetIndex(pk string) int {
+func (pc *PanelsMapType) GetIndex(uuid string) int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
 	for i := range pc.Data {
-		if pc.Data[i].IsEqualContentString(pk) {
+		pdt := pc.GetDataByIndex(i)
+		if pdt.ID == uuid {
 			return i
 		}
 	}
@@ -112,15 +112,29 @@ func (pc *PanelsMapType) GetIndex(pk string) int {
 	return -1
 }
 
+func (pc *PanelsMapType) GetData(uuid string) *PanelDataType {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	for i := range pc.Data {
+		pdt := pc.GetDataByIndex(i)
+		if pdt.ID == uuid {
+			return &pc.Data[i]
+		}
+	}
+
+	return nil
+}
+
 func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	if index < 0 || index >= len(pc.Data) {
-		return nil
+	if index >= 0 && index < len(pc.Data) {
+		return &pc.Data[index]
 	}
 
-	return &pc.Data[index]
+	return nil
 }
 
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {

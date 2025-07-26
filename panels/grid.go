@@ -19,6 +19,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	list := JT.BP.Get()
 
 	for i := range list {
+		// Using index for first initial boot
 		pkt := JT.BP.GetDataByIndex(i)
 		pkt.Index = i
 		grid.Add(createPanel(pkt))

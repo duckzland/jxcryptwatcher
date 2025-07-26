@@ -35,8 +35,8 @@ func UpdateRates() bool {
 	list := JT.BP.Get()
 
 	// Prune data first, remove duplicate calls, merge into single call wheneveer possible
-	for i := range list {
-		pk := JT.BP.GetDataByIndex(i)
+	for _, p := range list {
+		pk := JT.BP.GetData(p.ID)
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
@@ -78,15 +78,23 @@ func RefreshRates() {
 	}
 }
 
-func RemovePanelByIndex(di int) {
-	if JT.RemovePanel(di) {
-		if di >= 0 && di < len(JC.Grid.Objects) {
-			JC.Grid.Objects = append(JC.Grid.Objects[:di], JC.Grid.Objects[di+1:]...)
+func RemovePanel(uuid string) {
+
+	for _, obj := range JC.Grid.Objects {
+		if panel, ok := obj.(*JW.DoubleClickContainer); ok {
+			if panel.GetTag() == uuid {
+
+				log.Printf("Removing panel %s", uuid)
+
+				JC.Grid.Remove(obj)
+
+				fyne.Do(JC.Grid.Refresh)
+
+				if JT.BP.Remove(uuid) {
+					JT.SavePanels()
+				}
+			}
 		}
-		fyne.Do(func() {
-			JC.Grid.Refresh()
-		})
-		JT.SavePanels()
 	}
 }
 
@@ -107,6 +115,7 @@ func SavePanelForm() {
 func OpenNewPanelForm() {
 	d := JP.NewPanelForm(
 		"new",
+		"",
 		SavePanelForm,
 		func(npdt *JT.PanelDataType) {
 			JC.Grid.Add(CreatePanel(npdt))
@@ -117,8 +126,8 @@ func OpenNewPanelForm() {
 	d.Resize(fyne.NewSize(400, 300))
 }
 
-func OpenPanelEditForm(pk string) {
-	d := JP.NewPanelForm(pk, SavePanelForm, nil)
+func OpenPanelEditForm(pk string, uuid string) {
+	d := JP.NewPanelForm(pk, uuid, SavePanelForm, nil)
 
 	d.Show()
 	d.Resize(fyne.NewSize(400, 300))
@@ -134,7 +143,7 @@ func OpenSettingForm() {
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
-	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanelByIndex)
+	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
 
 func ResetCryptosMap() {

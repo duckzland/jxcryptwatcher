@@ -15,6 +15,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/storage"
+	"github.com/google/uuid"
 )
 
 func NumDecPlaces(v float64) int {
@@ -176,4 +177,9 @@ func SetTextAlpha(text *canvas.Text, alpha uint8) {
 		// fallback to white with new alpha if type is unknown
 		text.Color = color.RGBA{R: 255, G: 255, B: 255, A: alpha}
 	}
+}
+
+func CreateUUID() string {
+	id := uuid.New()
+	return id.String()
 }

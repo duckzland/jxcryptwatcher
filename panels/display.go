@@ -1,6 +1,7 @@
 package panels
 
 import (
+	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -16,9 +17,13 @@ import (
 
 func NewPanelDisplay(
 	pdt *JT.PanelDataType,
-	onEdit func(pk string),
-	onDelete func(index int),
+	onEdit func(pk string, uuid string),
+	onDelete func(uuid string),
 ) fyne.CanvasObject {
+
+	// Generate a new UUID for the panel, avoiding panel use wrong uuid
+	uuid := JC.CreateUUID()
+	pdt.ID = uuid
 
 	title := canvas.NewText("", JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -43,22 +48,25 @@ func NewPanelDisplay(
 	action := NewPanelActionBar(
 		func() {
 			dynpk, _ := str.Get()
+			// Potential bug fix, maybe this will persist and store as local variable?
+			u := uuid
 			if onEdit != nil {
-				onEdit(dynpk)
+				log.Printf("Editing panel %s", u)
+				onEdit(dynpk, u)
 			}
 		},
 		func() {
-			dynpk, _ := str.Get()
-			dynpi := JT.BP.GetIndex(dynpk)
-
-			if onEdit != nil {
-				onDelete(dynpi)
+			// Potential bug fix, maybe this will persist and store as local variable?
+			u := uuid
+			if onDelete != nil {
+				log.Printf("Deleting panel %s", u)
+				onDelete(u)
 			}
 		},
 	)
 
 	panel := JW.NewDoubleClickContainer(
-		"PanelObject",
+		uuid,
 		NewPanelContainer(
 			container.NewStack(
 				background,
@@ -106,6 +114,7 @@ func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text,
 		subtitle.Hide()
 		content.Hide()
 		background.FillColor = JC.PanelBG
+
 		return
 	}
 
@@ -116,6 +125,7 @@ func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text,
 		content.Hide()
 		panel.DisableClick()
 		background.FillColor = JC.PanelBG
+
 		return
 	}
 
@@ -123,6 +133,7 @@ func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text,
 	title.Text = pdt.FormatTitle()
 	subtitle.Text = pdt.FormatSubtitle()
 	content.Text = pdt.FormatContent()
+
 	subtitle.Show()
 	content.Show()
 	panel.EnableClick()

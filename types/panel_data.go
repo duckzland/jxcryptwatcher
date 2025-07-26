@@ -16,6 +16,7 @@ type PanelDataType struct {
 	OldKey string
 	Parent *PanelsMapType
 	Index  int
+	ID     string
 	mu     sync.Mutex
 }
 

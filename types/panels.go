@@ -8,9 +8,9 @@ import (
 	"log"
 	"strconv"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2/storage"
+
+	JC "jxwatcher/core"
 )
 
 type PanelsType []PanelType
@@ -131,6 +131,6 @@ func SavePanels() bool {
 	return Panels.SaveFile(&BP)
 }
 
-func RemovePanel(i int) bool {
-	return BP.Remove(i)
+func RemovePanel(uuid string) bool {
+	return BP.Remove(uuid)
 }
