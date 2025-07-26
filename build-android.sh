@@ -25,7 +25,7 @@ app_name="JXWatcher"
 app_version=$(grep '^version=' version.txt | cut -d'=' -f2)
 app_icon="assets/256x256/jxwatcher.png"
 app_source="$PWD"
-app_tags="production"
+app_tags="production,mobile"
 # app_flags="-w -s"
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2)
