@@ -3,10 +3,10 @@ package types
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
-	"os"
+
+	"fyne.io/fyne/v2/storage"
 
 	JC "jxwatcher/core"
 )
@@ -20,25 +20,36 @@ type ConfigType struct {
 }
 
 func (c *ConfigType) LoadFile() *ConfigType {
-	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
+
+	// Construct the file URI
+	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
+	if err != nil {
+		log.Println("Error getting parsing uri for file:", fileURI, err)
+		return c
+	}
+
+	// Attempt to open the file with Fyne's Reader
+	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		log.Println("Failed to open config.json:", err)
 		return c
 	}
-	defer f.Close()
+	defer reader.Close()
 
-	b := bytes.NewBuffer(nil)
-	if _, err := io.Copy(b, f); err != nil {
-		log.Println("Failed to copy file contents:", err)
+	// Read the file into a buffer
+	buffer := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buffer, reader); err != nil {
+		log.Println("Failed to read config contents:", err)
 		return c
 	}
 
-	if err := json.Unmarshal(b.Bytes(), c); err != nil {
-		wrappedErr := fmt.Errorf("Failed to load config.json: %w", err)
-		log.Println(wrappedErr)
-	} else {
-		log.Println("Configuration Loaded")
+	// Parse JSON into the config object
+	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
+		log.Printf("Failed to unmarshal config.json: %v", err)
+		return c
 	}
+
+	log.Println("Configuration Loaded")
 
 	return c
 }
@@ -47,24 +58,17 @@ func (c *ConfigType) SaveFile() *ConfigType {
 
 	jsonData, err := json.MarshalIndent(Config, "", "  ")
 	if err != nil {
-		log.Println(err)
+		log.Println("Error marshaling config:", err)
 		return nil
 	}
 
-	// Save to file
-	err = os.WriteFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), jsonData, 0644)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	log.Println("Configuration File Saved")
+	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}), string(jsonData))
 
 	return c
 }
 
 func (c *ConfigType) CheckFile() *ConfigType {
-	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
 	if !exists {
 		data := ConfigType{
 			DataEndpoint:     "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json",
@@ -78,7 +82,14 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			return c
 		}
 
-		JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "config.json"}), string(jsonData))
+		if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}), string(jsonData)) {
+			log.Println("Failed to create config.json with default values")
+			c = &data
+
+			return c
+		} else {
+			log.Println("Created config.json with default values")
+		}
 	}
 
 	if err != nil {
@@ -86,6 +97,10 @@ func (c *ConfigType) CheckFile() *ConfigType {
 	}
 
 	return c
+}
+
+func (c *ConfigType) IsValid() bool {
+	return c.DataEndpoint != "" && c.ExchangeEndpoint != ""
 }
 
 func ConfigInit() {

@@ -1,15 +1,17 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2/storage"
 )
 
 type CryptosType struct {
@@ -20,19 +22,31 @@ func (c *CryptosType) LoadFile() *CryptosType {
 
 	JC.PrintMemUsage("Start loading cryptos.json")
 
-	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	// Build full storage URI
+	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
+	if err != nil {
+		log.Println("Error getting parsing uri for file:", err)
+		return c
+	}
+
+	// Open the file using Fyne's storage API
+	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		log.Println("Failed to open cryptos.json:", err)
 		return c
 	}
+	defer reader.Close()
 
-	defer f.Close()
+	// Decode JSON from reader
+	buffer := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buffer, reader); err != nil {
+		log.Println("Failed to read cryptos.json:", err)
+		return c
+	}
 
-	decoder := json.NewDecoder(f)
-	if err := decoder.Decode(c); err != nil {
+	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
 		log.Println(wrappedErr)
-
 	} else {
 		log.Println("Cryptos Loaded")
 	}
@@ -43,16 +57,24 @@ func (c *CryptosType) LoadFile() *CryptosType {
 }
 
 func (c *CryptosType) CreateFile() *CryptosType {
-	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}), c.FetchData())
+	if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), c.FetchData()) {
+		return nil
+	}
 
 	return c
 }
 
 func (c *CryptosType) CheckFile() *CryptosType {
-	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "cryptos.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 
 	if !exists {
-		c.CreateFile()
+		if c.CreateFile() == nil {
+			log.Println("Failed to create cryptos.json with default values")
+			c = &CryptosType{}
+			return c
+		} else {
+			log.Println("Created cryptos.json with default values")
+		}
 	}
 
 	if err != nil {

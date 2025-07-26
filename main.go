@@ -17,12 +17,14 @@ func main() {
 	JC.InitLogger()
 
 	JT.ExchangeCache.Reset()
-	JT.ConfigInit()
 
-	a := app.New()
+	a := app.NewWithID(JC.AppID)
 	a.Settings().SetTheme(theme.DarkTheme())
 
+	JT.ConfigInit()
+
 	JT.PanelsInit()
+
 	JC.Window = a.NewWindow("JXCrypto Watcher")
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)

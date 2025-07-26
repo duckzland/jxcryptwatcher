@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"image/color"
 	"log"
 	"os"
@@ -13,7 +12,9 @@ import (
 	"strconv"
 	"strings"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/storage"
 )
 
 func NumDecPlaces(v float64) int {
@@ -25,48 +26,50 @@ func NumDecPlaces(v float64) int {
 	return 0
 }
 
-func CreateFile(fileName string, textString string) {
+func CreateFile(path string, textString string) bool {
 
-	dirPath := filepath.Dir(fileName)
-	err := os.MkdirAll(dirPath, 0755)
+	fullPath := strings.TrimLeft(path, "/")
+	fileURI, err := storage.ParseURI(fullPath)
+
 	if err != nil {
-		fmt.Printf("Error creating directory: %v\n", err)
-		return
+		log.Println("Error getting parsing uri for file:", err)
+		return false
 	}
 
-	out, err := os.Create(fileName)
+	writer, err := storage.Writer(fileURI)
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to create file: %w", err)
-		log.Fatal(wrappedErr)
+		log.Printf("Error creating writer: %v", err)
+		return false
 	}
 
-	defer out.Close()
+	defer writer.Close()
 
-	_, err2 := out.WriteString(textString)
-
-	if err2 != nil {
-		wrappedErr2 := fmt.Errorf("Failed to write file: %w", err2)
-		log.Fatal(wrappedErr2)
-	} else {
-		log.Printf("Creating new file %s", fileName)
+	_, err = writer.Write([]byte(textString))
+	if err != nil {
+		log.Printf("Error writing to file: %v", err)
+		return false
 	}
 
-	out.Sync()
-	out.Close()
+	log.Printf("Successfully created and wrote to file: %s", path)
 
+	return true
 }
 
 func FileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
+
+	fileURI, err := storage.ParseURI(path)
+	if err != nil {
+		log.Println("Error getting parsing uri for file:", err)
+		return false, err
 	}
 
-	if os.IsNotExist(err) {
-		return false, nil
+	reader, err := storage.Reader(fileURI)
+	if err != nil {
+		return false, err
 	}
+	reader.Close()
 
-	return false, err
+	return true, nil
 }
 
 func IsNumeric(val string) bool {
@@ -75,6 +78,25 @@ func IsNumeric(val string) bool {
 }
 
 func BuildPathRelatedToUserDirectory(additionalPath []string) string {
+
+	app := fyne.CurrentApp()
+
+	storageRoot := GetUserDirectory()
+	if IsMobile {
+		storageRoot = app.Storage().RootURI().Path()
+	}
+
+	// Construct the full path
+	allPaths := append([]string{storageRoot}, additionalPath...)
+	fullpath := filepath.Join(allPaths...)
+	uri := storage.NewFileURI(fullpath)
+
+	// log.Println("User Root Directory:", uri.String())
+	return uri.String()
+}
+
+func GetUserDirectory() string {
+
 	path := []string{}
 
 	// Try using config directory
@@ -100,7 +122,8 @@ func BuildPathRelatedToUserDirectory(additionalPath []string) string {
 		}
 	}
 
-	path = append(path, additionalPath...)
+	path = append(path, "jxcryptwatcher")
+
 	return filepath.Join(path...)
 }
 

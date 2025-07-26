@@ -146,6 +146,9 @@ func StartWorkers() {
 	}()
 	go func() {
 		for range JC.UpdateRatesChan {
+			if !JT.Config.IsValid() {
+				continue
+			}
 			JW.DoActionWithNotification(
 				"Fetching exchange rate...",
 				"Fetching rates from exchange...",

@@ -1,27 +1,47 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"os"
 	"strconv"
 
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2/storage"
 )
 
 type PanelsType []PanelType
 
 func (p *PanelsType) LoadFile() *PanelsType {
-	f, err := os.Open(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
+
+	// Build the file URI relative to Fyne's root storage
+	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
+	if err != nil {
+		log.Println("Error getting parsing uri for file:", err)
+		return p
+	}
+
+	// Attempt to open the file with Fyne
+	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		log.Println("Failed to open panels.json:", err)
 		return p
 	}
-	defer f.Close()
+	defer reader.Close()
 
-	decoder := json.NewDecoder(f)
-	if err := decoder.Decode(p); err != nil {
+	// Read the JSON data
+	buffer := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buffer, reader); err != nil {
+		log.Println("Failed to read panels.json:", err)
+		return p
+	}
+
+	// Decode JSON into your struct
+	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
+		p = &PanelsType{}
 		log.Println(fmt.Errorf("Failed to decode panels.json: %w", err))
 	} else {
 		log.Println("Panels Loaded")
@@ -60,26 +80,16 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 		return false
 	}
 
-	err = os.WriteFile(
-		JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}),
-		jsonData,
-		0644,
-	)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-
-	return true
+	return JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), string(jsonData))
 }
 
 func (p *PanelsType) CreateFile() *PanelsType {
-	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}), "[]")
+	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), "[]")
 	return p
 }
 
 func (p *PanelsType) CheckFile() *PanelsType {
-	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"jxcryptwatcher", "panels.json"}))
+	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
 		p.CreateFile()
 	}
