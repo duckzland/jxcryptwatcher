@@ -1,5 +1,5 @@
-//go:build !mobile
-// +build !mobile
+//go:build !jxmobile
+// +build !jxmobile
 
 package core
 

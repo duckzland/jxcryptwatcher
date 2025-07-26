@@ -29,7 +29,10 @@ func NewCompletionEntry(
 	c := &CompletionEntry{Suggestions: options}
 	c.ExtendBaseWidget(c)
 
-	c.OnChanged = c.SearchSuggestions
+	if !JC.IsMobile {
+		c.OnChanged = c.SearchSuggestions
+	}
+
 	c.SetOptions(options)
 
 	return c
@@ -62,6 +65,17 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	// then show them
 	c.SetOptions(results)
 	c.ShowCompletion()
+}
+
+func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
+	switch event.Name {
+	case fyne.KeyReturn, fyne.KeyEnter:
+		if JC.IsMobile {
+			c.SearchSuggestions(c.Text)
+		}
+	}
+
+	c.Entry.TypedKey(event)
 }
 
 func (c *CompletionEntry) SetDefaultValue(s string) {

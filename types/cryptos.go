@@ -91,6 +91,11 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 	CM := &CryptosMapType{}
 	CM.Init()
 
+	if c == nil || len(c.Values) == 0 {
+		log.Println("No cryptos found in the data")
+		return CM
+	}
+
 	for _, crypto := range c.Values {
 		if crypto.Status != 0 || crypto.IsActive != 0 {
 			CM.Insert(strconv.FormatInt(crypto.Id, 10), crypto.CreateKey())

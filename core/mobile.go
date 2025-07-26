@@ -1,5 +1,5 @@
-//go:build mobile
-// +build mobile
+//go:build jxmobile
+// +build jxmobile
 
 package core
 
@@ -12,7 +12,7 @@ import (
 
 const Epsilon = 1e-9
 const IsMobile = true
-const AppID = "io.github.duckzland.jxcryptwatcher"
+const AppID = "io.fyne.jxwatcher"
 
 var Grid *fyne.Container
 var Window fyne.Window

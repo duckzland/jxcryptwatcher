@@ -64,6 +64,12 @@ func UpdateRates() bool {
 }
 
 func RefreshRates() {
+
+	if !JT.Config.IsValid() {
+		log.Println("Invalid configuration, cannot refresh rates")
+		return
+	}
+
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
@@ -132,6 +138,10 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 }
 
 func ResetCryptosMap() {
+	if !JT.Config.IsValid() {
+		log.Println("Invalid configuration, cannot reset cryptos map")
+		return
+	}
 	Cryptos := JT.CryptosType{}
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()

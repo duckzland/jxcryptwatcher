@@ -10,35 +10,47 @@
 ##                    g++-aarch64-linux-gnu \
 ##                    google-android-ndk-r26c-installer
 
-
-###### This script can compile correctly, but I don't understand on how android wont give proper permissions for file operation under android?
-###### Anyone can help figure this out?
-###### Disabling the script for now..
-
-echo "Script disabled..."
-exit
-
-
 set -e
 
 # Ubuntu ndk will be installed in this folder
 android_sdk="/usr/lib/android-ndk/"
-
-# Without this flags the binary size will be large, still havent found the clue on how to inject this flag
-# when using fyne package
-# go_flags="-ldflags='-w -s'"
+if [ ! -d "$android_sdk" ]; then
+    echo "Android NDK not found at $android_sdk. Please install it."
+    exit 1
+fi
 
 # Options
-app_id="io.github.duckzland.jxcryptwatcher"
+app_id="io.fyne.jxwatcher"
 app_name="JXWatcher"
 app_version=$(grep '^version=' version.txt | cut -d'=' -f2)
 app_icon="assets/256x256/jxwatcher.png"
 app_source="$PWD"
-app_tags="production, mobile"
-# app_flags="-w -s"
+
+## Production options 
+app_tags="production, jxmobile"
+
+## Debugging options 
+##app_tags="jxmobile"
+
+# Check if fyne is installed
+if ! command -v fyne &> /dev/null; then
+    echo "Fyne CLI not found. Please install it using 'go install fyne.io/fyne/v2/cmd/fyne@latest'."
+    exit 1
+fi
+
+# Check if fyne package is available
+if ! fyne package -h &> /dev/null; then
+    echo "Fyne package command not found. Please ensure you have the latest version of Fyne CLI installed."
+    exit 1
+fi
+
+# Check if version.txt exists and read the version
+if [ ! -f version.txt ]; then
+    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    exit 1
+fi
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2)
-
 
 ## Generate the AndroidManifest.xml file
 cat > AndroidManifest.xml <<EOF
@@ -73,7 +85,14 @@ cat > AndroidManifest.xml <<EOF
 </manifest>
 EOF
 
-ANDROID_NDK_HOME=$android_sdk GOFLAGS="$go_flags" fyne package -os android -app-id $app_id -icon $app_icon -name $app_name -app-version $app_version -tags $app_tags -release true
+ANDROID_NDK_HOME=$android_sdk fyne package -os android -app-id $app_id -icon $app_icon -name $app_name -app-version $app_version -tags $app_tags -release true
+
+if [ $? -ne 0 ]; then
+    echo "Failed to package the application."
+    rm AndroidManifest.xml
+    rm JXWatcher.apk
+    exit 1
+fi
 
 mv JXWatcher.apk build/jxwatcher-$version-android-arm64.apk
-rm -rf AndroidManifest.xml
+rm AndroidManifest.xml
