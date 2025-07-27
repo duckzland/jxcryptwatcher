@@ -43,5 +43,9 @@ func main() {
 
 	JC.Notify("Starting Application...")
 
+	if !JT.Config.IsValid() {
+		JC.Notify("Bad configuration file")
+	}
+
 	JC.Window.ShowAndRun()
 }

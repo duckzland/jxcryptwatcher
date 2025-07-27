@@ -20,6 +20,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if err != nil {
 		log.Println("Error getting parsing uri for file:", err)
+		JC.Notify("Failed loading panels")
 		return p
 	}
 
@@ -27,6 +28,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		log.Println("Failed to open panels.json:", err)
+		JC.Notify("Failed loading panels")
 		return p
 	}
 	defer reader.Close()
@@ -35,6 +37,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
 		log.Println("Failed to read panels.json:", err)
+		JC.Notify("Failed loading panels")
 		return p
 	}
 
@@ -42,6 +45,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
 		p = &PanelsType{}
 		log.Println(fmt.Errorf("Failed to decode panels.json: %w", err))
+		JC.Notify("Failed loading panels")
 	} else {
 		log.Println("Panels Loaded")
 	}

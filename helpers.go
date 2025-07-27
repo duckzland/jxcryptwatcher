@@ -50,6 +50,12 @@ func UpdateRates() bool {
 		}
 	}
 
+	if len(jb) == 0 {
+		return false
+	}
+
+	JC.Notify("Start retrieving rates...")
+
 	// Fetching with delay
 	for _, rk := range jb {
 		ex.GetRate(rk)
@@ -57,6 +63,8 @@ func UpdateRates() bool {
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
 	}
+
+	JC.Notify("New rates retrieved")
 
 	log.Printf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
@@ -74,16 +82,11 @@ func RefreshRates() bool {
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
-	// BUG: Not sure why this wont fire when triggered from button?
-	JC.Notify("Updating Exchange rates...")
-
 	if UpdateRates() {
-		JC.Notify("Exchange rates updated")
 		fyne.Do(UpdateDisplay)
-		return true
 	}
 
-	return false
+	return true
 }
 
 func RemovePanel(uuid string) {
@@ -197,6 +200,10 @@ func ResetCryptosMap() {
 func StartWorkers() {
 	go func() {
 		for range JC.UpdateDisplayChan {
+			if !JT.Config.IsValid() {
+				continue
+			}
+
 			fyne.Do(UpdateDisplay)
 		}
 	}()
@@ -206,14 +213,7 @@ func StartWorkers() {
 				continue
 			}
 
-			JC.Notify("Start retrieving rates...")
-
-			if RefreshRates() {
-				JC.Notify("New rates retrieved")
-
-			} else {
-				JC.Notify("Failed retrieving rates...")
-			}
+			RefreshRates()
 		}
 	}()
 }
