@@ -18,6 +18,7 @@ func main() {
 	JT.ExchangeCache.Reset()
 
 	a := app.NewWithID(JC.AppID)
+
 	a.Settings().SetTheme(theme.DarkTheme())
 
 	JT.ConfigInit()

@@ -1,5 +1,5 @@
-//go:build !jxandroid || !mobile
-// +build !jxandroid !mobile
+//go:build desktop || !jxandroid
+// +build desktop !jxandroid
 
 package core
 

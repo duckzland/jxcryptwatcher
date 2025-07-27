@@ -46,7 +46,7 @@ mkdir -p "${pkg_dir}/DEBIAN" \
 
 # Build the Go binary
 echo "Building Go binary..."
-go build -tags production -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
+go build -tags production,desktop -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
 
 # Create control file
 cat > "${pkg_dir}/DEBIAN/control" <<EOF

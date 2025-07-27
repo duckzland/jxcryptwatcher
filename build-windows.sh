@@ -133,7 +133,7 @@ CGO_ENABLED=1 \
 CGO_CFLAGS="-pthread" \
 CGO_LDFLAGS="-pthread" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
-go build -tags production -ldflags "-w -s -H=windowsgui" -o "${build_dir}/${bin_name}" .
+go build -tags production,desktop -ldflags "-w -s -H=windowsgui" -o "${build_dir}/${bin_name}" .
 
 echo "Windows binary generated: ${build_dir}/${bin_name}"
 

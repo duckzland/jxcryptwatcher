@@ -85,7 +85,7 @@ cat > AndroidManifest.xml <<EOF
 </manifest>
 EOF
 
-ANDROID_NDK_HOME=$android_sdk fyne package -os android -app-id $app_id -icon $app_icon -name $app_name -app-version $app_version -tags $app_tags -release true
+ANDROID_NDK_HOME=$android_sdk fyne package -os android -app-id $app_id -icon $app_icon -name $app_name -app-version $app_version -tags $app_tags -release
 
 if [ $? -ne 0 ]; then
     echo "Failed to package the application."
