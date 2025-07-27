@@ -72,11 +72,9 @@ func NewSettingsForm(onSave func()) *JW.ExtendedFormDialog {
 			JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
 			JT.Config.Delay = delay
 
-			JW.DoActionWithNotification("Saving configuration...", "Configuration data saved...", JC.NotificationBox, func() {
-				if onSave != nil {
-					onSave()
-				}
-			})
+			if onSave != nil {
+				onSave()
+			}
 		}
 	}, JC.Window)
 }

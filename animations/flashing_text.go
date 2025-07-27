@@ -1,4 +1,4 @@
-package widgets
+package animations
 
 import (
 	"image/color"

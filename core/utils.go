@@ -183,3 +183,7 @@ func CreateUUID() string {
 	id := uuid.New()
 	return id.String()
 }
+
+func Notify(str string) {
+	UpdateStatusChan <- str
+}

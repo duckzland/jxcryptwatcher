@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 
-	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 )
 
@@ -22,11 +21,9 @@ func NewPanelActionBar(
 	})
 
 	deleteBtn := JW.NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
-		JW.DoActionWithNotification("Removing Panel...", "Panel removed...", JC.NotificationBox, func() {
-			if onDelete != nil {
-				onDelete()
-			}
-		})
+		if onDelete != nil {
+			onDelete()
+		}
 	})
 
 	return container.NewHBox(

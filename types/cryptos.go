@@ -110,12 +110,14 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 func (c *CryptosType) FetchData() string {
 
 	JC.PrintMemUsage("Start fetching cryptos data")
+	JC.Notify("Requesting new cryptos data from exchange")
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
 
 	if err != nil {
 		log.Println("Error creating request:", err)
+		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
 
@@ -123,6 +125,7 @@ func (c *CryptosType) FetchData() string {
 
 	if err != nil {
 		log.Println("Error performing request:", err)
+		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
 
@@ -132,10 +135,13 @@ func (c *CryptosType) FetchData() string {
 
 	if err != nil {
 		log.Println("Failed to read response body:", err)
+		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
 
 	log.Println("Fetched cryptodata from CMC")
+	JC.Notify("Retrieved cryptos data from exchange")
+
 	JC.PrintMemUsage("End fetching cryptos data")
 
 	return string(respBody)

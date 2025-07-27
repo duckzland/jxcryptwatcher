@@ -154,28 +154,26 @@ func NewPanelForm(
 			if panelKey == "new" {
 				ns := JT.BP.Append(newKey)
 				if ns == nil {
-					JW.DoActionWithNotification("Error", "Failed to add new panel.", JC.NotificationBox, nil)
+					JC.Notify("Failed to add new panel")
 					return
 				}
 				if onNew != nil {
 					onNew(ns)
 				}
-				ns.Index = -1
+				ns.Status = -1
 			} else {
 				ns := JT.BP.GetData(uuid)
 				if ns == nil {
-					JW.DoActionWithNotification("Error", "Failed to update panel.", JC.NotificationBox, nil)
+					JC.Notify("Failed to update panel")
 					return
 				}
 				ns.Set(newKey)
 				ns.Update(newKey)
 			}
 
-			JW.DoActionWithNotification("Saving Panel...", "Panel data saved...", JC.NotificationBox, func() {
-				if onSave != nil {
-					onSave()
-				}
-			})
+			if onSave != nil {
+				onSave()
+			}
 		}
 	}, JC.Window)
 }

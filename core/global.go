@@ -1,22 +1,15 @@
-//go:build jxmobile
-// +build jxmobile
-
 package core
 
 import (
 	"image/color"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/widget"
 )
 
 const Epsilon = 1e-9
-const IsMobile = true
-const AppID = "io.fyne.jxwatcher"
 
 var Grid *fyne.Container
 var Window fyne.Window
-var NotificationBox *widget.Label
 
 var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
 var TextColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
@@ -29,8 +22,9 @@ var PanelPadding [4]float32 = [4]float32{0, 5, 10, 5}
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
 var PanelContentSize float32 = 30
-var PanelWidth float32 = 260
-var PanelHeight float32 = 180
+var PanelWidth float32 = 300
+var PanelHeight float32 = 150
 
+var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})

@@ -5,7 +5,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
-	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
@@ -28,12 +27,11 @@ func main() {
 	JC.Window = a.NewWindow("JXCrypto Watcher")
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)
-	JC.NotificationBox = widget.NewLabel("")
 
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(fyne.NewSize(920, 600))
 
-	topBar := JA.NewTopBar(ResetCryptosMap, RefreshRates, OpenSettingForm, OpenNewPanelForm)
+	topBar := JA.NewTopBar(ResetCryptosMap, func() { RefreshRates() }, OpenSettingForm, OpenNewPanelForm)
 
 	JC.Window.SetContent(JA.NewAppLayout(bg, &topBar, JC.Grid))
 

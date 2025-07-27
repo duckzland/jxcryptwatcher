@@ -35,8 +35,8 @@ func UpdateRates() bool {
 	list := JT.BP.Get()
 
 	// Prune data first, remove duplicate calls, merge into single call wheneveer possible
-	for _, p := range list {
-		pk := JT.BP.GetData(p.ID)
+	for i := range list {
+		pk := JT.BP.GetDataByIndex(i)
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
@@ -63,19 +63,27 @@ func UpdateRates() bool {
 	return true
 }
 
-func RefreshRates() {
+func RefreshRates() bool {
 
 	if !JT.Config.IsValid() {
 		log.Println("Invalid configuration, cannot refresh rates")
-		return
+		JC.Notify("Invalid configuration, cannot refresh rates")
+		return false
 	}
 
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
+	// BUG: Not sure why this wont fire when triggered from button?
+	JC.Notify("Updating Exchange rates...")
+
 	if UpdateRates() {
+		JC.Notify("Exchange rates updated")
 		fyne.Do(UpdateDisplay)
+		return true
 	}
+
+	return false
 }
 
 func RemovePanel(uuid string) {
@@ -91,7 +99,9 @@ func RemovePanel(uuid string) {
 				fyne.Do(JC.Grid.Refresh)
 
 				if JT.BP.Remove(uuid) {
-					JT.SavePanels()
+					if JT.SavePanels() {
+						JC.Notify("Panel removed")
+					}
 				}
 			}
 		}
@@ -100,16 +110,24 @@ func RemovePanel(uuid string) {
 
 func SavePanelForm() {
 
+	JC.Notify("Saving panel configuration...")
+
 	fyne.Do(func() {
 		JC.Grid.Refresh()
 		JC.UpdateDisplayChan <- struct{}{}
 	})
 
-	if JT.SavePanels() {
-		if UpdateRates() {
-			JC.UpdateDisplayChan <- struct{}{}
+	go func() {
+		if JT.SavePanels() {
+			if UpdateRates() {
+				JC.UpdateDisplayChan <- struct{}{}
+				JC.Notify("Panel configuration saved")
+			}
+
+		} else {
+			JC.Notify("Failed to save panel")
 		}
-	}
+	}()
 }
 
 func OpenNewPanelForm() {
@@ -118,7 +136,10 @@ func OpenNewPanelForm() {
 		"",
 		SavePanelForm,
 		func(npdt *JT.PanelDataType) {
-			JC.Grid.Add(CreatePanel(npdt))
+			fyne.Do(func() {
+				JC.Grid.Add(CreatePanel(npdt))
+				JC.Notify("New Panel created")
+			})
 		},
 	)
 
@@ -135,7 +156,13 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 func OpenSettingForm() {
 	d := JA.NewSettingsForm(func() {
-		JT.Config.SaveFile()
+		JC.Notify("Saving configuration...")
+
+		if JT.Config.SaveFile() != nil {
+			JC.Notify("Configuration data saved...")
+		} else {
+			JC.Notify("Failed to save configuration")
+		}
 	})
 
 	d.Show()
@@ -149,11 +176,15 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 func ResetCryptosMap() {
 	if !JT.Config.IsValid() {
 		log.Println("Invalid configuration, cannot reset cryptos map")
+		JC.Notify("Invalid configuration, cannot reset cryptos map")
 		return
 	}
 	Cryptos := JT.CryptosType{}
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
+
+	JC.Notify("Cryptos map regenerated")
+
 	JC.UpdateDisplayChan <- struct{}{}
 }
 
@@ -168,12 +199,14 @@ func StartWorkers() {
 			if !JT.Config.IsValid() {
 				continue
 			}
-			JW.DoActionWithNotification(
-				"Fetching exchange rate...",
-				"Fetching rates from exchange...",
-				JC.NotificationBox,
-				RefreshRates,
-			)
+
+			JC.Notify("Start retrieving rates...")
+
+			if RefreshRates() {
+				JC.Notify("New rates retrieved")
+			} else {
+				JC.Notify("Failed retrieving rates...")
+			}
 		}
 	}()
 }

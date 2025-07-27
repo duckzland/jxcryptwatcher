@@ -15,7 +15,7 @@ type PanelDataType struct {
 	Data   binding.String
 	OldKey string
 	Parent *PanelsMapType
-	Index  int
+	Status int
 	ID     string
 	mu     sync.Mutex
 }
@@ -88,6 +88,7 @@ func (p *PanelDataType) Update(pk string) bool {
 
 	if npk != opk {
 		p.Set(npk)
+		p.Status = 1
 	}
 
 	return true

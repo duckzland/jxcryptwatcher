@@ -27,7 +27,7 @@ app_icon="assets/256x256/jxwatcher.png"
 app_source="$PWD"
 
 ## Production options 
-app_tags="production,jxmobile"
+app_tags="production,jxandroid"
 
 ## Debugging options 
 ##app_tags="jxmobile"

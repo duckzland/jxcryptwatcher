@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
 
+	JA "jxwatcher/animations"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
@@ -52,7 +53,7 @@ func NewPanelDisplay(
 			u := uuid
 			if onEdit != nil {
 				log.Printf("Editing panel %s", u)
-				onEdit(dynpk, u)
+				go onEdit(dynpk, u)
 			}
 		},
 		func() {
@@ -60,7 +61,7 @@ func NewPanelDisplay(
 			u := uuid
 			if onDelete != nil {
 				log.Printf("Deleting panel %s", u)
-				onDelete(u)
+				go onDelete(u)
 			}
 		},
 	)
@@ -98,7 +99,7 @@ func NewPanelDisplay(
 
 		updateContent(pdt, title, subtitle, content, background, panel)
 
-		JW.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
+		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	updateContent(pdt, title, subtitle, content, background, panel)
@@ -107,6 +108,17 @@ func NewPanelDisplay(
 }
 
 func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text, background *canvas.Rectangle, panel *JW.DoubleClickContainer) {
+
+	// New Panel
+	if pdt.Status == -1 {
+		title.Text = "Fetching Rates..."
+		subtitle.Hide()
+		content.Hide()
+		panel.DisableClick()
+		background.FillColor = JC.PanelBG
+
+		return
+	}
 
 	// Invalid panel
 	if !JT.BP.ValidatePanel(pdt.Get()) {

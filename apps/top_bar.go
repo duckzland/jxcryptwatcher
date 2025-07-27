@@ -30,29 +30,25 @@ func NewTopBar(
 
 		container.NewStack(
 			topBg,
-			JC.NotificationBox,
+			JW.NewNotificationDisplayWidget(JC.UpdateStatusChan),
 		),
 
 		layout.NewSpacer(),
 
 		// Refresh ticker data
 		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			JW.DoActionWithNotification("Fetching new ticker data...", "Finished fetching ticker data", JC.NotificationBox, func() {
-				if onCryptosRefresh != nil {
-					onCryptosRefresh()
-				}
-			})
+			if onCryptosRefresh != nil {
+				go onCryptosRefresh()
+			}
 		}),
 
 		layout.NewSpacer(),
 
 		// Refresh exchange rates
 		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			JW.DoActionWithNotification("Fetching exchange rates...", "Panel refreshed with new rates", JC.NotificationBox, func() {
-				if onRatesRefresh != nil {
-					onRatesRefresh()
-				}
-			})
+			if onRatesRefresh != nil {
+				go onRatesRefresh()
+			}
 		}),
 
 		layout.NewSpacer(),
@@ -60,7 +56,7 @@ func NewTopBar(
 		// Open settings
 		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
 			if onSettingSave != nil {
-				onSettingSave()
+				go onSettingSave()
 			}
 		}),
 
@@ -69,7 +65,7 @@ func NewTopBar(
 		// Add new panel
 		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
 			if onAddNewPanel != nil {
-				onAddNewPanel()
+				go onAddNewPanel()
 			}
 		}),
 	)
