@@ -1,6 +1,7 @@
 package types
 
 import (
+	"log"
 	"sync"
 )
 
@@ -87,6 +88,32 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 	pdt.Update(pk)
 
 	return pdt
+}
+
+func (pc *PanelsMapType) RefreshData() bool {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	for i := range pc.Data {
+		pdt := pc.GetDataByIndex(i)
+		pko := pdt.UsePanelKey()
+		mmp := pc.Maps
+
+		npk := PanelType{
+			Source:       pko.GetSourceCoinInt(),
+			Target:       pko.GetTargetCoinInt(),
+			Decimals:     pko.GetDecimalsInt(),
+			Value:        pko.GetSourceValueFloat(),
+			SourceSymbol: mmp.GetSymbolById(pko.GetSourceCoinString()),
+			TargetSymbol: mmp.GetSymbolById(pko.GetSourceCoinString()),
+		}
+
+		pdt.Update(pko.GenerateKeyFromPanel(npk, float32(pko.GetValueFloat())))
+
+		log.Print("Panel refreshed: ", pdt.Get())
+	}
+
+	return true
 }
 
 func (pc *PanelsMapType) Get() []PanelDataType {

@@ -22,6 +22,10 @@ func (p *PanelKeyType) UpdateValue(rate float32) string {
 	return p.value
 }
 
+func (p *PanelKeyType) RefreshKey() string {
+	return p.GenerateKeyFromPanel(p.GetPanel(), float32(p.GetValueFloat()))
+}
+
 func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float32) string {
 	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 	return p.value
@@ -44,6 +48,21 @@ func (p *PanelKeyType) Validate() bool {
 	}
 
 	return true
+}
+
+func (p *PanelKeyType) GetRawValue() string {
+	return p.value
+}
+
+func (p *PanelKeyType) GetPanel() PanelType {
+	return PanelType{
+		Source:       p.GetSourceCoinInt(),
+		Target:       p.GetTargetCoinInt(),
+		Decimals:     p.GetDecimalsInt(),
+		Value:        p.GetSourceValueFloat(),
+		SourceSymbol: p.GetSourceSymbolString(),
+		TargetSymbol: p.GetTargetSymbolString(),
+	}
 }
 
 func (p *PanelKeyType) GetValueFloat() float64 {

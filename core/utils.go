@@ -187,3 +187,11 @@ func CreateUUID() string {
 func Notify(str string) {
 	UpdateStatusChan <- str
 }
+
+func RequestRateUpdate() {
+	UpdateRatesChan <- struct{}{}
+}
+
+func RequestDisplayUpdate() {
+	UpdateDisplayChan <- struct{}{}
+}

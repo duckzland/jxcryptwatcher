@@ -29,7 +29,8 @@ func (p *PanelDataType) Insert(panel PanelType, rate float32) {
 	defer p.mu.Unlock()
 
 	p.OldKey = p.Get()
-	p.Data.Set(fmt.Sprintf("%d-%d-%f-%d|%f", panel.Source, panel.Target, panel.Value, panel.Decimals, rate))
+	pkt := &PanelKeyType{}
+	p.Data.Set(pkt.GenerateKeyFromPanel(panel, rate))
 }
 
 func (p *PanelDataType) Set(pk string) {

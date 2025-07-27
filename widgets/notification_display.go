@@ -52,6 +52,7 @@ func (nd *NotificationDisplayWidget) animateMessages() {
 func (nd *NotificationDisplayWidget) watchIdleAndClear() {
 	for {
 		if time.Since(nd.lastActivity) > 6*time.Second && nd.text.Text != "" {
+
 			log.Println("Clearing notification display due to inactivity")
 
 			// Clear text

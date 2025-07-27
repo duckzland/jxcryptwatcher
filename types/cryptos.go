@@ -26,6 +26,8 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 	if err != nil {
 		log.Println("Error getting parsing uri for file:", err)
+		JC.Notify("Failed to load cryptos data")
+
 		return c
 	}
 
@@ -33,6 +35,8 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		log.Println("Failed to open cryptos.json:", err)
+		JC.Notify("Failed to load cryptos data")
+
 		return c
 	}
 	defer reader.Close()
@@ -41,14 +45,21 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
 		log.Println("Failed to read cryptos.json:", err)
+		JC.Notify("Failed to load cryptos data")
+
 		return c
 	}
 
 	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
+
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
+		JC.Notify("Failed to load cryptos data")
 		log.Println(wrappedErr)
+
 	} else {
+
 		log.Println("Cryptos Loaded")
+
 	}
 
 	JC.PrintMemUsage("End loading cryptos.json")
@@ -70,7 +81,9 @@ func (c *CryptosType) CheckFile() *CryptosType {
 	if !exists {
 		if c.CreateFile() == nil {
 			log.Println("Failed to create cryptos.json with default values")
+			JC.Notify("Failed to create cryptos data file")
 			c = &CryptosType{}
+
 			return c
 		} else {
 			log.Println("Created cryptos.json with default values")

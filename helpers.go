@@ -114,13 +114,13 @@ func SavePanelForm() {
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
-		JC.UpdateDisplayChan <- struct{}{}
+		JC.RequestDisplayUpdate()
 	})
 
 	go func() {
 		if JT.SavePanels() {
 			if UpdateRates() {
-				JC.UpdateDisplayChan <- struct{}{}
+				JC.RequestDisplayUpdate()
 				JC.Notify("Panel configuration saved")
 			}
 
@@ -179,13 +179,19 @@ func ResetCryptosMap() {
 		JC.Notify("Invalid configuration, cannot reset cryptos map")
 		return
 	}
+
 	Cryptos := JT.CryptosType{}
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 
 	JC.Notify("Cryptos map regenerated")
 
-	JC.UpdateDisplayChan <- struct{}{}
+	if JT.BP.RefreshData() {
+		fyne.Do(func() {
+			JC.Grid.Refresh()
+			JC.RequestDisplayUpdate()
+		})
+	}
 }
 
 func StartWorkers() {
@@ -204,6 +210,7 @@ func StartWorkers() {
 
 			if RefreshRates() {
 				JC.Notify("New rates retrieved")
+
 			} else {
 				JC.Notify("Failed retrieving rates...")
 			}
@@ -214,7 +221,7 @@ func StartWorkers() {
 func StartUpdateDisplayWorker() {
 	go func() {
 		for {
-			JC.UpdateDisplayChan <- struct{}{}
+			JC.RequestDisplayUpdate()
 			time.Sleep(3 * time.Second)
 		}
 	}()
@@ -223,7 +230,7 @@ func StartUpdateDisplayWorker() {
 func StartUpdateRatesWorker() {
 	go func() {
 		for {
-			JC.UpdateRatesChan <- struct{}{}
+			JC.RequestRateUpdate()
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()

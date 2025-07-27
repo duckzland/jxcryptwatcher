@@ -41,5 +41,7 @@ func main() {
 	StartUpdateDisplayWorker()
 	StartUpdateRatesWorker()
 
+	JC.Notify("Starting Application...")
+
 	JC.Window.ShowAndRun()
 }

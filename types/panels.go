@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strconv"
 
 	"fyne.io/fyne/v2/storage"
 
@@ -105,10 +104,14 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 	for i := range *p {
 		pp := &(*p)[i]
 
-		pp.SourceSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Source, 10))
-		pp.TargetSymbol = maps.GetSymbolById(strconv.FormatInt(pp.Target, 10))
-
 		pko := PanelKeyType{}
+		pko.GenerateKeyFromPanel(*pp, -1)
+
+		pp.SourceSymbol = maps.GetSymbolById(pko.GetSourceCoinString())
+		pp.TargetSymbol = maps.GetSymbolById(pko.GetTargetCoinString())
+
+		log.Printf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, -1))
+
 		maps.Append(pko.GenerateKeyFromPanel(*pp, -1))
 	}
 }
