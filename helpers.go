@@ -134,42 +134,48 @@ func SavePanelForm() {
 }
 
 func OpenNewPanelForm() {
-	d := JP.NewPanelForm(
-		"new",
-		"",
-		SavePanelForm,
-		func(npdt *JT.PanelDataType) {
-			fyne.Do(func() {
-				JC.Grid.Add(CreatePanel(npdt))
-				JC.Notify("New Panel created")
-			})
-		},
-	)
+	fyne.Do(func() {
+		d := JP.NewPanelForm(
+			"new",
+			"",
+			SavePanelForm,
+			func(npdt *JT.PanelDataType) {
+				fyne.Do(func() {
+					JC.Grid.Add(CreatePanel(npdt))
+					JC.Notify("New Panel created")
+				})
+			},
+		)
 
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
+		d.Show()
+		d.Resize(fyne.NewSize(400, 300))
+	})
 }
 
 func OpenPanelEditForm(pk string, uuid string) {
-	d := JP.NewPanelForm(pk, uuid, SavePanelForm, nil)
+	fyne.Do(func() {
+		d := JP.NewPanelForm(pk, uuid, SavePanelForm, nil)
 
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
+		d.Show()
+		d.Resize(fyne.NewSize(400, 300))
+	})
 }
 
 func OpenSettingForm() {
-	d := JA.NewSettingsForm(func() {
-		JC.Notify("Saving configuration...")
+	fyne.Do(func() {
+		d := JA.NewSettingsForm(func() {
+			JC.Notify("Saving configuration...")
 
-		if JT.Config.SaveFile() != nil {
-			JC.Notify("Configuration data saved...")
-		} else {
-			JC.Notify("Failed to save configuration")
-		}
+			if JT.Config.SaveFile() != nil {
+				JC.Notify("Configuration data saved...")
+			} else {
+				JC.Notify("Failed to save configuration")
+			}
+		})
+
+		d.Show()
+		d.Resize(fyne.NewSize(400, 300))
 	})
-
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
@@ -222,7 +228,7 @@ func StartUpdateDisplayWorker() {
 	go func() {
 		for {
 			JC.RequestDisplayUpdate()
-			time.Sleep(3 * time.Second)
+			time.Sleep(600 * time.Millisecond)
 		}
 	}()
 }

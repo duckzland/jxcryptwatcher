@@ -45,7 +45,7 @@ func (nd *NotificationDisplayWidget) animateMessages() {
 			nd.text.Refresh()
 		})
 
-		time.Sleep(600 * time.Millisecond) // Show full color
+		time.Sleep(600 * time.Millisecond)
 	}
 }
 

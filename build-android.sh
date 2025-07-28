@@ -59,9 +59,11 @@ fi
 
 ## Production options 
 tags="production,jxandroid"
+release="true"
 
 ## Debugging options, you will need to set -release to false
 # tags="jxandroid"
+# release="false"
 
 ## Target os, this will create only for android with arm64 processor
 os="android/arm64"
@@ -108,7 +110,7 @@ EOF
 CGO_CFLAGS="-pthread" \
 CGO_LDFLAGS="-pthread" \
 ANDROID_NDK_HOME=$android_sdk \
-fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release true
+fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release $release
 
 if [ $? -ne 0 ]; then
     echo "Failed to package the application."
