@@ -44,6 +44,7 @@ fi
 # App metadata
 app_name="JXWatcher"
 package_name="io.github.duckzland.jxcryptwatcher"
+manufacturer="duckzland"
 bin_name="jxwatcher.exe"
 manufacturer="duckzland"
 build_dir="build"
@@ -78,6 +79,17 @@ if [[ -z "$product_guid" ]]; then
     exit 1
 fi
 
+# The Guid assigned to the shortcut's <Component> (e.g. AppShortcut) should remain the same across builds, 
+# unless something structurally changes in the shortcut component.
+# shortcut_guid=$(uuidgen)
+shortcut_guid="3e0298de-9989-49c6-9285-23c7e55399b0"
+if [[ -z "$shortcut_guid" ]]; then
+    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    exit 1
+fi
+
+
+
 
 # Build Go binary
 GOOS=windows \
@@ -108,10 +120,12 @@ rm -f rsrc_windows_amd64.syso
 cat > "$wxs_file" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="$product_guid" Name="$app_name" Language="1033" Version="$version"
-         Manufacturer="$manufacturer" UpgradeCode="$upgrade_guid">
 
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+  <Product Id="$product_guid" Name="$app_name" Language="1033" Version="$version"
+           Manufacturer="$manufacturer" UpgradeCode="$upgrade_guid">
+
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <Property Id="ARPPRODUCTICON" Value="jxwatcher.ico" />
 
     <!-- Define upgrade behavior -->
     <Upgrade Id="$upgrade_guid">
@@ -119,7 +133,6 @@ cat > "$wxs_file" <<EOF
       <UpgradeVersion Minimum="$version" IncludeMinimum="yes" OnlyDetect="yes" Property="NEWER_VERSION_FOUND" />
     </Upgrade>
 
-    <!-- Schedule removal of previous versions -->
     <InstallExecuteSequence>
       <RemoveExistingProducts After="InstallInitialize" />
     </InstallExecuteSequence>
@@ -134,11 +147,33 @@ cat > "$wxs_file" <<EOF
           </Component>
         </Directory>
       </Directory>
+
+      <!-- Start Menu Directory -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppProgramMenuDir" Name="$app_name">
+          <Component Id="AppShortcut" Guid="$shortcut_guid">
+            <Shortcut Id="startMenuShortcut"
+                      Name="$app_name"
+                      Description="$app_description"
+                      Target="[INSTALLFOLDER]\\${bin_name}"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="jxwatcher.ico"
+                      IconIndex="0" />
+            <RemoveFolder Id="AppProgramMenuDir" On="uninstall"/>
+            <RegistryValue Root="HKCU" Key="Software\\${manufacturer}\\${app_name}" Name="installed"
+                           Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
+        </Directory>
+      </Directory>
     </Directory>
 
     <Feature Id="DefaultFeature" Level="1">
       <ComponentRef Id="MainBinary" />
+      <ComponentRef Id="AppShortcut" />
     </Feature>
+
+    <Icon Id="jxwatcher.ico" SourceFile="assets/windows/jxwatcher.ico" />
+
   </Product>
 </Wix>
 EOF
