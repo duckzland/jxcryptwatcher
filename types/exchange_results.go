@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -84,7 +83,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	req, err := http.NewRequest("GET", Config.ExchangeEndpoint, nil)
 
 	if err != nil {
-		log.Println("Error encountered:", err)
+		JC.Logln("Error encountered:", err)
 		return nil
 	}
 
@@ -96,15 +95,15 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	req.URL.RawQuery = q.Encode()
 
 	// Debug
-	log.Printf("Fetching data from %v", req.URL.RawQuery)
+	JC.Logf("Fetching data from %v", req.URL.RawQuery)
 
 	resp, err := client.Do(req)
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
-		log.Println(wrappedErr)
+		JC.Logln(wrappedErr)
 		return nil
 	} else {
-		// log.Print("Fetched exchange data from CMC:", req.URL.RawQuery)
+		// JC.Log("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
 
 	defer resp.Body.Close()
@@ -112,7 +111,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	// Decode JSON directly from response body to save memory
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(er); err != nil {
-		log.Println(fmt.Errorf("Failed to examine exchange data: %w", err))
+		JC.Logln(fmt.Errorf("Failed to examine exchange data: %w", err))
 		return nil
 	}
 

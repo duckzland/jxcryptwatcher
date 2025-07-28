@@ -2,14 +2,14 @@ package widgets
 
 import (
 	"image/color"
-	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
-	FA "jxwatcher/animations"
+	JA "jxwatcher/animations"
+	JC "jxwatcher/core"
 )
 
 type NotificationDisplayWidget struct {
@@ -53,10 +53,10 @@ func (nd *NotificationDisplayWidget) watchIdleAndClear() {
 	for {
 		if time.Since(nd.lastActivity) > 6*time.Second && nd.text.Text != "" {
 
-			log.Println("Clearing notification display due to inactivity")
+			JC.Logln("Clearing notification display due to inactivity")
 
 			// Clear text
-			FA.StartFadingText(nd.text, func() {
+			JA.StartFadingText(nd.text, func() {
 				fyne.Do(func() {
 					nd.text.Text = ""
 					nd.text.Color = color.White // Reset for next message

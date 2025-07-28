@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 
 	"fyne.io/fyne/v2/storage"
 
@@ -24,14 +23,14 @@ func (c *ConfigType) LoadFile() *ConfigType {
 	// Construct the file URI
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
 	if err != nil {
-		log.Println("Error getting parsing uri for file:", fileURI, err)
+		JC.Logln("Error getting parsing uri for file:", fileURI, err)
 		return c
 	}
 
 	// Attempt to open the file with Fyne's Reader
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
-		log.Println("Failed to open config.json:", err)
+		JC.Logln("Failed to open config.json:", err)
 		return c
 	}
 	defer reader.Close()
@@ -39,17 +38,17 @@ func (c *ConfigType) LoadFile() *ConfigType {
 	// Read the file into a buffer
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
-		log.Println("Failed to read config contents:", err)
+		JC.Logln("Failed to read config contents:", err)
 		return c
 	}
 
 	// Parse JSON into the config object
 	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
-		log.Printf("Failed to unmarshal config.json: %v", err)
+		JC.Logf("Failed to unmarshal config.json: %v", err)
 		return c
 	}
 
-	log.Println("Configuration Loaded")
+	JC.Logln("Configuration Loaded")
 
 	return c
 }
@@ -58,7 +57,7 @@ func (c *ConfigType) SaveFile() *ConfigType {
 
 	jsonData, err := json.MarshalIndent(Config, "", "  ")
 	if err != nil {
-		log.Println("Error marshaling config:", err)
+		JC.Logln("Error marshaling config:", err)
 		return nil
 	}
 
@@ -78,22 +77,22 @@ func (c *ConfigType) CheckFile() *ConfigType {
 
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
-			log.Println(err)
+			JC.Logln(err)
 			return c
 		}
 
 		if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}), string(jsonData)) {
-			log.Println("Failed to create config.json with default values")
+			JC.Logln("Failed to create config.json with default values")
 			c = &data
 
 			return c
 		} else {
-			log.Println("Created config.json with default values")
+			JC.Logln("Created config.json with default values")
 		}
 	}
 
 	if err != nil {
-		log.Println(err)
+		JC.Logln(err)
 	}
 
 	return c

@@ -1,8 +1,9 @@
 package types
 
 import (
-	"log"
 	"sync"
+
+	JC "jxwatcher/core"
 )
 
 var BP PanelsMapType
@@ -110,7 +111,7 @@ func (pc *PanelsMapType) RefreshData() bool {
 
 		pdt.Update(pko.GenerateKeyFromPanel(npk, float32(pko.GetValueFloat())))
 
-		log.Print("Panel refreshed: ", pdt.Get())
+		JC.Logln("Panel refreshed: ", pdt.Get())
 	}
 
 	return true

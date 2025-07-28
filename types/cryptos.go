@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -25,7 +24,7 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	// Build full storage URI
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 	if err != nil {
-		log.Println("Error getting parsing uri for file:", err)
+		JC.Logln("Error getting parsing uri for file:", err)
 		JC.Notify("Failed to load cryptos data")
 
 		return c
@@ -34,7 +33,7 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	// Open the file using Fyne's storage API
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
-		log.Println("Failed to open cryptos.json:", err)
+		JC.Logln("Failed to open cryptos.json:", err)
 		JC.Notify("Failed to load cryptos data")
 
 		return c
@@ -44,7 +43,7 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	// Decode JSON from reader
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
-		log.Println("Failed to read cryptos.json:", err)
+		JC.Logln("Failed to read cryptos.json:", err)
 		JC.Notify("Failed to load cryptos data")
 
 		return c
@@ -54,11 +53,11 @@ func (c *CryptosType) LoadFile() *CryptosType {
 
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
 		JC.Notify("Failed to load cryptos data")
-		log.Println(wrappedErr)
+		JC.Logln(wrappedErr)
 
 	} else {
 
-		log.Println("Cryptos Loaded")
+		JC.Logln("Cryptos Loaded")
 
 	}
 
@@ -80,18 +79,18 @@ func (c *CryptosType) CheckFile() *CryptosType {
 
 	if !exists {
 		if c.CreateFile() == nil {
-			log.Println("Failed to create cryptos.json with default values")
+			JC.Logln("Failed to create cryptos.json with default values")
 			JC.Notify("Failed to create cryptos data file")
 			c = &CryptosType{}
 
 			return c
 		} else {
-			log.Println("Created cryptos.json with default values")
+			JC.Logln("Created cryptos.json with default values")
 		}
 	}
 
 	if err != nil {
-		log.Println(err)
+		JC.Logln(err)
 	}
 
 	return c
@@ -105,7 +104,7 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 	CM.Init()
 
 	if c == nil || len(c.Values) == 0 {
-		log.Println("No cryptos found in the data")
+		JC.Logln("No cryptos found in the data")
 		return CM
 	}
 
@@ -129,7 +128,7 @@ func (c *CryptosType) FetchData() string {
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
 
 	if err != nil {
-		log.Println("Error creating request:", err)
+		JC.Logln("Error creating request:", err)
 		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
@@ -137,7 +136,7 @@ func (c *CryptosType) FetchData() string {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Println("Error performing request:", err)
+		JC.Logln("Error performing request:", err)
 		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
@@ -147,12 +146,12 @@ func (c *CryptosType) FetchData() string {
 	respBody, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Println("Failed to read response body:", err)
+		JC.Logln("Failed to read response body:", err)
 		JC.Notify("Failed to fetch cryptos data")
 		return ""
 	}
 
-	log.Println("Fetched cryptodata from CMC")
+	JC.Logln("Fetched cryptodata from CMC")
 	JC.Notify("Retrieved cryptos data from exchange")
 
 	JC.PrintMemUsage("End fetching cryptos data")

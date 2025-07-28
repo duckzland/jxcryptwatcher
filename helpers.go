@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -26,7 +25,7 @@ func UpdateDisplay() {
 		time.Sleep(1 * time.Millisecond)
 	}
 
-	// log.Print("Display Refreshed")
+	// JC.Log("Display Refreshed")
 }
 
 func UpdateRates() bool {
@@ -66,7 +65,7 @@ func UpdateRates() bool {
 
 	JC.Notify("New rates retrieved")
 
-	log.Printf("Exchange Rate updated: %v/%v", len(jb), len(list))
+	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
 	return true
 }
@@ -74,7 +73,7 @@ func UpdateRates() bool {
 func RefreshRates() bool {
 
 	if !JT.Config.IsValid() {
-		log.Println("Invalid configuration, cannot refresh rates")
+		JC.Logln("Invalid configuration, cannot refresh rates")
 		JC.Notify("Invalid configuration, cannot refresh rates")
 		return false
 	}
@@ -95,7 +94,7 @@ func RemovePanel(uuid string) {
 		if panel, ok := obj.(*JW.DoubleClickContainer); ok {
 			if panel.GetTag() == uuid {
 
-				log.Printf("Removing panel %s", uuid)
+				JC.Logf("Removing panel %s", uuid)
 
 				JC.Grid.Remove(obj)
 
@@ -184,7 +183,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 
 func ResetCryptosMap() {
 	if !JT.Config.IsValid() {
-		log.Println("Invalid configuration, cannot reset cryptos map")
+		JC.Logln("Invalid configuration, cannot reset cryptos map")
 		JC.Notify("Invalid configuration, cannot reset cryptos map")
 		return
 	}

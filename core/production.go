@@ -3,13 +3,13 @@
 
 package core
 
-import (
-	"io"
-	"log"
-)
-
 const MemoryDebug = false
 
 func InitLogger() {
-	log.SetOutput(io.Discard)
+}
+
+func Logln(v ...any) {
+}
+
+func Logf(format string, v ...any) {
 }

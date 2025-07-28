@@ -1,7 +1,6 @@
 package panels
 
 import (
-	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -52,7 +51,7 @@ func NewPanelDisplay(
 			// Potential bug fix, maybe this will persist and store as local variable?
 			u := uuid
 			if onEdit != nil {
-				log.Printf("Editing panel %s", u)
+				JC.Logf("Editing panel %s", u)
 				go onEdit(dynpk, u)
 			}
 		},
@@ -60,7 +59,7 @@ func NewPanelDisplay(
 			// Potential bug fix, maybe this will persist and store as local variable?
 			u := uuid
 			if onDelete != nil {
-				log.Printf("Deleting panel %s", u)
+				JC.Logf("Deleting panel %s", u)
 				go onDelete(u)
 			}
 		},

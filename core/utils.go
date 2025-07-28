@@ -2,7 +2,6 @@ package core
 
 import (
 	"image/color"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -33,13 +32,13 @@ func CreateFile(path string, textString string) bool {
 	fileURI, err := storage.ParseURI(fullPath)
 
 	if err != nil {
-		log.Println("Error getting parsing uri for file:", err)
+		Logln("Error getting parsing uri for file:", err)
 		return false
 	}
 
 	writer, err := storage.Writer(fileURI)
 	if err != nil {
-		log.Printf("Error creating writer: %v", err)
+		Logf("Error creating writer: %v", err)
 		return false
 	}
 
@@ -47,11 +46,11 @@ func CreateFile(path string, textString string) bool {
 
 	_, err = writer.Write([]byte(textString))
 	if err != nil {
-		log.Printf("Error writing to file: %v", err)
+		Logf("Error writing to file: %v", err)
 		return false
 	}
 
-	log.Printf("Successfully created and wrote to file: %s", path)
+	Logf("Successfully created and wrote to file: %s", path)
 
 	return true
 }
@@ -60,7 +59,7 @@ func FileExists(path string) (bool, error) {
 
 	fileURI, err := storage.ParseURI(path)
 	if err != nil {
-		log.Println("Error getting parsing uri for file:", err)
+		Logln("Error getting parsing uri for file:", err)
 		return false, err
 	}
 
@@ -92,7 +91,7 @@ func BuildPathRelatedToUserDirectory(additionalPath []string) string {
 	fullpath := filepath.Join(allPaths...)
 	uri := storage.NewFileURI(fullpath)
 
-	// log.Println("User Root Directory:", uri.String())
+	// Logln("User Root Directory:", uri.String())
 	return uri.String()
 }
 
@@ -132,7 +131,7 @@ func PrintMemUsage(title string) {
 	if MemoryDebug {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
-		log.Printf(
+		Logf(
 			"%s | Alloc = %v MiB TotalAlloc = %v MiB Sys = %v MiB NumGC = %v",
 			title,
 			m.Alloc/1024/1024,

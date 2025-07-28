@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"sync"
 
@@ -152,17 +151,17 @@ func (p *PanelDataType) IsValueIncrease() int {
 	numB, errB := strconv.ParseFloat(b, 32)
 
 	if errA != nil || errB != nil {
-		log.Printf("Error Formatting")
+		JC.Logf("Error Formatting")
 		return 0
 	}
 
 	if numA > numB {
-		log.Printf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		JC.Logf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
 		return -1
 	}
 
 	if numA < numB {
-		log.Printf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		JC.Logf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
 		return 1
 	}
 

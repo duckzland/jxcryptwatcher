@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 
 	"fyne.io/fyne/v2/storage"
 
@@ -19,7 +18,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	// Build the file URI relative to Fyne's root storage
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if err != nil {
-		log.Println("Error getting parsing uri for file:", err)
+		JC.Logln("Error getting parsing uri for file:", err)
 		JC.Notify("Failed loading panels")
 		return p
 	}
@@ -27,7 +26,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	// Attempt to open the file with Fyne
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
-		log.Println("Failed to open panels.json:", err)
+		JC.Logln("Failed to open panels.json:", err)
 		JC.Notify("Failed loading panels")
 		return p
 	}
@@ -36,7 +35,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	// Read the JSON data
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
-		log.Println("Failed to read panels.json:", err)
+		JC.Logln("Failed to read panels.json:", err)
 		JC.Notify("Failed loading panels")
 		return p
 	}
@@ -44,10 +43,10 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	// Decode JSON into your struct
 	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
 		p = &PanelsType{}
-		log.Println(fmt.Errorf("Failed to decode panels.json: %w", err))
+		JC.Logln(fmt.Errorf("Failed to decode panels.json: %w", err))
 		JC.Notify("Failed loading panels")
 	} else {
-		log.Println("Panels Loaded")
+		JC.Logln("Panels Loaded")
 	}
 
 	return p
@@ -79,7 +78,7 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 
 	jsonData, err := json.MarshalIndent(np, "", "  ")
 	if err != nil {
-		log.Println(err)
+		JC.Logln(err)
 		return false
 	}
 
@@ -98,7 +97,7 @@ func (p *PanelsType) CheckFile() *PanelsType {
 	}
 
 	if err != nil {
-		log.Println(err)
+		JC.Logln(err)
 	}
 
 	return p
@@ -114,7 +113,7 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 		pp.SourceSymbol = maps.GetSymbolById(pko.GetSourceCoinString())
 		pp.TargetSymbol = maps.GetSymbolById(pko.GetTargetCoinString())
 
-		log.Printf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, -1))
+		JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, -1))
 
 		maps.Append(pko.GenerateKeyFromPanel(*pp, -1))
 	}

@@ -3,7 +3,8 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+
+	JC "jxwatcher/core"
 )
 
 type CryptoType struct {
@@ -18,7 +19,7 @@ func (cp *CryptoType) UnmarshalJSON(data []byte) error {
 	var v []interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
-		log.Println(err)
+		JC.Logln(err)
 		return err
 	}
 
