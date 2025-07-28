@@ -1,102 +1,18 @@
 #!/bin/bash
 
-## 
-## You must install mingw for compiling go to windows binary
-## sudo apt install gcc-mingw-w64
-##
-
-## To regenerate the syso file, you need to run the following command:
-## go-winres simply --icon jxwatcher.ico --product-version 1.0.0 --file-version 1.0.0 --product-name "JXWatcher"
-##
-## You can install go-winres with the following command:
-## go install github.com/tc-hib/go-winres@latest
-
-## To regenerate the .ico file, you can copy the following function into your .bashrc or bash_profile
-## and then run the command `svgtoico jxwatcher scalable/jxwatcher.svg windows/jxwatcher.ico`
-## This function uses Inkscape to convert SVG to PNG and ImageMagick to convert PNGs to ICO.
-##
-## Make sure you have Inkscape and ImageMagick installed:
-## sudo apt install inkscape imagemagick    
-##
-# svgtoico(){
-#     # $1: Base name for the icon (e.g., "my_icon")
-#     # $2: Path to the source SVG file (e.g., "path/to/my_icon.svg")
-#     # $3: Desired path for the output ICO file (e.g., "path/to/output.ico")
-
-#     # Create temporary PNG files for different sizes
-#     inkscape -w 16 -h 16 -o "$1-16.png" "$2"
-#     inkscape -w 32 -h 32 -o "$1-32.png" "$2"
-#     inkscape -w 48 -h 48 -o "$1-48.png" "$2"
-#     inkscape -w 256 -h 256 -o "$1-256.png" "$2"
-
-#     # Combine PNGs into an ICO file
-#     convert "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png" "$1.ico"
-
-#     # Clean up temporary PNG files
-#     rm "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png"
-
-#     # Move the generated ICO to the desired location
-#     mv "$1.ico" "$3"
-# }
-##
-## To build the JXWatcher.msi you need these dependencies:
-## sudo apt install wixl msitools uuid-runtime
-
-
 ## ================================================================
 ## JXWatcher Build Environment Setup Instructions
 ## ================================================================
-
-## 1. Cross-Compiling Go to Windows Binary
-##    - Requirement: MinGW-w64
-##    - Install with: sudo apt install gcc-mingw-w64
-
-## 2. Regenerating the .syso File
-##    - Tool: go-winres
-##    - Command:
-##      go-winres simply \
-##         --icon jxwatcher.ico \
-##         --product-version 1.0.0 \
-##         --file-version 1.0.0 \
-##         --product-name "JXWatcher"
-##    - Install go-winres:
-##      go install github.com/tc-hib/go-winres@latest
-
-## 3. Regenerating the .ico File from SVG
-##    - Required tools: Inkscape, ImageMagick
-##    - Install with:
-##      sudo apt install inkscape imagemagick
 ##
-##    - Suggested shell function (add to .bashrc or .bash_profile):
+## Install these requirements package first:
+## 
+## sudo apt install gcc-mingw-w64 wixl uuid-runtime
+## go install github.com/tc-hib/go-winres@latest
 ##
-##      svgtoico() {
-##          # $1: Base name (e.g., "my_icon")
-##          # $2: Source SVG path
-##          # $3: Destination ICO path
-##
-##          inkscape -w 16 -h 16 -o "$1-16.png" "$2"
-##          inkscape -w 32 -h 32 -o "$1-32.png" "$2"
-##          inkscape -w 48 -h 48 -o "$1-48.png" "$2"
-##          inkscape -w 256 -h 256 -o "$1-256.png" "$2"
-##
-##          convert "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png" "$1.ico"
-##
-##          rm "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png"
-##          mv "$1.ico" "$3"
-##      }
-
-## 4. Building JXWatcher.msi Installer
-##    - Dependencies: wixl, uuid-runtime
-##    - Install with:
-##      sudo apt install wixl uuid-runtime
+## Note:
+## - uuid-runtime is optional, only if you wish to regenerate new uuid
 
 set -e
-
-# Check if uuidgen is installed
-if ! command -v uuidgen &> /dev/null; then
-    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
-    exit 1
-fi
 
 # Check if go-winres is installed
 if ! command -v go-winres &> /dev/null; then
@@ -137,23 +53,31 @@ wxs_file="${build_dir}/installer.wxs"
 # Only no need to regenerate this
 # upgrade_guid=$(uuidgen)
 upgrade_guid="11442397-0932-48db-98f3-eeb7704e669a"
+if [[ -z "$upgrade_guid" ]]; then
+    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    exit 1
+fi
 
 # Change component GUIDs only when necessary: A new component GUID is required if the key path of 
 # the component changes (e.g., a file is renamed or moved to a different location) 
 # or if the component's content fundamentally changes such that it's no longer the same logical entity.
 # component_guid=$(uuidgen)
 component_guid="900c3a3d-77b4-468c-8a2d-8a6eb9dd838e"
+if [[ -z "$component_guid" ]]; then
+    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    exit 1
+fi
 
-# Copy Windows resource file
-rsrc_file="assets/windows/rsrc_windows_amd64.syso"
+# Whether you bump from 1.0.0 → 1.0.1 or 1.0.0 → 2.0.0, if your MSI should uninstall the old version and 
+# install the new one, you need a new Product Id every time.
+# Generate one manually or use uuidgen if you have one installed
+product_guid=$(uuidgen)
+# product_guid="0d50ab79-1abd-4277-8b96-d92fffa1afa6"
+if [[ -z "$product_guid" ]]; then
+    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    exit 1
+fi
 
-# Update the syso file
-cd assets/windows/
-go-winres simply --icon jxwatcher.ico --product-version $version --file-version $version --product-name $app_name
-cd ../../
-
-cp "$rsrc_file" rsrc_windows_amd64.syso
-rm assets/windows/rsrc_windows*
 
 # Build Go binary
 GOOS=windows \
@@ -166,6 +90,17 @@ go build -tags="production,desktop" -ldflags "-w -s -H=windowsgui" -o "${build_d
 
 echo "Windows binary generated: ${build_dir}/${bin_name}"
 
+# Copy Windows resource file
+rsrc_file="assets/windows/rsrc_windows_amd64.syso"
+
+# Update the syso file
+cd assets/windows/
+go-winres simply --icon jxwatcher.ico --product-version $version --file-version $version --product-name $app_name
+cd ../../
+
+cp "$rsrc_file" rsrc_windows_amd64.syso
+rm assets/windows/rsrc_windows*
+
 # Remove copied resource file
 rm -f rsrc_windows_amd64.syso
 
@@ -173,9 +108,21 @@ rm -f rsrc_windows_amd64.syso
 cat > "$wxs_file" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="$app_name" Language="1033" Version="$version"
-           Manufacturer="$manufacturer" UpgradeCode="$upgrade_guid">
+  <Product Id="$product_guid" Name="$app_name" Language="1033" Version="$version"
+         Manufacturer="$manufacturer" UpgradeCode="$upgrade_guid">
+
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <!-- Define upgrade behavior -->
+    <Upgrade Id="$upgrade_guid">
+      <UpgradeVersion Minimum="0.0.0" Maximum="$version" OnlyDetect="no" Property="OLD_VERSION_FOUND" />
+      <UpgradeVersion Minimum="$version" IncludeMinimum="yes" OnlyDetect="yes" Property="NEWER_VERSION_FOUND" />
+    </Upgrade>
+
+    <!-- Schedule removal of previous versions -->
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallInitialize" />
+    </InstallExecuteSequence>
 
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 

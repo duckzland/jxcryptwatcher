@@ -1,14 +1,16 @@
 #!/bin/bash
 
 ## ================================================================
-## Android Cross-Compilation & APK Build Environment Setup
+## JXWatcher Build Environment Setup Instructions
 ## ================================================================
-
-## NDK Setup for Compiling Go to Android arm64
-## Ensure these packages are installed:
-##   sudo apt install gcc-aarch64-linux-gnu \
-##                    g++-aarch64-linux-gnu \
-##                    google-android-ndk-r26c-installer
+##
+## Install these requirements package first:
+## 
+## sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
+## go install fyne.io/fyne/v2/cmd/fyne@latest
+##
+## Note:
+## - The source of the Android NDK is important, as the compiler path may vary depending on whether it's installed directly from Google.
 
 set -e
 
@@ -32,7 +34,6 @@ fi
 
 # Ubuntu will install android ndk to this folder
 android_sdk="/usr/lib/android-ndk/"
-
 if [ ! -d "$android_sdk" ]; then
     echo "Android NDK not found at $android_sdk. Please install it."
     exit 1

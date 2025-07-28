@@ -1,18 +1,17 @@
 #!/bin/bash
 
 ## ================================================================
-## JXWatcher Debian Package Build Script Overview
+## JXWatcher Build Environment Setup Instructions
 ## ================================================================
-
-## Description:
+##
 ## This script builds a Debian (.deb) package and places the output
 ## in the /build directory.
-
-## Dependencies:
-## - dpkg-deb             : Used to build the Debian package
-## - Go                   : Must be installed and available in PATH
-## - Assets directory     : Required; must be present
-## - version.txt file     : Required; must contain version info
+##
+## Install requirements:
+## sudo apt install dpkg
+##
+## Note: 
+## - Ubuntu should already have dpkg package installed by default
 
 set -e
 

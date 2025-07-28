@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## ================================================================
+## JXWatcher Build Environment Setup Instructions
+## ================================================================
 ##
 ## This is the minimal build script that will generate linux binary at /build folder
 ##
