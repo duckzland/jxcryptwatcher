@@ -14,15 +14,22 @@
 ## - Assets directory     : Required; must be present
 ## - version.txt file     : Required; must contain version info
 
-set -euo pipefail
+set -e
+
+# Check if go-winres is installed
+if ! command -v dpkg-deb &> /dev/null; then
+    echo "Command dpkg-deb not found, install with 'apt install dpkg'"
+    exit 1
+fi
+
+# Check if version.txt exists and read the version
+if [ ! -f version.txt ]; then
+    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    exit 1
+fi
 
 echo "Generating Debian Package..."
 
-# Extract version
-if [[ ! -f version.txt ]]; then
-    echo "version.txt not found."
-    exit 1
-fi
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 if [[ -z "$version" ]]; then
@@ -45,8 +52,8 @@ mkdir -p "${pkg_dir}/DEBIAN" \
          "${icons_path}/32x32/apps"
 
 # Build the Go binary
-echo "Building Go binary..."
-go build -tags production,desktop -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
+echo "Building binary..."
+go build -tags="production,desktop" -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
 
 # Create control file
 cat > "${pkg_dir}/DEBIAN/control" <<EOF
@@ -71,16 +78,14 @@ Terminal=false
 EOF
 
 # Copy assets
-echo "Copying assets..."
 cp assets/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
 cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 
 # Build the Debian package
-echo "Building Debian package..."
+echo "Building debian package..."
 dpkg-deb --build "${pkg_dir}" "${deb_output}"
 
-echo "Package created successfully: ${deb_output}"
+echo "Debian package created: ${deb_output}"
 
 # Clean up
-echo "Cleaning up..."
 rm -rf "${pkg_dir}"

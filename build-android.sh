@@ -12,26 +12,6 @@
 
 set -e
 
-# Ubuntu ndk will be installed in this folder
-android_sdk="/usr/lib/android-ndk/"
-if [ ! -d "$android_sdk" ]; then
-    echo "Android NDK not found at $android_sdk. Please install it."
-    exit 1
-fi
-
-# Options
-app_id="io.fyne.jxwatcher"
-app_name="JXWatcher"
-app_version=$(grep '^version=' version.txt | cut -d'=' -f2)
-app_icon="assets/256x256/jxwatcher.png"
-app_source="$PWD"
-
-## Production options 
-app_tags="production,jxandroid"
-
-## Debugging options 
-##app_tags="jxmobile"
-
 # Check if fyne is installed
 if ! command -v fyne &> /dev/null; then
     echo "Fyne CLI not found. Please install it using 'go install fyne.io/fyne/v2/cmd/fyne@latest'."
@@ -50,7 +30,46 @@ if [ ! -f version.txt ]; then
     exit 1
 fi
 
+# Ubuntu will install android ndk to this folder
+android_sdk="/usr/lib/android-ndk/"
+
+if [ ! -d "$android_sdk" ]; then
+    echo "Android NDK not found at $android_sdk. Please install it."
+    exit 1
+fi
+
+echo "Building Android APK"
+
+# Options
+name="JXWatcher"
+icon="assets/256x256/jxwatcher.png"
+
+# Dynamic variable based on source code
+id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/android.go)
+if [[ -z "$id" ]]; then
+    echo "App id not found in core/android.go"
+    exit 1
+fi
+
 version=$(grep '^version=' version.txt | cut -d'=' -f2)
+if [[ -z "$version" ]]; then
+    echo "Version not found in version.txt"
+    exit 1
+fi
+
+## Production options 
+tags="production,jxandroid"
+
+## Debugging options, you will need to set -release to false
+# tags="jxandroid"
+
+## Target os, this will create only for android with arm64 processor
+os="android/arm64"
+
+## This will build all possible combination for android, thus big file size
+# os="android"
+
+apk_output="build/jxwatcher-$version-android-arm64.apk"
 
 ## Generate the AndroidManifest.xml file
 cat > AndroidManifest.xml <<EOF
@@ -68,9 +87,9 @@ cat > AndroidManifest.xml <<EOF
         android:maxSdkVersion="29" />
 
     <!-- Application block -->
-    <application android:label="$app_name">
+    <application android:label="$name">
         <activity android:name="org.golang.app.GoNativeActivity"
-            android:label="$app_name"
+            android:label="$name"
             android:configChanges="orientation|screenSize"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
             
@@ -85,7 +104,11 @@ cat > AndroidManifest.xml <<EOF
 </manifest>
 EOF
 
-ANDROID_NDK_HOME=$android_sdk fyne package -os android -app-id $app_id -icon $app_icon -name $app_name -app-version $app_version -tags $app_tags -release
+
+CGO_CFLAGS="-pthread" \
+CGO_LDFLAGS="-pthread" \
+ANDROID_NDK_HOME=$android_sdk \
+fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release true
 
 if [ $? -ne 0 ]; then
     echo "Failed to package the application."
@@ -94,5 +117,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-mv JXWatcher.apk build/jxwatcher-$version-android-arm64.apk
+mv JXWatcher.apk $apk_output
 rm AndroidManifest.xml
+
+echo "APK package created: ${apk_output}"

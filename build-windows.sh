@@ -86,11 +86,35 @@
 ##      }
 
 ## 4. Building JXWatcher.msi Installer
-##    - Dependencies: wixl, msitools, uuid-runtime
+##    - Dependencies: wixl, uuid-runtime
 ##    - Install with:
-##      sudo apt install wixl msitools uuid-runtime
+##      sudo apt install wixl uuid-runtime
 
-set -euo pipefail
+set -e
+
+# Check if uuidgen is installed
+if ! command -v uuidgen &> /dev/null; then
+    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    exit 1
+fi
+
+# Check if go-winres is installed
+if ! command -v go-winres &> /dev/null; then
+    echo "Command go-winres not found, install with 'go install github.com/tc-hib/go-winres@latest'"
+    exit 1
+fi
+
+# Check if wixl is installed
+# if ! command -v wixl &> /dev/null; then
+#     echo "Command wixl not found, install with 'sudo apt install wixl'"
+#     exit 1
+# fi
+
+# Check if version.txt exists and read the version
+if [ ! -f version.txt ]; then
+    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    exit 1
+fi
 
 echo "Building Windows binary..."
 
@@ -107,12 +131,18 @@ package_name="io.github.duckzland.jxcryptwatcher"
 bin_name="jxwatcher.exe"
 manufacturer="duckzland"
 build_dir="build"
-msi_output="${build_dir}/${app_name}.msi"
+msi_output="${build_dir}/${app_name}-${version}.msi"
 wxs_file="${build_dir}/installer.wxs"
 
-# Generate GUIDs
-upgrade_guid=$(uuidgen)
-component_guid=$(uuidgen)
+# Only no need to regenerate this
+# upgrade_guid=$(uuidgen)
+upgrade_guid="11442397-0932-48db-98f3-eeb7704e669a"
+
+# Change component GUIDs only when necessary: A new component GUID is required if the key path of 
+# the component changes (e.g., a file is renamed or moved to a different location) 
+# or if the component's content fundamentally changes such that it's no longer the same logical entity.
+# component_guid=$(uuidgen)
+component_guid="900c3a3d-77b4-468c-8a2d-8a6eb9dd838e"
 
 # Copy Windows resource file
 rsrc_file="assets/windows/rsrc_windows_amd64.syso"
@@ -125,7 +155,6 @@ cd ../../
 cp "$rsrc_file" rsrc_windows_amd64.syso
 rm assets/windows/rsrc_windows*
 
-
 # Build Go binary
 GOOS=windows \
 GOARCH=amd64  \
@@ -133,7 +162,7 @@ CGO_ENABLED=1 \
 CGO_CFLAGS="-pthread" \
 CGO_LDFLAGS="-pthread" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
-go build -tags production,desktop -ldflags "-w -s -H=windowsgui" -o "${build_dir}/${bin_name}" .
+go build -tags="production,desktop" -ldflags "-w -s -H=windowsgui" -o "${build_dir}/${bin_name}" .
 
 echo "Windows binary generated: ${build_dir}/${bin_name}"
 
@@ -166,12 +195,6 @@ cat > "$wxs_file" <<EOF
   </Product>
 </Wix>
 EOF
-
-# Verify wixl availability
-if ! command -v wixl &> /dev/null; then
-    echo "Error: 'wixl' not installed. Install via: sudo apt install msitools"
-    exit 1
-fi
 
 # Build MSI
 echo "Building MSI..."
