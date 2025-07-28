@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -125,21 +124,6 @@ func GetUserDirectory() string {
 	path = append(path, "jxcryptwatcher")
 
 	return filepath.Join(path...)
-}
-
-func PrintMemUsage(title string) {
-	if MemoryDebug {
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-		Logf(
-			"%s | Alloc = %v MiB TotalAlloc = %v MiB Sys = %v MiB NumGC = %v",
-			title,
-			m.Alloc/1024/1024,
-			m.TotalAlloc/1024/1024,
-			m.Sys/1024/1024,
-			m.NumGC,
-		)
-	}
 }
 
 func ExtractLeadingNumber(s string) int {

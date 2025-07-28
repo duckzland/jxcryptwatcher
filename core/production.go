@@ -13,3 +13,6 @@ func Logln(v ...any) {
 
 func Logf(format string, v ...any) {
 }
+
+func PrintMemUsage(title string) {
+}
