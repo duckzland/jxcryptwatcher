@@ -105,6 +105,11 @@ func (p *PanelKeyType) GetCalculatedValueFormattedString() string {
 		frac = 2
 	}
 
+	nv := p.GetValueFloat() * p.GetSourceValueFloat()
+	if nv < 1 {
+		frac = max(int(p.GetDecimalsInt()), 4)
+	}
+
 	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat()*p.GetSourceValueFloat(), number.MaxFractionDigits(int(frac))))
 
 }
