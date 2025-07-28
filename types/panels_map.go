@@ -106,7 +106,7 @@ func (pc *PanelsMapType) RefreshData() bool {
 			Decimals:     pko.GetDecimalsInt(),
 			Value:        pko.GetSourceValueFloat(),
 			SourceSymbol: mmp.GetSymbolById(pko.GetSourceCoinString()),
-			TargetSymbol: mmp.GetSymbolById(pko.GetSourceCoinString()),
+			TargetSymbol: mmp.GetSymbolById(pko.GetTargetCoinString()),
 		}
 
 		pdt.Update(pko.GenerateKeyFromPanel(npk, float32(pko.GetValueFloat())))
