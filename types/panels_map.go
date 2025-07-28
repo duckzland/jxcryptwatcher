@@ -28,7 +28,7 @@ func (pc *PanelsMapType) Set(data []PanelDataType) {
 		pc.Data[i].Init()
 		pc.Data[i].Set(data[i].Get())
 		pc.Data[i].Parent = pc
-		pc.Data[i].Status = i
+		pc.Data[i].Status = 0
 	}
 }
 
@@ -71,7 +71,7 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref.Init()
 	ref.Update(pk)
 	ref.Parent = pc
-	ref.Status = len(pc.Data) - 1
+	ref.Status = -1
 
 	return ref
 }

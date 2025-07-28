@@ -83,7 +83,10 @@ func NewPanelDisplay(
 	)
 
 	str.AddListener(binding.NewDataListener(func() {
-		if !pdt.DidChange() {
+
+		// BugFix: Use pdt status to check the didchange logic preventing panel never change after rates updated
+		if !pdt.DidChange() && pdt.Status == 1 {
+			JC.Logln("Skipping panel panel rebuild for:", pdt.OldKey, pdt.Get(), pdt.Status)
 			return
 		}
 
@@ -108,6 +111,11 @@ func NewPanelDisplay(
 
 func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text, background *canvas.Rectangle, panel *JW.DoubleClickContainer) {
 
+	// Mutate from fresh panel to normal panel when we got valid value
+	if pdt.UsePanelKey().GetValueFloat() != -1 {
+		pdt.Status = 1
+	}
+
 	// New Panel
 	if pdt.Status == -1 {
 		title.Text = "Fetching Rates..."
@@ -130,7 +138,7 @@ func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text,
 	}
 
 	// Fresh panel
-	if pdt.UsePanelKey().GetValueFloat() == -1 {
+	if pdt.Status == 0 {
 		title.Text = "Loading..."
 		subtitle.Hide()
 		content.Hide()

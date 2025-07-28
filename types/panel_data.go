@@ -88,7 +88,7 @@ func (p *PanelDataType) Update(pk string) bool {
 
 	if npk != opk {
 		p.Set(npk)
-		p.Status = 1
+		p.OldKey = opk
 	}
 
 	return true

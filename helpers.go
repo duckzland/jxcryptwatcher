@@ -50,6 +50,7 @@ func UpdateRates() bool {
 	}
 
 	if len(jb) == 0 {
+		JC.Notify("Refuse to fetch rates due to no valid panels...")
 		return false
 	}
 
@@ -58,6 +59,8 @@ func UpdateRates() bool {
 	// Fetching with delay
 	for _, rk := range jb {
 		ex.GetRate(rk)
+
+		JC.RequestDisplayUpdate()
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
