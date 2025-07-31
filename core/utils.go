@@ -162,13 +162,13 @@ func SetTextAlpha(text *canvas.Text, alpha uint8) {
 	}
 }
 
+func Notify(str string) {
+	UpdateStatusChan <- str
+}
+
 func CreateUUID() string {
 	id := uuid.New()
 	return id.String()
-}
-
-func Notify(str string) {
-	UpdateStatusChan <- str
 }
 
 func RequestRateUpdate() {
@@ -177,4 +177,31 @@ func RequestRateUpdate() {
 
 func RequestDisplayUpdate() {
 	UpdateDisplayChan <- struct{}{}
+}
+
+func TruncateText(str string, maxWidth float32) string {
+
+	// Measure full text width
+	full := canvas.NewText(str, color.White)
+	size := full.MinSize()
+
+	// If it fits, nothing to do
+	if size.Width <= maxWidth {
+		return str
+	}
+
+	// Truncate and add ellipsis
+	runes := []rune(str)
+	ellipsis := "..."
+	for i := len(runes); i > 0; i-- {
+		trial := string(runes[:i]) + ellipsis
+		tmp := canvas.NewText(trial, color.White)
+
+		if tmp.MinSize().Width <= maxWidth {
+			str = trial
+			break
+		}
+	}
+
+	return str
 }

@@ -24,6 +24,8 @@ var PanelSubTitleSize float32 = 16
 var PanelContentSize float32 = 30
 var PanelWidth float32 = 286
 var PanelHeight float32 = 130
+var ActionBtnWidth float32 = 40
+var ActionBtnGap float32 = 6
 
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})
