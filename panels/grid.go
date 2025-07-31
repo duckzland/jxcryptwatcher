@@ -15,7 +15,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 
 	JC.PrintMemUsage("Start building panels")
 
-	grid := container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(JC.PanelWidth, JC.PanelHeight)))
+	grid := container.New(JL.NewDynamicGridWrapLayout(fyne.NewSize(JC.PanelWidth, JC.PanelHeight), JC.PanelPadding))
 	list := JT.BP.Get()
 
 	for i := range list {

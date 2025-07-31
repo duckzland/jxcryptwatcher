@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/layout"
 
 	JA "jxwatcher/animations"
 	JC "jxwatcher/core"
@@ -67,17 +66,12 @@ func NewPanelDisplay(
 
 	panel := JW.NewDoubleClickContainer(
 		uuid,
-		NewPanelContainer(
-			container.NewStack(
-				background,
-				container.NewVBox(
-					layout.NewSpacer(),
-					title, content, subtitle,
-					layout.NewSpacer(),
-				),
-				container.NewVBox(action),
-			),
-		),
+		container.New(&PanelLayout{},
+			background,
+			title,
+			content,
+			subtitle,
+			action),
 		action,
 		false,
 	)

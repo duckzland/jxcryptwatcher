@@ -1,36 +1,70 @@
 package panels
 
 import (
-	"image/color"
-
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
-
-	JC "jxwatcher/core"
 )
 
-func NewPanelContainer(content fyne.CanvasObject) fyne.CanvasObject {
+type PanelLayout struct{}
 
-	background := canvas.NewRectangle(JC.PanelBG)
-	background.SetMinSize(fyne.NewSize(100, 100))
-	background.CornerRadius = JC.PanelBorderRadius
+func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	if len(objects) < 5 {
+		return
+	}
 
-	item := container.NewStack(background, content)
-	padding := JC.PanelPadding
+	bg := objects[0]
+	title := objects[1]
+	content := objects[2]
+	subtitle := objects[3]
+	action := objects[4]
 
-	// Simulate padding using transparent spacers
-	top := canvas.NewRectangle(color.Transparent)
-	top.SetMinSize(fyne.NewSize(0, padding[0]))
+	// Full-size background
+	bg.Resize(size)
+	bg.Move(fyne.NewPos(0, 0))
 
-	left := canvas.NewRectangle(color.Transparent)
-	left.SetMinSize(fyne.NewSize(padding[1], 0))
+	// Filter visible content elements
+	centerItems := []fyne.CanvasObject{}
+	for _, obj := range []fyne.CanvasObject{title, content, subtitle} {
+		if obj.Visible() && obj.MinSize().Height > 0 {
+			centerItems = append(centerItems, obj)
+		}
+	}
 
-	bottom := canvas.NewRectangle(color.Transparent)
-	bottom.SetMinSize(fyne.NewSize(0, padding[2]))
+	// Compute total height of visible center items
+	var totalHeight float32
+	for _, obj := range centerItems {
+		totalHeight += obj.MinSize().Height
+	}
 
-	right := canvas.NewRectangle(color.Transparent)
-	right.SetMinSize(fyne.NewSize(padding[3], 0))
+	startY := (size.Height - totalHeight) / 2
+	currentY := startY
 
-	return container.NewBorder(top, bottom, left, right, item)
+	// Center stack
+	for _, obj := range centerItems {
+		objSize := obj.MinSize()
+		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
+		obj.Resize(objSize)
+		currentY += objSize.Height
+	}
+
+	// Position action element last (highest z-index)
+	actionSize := action.MinSize()
+	action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
+	action.Resize(actionSize)
+}
+
+func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	width := float32(0)
+	height := float32(0)
+
+	for _, obj := range objects[1:4] {
+		if obj.Visible() && obj.MinSize().Height > 0 {
+			size := obj.MinSize()
+			if size.Width > width {
+				width = size.Width
+			}
+			height += size.Height
+		}
+	}
+
+	return fyne.NewSize(width, height)
 }

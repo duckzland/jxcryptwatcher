@@ -18,12 +18,12 @@ var GreenColor color.RGBA = color.RGBA{R: 2, G: 115, B: 78, A: 255}
 
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelBorderRadius float32 = 6
-var PanelPadding [4]float32 = [4]float32{0, 5, 10, 5}
+var PanelPadding [4]float32 = [4]float32{10, 8, 10, 8}
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
 var PanelContentSize float32 = 30
-var PanelWidth float32 = 300
-var PanelHeight float32 = 150
+var PanelWidth float32 = 286
+var PanelHeight float32 = 130
 
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})

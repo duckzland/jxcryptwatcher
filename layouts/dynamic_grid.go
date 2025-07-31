@@ -4,41 +4,45 @@ import (
 	"math"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/theme"
 )
 
 var _ fyne.Layout = (*dynamicGridWrapLayout)(nil)
 
 type dynamicGridWrapLayout struct {
-	MinCellSize fyne.Size
-	DynCellSize fyne.Size
-	colCount    int
-	rowCount    int
+	MinCellSize  fyne.Size
+	DynCellSize  fyne.Size
+	colCount     int
+	rowCount     int
+	InnerPadding [4]float32 // top, right, bottom, left
 }
 
-func NewDynamicGridWrapLayout(size fyne.Size) fyne.Layout {
-	return &dynamicGridWrapLayout{size, size, 1, 1}
+func NewDynamicGridWrapLayout(size fyne.Size, padding [4]float32) fyne.Layout {
+	return &dynamicGridWrapLayout{
+		MinCellSize:  size,
+		DynCellSize:  size,
+		colCount:     1,
+		rowCount:     1,
+		InnerPadding: padding,
+	}
 }
 
 func (g *dynamicGridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	padding := theme.Padding()
+	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
+	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
+
 	g.colCount = 1
 	g.rowCount = 0
-
-	// Reset first
 	g.DynCellSize = g.MinCellSize
 
 	if size.Width > g.MinCellSize.Width {
-		g.colCount = int(math.Floor(float64(size.Width+padding) / float64(g.MinCellSize.Width+padding)))
-
-		// Grap empty space and spread them to all cells
-		emptySpace := size.Width - (float32(g.colCount) * g.MinCellSize.Width) - (float32(padding) * float32(g.colCount))
-		if emptySpace > float32(0) {
+		g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+		emptySpace := size.Width - (float32(g.colCount) * g.MinCellSize.Width) - (float32(g.colCount) * hPad)
+		if emptySpace > 0 {
 			g.DynCellSize.Width += emptySpace / float32(g.colCount)
 		}
 	}
 
-	i, x, y := 0, float32(0), float32(0)
+	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
 	for _, child := range objects {
 		if !child.Visible() {
 			continue
@@ -52,10 +56,10 @@ func (g *dynamicGridWrapLayout) Layout(objects []fyne.CanvasObject, size fyne.Si
 		child.Resize(g.DynCellSize)
 
 		if (i+1)%g.colCount == 0 {
-			x = 0
-			y += g.DynCellSize.Height + padding
+			x = g.InnerPadding[3]
+			y += g.DynCellSize.Height + vPad
 		} else {
-			x += g.DynCellSize.Width + padding
+			x += g.DynCellSize.Width + hPad
 		}
 		i++
 	}
@@ -66,6 +70,8 @@ func (g *dynamicGridWrapLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	if rows < 1 {
 		rows = 1
 	}
-	return fyne.NewSize(g.DynCellSize.Width,
-		(g.DynCellSize.Height*float32(rows))+(float32(rows-1)*theme.Padding()))
+	return fyne.NewSize(
+		g.DynCellSize.Width,
+		(g.DynCellSize.Height*float32(rows))+(float32(rows-1)*g.InnerPadding[0])+g.InnerPadding[2],
+	)
 }
