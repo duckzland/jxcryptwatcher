@@ -16,12 +16,9 @@ type PanelGridLayout struct {
 	colCount     int
 	rowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
-	layoutSize   fyne.Size
 }
 
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
-	g.layoutSize = size
 
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
@@ -35,12 +32,12 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
 
 	if th > JC.MainLayoutContentHeight {
-		size.Width -= 16
+		size.Width -= 18
 	}
 
 	// Mobile or super small screen
-	if size.Width != 0 && int64(size.Width) < int64(300) {
-		g.MinCellSize.Width = 200
+	if size.Width != 0 && size.Width < g.MinCellSize.Width {
+		g.MinCellSize.Width = size.Width - hPad
 	}
 
 	if size.Width > g.MinCellSize.Width {
