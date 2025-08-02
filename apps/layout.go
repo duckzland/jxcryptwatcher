@@ -10,17 +10,55 @@ import (
 	JC "jxwatcher/core"
 )
 
-func NewAppLayout(bg *canvas.Rectangle, topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
+type AppMainLayout struct {
+	Padding float32
+}
+
+func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	if len(objects) < 2 {
+		return
+	}
+
+	// Build background
+	bg := canvas.NewRectangle(JC.AppBG)
+	bg.SetMinSize(fyne.NewSize(920, 600))
+	bg.Resize(size)
+
+	// bg := objects[0]
+	topBar := objects[0]
+	content := objects[1]
+
+	// TopBar layout
+	topHeight := topBar.MinSize().Height
+	topBar.Move(fyne.NewPos(a.Padding, a.Padding))
+	topBar.Resize(fyne.NewSize(size.Width-2*a.Padding, topHeight))
+
+	// Content layout (scrollable)
+	contentY := topHeight + a.Padding
+	JC.MainLayoutContentHeight = size.Height - contentY - a.Padding
+	content.Move(fyne.NewPos(a.Padding, contentY))
+	content.Resize(fyne.NewSize(size.Width-2*a.Padding, JC.MainLayoutContentHeight))
+}
+
+func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+
+	top := objects[0].MinSize()
+	content := objects[1].MinSize()
+
+	width := fyne.Max(top.Width, content.Width) + 2*a.Padding
+	height := top.Height + content.Height + 2*a.Padding
+
+	return fyne.NewSize(width, height)
+}
+
+func NewAppLayout(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
 	return fynetooltip.AddWindowToolTipLayer(
-		container.NewStack(
-			bg,
-			container.NewPadded(
-				container.NewBorder(
-					*topbar,
-					nil, nil, nil,
-					container.NewVScroll(content),
-				),
-			),
-		), JC.Window.Canvas(),
-	)
+		container.New(
+			&AppMainLayout{
+				Padding: 10,
+			},
+			*topbar,
+			container.NewVScroll(content),
+		),
+		JC.Window.Canvas())
 }

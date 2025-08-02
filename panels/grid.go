@@ -16,15 +16,27 @@ type PanelGridLayout struct {
 	colCount     int
 	rowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
+	layoutSize   fyne.Size
 }
 
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	g.layoutSize = size
+
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
 
 	g.colCount = 1
 	g.rowCount = 0
 	g.DynCellSize = g.MinCellSize
+
+	// Battling scrollbar, detect if we have scrollbar visible
+	mr := g.countRows(size, hPad, objects)
+	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
+
+	if th > JC.MainLayoutContentHeight {
+		size.Width -= 16
+	}
 
 	// Mobile or super small screen
 	if size.Width != 0 && int64(size.Width) < int64(300) {
@@ -85,13 +97,40 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	rows := max(g.rowCount, 1)
+// Count approx how many rows will be, this isn't accurate and should be only used at the beginning of layouting
+// After layouting use g.rowCount instead
+func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne.CanvasObject) int {
 
-	return fyne.NewSize(
-		g.DynCellSize.Width,
-		(g.DynCellSize.Height*float32(rows))+(float32(rows-1)*g.InnerPadding[0])+g.InnerPadding[2],
-	)
+	r := 0
+	i := 0
+	c := int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+
+	for _, child := range objects {
+		if !child.Visible() {
+			continue
+		}
+		if c != 0 && i%c == 0 {
+			r++
+		}
+
+		i++
+	}
+
+	return r
+}
+
+func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+
+	rows := max(g.rowCount, 1)
+	width := g.DynCellSize.Width
+	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
+
+	// Battling scrollbar, when we have scrollbar give space for it
+	if height > JC.MainLayoutContentHeight {
+		width -= 16
+	}
+
+	return fyne.NewSize(width, height)
 }
 
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject

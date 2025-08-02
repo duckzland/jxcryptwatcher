@@ -3,7 +3,6 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
 
 	JA "jxwatcher/apps"
@@ -29,12 +28,9 @@ func main() {
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)
 
-	bg := canvas.NewRectangle(JC.AppBG)
-	bg.SetMinSize(fyne.NewSize(920, 600))
-
 	topBar := JA.NewTopBar(ResetCryptosMap, func() { RefreshRates() }, OpenSettingForm, OpenNewPanelForm)
 
-	JC.Window.SetContent(JA.NewAppLayout(bg, &topBar, JC.Grid))
+	JC.Window.SetContent(JA.NewAppLayout(&topBar, JC.Grid))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 

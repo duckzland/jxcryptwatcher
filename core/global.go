@@ -30,3 +30,5 @@ var ActionBtnGap float32 = 6
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
+
+var MainLayoutContentHeight float32
