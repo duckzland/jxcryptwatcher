@@ -1,4 +1,4 @@
-name: Cross-Compile and Package Fyne App
+name: Build JXWatcher Binaries
 
 on:
   push:
@@ -18,10 +18,10 @@ jobs:
           go-version: '1.22'
 
       - name: Setup go winres dependencies
-      - run: go install github.com/tc-hib/go-winres@latest
+        run: go install github.com/tc-hib/go-winres@latest
 
       - name: Setup Fyne CLI
-      - run: go install fyne.io/fyne/v2/cmd/fyne@latest
+        run: go install fyne.io/fyne/v2/cmd/fyne@latest
       
       - name: Install dependencies for cross compiling
         run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
