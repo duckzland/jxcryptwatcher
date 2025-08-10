@@ -1,15 +1,15 @@
 name: Build JXWatcher Binaries
 
 ## For debugging the workflow only:
-on:
-  push:
-    branches: [master]
-
-## Make trigger based on tags:
 # on:
 #   push:
-#     tags:
-#       - 'v*'
+#     branches: [master]
+
+## Make trigger based on tags:
+on:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -70,10 +70,4 @@ jobs:
               --data-binary @"$file" \
               "$CLEAN_URL?name=$(basename "$file")"
           done
-          
-      # - name: Upload packaged binaries
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: JXWatcher packages
-      #     path: |
-      #       build/*
+
