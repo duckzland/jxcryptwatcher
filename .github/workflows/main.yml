@@ -58,14 +58,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
         run: |
+          # Strip off the {?name,label} part if present
+          CLEAN_URL="${UPLOAD_URL%%\{*}"
+
           for file in build/*; do
-            echo "Uploading $file to $UPLOAD_URL?name=$(basename "$file")"
+            echo "Uploading $file to $CLEAN_URL?name=$(basename "$file")"
             curl \
               -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$file" \
-              "$UPLOAD_URL?name=$(basename "$file")"
+              "$CLEAN_URL?name=$(basename "$file")"
           done
           
       # - name: Upload packaged binaries
