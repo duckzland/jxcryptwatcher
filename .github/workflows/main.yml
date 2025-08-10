@@ -1,0 +1,73 @@
+name: Build JXWatcher Binaries
+
+## For debugging the workflow only:
+# on:
+#   push:
+#     branches: [master]
+
+## Make trigger based on tags:
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Setup go winres dependencies
+        run: go install github.com/tc-hib/go-winres@latest
+
+      - name: Setup Fyne CLI
+        run: go install fyne.io/tools/cmd/fyne@latest
+      
+      - name: Install dependencies for cross compiling
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
+
+      - name: Read version from version.txt
+        id: get_version
+        run: |
+          VERSION=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+      - name: Cross-compile and packages
+        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          
+      - name: Upload all release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        run: |
+          # Strip off the {?name,label} part if present
+          CLEAN_URL="${UPLOAD_URL%%\{*}"
+
+          for file in build/*; do
+            echo "Uploading $file to $CLEAN_URL?name=$(basename "$file")"
+            curl \
+              -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$file" \
+              "$CLEAN_URL?name=$(basename "$file")"
+          done
+
