@@ -63,8 +63,7 @@ jobs:
             curl \
               -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Content-Type: $(file --mime-type -b "$file")" \
-              --data-binary @"$file" \
+              -F "file=@$file" \
               "$UPLOAD_URL?name=$(basename "$file")"
           done
           
