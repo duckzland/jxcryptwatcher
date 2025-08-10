@@ -5,9 +5,9 @@
 ## ================================================================
 ##
 ## Install these requirements package first:
-## 
+## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
 ## sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
-## go install fyne.io/fyne/v2/cmd/fyne@latest
+## go install fyne.io/tools/cmd/fyne@latest
 ##
 ## Note:
 ## - The source of the Android NDK is important, as the compiler path may vary depending on whether it's installed directly from Google.
@@ -16,7 +16,7 @@ set -e
 
 # Check if fyne is installed
 if ! command -v fyne &> /dev/null; then
-    echo "Fyne CLI not found. Please install it using 'go install fyne.io/fyne/v2/cmd/fyne@latest'."
+    echo "Fyne CLI not found. Please install it using 'go install fyne.io/tools/cmd/fyne@latest'."
     exit 1
 fi
 

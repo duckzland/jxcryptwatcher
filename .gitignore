@@ -13,4 +13,5 @@ assets/rsrc_windows*
 rsrc_windows*
 experimental
 fyne_metadata_init.go
+ghtoken.txt
 */*.old

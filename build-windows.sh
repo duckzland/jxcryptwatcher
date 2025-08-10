@@ -5,7 +5,7 @@
 ## ================================================================
 ##
 ## Install these requirements package first:
-## 
+## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
 ## sudo apt install gcc-mingw-w64 wixl uuid-runtime
 ## go install github.com/tc-hib/go-winres@latest
 ##
