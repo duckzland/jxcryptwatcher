@@ -1,0 +1,37 @@
+name: Cross-Compile and Package Fyne App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Setup go winres dependencies
+      - run: go install github.com/tc-hib/go-winres@latest
+
+      - name: Setup Fyne CLI
+      - run: go install fyne.io/fyne/v2/cmd/fyne@latest
+      
+      - name: Install dependencies for cross compiling
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
+
+      - name: Cross-compile and packages
+        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
+        
+      - name: Upload packaged binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: fyne-packages
+          path: |
+            build/*
