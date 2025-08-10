@@ -24,7 +24,7 @@ jobs:
         run: go install fyne.io/fyne/v2/cmd/fyne@latest
       
       - name: Install dependencies for cross compiling
-        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xorg-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
 
       - name: Cross-compile and packages
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
