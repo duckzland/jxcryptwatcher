@@ -59,11 +59,12 @@ jobs:
           UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
         run: |
           for file in build/*; do
-            echo "Uploading $file..."
+            echo "Uploading $file to $UPLOAD_URL?name=$(basename "$file")"
             curl \
               -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -F "file=@$file" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$file" \
               "$UPLOAD_URL?name=$(basename "$file")"
           done
           
