@@ -30,8 +30,8 @@ jobs:
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
         
       - name: Upload packaged binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: fyne-packages
+          name: JXWatcher packages
           path: |
             build/*
