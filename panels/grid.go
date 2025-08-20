@@ -35,9 +35,11 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		size.Width -= 18
 	}
 
-	// Mobile or super small screen
-	if size.Width != 0 && size.Width < g.MinCellSize.Width {
-		g.MinCellSize.Width = size.Width - hPad
+	// Mobile only!
+	if JC.IsMobile {
+		if size.Width != 0 && size.Width < g.MinCellSize.Width {
+			g.MinCellSize.Width = size.Width - hPad
+		}
 	}
 
 	if size.Width > g.MinCellSize.Width {
