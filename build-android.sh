@@ -12,32 +12,46 @@
 ## Note:
 ## - The source of the Android NDK is important, as the compiler path may vary depending on whether it's installed directly from Google.
 
+set -e
+
+echo_error() {
+  echo -e "\033[0;31m- $1\033[0m"
+}
+
+echo_success() {
+  echo -e "\033[0;32m- $1\033[0m"
+}
+
+echo_start() {
+  echo -e "\033[1m$1\033[0m"
+}
+
+echo_start "Building Android package"
+
 # Check if fyne is installed
 if ! command -v fyne &> /dev/null; then
-    echo "Fyne CLI not found. Please install it using 'go install fyne.io/tools/cmd/fyne@latest'."
+    echo_error "Fyne CLI not found. Please install it using 'go install fyne.io/tools/cmd/fyne@latest'."
     exit 1
 fi
 
 # Check if fyne package is available
 if ! fyne package -h &> /dev/null; then
-    echo "Fyne package command not found. Please ensure you have the latest version of Fyne CLI installed."
+    echo_error "Fyne package command not found. Please ensure you have the latest version of Fyne CLI installed."
     exit 1
 fi
 
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
-    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    echo_error "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
     exit 1
 fi
 
 # Ubuntu will install android ndk to this folder
 android_sdk="/usr/lib/android-ndk/"
 if [ ! -d "$android_sdk" ]; then
-    echo "Android NDK not found at $android_sdk. Please install it."
+    echo_error "Android NDK not found at $android_sdk. Please install it."
     exit 1
 fi
-
-echo -e "\033[1mBuilding Android package\033[0m"
 
 # Options
 name="JXWatcher"
@@ -46,13 +60,13 @@ icon="assets/256x256/jxwatcher.png"
 # Dynamic variable based on source code
 id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/android.go)
 if [[ -z "$id" ]]; then
-    echo "App id not found in core/android.go"
+    echo_error "App id not found in core/android.go"
     exit 1
 fi
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2)
 if [[ -z "$version" ]]; then
-    echo "Version not found in version.txt"
+    echo_error "Version not found in version.txt"
     exit 1
 fi
 
@@ -120,7 +134,7 @@ ANDROID_NDK_HOME=$android_sdk \
 fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release $release
 
 if [ $? -ne 0 ]; then
-    echo "Failed to package the application."
+    echo_error "Failed to package the application."
     rm -f AndroidManifest.xml
     rm -f JXWatcher.apk
     exit 1
@@ -129,4 +143,4 @@ fi
 mv JXWatcher.apk $apk_output
 rm -f AndroidManifest.xml
 
-echo "APK package created: ${apk_output}"
+echo_success "APK package created at: ${apk_output}"

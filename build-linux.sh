@@ -12,18 +12,32 @@
 ## flags -ldflags "-w -s" -gcflags="-l" is the minimum flags for small binary output
 ## 
 
+set -e
+
+echo_error() {
+  echo -e "\033[0;31m- $1\033[0m"
+}
+
+echo_success() {
+  echo -e "\033[0;32m- $1\033[0m"
+}
+
+echo_start() {
+  echo -e "\033[1m$1\033[0m"
+}
+
+echo_start "Generating Linux binary"
+
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
-    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    echo_error "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
     exit 1
 fi
-
-echo -e "\033[1mGenerating Linux binary\033[0m"
 
 # Load version info
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 if [[ -z "$version" ]]; then
-    echo "Error: Version not found in version.txt"
+    echo_error "Error: Version not found in version.txt"
     exit 1
 fi
 
@@ -48,4 +62,4 @@ CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \
 go build -tags="${tags}" -ldflags "${ldflags}" -gcflags="${gcflags}" -o $target_output .
 
-echo "Linux binary created: ${target_output}"
+echo_success "Linux binary created at: ${target_output}"

@@ -14,23 +14,37 @@
 ## Note: 
 ## - Ubuntu should already have dpkg package installed by default
 
+set -e
+
+echo_error() {
+  echo -e "\033[0;31m- $1\033[0m"
+}
+
+echo_success() {
+  echo -e "\033[0;32m- $1\033[0m"
+}
+
+echo_start() {
+  echo -e "\033[1m$1\033[0m"
+}
+
+echo_start "Building Debian package"
+
 # Check if go-winres is installed
 if ! command -v dpkg-deb &> /dev/null; then
-    echo "Command dpkg-deb not found, install with 'apt install dpkg'"
+    echo_error "Command dpkg-deb not found, install with 'apt install dpkg'"
     exit 1
 fi
 
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
-    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    echo_error "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
     exit 1
 fi
 
-echo -e "\033[1mBuilding Debian package\033[0m"
-
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 if [[ -z "$version" ]]; then
-    echo "Version not found in version.txt"
+    echo_error "Version not found in version.txt"
     exit 1
 fi
 
@@ -98,7 +112,7 @@ cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 dpkg-deb --build "${pkg_dir}" "${deb_output}" &> /dev/null
 
 if [ $? -ne 0 ]; then
-    echo "Failed to package the application."
+    echo_error "Failed to package the application."
     rm -rf "${pkg_dir}"
     exit 1
 fi
@@ -106,4 +120,4 @@ fi
 # Clean up
 rm -rf "${pkg_dir}"
 
-echo "Debian package created: ${deb_output}"
+echo_success "Debian package created at: ${deb_output}"

@@ -12,15 +12,31 @@
 ## Note:
 ## - uuid-runtime is optional, only if you wish to regenerate new uuid
 
+set -e
+
+echo_error() {
+  echo -e "\033[0;31m- $1\033[0m"
+}
+
+echo_success() {
+  echo -e "\033[0;32m- $1\033[0m"
+}
+
+echo_start() {
+  echo -e "\033[1m$1\033[0m"
+}
+
+echo_start "Building Windows package"
+
 # Check if mingw gcc compiler exists
 if ! command -v /usr/bin/x86_64-w64-mingw32-gcc &> /dev/null; then
-    echo "Command mingw gcc not found, install with 'sudo apt install gcc-mingw-w64'"
+    echo_error "Command mingw gcc not found, install with 'sudo apt install gcc-mingw-w64'"
     exit 1
 fi
 
 # Check if go-winres is installed
 if ! command -v go-winres &> /dev/null; then
-    echo "Command go-winres not found, install with 'go install github.com/tc-hib/go-winres@latest'"
+    echo_error "Command go-winres not found, install with 'go install github.com/tc-hib/go-winres@latest'"
     exit 1
 fi
 
@@ -32,16 +48,14 @@ fi
 
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
-    echo "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
+    echo_error "version.txt not found. Please create a version.txt file with the format 'version=1.0.0'."
     exit 1
 fi
-
-echo -e "\033[1mBuilding Windows package\033[0m"
 
 # Load version info
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 if [[ -z "$version" ]]; then
-    echo "Error: Version not found in version.txt"
+    echo_error "Error: Version not found in version.txt"
     exit 1
 fi
 
@@ -75,7 +89,7 @@ cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 # upgrade_guid=$(uuidgen)
 upgrade_guid="11442397-0932-48db-98f3-eeb7704e669a"
 if [[ -z "$upgrade_guid" ]]; then
-    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    echo_error "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
     exit 1
 fi
 
@@ -85,7 +99,7 @@ fi
 # component_guid=$(uuidgen)
 component_guid="900c3a3d-77b4-468c-8a2d-8a6eb9dd838e"
 if [[ -z "$component_guid" ]]; then
-    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    echo_error "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
     exit 1
 fi
 
@@ -95,7 +109,7 @@ fi
 product_guid=$(uuidgen)
 # product_guid="0d50ab79-1abd-4277-8b96-d92fffa1afa6"
 if [[ -z "$product_guid" ]]; then
-    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    echo_error "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
     exit 1
 fi
 
@@ -104,7 +118,7 @@ fi
 # shortcut_guid=$(uuidgen)
 shortcut_guid="3e0298de-9989-49c6-9285-23c7e55399b0"
 if [[ -z "$shortcut_guid" ]]; then
-    echo "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
+    echo_error "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
     exit 1
 fi
 
@@ -120,7 +134,7 @@ CGO_LDFLAGS="${cldflags}" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
 go build -tags="${tags}" -ldflags "${ldflags}" -o "${build_dir}/${bin_name}" .
 
-echo "Windows binary generated: ${build_dir}/${bin_name}"
+echo_success "Windows binary generated at: ${build_dir}/${bin_name}"
 
 # Copy Windows resource file
 rsrc_file="assets/windows/rsrc_windows_amd64.syso"
@@ -202,12 +216,12 @@ EOF
 wixl -o "${msi_output}" "${wxs_file}"
 
 if [ $? -ne 0 ]; then
-    echo "Failed to package the application."
+    echo_error "Failed to package the application."
     rm -f "$wxs_file"
     exit 1
 fi
 
-echo "MSI package created: ${msi_output}"
+echo_success "MSI package created at: ${msi_output}"
 
 # Clean up
 rm -f "$wxs_file"
