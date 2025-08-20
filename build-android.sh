@@ -12,8 +12,6 @@
 ## Note:
 ## - The source of the Android NDK is important, as the compiler path may vary depending on whether it's installed directly from Google.
 
-set -e
-
 # Check if fyne is installed
 if ! command -v fyne &> /dev/null; then
     echo "Fyne CLI not found. Please install it using 'go install fyne.io/tools/cmd/fyne@latest'."
@@ -39,7 +37,7 @@ if [ ! -d "$android_sdk" ]; then
     exit 1
 fi
 
-echo "Building Android APK"
+echo -e "\033[1mBuilding Android package\033[0m"
 
 # Options
 name="JXWatcher"
@@ -62,9 +60,17 @@ fi
 tags="production,jxandroid"
 release="true"
 
+## Note: must have at least -pthread
+cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
+cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+
 ## Debugging options, you will need to set -release to false
 # tags="jxandroid"
 # release="false"
+
+## Note: must have at least -pthread
+# cflags="-pipe -Wall -pthread"
+# cldflags="-pthread"
 
 ## Target os, this will create only for android with arm64 processor
 os="android/arm64"
@@ -108,19 +114,19 @@ cat > AndroidManifest.xml <<EOF
 EOF
 
 
-CGO_CFLAGS="-pthread" \
-CGO_LDFLAGS="-pthread" \
+CGO_CFLAGS="${cflags}" \
+CGO_LDFLAGS="${cldflags}" \
 ANDROID_NDK_HOME=$android_sdk \
 fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release $release
 
 if [ $? -ne 0 ]; then
     echo "Failed to package the application."
-    rm AndroidManifest.xml
-    rm JXWatcher.apk
+    rm -f AndroidManifest.xml
+    rm -f JXWatcher.apk
     exit 1
 fi
 
 mv JXWatcher.apk $apk_output
-rm AndroidManifest.xml
+rm -f AndroidManifest.xml
 
 echo "APK package created: ${apk_output}"

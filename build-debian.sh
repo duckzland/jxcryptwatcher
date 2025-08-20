@@ -14,8 +14,6 @@
 ## Note: 
 ## - Ubuntu should already have dpkg package installed by default
 
-set -e
-
 # Check if go-winres is installed
 if ! command -v dpkg-deb &> /dev/null; then
     echo "Command dpkg-deb not found, install with 'apt install dpkg'"
@@ -28,8 +26,7 @@ if [ ! -f version.txt ]; then
     exit 1
 fi
 
-echo "Generating Debian Package..."
-
+echo -e "\033[1mBuilding Debian package\033[0m"
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 if [[ -z "$version" ]]; then
@@ -44,6 +41,20 @@ icons_path="${pkg_dir}/usr/share/icons/hicolor"
 desktop_path="${pkg_dir}/usr/share/applications"
 deb_output="build/jxwatcher_${version}_amd64.deb"
 
+# Production compiling flags
+ldflags="-w -s"
+gcflags="-l"
+tags="production,desktop"
+cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
+cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+
+# Debug compiling flags
+# ldflags=""
+# gcflags="-l"
+# tags="desktop"
+# cflags="-pipe -Wall -g -pthread"
+# cldflags="-pthread"
+
 # Create necessary directories
 mkdir -p "${pkg_dir}/DEBIAN" \
          "${bin_path}" \
@@ -52,8 +63,10 @@ mkdir -p "${pkg_dir}/DEBIAN" \
          "${icons_path}/32x32/apps"
 
 # Build the Go binary
-echo "Building binary..."
-go build -tags="production,desktop" -ldflags "-w -s" -gcflags="-l" -o "${bin_path}/jxwatcher" .
+CGO_ENABLED=1 \
+CGO_CFLAGS="${cflags}" \
+CGO_LDFLAGS="${cldflags}" \
+go build -tags="${tags}" -ldflags "${ldflags}" -gcflags="${gcflags}" -o "${bin_path}/jxwatcher" .
 
 # Create control file
 cat > "${pkg_dir}/DEBIAN/control" <<EOF
@@ -82,10 +95,15 @@ cp assets/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
 cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 
 # Build the Debian package
-echo "Building debian package..."
-dpkg-deb --build "${pkg_dir}" "${deb_output}"
+dpkg-deb --build "${pkg_dir}" "${deb_output}" &> /dev/null
 
-echo "Debian package created: ${deb_output}"
+if [ $? -ne 0 ]; then
+    echo "Failed to package the application."
+    rm -rf "${pkg_dir}"
+    exit 1
+fi
 
 # Clean up
 rm -rf "${pkg_dir}"
+
+echo "Debian package created: ${deb_output}"

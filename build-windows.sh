@@ -12,7 +12,11 @@
 ## Note:
 ## - uuid-runtime is optional, only if you wish to regenerate new uuid
 
-set -e
+# Check if mingw gcc compiler exists
+if ! command -v /usr/bin/x86_64-w64-mingw32-gcc &> /dev/null; then
+    echo "Command mingw gcc not found, install with 'sudo apt install gcc-mingw-w64'"
+    exit 1
+fi
 
 # Check if go-winres is installed
 if ! command -v go-winres &> /dev/null; then
@@ -32,7 +36,7 @@ if [ ! -f version.txt ]; then
     exit 1
 fi
 
-echo "Building Windows binary..."
+echo -e "\033[1mBuilding Windows package\033[0m"
 
 # Load version info
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
@@ -50,6 +54,22 @@ manufacturer="duckzland"
 build_dir="build"
 msi_output="${build_dir}/${app_name}-${version}.msi"
 wxs_file="${build_dir}/installer.wxs"
+
+# Production compiling flags
+ldflags="-w -s -H=windowsgui"
+tags="production,desktop"
+
+## Note: must have at least -pthread
+cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
+cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+
+# Debug compiling flags
+# ldflags=""
+# tags="desktop"
+
+## Note: must have at least -pthread
+# cflags="-pipe -Wall -pthread"
+# cldflags="-pthread"
 
 # Only no need to regenerate this
 # upgrade_guid=$(uuidgen)
@@ -95,10 +115,10 @@ fi
 GOOS=windows \
 GOARCH=amd64  \
 CGO_ENABLED=1 \
-CGO_CFLAGS="-pthread" \
-CGO_LDFLAGS="-pthread" \
+CGO_CFLAGS="${cflags}" \
+CGO_LDFLAGS="${cldflags}" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
-go build -tags="production,desktop" -ldflags "-w -s -H=windowsgui" -o "${build_dir}/${bin_name}" .
+go build -tags="${tags}" -ldflags "${ldflags}" -o "${build_dir}/${bin_name}" .
 
 echo "Windows binary generated: ${build_dir}/${bin_name}"
 
@@ -179,8 +199,13 @@ cat > "$wxs_file" <<EOF
 EOF
 
 # Build MSI
-echo "Building MSI..."
 wixl -o "${msi_output}" "${wxs_file}"
+
+if [ $? -ne 0 ]; then
+    echo "Failed to package the application."
+    rm -f "$wxs_file"
+    exit 1
+fi
 
 echo "MSI package created: ${msi_output}"
 
