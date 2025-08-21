@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var Groups = make(map[string]*DoubleClickContainer)
+var groups = make(map[string]*DoubleClickContainer)
 
 type DoubleClickContainer struct {
 	widget.BaseWidget
@@ -90,11 +90,11 @@ func (h *DoubleClickContainer) ShowTarget() {
 	if h.group != nil {
 		hg := *h.group
 
-		if Groups[hg] != nil {
-			Groups[hg].HideTarget()
+		if groups[hg] != nil {
+			groups[hg].HideTarget()
 		}
 
-		Groups[hg] = h
+		groups[hg] = h
 	}
 }
 
@@ -106,8 +106,8 @@ func (h *DoubleClickContainer) HideTarget() {
 	if h.group != nil {
 		hg := *h.group
 
-		if Groups[hg] != nil {
-			delete(Groups, hg)
+		if groups[hg] != nil {
+			delete(groups, hg)
 		}
 	}
 }
