@@ -156,5 +156,14 @@ func (c *CryptosType) FetchData() string {
 
 	JC.PrintMemUsage("End fetching cryptos data")
 
-	return string(respBody)
+	payload := string(respBody)
+
+	// Debug simulating invalid json
+	// payload = "{///}"
+	// payload = "{}"
+	// payload = `{"values":{}}`
+	// payload = `{"values":[{}]}`
+	// payload = `{"values":[[]]}`
+
+	return payload
 }

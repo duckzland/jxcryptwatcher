@@ -208,7 +208,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 
 	c := resp.Body
 
-	// Debug
+	// Debug simulating invalid json
 	// payload := ""
 	// payload = "{}"
 	// payload = `{"data":[]}`

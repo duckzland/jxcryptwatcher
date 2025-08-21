@@ -23,6 +23,10 @@ func (cp *CryptoType) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if !cp.validate(v) {
+		return nil
+	}
+
 	isActive := int64(v[4].(float64))
 	status := int64(v[5].(float64))
 
@@ -37,6 +41,45 @@ func (cp *CryptoType) UnmarshalJSON(data []byte) error {
 	cp.Status = int64(v[5].(float64))
 
 	return nil
+}
+
+func (cp *CryptoType) validate(v []interface{}) bool {
+	if len(v) < 6 {
+		JC.Logln("Invalid crypto data length, expected at least 6 fields")
+		return false
+	}
+
+	// Checking ID
+	if _, ok := v[0].(float64); !ok {
+		JC.Logln("Invalid 'id' field type in crypto data")
+		return false
+	}
+
+	// Checking Name
+	if _, ok := v[1].(string); !ok {
+		JC.Logln("Invalid 'name' field type in crypto data")
+		return false
+	}
+
+	// Checking Symbol
+	if _, ok := v[2].(string); !ok {
+		JC.Logln("Invalid 'symbol' field type in crypto data")
+		return false
+	}
+
+	// Checking Active
+	if _, ok := v[4].(float64); !ok {
+		JC.Logln("Invalid 'is_active' field type in crypto data")
+		return false
+	}
+
+	// Checking Name
+	if _, ok := v[5].(float64); !ok {
+		JC.Logln("Invalid 'status' field type in crypto data")
+		return false
+	}
+
+	return true
 }
 
 func (cp *CryptoType) CreateKey() string {
