@@ -79,6 +79,8 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(width, height)
 }
 
+var panel_group *string
+
 func NewPanelDisplay(
 	pdt *JT.PanelDataType,
 	onEdit func(pk string, uuid string),
@@ -129,6 +131,9 @@ func NewPanelDisplay(
 		},
 	)
 
+	pg := "panels"
+	panel_group = &pg
+
 	panel := JW.NewDoubleClickContainer(
 		uuid,
 		container.New(&PanelLayout{},
@@ -139,6 +144,7 @@ func NewPanelDisplay(
 			action),
 		action,
 		false,
+		panel_group,
 	)
 
 	str.AddListener(binding.NewDataListener(func() {

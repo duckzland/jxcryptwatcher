@@ -8,6 +8,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+var Groups = make(map[string]*DoubleClickContainer)
+
 type DoubleClickContainer struct {
 	widget.BaseWidget
 	tag         string
@@ -17,6 +19,7 @@ type DoubleClickContainer struct {
 	visible     bool
 	doubleClick bool
 	disabled    bool
+	group       *string
 }
 
 func NewDoubleClickContainer(
@@ -24,6 +27,7 @@ func NewDoubleClickContainer(
 	content fyne.CanvasObject,
 	child fyne.CanvasObject,
 	doubleClick bool,
+	group *string,
 ) *DoubleClickContainer {
 
 	child.Hide()
@@ -34,8 +38,10 @@ func NewDoubleClickContainer(
 		visible:     false,
 		doubleClick: doubleClick,
 		disabled:    false,
+		group:       group,
 	}
 	wrapper.ExtendBaseWidget(wrapper)
+
 	return wrapper
 }
 
@@ -80,12 +86,30 @@ func (h *DoubleClickContainer) ShowTarget() {
 	h.child.Show()
 	h.visible = true
 	h.Refresh()
+
+	if h.group != nil {
+		hg := *h.group
+
+		if Groups[hg] != nil {
+			Groups[hg].HideTarget()
+		}
+
+		Groups[hg] = h
+	}
 }
 
 func (h *DoubleClickContainer) HideTarget() {
 	h.child.Hide()
 	h.visible = false
 	h.Refresh()
+
+	if h.group != nil {
+		hg := *h.group
+
+		if Groups[hg] != nil {
+			delete(Groups, hg)
+		}
+	}
 }
 
 func (h *DoubleClickContainer) Cursor() desktop.Cursor {
