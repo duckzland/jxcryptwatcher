@@ -162,6 +162,17 @@ func SetTextAlpha(text *canvas.Text, alpha uint8) {
 	}
 }
 
+func SetAlpha(c color.Color, alpha float32) color.Color {
+	r, g, b, _ := c.RGBA()
+
+	return &color.RGBA{
+		R: uint8(r >> 8),
+		G: uint8(g >> 8),
+		B: uint8(b >> 8),
+		A: uint8(alpha),
+	}
+}
+
 func Notify(str string) {
 	UpdateStatusChan <- str
 }

@@ -156,16 +156,13 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	// Get the list of panel data
 	list := JT.BP.Get()
 
-	for i := range list {
+	for _, pot := range list {
 		// Retrieve and initialize panel data
-		pkt := JT.BP.GetDataByIndex(i)
+		pkt := JT.BP.GetData(pot.ID)
 		pkt.Status = 0
 
 		// Create the panel
 		panel := createPanel(pkt).(*PanelDisplay)
-
-		// Assign parent container for snapping logic
-		panel.parent = grid
 
 		// Add to grid
 		grid.Add(panel)

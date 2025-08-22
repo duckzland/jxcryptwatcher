@@ -79,7 +79,17 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 
 func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
 
-	index := pc.GetIndex(uuid)
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	index := -1
+	for i, pdt := range pc.Data {
+		if pdt.ID == uuid {
+			index = i
+			break
+		}
+	}
+
 	if index == -1 || index == newIndex {
 		return false
 	}
@@ -117,8 +127,8 @@ func (pc *PanelsMapType) RefreshData() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	for i := range pc.Data {
-		pdt := pc.GetDataByIndex(i)
+	for _, pot := range pc.Data {
+		pdt := pc.GetData(pot.ID)
 		pko := pdt.UsePanelKey()
 		mmp := pc.Maps
 
@@ -152,8 +162,7 @@ func (pc *PanelsMapType) GetIndex(uuid string) int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	for i := range pc.Data {
-		pdt := pc.GetDataByIndex(i)
+	for i, pdt := range pc.Data {
 		if pdt.ID == uuid {
 			return i
 		}

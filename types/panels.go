@@ -62,8 +62,8 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 	maps.mu.RUnlock()
 
 	np := []PanelType{}
-	for i := range data {
-		pdt := maps.GetDataByIndex(i)
+	for _, pot := range data {
+		pdt := maps.GetData(pot.ID)
 		pk := pdt.UsePanelKey()
 
 		panel := PanelType{

@@ -14,9 +14,9 @@ import (
 func UpdateDisplay() {
 
 	list := JT.BP.Get()
-	for i := range list {
+	for _, pot := range list {
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetDataByIndex(i)
+		pkt := JT.BP.GetData(pot.ID)
 		pk := pkt.Get()
 		pkt.Update(pk)
 
@@ -33,8 +33,8 @@ func UpdateRates() bool {
 	list := JT.BP.Get()
 
 	// Prune data first, remove duplicate calls, merge into single call wheneveer possible
-	for i := range list {
-		pk := JT.BP.GetDataByIndex(i)
+	for _, pot := range list {
+		pk := JT.BP.GetData(pot.ID)
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()

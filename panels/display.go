@@ -92,7 +92,7 @@ type PanelDisplay struct {
 	endScroll   float32
 	dragOffset  fyne.Position
 	dragging    bool
-	parent      *fyne.Container
+	background  *canvas.Rectangle
 }
 
 var activeAction *PanelDisplay = nil
@@ -148,9 +148,10 @@ func NewPanelDisplay(
 			subtitle,
 			action,
 		),
-		child:    action,
-		visible:  false,
-		disabled: false,
+		child:      action,
+		visible:    false,
+		disabled:   false,
+		background: background,
 	}
 
 	panel.ExtendBaseWidget(panel)
@@ -163,22 +164,22 @@ func NewPanelDisplay(
 
 		switch pdt.IsValueIncrease() {
 		case 1:
-			background.FillColor = JC.GreenColor
-			background.Refresh()
+			panel.background.FillColor = JC.GreenColor
+			panel.background.Refresh()
 		case -1:
-			background.FillColor = JC.RedColor
-			background.Refresh()
+			panel.background.FillColor = JC.RedColor
+			panel.background.Refresh()
 		}
 
-		panel.updateContent(pdt, title, subtitle, content, background)
+		panel.updateContent(pdt, title, subtitle, content)
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	panel.updateContent(pdt, title, subtitle, content, background)
+	panel.updateContent(pdt, title, subtitle, content)
 	return panel
 }
 
-func (h *PanelDisplay) updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text, background *canvas.Rectangle) {
+func (h *PanelDisplay) updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text) {
 	if pdt.UsePanelKey().GetValueFloat() != -1 {
 		pdt.Status = 1
 	}
@@ -189,21 +190,21 @@ func (h *PanelDisplay) updateContent(pdt *JT.PanelDataType, title, subtitle, con
 		subtitle.Hide()
 		content.Hide()
 		h.DisableClick()
-		background.FillColor = JC.PanelBG
+		h.background.FillColor = JC.PanelBG
 
 	case 0:
 		title.Text = "Loading..."
 		subtitle.Hide()
 		content.Hide()
 		h.DisableClick()
-		background.FillColor = JC.PanelBG
+		h.background.FillColor = JC.PanelBG
 
 	default:
 		if !JT.BP.ValidatePanel(pdt.Get()) {
 			title.Text = "Invalid Panel"
 			subtitle.Hide()
 			content.Hide()
-			background.FillColor = JC.PanelBG
+			h.background.FillColor = JC.PanelBG
 			return
 		}
 
@@ -272,6 +273,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	if !Draggable {
 		return
 	}
+
 	if !h.dragging {
 		h.firstDrag = h.Position().Add(ev.Position)
 		h.startScroll = JM.AppMainPanelScrollWindow.Offset.Y
@@ -282,14 +284,19 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) DragEnd() {
-	h.dragging = false
 	h.endScroll = JM.AppMainPanelScrollWindow.Offset.Y
 	h.dragOffset = h.firstDrag.Add(h.lastDrag)
 	h.dragOffset.Y -= h.startScroll - h.endScroll
 
-	if h.parent != nil {
-		h.snapToNearest()
-	}
+	h.snapToNearest()
+
+	h.dragging = false
+	h.dragOffset = fyne.NewPos(0, 0)
+	h.startScroll = 0
+	h.endScroll = 0
+	h.firstDrag = fyne.NewPos(0, 0)
+	h.lastDrag = fyne.NewPos(0, 0)
+
 }
 
 func (h *PanelDisplay) snapToNearest() {
@@ -297,38 +304,42 @@ func (h *PanelDisplay) snapToNearest() {
 	// Convert target position to grid index
 	targetIndex := h.findDropTargetIndex()
 	if targetIndex != -1 {
-		h.parent.Objects = h.reorder(targetIndex)
+		Draggable = false
+		JC.Grid.Objects = h.reorder(targetIndex)
+		JT.BP.Move(h.tag, targetIndex)
+		JC.Grid.Refresh()
+
+		go func() {
+			if JT.SavePanels() {
+				JC.Notify("Panels updated")
+			}
+
+			// time.Sleep(time.Duration(float32(len(JC.Grid.Objects)*3) * float32(time.Millisecond)))
+			time.Sleep(1 * time.Millisecond)
+			Draggable = true
+		}()
 	}
-
-	h.dragOffset = fyne.NewPos(0, 0)
-	Draggable = false
-	h.parent.Refresh()
-
-	// Stop dragging till refresh finished
-	go func() {
-		time.Sleep(5 * time.Millisecond)
-		Draggable = true
-	}()
 }
 
 func (h *PanelDisplay) findDropTargetIndex() int {
-	panels := h.parent.Objects
+	panels := JC.Grid.Objects
 	dragPos := h.dragOffset
 
 	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f) - Offset: (%.2f, %.2f)", dragPos.X, dragPos.Y, h.dragOffset.X, h.dragOffset.Y))
+
+	layout, ok := JC.Grid.Layout.(*PanelGridLayout)
+	if !ok {
+		return -1
+	}
 
 	for i, panel := range panels {
 		panelPos := panel.Position()
 		panelSize := panel.Size()
 
-		layout, _ := h.parent.Layout.(*PanelGridLayout)
-		hPad := layout.InnerPadding[1] + layout.InnerPadding[3]
-		vPad := layout.InnerPadding[0] + layout.InnerPadding[2]
-
-		left := panelPos.X + vPad
-		right := panelPos.X + panelSize.Width + vPad
-		top := panelPos.Y + hPad
-		bottom := panelPos.Y + panelSize.Height + hPad
+		left := panelPos.X - layout.InnerPadding[1]
+		right := panelPos.X + panelSize.Width + layout.InnerPadding[3]
+		top := panelPos.Y - layout.InnerPadding[0]
+		bottom := panelPos.Y + panelSize.Height + layout.InnerPadding[2]
 
 		JC.Logln(fmt.Sprintf(
 			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",
@@ -348,7 +359,7 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 }
 
 func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
-	panels := h.parent.Objects
+	panels := JC.Grid.Objects
 	var result []fyne.CanvasObject
 	for _, obj := range panels {
 		if obj != h {
@@ -362,24 +373,7 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	JC.Logln(fmt.Sprintf(
-		"Moving panel [%s]: from index %d to index %d",
-		h.tag,
-		JT.BP.GetIndex(h.tag),
-		targetIndex,
-	))
-
-	if JT.BP.Move(h.tag, targetIndex) {
-		if JT.SavePanels() {
-			JC.Notify("Panels updated")
-		}
-	}
-
-	JC.Logln(fmt.Sprintf(
-		"Move complete: panel [%s] now at index %d",
-		h.tag,
-		JT.BP.GetIndex(h.tag),
-	))
+	JA.FadeInBackground(h.background, 100*time.Millisecond)
 
 	return result
 }
