@@ -1,18 +1,23 @@
 package panels
 
 import (
+	"fmt"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/animations"
+	JM "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
-	JW "jxwatcher/widgets"
 )
+
+var Draggable = true
 
 type PanelLayout struct{}
 
@@ -20,18 +25,15 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 5 {
 		return
 	}
-
 	bg := objects[0]
 	title := objects[1]
 	content := objects[2]
 	subtitle := objects[3]
 	action := objects[4]
 
-	// Full-size background
 	bg.Resize(size)
 	bg.Move(fyne.NewPos(0, 0))
 
-	// Filter visible content elements
 	centerItems := []fyne.CanvasObject{}
 	for _, obj := range []fyne.CanvasObject{title, content, subtitle} {
 		if obj.Visible() && obj.MinSize().Height > 0 {
@@ -39,7 +41,6 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		}
 	}
 
-	// Compute total height of visible center items
 	var totalHeight float32
 	for _, obj := range centerItems {
 		totalHeight += obj.MinSize().Height
@@ -48,7 +49,6 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	startY := (size.Height - totalHeight) / 2
 	currentY := startY
 
-	// Center stack
 	for _, obj := range centerItems {
 		objSize := obj.MinSize()
 		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
@@ -56,7 +56,6 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		currentY += objSize.Height
 	}
 
-	// Position action element last (highest z-index)
 	actionSize := action.MinSize()
 	action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
 	action.Resize(actionSize)
@@ -79,13 +78,30 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(width, height)
 }
 
+type PanelDisplay struct {
+	widget.BaseWidget
+	tag         string
+	content     fyne.CanvasObject
+	child       fyne.CanvasObject
+	lastClick   time.Time
+	visible     bool
+	disabled    bool
+	firstDrag   fyne.Position
+	lastDrag    fyne.Position
+	startScroll float32
+	endScroll   float32
+	dragOffset  fyne.Position
+	dragging    bool
+	parent      *fyne.Container
+}
+
+var activeAction *PanelDisplay = nil
+
 func NewPanelDisplay(
 	pdt *JT.PanelDataType,
 	onEdit func(pk string, uuid string),
 	onDelete func(uuid string),
-) fyne.CanvasObject {
-
-	// Generate a new UUID for the panel, avoiding panel use wrong uuid
+) *PanelDisplay {
 	uuid := JC.CreateUUID()
 	pdt.ID = uuid
 
@@ -112,46 +128,36 @@ func NewPanelDisplay(
 	action := NewPanelActionBar(
 		func() {
 			dynpk, _ := str.Get()
-			// Potential bug fix, maybe this will persist and store as local variable?
-			u := uuid
 			if onEdit != nil {
-				JC.Logf("Editing panel %s", u)
-				go onEdit(dynpk, u)
+				go onEdit(dynpk, uuid)
 			}
 		},
 		func() {
-			// Potential bug fix, maybe this will persist and store as local variable?
-			u := uuid
 			if onDelete != nil {
-				JC.Logf("Deleting panel %s", u)
-				go onDelete(u)
+				go onDelete(uuid)
 			}
 		},
 	)
 
-	// Use reference instead of constant.
-	pg := "panels"
-	var panel_group *string
-	panel_group = &pg
-
-	panel := JW.NewDoubleClickContainer(
-		uuid,
-		container.New(&PanelLayout{},
+	panel := &PanelDisplay{
+		tag: uuid,
+		content: container.New(&PanelLayout{},
 			background,
 			title,
 			content,
 			subtitle,
-			action),
-		action,
-		false,
-		panel_group,
-	)
+			action,
+		),
+		child:    action,
+		visible:  false,
+		disabled: false,
+	}
+
+	panel.ExtendBaseWidget(panel)
+	action.Hide()
 
 	str.AddListener(binding.NewDataListener(func() {
-
-		// BugFix: Use pdt status to check the didchange logic preventing panel never change after rates updated
 		if !pdt.DidChange() && pdt.Status == 1 {
-			JC.Logln("Skipping panel panel rebuild for:", pdt.OldKey, pdt.Get(), pdt.Status)
 			return
 		}
 
@@ -164,61 +170,216 @@ func NewPanelDisplay(
 			background.Refresh()
 		}
 
-		updateContent(pdt, title, subtitle, content, background, panel)
-
+		panel.updateContent(pdt, title, subtitle, content, background)
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	updateContent(pdt, title, subtitle, content, background, panel)
-
+	panel.updateContent(pdt, title, subtitle, content, background)
 	return panel
 }
 
-func updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text, background *canvas.Rectangle, panel *JW.DoubleClickContainer) {
-
-	// Mutate from fresh panel to normal panel when we got valid value
+func (h *PanelDisplay) updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text, background *canvas.Rectangle) {
 	if pdt.UsePanelKey().GetValueFloat() != -1 {
 		pdt.Status = 1
 	}
 
-	// New Panel
-	if pdt.Status == -1 {
+	switch pdt.Status {
+	case -1:
 		title.Text = "Fetching Rates..."
 		subtitle.Hide()
 		content.Hide()
-		panel.DisableClick()
+		h.DisableClick()
 		background.FillColor = JC.PanelBG
 
-		return
-	}
-
-	// Invalid panel
-	if !JT.BP.ValidatePanel(pdt.Get()) {
-		title.Text = "Invalid Panel"
-		subtitle.Hide()
-		content.Hide()
-		background.FillColor = JC.PanelBG
-
-		return
-	}
-
-	// Fresh panel
-	if pdt.Status == 0 {
+	case 0:
 		title.Text = "Loading..."
 		subtitle.Hide()
 		content.Hide()
-		panel.DisableClick()
+		h.DisableClick()
 		background.FillColor = JC.PanelBG
 
+	default:
+		if !JT.BP.ValidatePanel(pdt.Get()) {
+			title.Text = "Invalid Panel"
+			subtitle.Hide()
+			content.Hide()
+			background.FillColor = JC.PanelBG
+			return
+		}
+
+		title.Text = pdt.FormatTitle()
+		subtitle.Text = pdt.FormatSubtitle()
+		content.Text = pdt.FormatContent()
+
+		subtitle.Show()
+		content.Show()
+		h.EnableClick()
+	}
+}
+
+func (h *PanelDisplay) GetTag() string {
+	return h.tag
+}
+
+func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(h.content)
+}
+
+func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
+	if h.disabled {
 		return
 	}
 
-	// Normal panel
-	title.Text = pdt.FormatTitle()
-	subtitle.Text = pdt.FormatSubtitle()
-	content.Text = pdt.FormatContent()
+	if h.visible {
+		h.HideTarget()
+	} else {
+		h.ShowTarget()
+	}
+}
 
-	subtitle.Show()
-	content.Show()
-	panel.EnableClick()
+func (h *PanelDisplay) ShowTarget() {
+	h.child.Show()
+	h.visible = true
+	h.Refresh()
+
+	if activeAction != nil {
+		activeAction.HideTarget()
+	}
+
+	activeAction = h
+}
+
+func (h *PanelDisplay) HideTarget() {
+	h.child.Hide()
+	h.visible = false
+	h.Refresh()
+	activeAction = nil
+}
+
+func (h *PanelDisplay) Cursor() desktop.Cursor {
+	return desktop.PointerCursor
+}
+
+func (h *PanelDisplay) DisableClick() {
+	h.disabled = true
+}
+
+func (h *PanelDisplay) EnableClick() {
+	h.disabled = false
+}
+
+func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
+	if !Draggable {
+		return
+	}
+	if !h.dragging {
+		h.firstDrag = h.Position().Add(ev.Position)
+		h.startScroll = JM.AppMainPanelScrollWindow.Offset.Y
+		h.dragging = true
+	}
+
+	h.lastDrag = ev.Position
+}
+
+func (h *PanelDisplay) DragEnd() {
+	h.dragging = false
+	h.endScroll = JM.AppMainPanelScrollWindow.Offset.Y
+	h.dragOffset = h.firstDrag.Add(h.lastDrag)
+	h.dragOffset.Y -= h.startScroll - h.endScroll
+
+	if h.parent != nil {
+		h.snapToNearest()
+	}
+}
+
+func (h *PanelDisplay) snapToNearest() {
+
+	// Convert target position to grid index
+	targetIndex := h.findDropTargetIndex()
+	if targetIndex != -1 {
+		h.parent.Objects = h.reorder(targetIndex)
+	}
+
+	h.dragOffset = fyne.NewPos(0, 0)
+	Draggable = false
+	h.parent.Refresh()
+
+	// Stop dragging till refresh finished
+	go func() {
+		time.Sleep(5 * time.Millisecond)
+		Draggable = true
+	}()
+}
+
+func (h *PanelDisplay) findDropTargetIndex() int {
+	panels := h.parent.Objects
+	dragPos := h.dragOffset
+
+	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f) - Offset: (%.2f, %.2f)", dragPos.X, dragPos.Y, h.dragOffset.X, h.dragOffset.Y))
+
+	for i, panel := range panels {
+		panelPos := panel.Position()
+		panelSize := panel.Size()
+
+		layout, _ := h.parent.Layout.(*PanelGridLayout)
+		hPad := layout.InnerPadding[1] + layout.InnerPadding[3]
+		vPad := layout.InnerPadding[0] + layout.InnerPadding[2]
+
+		left := panelPos.X + vPad
+		right := panelPos.X + panelSize.Width + vPad
+		top := panelPos.Y + hPad
+		bottom := panelPos.Y + panelSize.Height + hPad
+
+		JC.Logln(fmt.Sprintf(
+			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",
+			i, left, right, top, bottom,
+		))
+
+		if dragPos.X >= left && dragPos.X <= right &&
+			dragPos.Y >= top && dragPos.Y <= bottom {
+
+			JC.Logln(fmt.Sprintf("Dropped inside panel %d", i))
+
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
+	panels := h.parent.Objects
+	var result []fyne.CanvasObject
+	for _, obj := range panels {
+		if obj != h {
+			result = append(result, obj)
+		}
+	}
+
+	if targetIndex >= len(result) {
+		result = append(result, h)
+	} else {
+		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
+	}
+
+	JC.Logln(fmt.Sprintf(
+		"Moving panel [%s]: from index %d to index %d",
+		h.tag,
+		JT.BP.GetIndex(h.tag),
+		targetIndex,
+	))
+
+	if JT.BP.Move(h.tag, targetIndex) {
+		if JT.SavePanels() {
+			JC.Notify("Panels updated")
+		}
+	}
+
+	JC.Logln(fmt.Sprintf(
+		"Move complete: panel [%s] now at index %d",
+		h.tag,
+		JT.BP.GetIndex(h.tag),
+	))
+
+	return result
 }

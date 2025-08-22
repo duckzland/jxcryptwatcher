@@ -13,8 +13,8 @@ import (
 type PanelGridLayout struct {
 	MinCellSize  fyne.Size
 	DynCellSize  fyne.Size
-	colCount     int
-	rowCount     int
+	ColCount     int
+	RowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
 }
 
@@ -23,8 +23,8 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
 
-	g.colCount = 1
-	g.rowCount = 0
+	g.ColCount = 1
+	g.RowCount = 0
 	g.DynCellSize = g.MinCellSize
 
 	// Battling scrollbar, detect if we have scrollbar visible
@@ -43,10 +43,10 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if size.Width > g.MinCellSize.Width {
-		g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+		g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
 
 		pads := float32(0)
-		for i := 0; i < g.colCount; i++ {
+		for i := 0; i < g.ColCount; i++ {
 			pads += hPad
 
 			// Properly count pads, the first in column will not need left padding
@@ -55,14 +55,14 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			}
 
 			// Properly count pads, the last in column will not need right padding
-			if i == g.colCount-1 {
+			if i == g.ColCount-1 {
 				pads -= g.InnerPadding[1]
 			}
 		}
 
-		emptySpace := size.Width - (float32(g.colCount) * g.MinCellSize.Width) - pads
+		emptySpace := size.Width - (float32(g.ColCount) * g.MinCellSize.Width) - pads
 		if emptySpace > 0 {
-			g.DynCellSize.Width += emptySpace / float32(g.colCount)
+			g.DynCellSize.Width += emptySpace / float32(g.ColCount)
 		}
 	}
 
@@ -74,21 +74,21 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		}
 
 		// First in column, move to 0 horizontally
-		if i%g.colCount == 0 {
+		if i%g.ColCount == 0 {
 			x = 0
-			g.rowCount++
+			g.RowCount++
 		}
 
 		child.Move(fyne.NewPos(x, y))
 		child.Resize(g.DynCellSize)
 
 		// End of column, prepare to move down the next item
-		if (i+1)%g.colCount == 0 {
+		if (i+1)%g.ColCount == 0 {
 			y += g.DynCellSize.Height + vPad
 		}
 
 		// Still in column, just move right horizontally
-		if (i+1)%g.colCount != 0 {
+		if (i+1)%g.ColCount != 0 {
 			x += g.DynCellSize.Width + hPad
 		}
 
@@ -97,7 +97,7 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 // Count approx how many rows will be, this isn't accurate and should be only used at the beginning of layouting
-// After layouting use g.rowCount instead
+// After layouting use g.RowCount instead
 func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne.CanvasObject) int {
 
 	r := 0
@@ -120,7 +120,7 @@ func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 
 func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
-	rows := max(g.rowCount, 1)
+	rows := max(g.RowCount, 1)
 	width := g.DynCellSize.Width
 	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
 
@@ -138,24 +138,37 @@ func NewPanelGridLayout(size fyne.Size, padding [4]float32) fyne.Layout {
 	return &PanelGridLayout{
 		MinCellSize:  size,
 		DynCellSize:  size,
-		colCount:     1,
-		rowCount:     1,
+		ColCount:     1,
+		RowCount:     1,
 		InnerPadding: padding,
 	}
 }
 
 func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
-
 	JC.PrintMemUsage("Start building panels")
 
-	grid := container.New(NewPanelGridLayout(fyne.NewSize(JC.PanelWidth, JC.PanelHeight), JC.PanelPadding))
+	// Create a grid container with custom layout
+	grid := container.New(NewPanelGridLayout(
+		fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+		JC.PanelPadding,
+	))
+
+	// Get the list of panel data
 	list := JT.BP.Get()
 
 	for i := range list {
-		// Using index for first initial boot
+		// Retrieve and initialize panel data
 		pkt := JT.BP.GetDataByIndex(i)
 		pkt.Status = 0
-		grid.Add(createPanel(pkt))
+
+		// Create the panel
+		panel := createPanel(pkt).(*PanelDisplay)
+
+		// Assign parent container for snapping logic
+		panel.parent = grid
+
+		// Add to grid
+		grid.Add(panel)
 	}
 
 	JC.PrintMemUsage("End building panels")

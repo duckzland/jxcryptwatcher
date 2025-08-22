@@ -10,21 +10,22 @@ var BP PanelsMapType
 
 type PanelsMapType struct {
 	mu   sync.RWMutex
-	Data []PanelDataType
+	Data []*PanelDataType
 	Maps *CryptosMapType
 }
 
 func (pc *PanelsMapType) Init() {
-	pc.Data = []PanelDataType{}
+	pc.Data = []*PanelDataType{}
 }
 
 func (pc *PanelsMapType) Set(data []PanelDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	pc.Data = make([]PanelDataType, len(data))
+	pc.Data = make([]*PanelDataType, len(data))
 
 	for i := range data {
+		pc.Data[i] = &PanelDataType{}
 		pc.Data[i].Init()
 		pc.Data[i].Set(data[i].Get())
 		pc.Data[i].Parent = pc
@@ -62,11 +63,11 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	defer pc.mu.Unlock()
 
 	if pc.Data == nil {
-		pc.Data = []PanelDataType{}
+		pc.Data = []*PanelDataType{}
 	}
 
-	pc.Data = append(pc.Data, PanelDataType{})
-	ref := &pc.Data[len(pc.Data)-1]
+	pc.Data = append(pc.Data, &PanelDataType{})
+	ref := pc.Data[len(pc.Data)-1]
 
 	ref.Init()
 	ref.Update(pk)
@@ -74,6 +75,27 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref.Status = -1
 
 	return ref
+}
+
+func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
+
+	index := pc.GetIndex(uuid)
+	if index == -1 || index == newIndex {
+		return false
+	}
+
+	// Move element by shifting others
+	if index < newIndex {
+		for i := index; i < newIndex; i++ {
+			pc.Data[i], pc.Data[i+1] = pc.Data[i+1], pc.Data[i]
+		}
+	} else {
+		for i := index; i > newIndex; i-- {
+			pc.Data[i], pc.Data[i-1] = pc.Data[i-1], pc.Data[i]
+		}
+	}
+
+	return true
 }
 
 func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
@@ -84,7 +106,7 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 		return nil
 	}
 
-	pdt := &pc.Data[index]
+	pdt := pc.Data[index]
 
 	pdt.Update(pk)
 
@@ -117,11 +139,11 @@ func (pc *PanelsMapType) RefreshData() bool {
 	return true
 }
 
-func (pc *PanelsMapType) Get() []PanelDataType {
+func (pc *PanelsMapType) Get() []*PanelDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	dataCopy := make([]PanelDataType, len(pc.Data))
+	dataCopy := make([]*PanelDataType, len(pc.Data))
 	copy(dataCopy, pc.Data)
 	return dataCopy
 }
@@ -147,7 +169,7 @@ func (pc *PanelsMapType) GetData(uuid string) *PanelDataType {
 	for i := range pc.Data {
 		pdt := pc.GetDataByIndex(i)
 		if pdt.ID == uuid {
-			return &pc.Data[i]
+			return pc.Data[i]
 		}
 	}
 
@@ -159,7 +181,7 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	defer pc.mu.RUnlock()
 
 	if index >= 0 && index < len(pc.Data) {
-		return &pc.Data[index]
+		return pc.Data[index]
 	}
 
 	return nil

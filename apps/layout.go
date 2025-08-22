@@ -14,6 +14,8 @@ type AppMainLayout struct {
 	Padding float32
 }
 
+var AppMainPanelScrollWindow *container.Scroll = nil
+
 func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 2 {
 		return
@@ -36,6 +38,7 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	contentY := topHeight + a.Padding
 	JC.MainLayoutContentWidth = size.Width - 2*a.Padding
 	JC.MainLayoutContentHeight = size.Height - contentY - a.Padding
+
 	content.Move(fyne.NewPos(a.Padding, contentY))
 	content.Resize(fyne.NewSize(JC.MainLayoutContentWidth, JC.MainLayoutContentHeight))
 }
@@ -52,13 +55,15 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 }
 
 func NewAppLayout(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
+	AppMainPanelScrollWindow = container.NewVScroll(content)
+
 	return fynetooltip.AddWindowToolTipLayer(
 		container.New(
 			&AppMainLayout{
 				Padding: 10,
 			},
 			*topbar,
-			container.NewVScroll(content),
+			AppMainPanelScrollWindow,
 		),
 		JC.Window.Canvas())
 }

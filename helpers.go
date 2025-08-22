@@ -9,7 +9,6 @@ import (
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
-	JW "jxwatcher/widgets"
 )
 
 func UpdateDisplay() {
@@ -94,7 +93,7 @@ func RefreshRates() bool {
 func RemovePanel(uuid string) {
 
 	for _, obj := range JC.Grid.Objects {
-		if panel, ok := obj.(*JW.DoubleClickContainer); ok {
+		if panel, ok := obj.(*JP.PanelDisplay); ok {
 			if panel.GetTag() == uuid {
 
 				JC.Logf("Removing panel %s", uuid)
