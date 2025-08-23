@@ -94,6 +94,10 @@ type PanelDisplay struct {
 	dragOffset  fyne.Position
 	dragging    bool
 	background  *canvas.Rectangle
+	refTitle    *canvas.Text
+	refContent  *canvas.Text
+	refSubtitle *canvas.Text
+	refData     *JT.PanelDataType
 }
 
 var activeAction *PanelDisplay = nil
@@ -149,21 +153,25 @@ func NewPanelDisplay(
 			subtitle,
 			action,
 		),
-		child:      action,
-		visible:    false,
-		disabled:   false,
-		background: background,
+		child:       action,
+		visible:     false,
+		disabled:    false,
+		background:  background,
+		refTitle:    title,
+		refContent:  content,
+		refSubtitle: subtitle,
+		refData:     pdt,
 	}
 
 	panel.ExtendBaseWidget(panel)
 	action.Hide()
 
 	str.AddListener(binding.NewDataListener(func() {
-		if !pdt.DidChange() && pdt.Status == 1 {
+		if !panel.refData.DidChange() && panel.refData.Status == 1 {
 			return
 		}
 
-		switch pdt.IsValueIncrease() {
+		switch panel.refData.IsValueIncrease() {
 		case 1:
 			panel.background.FillColor = JC.GreenColor
 			panel.background.Refresh()
@@ -172,49 +180,49 @@ func NewPanelDisplay(
 			panel.background.Refresh()
 		}
 
-		panel.updateContent(pdt, title, subtitle, content)
+		panel.updateContent()
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	panel.updateContent(pdt, title, subtitle, content)
+	panel.updateContent()
 	return panel
 }
 
-func (h *PanelDisplay) updateContent(pdt *JT.PanelDataType, title, subtitle, content *canvas.Text) {
-	if pdt.UsePanelKey().GetValueFloat() != -1 {
-		pdt.Status = 1
+func (h *PanelDisplay) updateContent() {
+	if h.refData.UsePanelKey().GetValueFloat() != -1 {
+		h.refData.Status = 1
 	}
 
-	switch pdt.Status {
+	switch h.refData.Status {
 	case -1:
-		title.Text = "Fetching Rates..."
-		subtitle.Hide()
-		content.Hide()
+		h.refTitle.Text = "Fetching Rates..."
+		h.refSubtitle.Hide()
+		h.refContent.Hide()
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
 
 	case 0:
-		title.Text = "Loading..."
-		subtitle.Hide()
-		content.Hide()
+		h.refTitle.Text = "Loading..."
+		h.refSubtitle.Hide()
+		h.refContent.Hide()
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
 
 	default:
-		if !JT.BP.ValidatePanel(pdt.Get()) {
-			title.Text = "Invalid Panel"
-			subtitle.Hide()
-			content.Hide()
+		if !JT.BP.ValidatePanel(h.refData.Get()) {
+			h.refTitle.Text = "Invalid Panel"
+			h.refSubtitle.Hide()
+			h.refContent.Hide()
 			h.background.FillColor = JC.PanelBG
 			return
 		}
 
-		title.Text = pdt.FormatTitle()
-		subtitle.Text = pdt.FormatSubtitle()
-		content.Text = pdt.FormatContent()
+		h.refTitle.Text = h.refData.FormatTitle()
+		h.refSubtitle.Text = h.refData.FormatSubtitle()
+		h.refContent.Text = h.refData.FormatContent()
 
-		subtitle.Show()
-		content.Show()
+		h.refSubtitle.Show()
+		h.refContent.Show()
 		h.EnableClick()
 	}
 }
