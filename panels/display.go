@@ -18,6 +18,7 @@ import (
 )
 
 var Draggable = true
+var SyncingPanels = false
 
 type PanelLayout struct{}
 
@@ -306,15 +307,24 @@ func (h *PanelDisplay) snapToNearest() {
 	if targetIndex != -1 {
 		Draggable = false
 		JC.Grid.Objects = h.reorder(targetIndex)
-		JT.BP.Move(h.tag, targetIndex)
 		JC.Grid.Refresh()
 
-		go func() {
-			if JT.SavePanels() {
-				JC.Notify("Panels updated")
-			}
+		if !SyncingPanels {
+			SyncingPanels = true
 
-			// time.Sleep(time.Duration(float32(len(JC.Grid.Objects)*3) * float32(time.Millisecond)))
+			go func() {
+				time.Sleep(1000 * time.Millisecond)
+
+				if h.syncPanelData() {
+					if JT.SavePanels() {
+						JC.Notify("Panels updated")
+						SyncingPanels = false
+					}
+				}
+			}()
+		}
+
+		go func() {
 			time.Sleep(1 * time.Millisecond)
 			Draggable = true
 		}()
@@ -376,4 +386,22 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	JA.FadeInBackground(h.background, 100*time.Millisecond)
 
 	return result
+}
+
+func (h *PanelDisplay) syncPanelData() bool {
+	nd := []*JT.PanelDataType{}
+
+	for _, obj := range JC.Grid.Objects {
+		if panel, ok := obj.(*PanelDisplay); ok {
+			uuid := panel.GetTag()
+			pdt := JT.BP.GetData(uuid)
+			if pdt != nil {
+				nd = append(nd, pdt)
+			}
+		}
+	}
+
+	JT.BP.Inject(nd)
+
+	return true
 }

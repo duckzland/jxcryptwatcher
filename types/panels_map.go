@@ -18,7 +18,7 @@ func (pc *PanelsMapType) Init() {
 	pc.Data = []*PanelDataType{}
 }
 
-func (pc *PanelsMapType) Set(data []PanelDataType) {
+func (pc *PanelsMapType) Set(data []*PanelDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -31,6 +31,13 @@ func (pc *PanelsMapType) Set(data []PanelDataType) {
 		pc.Data[i].Parent = pc
 		pc.Data[i].Status = 0
 	}
+}
+
+func (pc *PanelsMapType) Inject(data []*PanelDataType) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	pc.Data = data
 }
 
 func (pc *PanelsMapType) SetMaps(maps *CryptosMapType) {
