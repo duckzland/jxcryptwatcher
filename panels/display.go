@@ -289,7 +289,11 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		h.dragging = true
 	}
 
-	h.lastDrag = ev.Position
+	x := (ev.Position.X / h.Size().Width) * h.Size().Width
+	y := (ev.Position.Y / h.Size().Height) * h.Size().Height
+
+	h.lastDrag = fyne.NewPos(x, y)
+	//h.lastDrag = ev.Position
 }
 
 func (h *PanelDisplay) DragEnd() {
