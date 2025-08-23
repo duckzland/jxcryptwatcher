@@ -81,23 +81,21 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type PanelDisplay struct {
 	widget.BaseWidget
-	tag         string
-	content     fyne.CanvasObject
-	child       fyne.CanvasObject
-	lastClick   time.Time
-	visible     bool
-	disabled    bool
-	firstDrag   fyne.Position
-	lastDrag    fyne.Position
-	startScroll float32
-	endScroll   float32
-	dragOffset  fyne.Position
-	dragging    bool
-	background  *canvas.Rectangle
-	refTitle    *canvas.Text
-	refContent  *canvas.Text
-	refSubtitle *canvas.Text
-	refData     *JT.PanelDataType
+	tag          string
+	content      fyne.CanvasObject
+	child        fyne.CanvasObject
+	lastClick    time.Time
+	visible      bool
+	disabled     bool
+	dragScroll   float32
+	dragPosition fyne.Position
+	dragOffset   fyne.Position
+	dragging     bool
+	background   *canvas.Rectangle
+	refTitle     *canvas.Text
+	refContent   *canvas.Text
+	refSubtitle  *canvas.Text
+	refData      *JT.PanelDataType
 }
 
 var activeAction *PanelDisplay = nil
@@ -284,32 +282,20 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	}
 
 	if !h.dragging {
-		h.firstDrag = h.Position().Add(ev.Position)
-		h.startScroll = JM.AppMainPanelScrollWindow.Offset.Y
+		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
 		h.dragging = true
 	}
 
-	x := (ev.Position.X / h.Size().Width) * h.Size().Width
-	y := (ev.Position.Y / h.Size().Height) * h.Size().Height
-
-	h.lastDrag = fyne.NewPos(x, y)
-	//h.lastDrag = ev.Position
+	h.dragPosition = ev.Position
 }
 
 func (h *PanelDisplay) DragEnd() {
-	h.endScroll = JM.AppMainPanelScrollWindow.Offset.Y
-	h.dragOffset = h.firstDrag.Add(h.lastDrag)
-	h.dragOffset.Y -= h.startScroll - h.endScroll
+	h.dragOffset = h.Position().Add(h.dragPosition)
+	h.dragOffset.Y -= h.dragScroll - JM.AppMainPanelScrollWindow.Offset.Y
 
 	h.snapToNearest()
 
 	h.dragging = false
-	h.dragOffset = fyne.NewPos(0, 0)
-	h.startScroll = 0
-	h.endScroll = 0
-	h.firstDrag = fyne.NewPos(0, 0)
-	h.lastDrag = fyne.NewPos(0, 0)
-
 }
 
 func (h *PanelDisplay) snapToNearest() {
@@ -347,21 +333,16 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 	panels := JC.Grid.Objects
 	dragPos := h.dragOffset
 
-	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f) - Offset: (%.2f, %.2f)", dragPos.X, dragPos.Y, h.dragOffset.X, h.dragOffset.Y))
-
-	layout, ok := JC.Grid.Layout.(*PanelGridLayout)
-	if !ok {
-		return -1
-	}
+	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", dragPos.X, dragPos.Y))
 
 	for i, panel := range panels {
 		panelPos := panel.Position()
 		panelSize := panel.Size()
 
-		left := panelPos.X - layout.InnerPadding[1]
-		right := panelPos.X + panelSize.Width + layout.InnerPadding[3]
-		top := panelPos.Y - layout.InnerPadding[0]
-		bottom := panelPos.Y + panelSize.Height + layout.InnerPadding[2]
+		left := panelPos.X
+		right := panelPos.X + panelSize.Width
+		top := panelPos.Y
+		bottom := panelPos.Y + panelSize.Height
 
 		JC.Logln(fmt.Sprintf(
 			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",
@@ -395,7 +376,7 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	JA.FadeInBackground(h.background, 100*time.Millisecond)
+	JA.FadeInBackground(h.background, 200*time.Millisecond)
 
 	return result
 }
