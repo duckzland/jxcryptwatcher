@@ -401,7 +401,7 @@ func (h *PanelDisplay) syncPanelData() bool {
 		}
 	}
 
-	JT.BP.Inject(nd)
+	JT.BP.Set(nd)
 
 	return true
 }

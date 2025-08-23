@@ -22,20 +22,16 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	pc.Data = make([]*PanelDataType, len(data))
+	for _, pk := range data {
+		if pk.Parent == nil {
+			pk.Parent = pc
+		}
 
-	for i := range data {
-		pc.Data[i] = &PanelDataType{}
-		pc.Data[i].Init()
-		pc.Data[i].Set(data[i].Get())
-		pc.Data[i].Parent = pc
-		pc.Data[i].Status = 0
+		// Not sure if we need handle status here?
+		// if pk.Status < -1 {
+		// 	pk.Status = -1
+		// }
 	}
-}
-
-func (pc *PanelsMapType) Inject(data []*PanelDataType) {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
 
 	pc.Data = data
 }
