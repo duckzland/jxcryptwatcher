@@ -368,7 +368,7 @@ func (h *PanelDisplay) snapToNearest() {
 			SyncingPanels = true
 
 			go func() {
-				time.Sleep(100000 * time.Millisecond)
+				time.Sleep(1000 * time.Millisecond)
 
 				if h.syncPanelData() {
 					if JT.SavePanels() {

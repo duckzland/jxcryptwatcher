@@ -41,9 +41,9 @@ func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 }
 
 func (ec *ExchangeDataCacheType) Has(ck string) bool {
-	_, ok := ec.data.Load(ck)
+	d, ok := ec.data.Load(ck)
 
-	return ok
+	return ok && d != nil
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {

@@ -82,8 +82,10 @@ func (p *PanelDataType) Update(pk string) bool {
 
 	if ExchangeCache.Has(ck) {
 		Data := ExchangeCache.Get(ck)
-		pko := PanelKeyType{value: npk}
-		npk = pko.UpdateValue(float32(Data.TargetAmount))
+		if Data != nil {
+			pko := PanelKeyType{value: npk}
+			npk = pko.UpdateValue(float32(Data.TargetAmount))
+		}
 	}
 
 	if npk != opk {
