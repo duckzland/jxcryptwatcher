@@ -62,3 +62,11 @@ func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 	}
 	return desktop.DefaultCursor
 }
+
+func (b *HoverCursorIconButton) Disable() {
+	b.Button.Disable()
+}
+
+func (b *HoverCursorIconButton) Enable() {
+	b.Button.Enable()
+}

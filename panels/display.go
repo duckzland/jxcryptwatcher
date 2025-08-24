@@ -133,12 +133,18 @@ func NewPanelDisplay(
 
 	action := NewPanelActionBar(
 		func() {
+			if SyncingPanels || !Draggable {
+				return
+			}
 			dynpk, _ := str.Get()
 			if onEdit != nil {
 				go onEdit(dynpk, uuid)
 			}
 		},
 		func() {
+			if SyncingPanels || !Draggable {
+				return
+			}
 			if onDelete != nil {
 				go onDelete(uuid)
 			}
