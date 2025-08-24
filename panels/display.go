@@ -146,7 +146,9 @@ func NewPanelDisplay(
 				return
 			}
 			if onDelete != nil {
-				go onDelete(uuid)
+				go JA.FadeOutBackground(background, 300*time.Millisecond, func() {
+					onDelete(uuid)
+				})
 			}
 		},
 	)
@@ -192,6 +194,9 @@ func NewPanelDisplay(
 	}))
 
 	panel.updateContent()
+
+	JA.FadeInBackground(background, 300*time.Millisecond, nil)
+
 	return panel
 }
 
@@ -436,7 +441,7 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	JA.FadeInBackground(h.background, 300*time.Millisecond)
+	JA.FadeInBackground(h.background, 300*time.Millisecond, nil)
 
 	return result
 }
