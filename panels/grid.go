@@ -4,11 +4,14 @@ import (
 	"math"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
+
+var DragPlaceholder fyne.CanvasObject
 
 type PanelGridLayout struct {
 	MinCellSize  fyne.Size
@@ -70,6 +73,11 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	for _, child := range objects {
 		if !child.Visible() {
+			continue
+		}
+
+		if child == DragPlaceholder && DragPlaceholder != nil {
+			child.Resize(g.DynCellSize)
 			continue
 		}
 
@@ -166,6 +174,12 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 
 		// Add to grid
 		grid.Add(panel)
+	}
+
+	// Global dummy panel for placeholder
+	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
+	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+		rect.CornerRadius = JC.PanelBorderRadius
 	}
 
 	JC.PrintMemUsage("End building panels")

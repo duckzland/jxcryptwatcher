@@ -81,21 +81,24 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type PanelDisplay struct {
 	widget.BaseWidget
-	tag          string
-	content      fyne.CanvasObject
-	child        fyne.CanvasObject
-	lastClick    time.Time
-	visible      bool
-	disabled     bool
-	dragScroll   float32
-	dragPosition fyne.Position
-	dragOffset   fyne.Position
-	dragging     bool
-	background   *canvas.Rectangle
-	refTitle     *canvas.Text
-	refContent   *canvas.Text
-	refSubtitle  *canvas.Text
-	refData      *JT.PanelDataType
+	tag              string
+	content          fyne.CanvasObject
+	child            fyne.CanvasObject
+	lastClick        time.Time
+	visible          bool
+	disabled         bool
+	dragScroll       float32
+	dragPosition     fyne.Position
+	dragOffset       fyne.Position
+	dragMoveEnd      fyne.Position
+	dragMoveStart    fyne.Position
+	dragCursorOffset fyne.Position
+	dragging         bool
+	background       *canvas.Rectangle
+	refTitle         *canvas.Text
+	refContent       *canvas.Text
+	refSubtitle      *canvas.Text
+	refData          *JT.PanelDataType
 }
 
 var activeAction *PanelDisplay = nil
@@ -281,21 +284,69 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		return
 	}
 
+	scrollY := JM.AppMainPanelScrollWindow.Offset.Y
+
 	if !h.dragging {
-		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
 		h.dragging = true
+
+		// Offset between cursor and widget's top-left corner
+		h.dragCursorOffset = ev.Position.Subtract(h.Position())
+
+		// Initial move — use live scroll offset
+		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
+		initialPos := fyne.NewPos(
+			ev.Position.X-h.dragCursorOffset.X,
+			ev.Position.Y-h.dragCursorOffset.Y,
+		)
+
+		DragPlaceholder.Move(initialPos)
+		JC.Grid.Add(DragPlaceholder)
+
+		// Handling scroll event when still in drag mode
+		go func() {
+			ticker := time.NewTicker(50 * time.Millisecond)
+			defer ticker.Stop()
+
+			for h.dragging {
+				<-ticker.C
+				currentScroll := JM.AppMainPanelScrollWindow.Offset.Y
+				if currentScroll != scrollY {
+					newPos := fyne.NewPos(
+						h.dragPosition.X-h.dragCursorOffset.X,
+						h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
+					)
+
+					scrollY = currentScroll
+					DragPlaceholder.Move(newPos)
+				}
+			}
+		}()
 	}
 
+	newPos := fyne.NewPos(
+		ev.Position.X-h.dragCursorOffset.X,
+		ev.Position.Y-h.dragCursorOffset.Y,
+	)
+
+	if scrollY != h.dragScroll {
+		newPos.Y += scrollY - h.dragScroll
+	}
+
+	DragPlaceholder.Move(newPos)
+
+	// Store the final position for snapping and reordering later!
 	h.dragPosition = ev.Position
 }
 
 func (h *PanelDisplay) DragEnd() {
+	// Call this early to cancel go routine
+	h.dragging = false
+	JC.Grid.Remove(DragPlaceholder)
+
 	h.dragOffset = h.Position().Add(h.dragPosition)
 	h.dragOffset.Y -= h.dragScroll - JM.AppMainPanelScrollWindow.Offset.Y
 
 	h.snapToNearest()
-
-	h.dragging = false
 }
 
 func (h *PanelDisplay) snapToNearest() {
@@ -376,7 +427,7 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	JA.FadeInBackground(h.background, 200*time.Millisecond)
+	JA.FadeInBackground(h.background, 300*time.Millisecond)
 
 	return result
 }
