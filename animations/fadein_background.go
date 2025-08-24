@@ -9,7 +9,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-func FadeInBackground(rect *canvas.Rectangle, duration time.Duration) {
+func FadeInBackground(rect *canvas.Rectangle, duration time.Duration, callback func()) {
 	steps := 30
 	interval := duration / time.Duration(steps)
 
@@ -26,6 +26,10 @@ func FadeInBackground(rect *canvas.Rectangle, duration time.Duration) {
 				rect.FillColor = JC.SetAlpha(rect.FillColor, origAlpha*progress)
 				rect.Refresh()
 			})
+		}
+
+		if callback != nil {
+			callback()
 		}
 	}()
 }
