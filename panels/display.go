@@ -323,7 +323,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 					)
 
 					scrollY = currentScroll
-					DragPlaceholder.Move(newPos)
+
+					fyne.Do(func() {
+						DragPlaceholder.Move(newPos)
+					})
 				}
 			}
 		}()
