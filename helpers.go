@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
+	JM "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
@@ -109,6 +110,7 @@ func RemovePanel(uuid string) {
 				JC.Grid.Remove(obj)
 
 				fyne.Do(JC.Grid.Refresh)
+				fyne.Do(JM.AppMainPanelScrollWindow.Refresh)
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
@@ -208,7 +210,7 @@ func ResetCryptosMap() {
 			JC.Grid.Refresh()
 		})
 
-		UpdateRates()
+		RefreshRates()
 	}
 }
 
@@ -236,15 +238,6 @@ func StartWorkers() {
 			RefreshRates()
 		}
 	}()
-}
-
-func StartUpdateDisplayWorker() {
-	// go func() {
-	// 	for {
-	// 		RequestDisplayUpdate()
-	// 		time.Sleep(100 * time.Millisecond)
-	// 	}
-	// }()
 }
 
 func StartUpdateRatesWorker() {

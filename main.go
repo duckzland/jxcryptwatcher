@@ -35,7 +35,6 @@ func main() {
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
 	StartWorkers()
-	StartUpdateDisplayWorker()
 	StartUpdateRatesWorker()
 
 	JC.Notify("Application is starting...")
