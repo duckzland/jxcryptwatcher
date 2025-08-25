@@ -182,14 +182,6 @@ func CreateUUID() string {
 	return id.String()
 }
 
-func RequestRateUpdate() {
-	UpdateRatesChan <- struct{}{}
-}
-
-func RequestDisplayUpdate() {
-	UpdateDisplayChan <- struct{}{}
-}
-
 func TruncateText(str string, maxWidth float32) string {
 
 	// Measure full text width

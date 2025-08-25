@@ -60,7 +60,7 @@ func UpdateRates() bool {
 	for _, rk := range jb {
 		ex.GetRate(rk)
 
-		RefreshDisplay()
+		RequestDisplayUpdate()
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
@@ -88,7 +88,7 @@ func RefreshRates() bool {
 	// 	fyne.Do(UpdateDisplay)
 	// }
 
-	// UpdateRates will call UpdateDisplay via RefreshDisplay
+	// UpdateRates will call UpdateDisplay via RequestDisplayUpdate
 	UpdateRates()
 
 	return true
@@ -122,14 +122,14 @@ func SavePanelForm() {
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
-		RefreshDisplay()
+		RequestDisplayUpdate()
 	})
 
 	go func() {
 		if JT.SavePanels() {
 			if UpdateRates() {
-				// UpdateRates will call RefreshDisplay
-				// RefreshDisplay()
+				// UpdateRates will call RequestDisplayUpdate
+				// RequestDisplayUpdate()
 				JC.Notify("Panel settings saved.")
 			}
 
@@ -240,7 +240,7 @@ func StartWorkers() {
 func StartUpdateDisplayWorker() {
 	go func() {
 		for {
-			RefreshDisplay()
+			RequestDisplayUpdate()
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
@@ -249,14 +249,18 @@ func StartUpdateDisplayWorker() {
 func StartUpdateRatesWorker() {
 	go func() {
 		for {
-			JC.RequestRateUpdate()
+			RequestRateUpdate()
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
 }
 
-func RefreshDisplay() {
+func RequestDisplayUpdate() {
 	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) {
-		JC.RequestDisplayUpdate()
+		JC.UpdateDisplayChan <- struct{}{}
 	}
+}
+
+func RequestRateUpdate() {
+	JC.UpdateRatesChan <- struct{}{}
 }
