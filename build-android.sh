@@ -1,16 +1,22 @@
 #!/bin/bash
 
 ## ================================================================
-## JXWatcher Build Environment Setup Instructions
+## JXWatcher Android Build Environment Setup
 ## ================================================================
 ##
-## Install these requirements package first:
-## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
-## sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
-## go install fyne.io/tools/cmd/fyne@latest
+## Required dependencies:
+##    sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+##    sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu google-android-ndk-r26c-installer
+##    go install fyne.io/tools/cmd/fyne@latest
+## 
+## For debugging, run: ./build-android.sh debug
 ##
-## Note:
-## - The source of the Android NDK is important, as the compiler path may vary depending on whether it's installed directly from Google.
+## Notes:
+## - Ensure the Android NDK is installed via your package manager or from Google's official site.
+## - Compiler paths may differ depending on the NDK installation source.
+## - This script builds an Android APK for arm64 architecture by default.
+##
+## ================================================================
 
 set -e
 
@@ -26,7 +32,7 @@ echo_start() {
   echo -e "\033[1m$1\033[0m"
 }
 
-echo_start "Building Android package"
+echo_start "Starting Android APK build process..."
 
 # Check if fyne is installed
 if ! command -v fyne &> /dev/null; then
@@ -49,7 +55,7 @@ fi
 # Ubuntu will install android ndk to this folder
 android_sdk="/usr/lib/android-ndk/"
 if [ ! -d "$android_sdk" ]; then
-    echo_error "Android NDK not found at $android_sdk. Please install it."
+    echo_error "Android NDK not found at $android_sdk. Please ensure the Android NDK is installed (e.g., via 'sudo apt install google-android-ndk-r26c-installer') and the path is correct."
     exit 1
 fi
 
@@ -60,13 +66,13 @@ icon="assets/256x256/jxwatcher.png"
 # Dynamic variable based on source code
 id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/android.go)
 if [[ -z "$id" ]]; then
-    echo_error "App id not found in core/android.go"
+    echo_error "Unable to extract AppID from core/android.go. Please ensure 'const AppID = \"...\"' is defined."
     exit 1
 fi
 
 version=$(grep '^version=' version.txt | cut -d'=' -f2)
 if [[ -z "$version" ]]; then
-    echo_error "Version not found in version.txt"
+    echo_error "No version specified in version.txt. Please ensure it contains a line like 'version=1.0.0'."
     exit 1
 fi
 
@@ -83,11 +89,11 @@ if [[ $1 == "debug" ]]; then
     tags="jxandroid"
     release="false"
 
-    ## Note: must have at least -pthread
+    # Use simpler flags for debugging
     cflags="-pipe -Wall -pthread"
     cldflags="-pthread"
 
-    echo_success "Generating binary for debugging"
+    echo_start "Debug mode enabled: building with debug flags"
 fi
 
 ## Target os, this will create only for android with arm64 processor
@@ -138,7 +144,7 @@ ANDROID_NDK_HOME=$android_sdk \
 fyne package -os $os -app-id $id -icon $icon -name $name -app-version $version -tags $tags -release $release
 
 if [ $? -ne 0 ]; then
-    echo_error "Failed to package the application."
+    echo_error "APK packaging failed. Please check the build output above for details."
     rm -f AndroidManifest.xml
     rm -f JXWatcher.apk
     exit 1
@@ -147,4 +153,4 @@ fi
 mv JXWatcher.apk $apk_output
 rm -f AndroidManifest.xml
 
-echo_success "APK package created at: ${apk_output}"
+echo_success "APK package successfully created at: ${apk_output}"

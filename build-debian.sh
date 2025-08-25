@@ -1,18 +1,21 @@
 #!/bin/bash
 
 ## ================================================================
-## JXWatcher Build Environment Setup Instructions
+## JXWatcher Debian Package Build Script
 ## ================================================================
 ##
-## This script builds a Debian (.deb) package and places the output
-## in the /build directory.
+## This script builds a Debian (.deb) package for JXWatcher and places
+## the output in the build/ directory.
 ##
-## Install requirements:
-## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
-## sudo apt install dpkg
+## Required dependencies:
+##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev dpkg
 ##
-## Note: 
-## - Ubuntu should already have dpkg package installed by default
+## For debugging, run: ./build-debian.sh debug
+##
+## Note:
+## - On Ubuntu, dpkg is typically pre-installed.
+##
+## ================================================================
 
 set -e
 
@@ -28,7 +31,7 @@ echo_start() {
   echo -e "\033[1m$1\033[0m"
 }
 
-echo_start "Building Debian package"
+echo_start "Starting Debian package build process..."
 
 # Check if go-winres is installed
 if ! command -v dpkg-deb &> /dev/null; then
@@ -69,7 +72,7 @@ if [[ $1 == "debug" ]]; then
     tags="desktop"
     cflags="-pipe -Wall -g -pthread"
     cldflags="-pthread"
-    echo_success "Generating binary for debugging"
+    echo_success "Debug mode enabled: building with debug flags"
 fi
 
 # Create necessary directories
@@ -115,7 +118,7 @@ cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 dpkg-deb --build "${pkg_dir}" "${deb_output}" &> /dev/null
 
 if [ $? -ne 0 ]; then
-    echo_error "Failed to package the application."
+    echo_error "Failed to build the Debian package. Please check for errors above."
     rm -rf "${pkg_dir}"
     exit 1
 fi
@@ -123,4 +126,4 @@ fi
 # Clean up
 rm -rf "${pkg_dir}"
 
-echo_success "Debian package created at: ${deb_output}"
+echo_success "Debian package successfully created at: ${deb_output}"

@@ -1,16 +1,20 @@
 #!/bin/bash
 
 ## ================================================================
-## JXWatcher Build Environment Setup Instructions
+## JXWatcher Windows Build Environment Setup
 ## ================================================================
 ##
-## Install these requirements package first:
-## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
-## sudo apt install gcc-mingw-w64 wixl uuid-runtime
-## go install github.com/tc-hib/go-winres@latest
+## Required dependencies:
+##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+##   sudo apt install gcc-mingw-w64 wixl uuid-runtime
+##   go install github.com/tc-hib/go-winres@latest
 ##
-## Note:
-## - uuid-runtime is optional, only if you wish to regenerate new uuid
+## For debugging, run: ./build-debian.sh debug
+##
+## Notes:
+## - 'uuid-runtime' is only needed if you want to generate new UUIDs.
+##
+## ================================================================
 
 set -e
 
@@ -26,7 +30,7 @@ echo_start() {
   echo -e "\033[1m$1\033[0m"
 }
 
-echo_start "Building Windows package"
+echo_start "Starting Windows build and installer packaging process..."
 
 # Check if mingw gcc compiler exists
 if ! command -v /usr/bin/x86_64-w64-mingw32-gcc &> /dev/null; then
@@ -87,7 +91,7 @@ if [[ $1 == "debug" ]]; then
     cflags="-pipe -Wall -g -pthread"
     cldflags="-pthread"
 
-    echo_success "Generating binary for debugging"
+    echo_success "Debug mode enabled: building with debug flags"
 fi
 
 # Only no need to regenerate this
@@ -127,9 +131,6 @@ if [[ -z "$shortcut_guid" ]]; then
     exit 1
 fi
 
-
-
-
 # Build Go binary
 GOOS=windows \
 GOARCH=amd64  \
@@ -139,7 +140,7 @@ CGO_LDFLAGS="${cldflags}" \
 CC=/usr/bin/x86_64-w64-mingw32-gcc \
 go build -tags="${tags}" -ldflags "${ldflags}" -o "${build_dir}/${bin_name}" .
 
-echo_success "Windows binary generated at: ${build_dir}/${bin_name}"
+echo_success "Successfully built Windows binary: ${build_dir}/${bin_name}"
 
 # Copy Windows resource file
 rsrc_file="assets/windows/rsrc_windows_amd64.syso"
@@ -221,12 +222,12 @@ EOF
 wixl -o "${msi_output}" "${wxs_file}"
 
 if [ $? -ne 0 ]; then
-    echo_error "Failed to package the application."
+    echo_error "Windows installer creation failed. Please check the build output above for details."
     rm -f "$wxs_file"
     exit 1
 fi
 
-echo_success "MSI package created at: ${msi_output}"
+echo_success "Windows installer successfully created: ${msi_output}"
 
 # Clean up
 rm -f "$wxs_file"

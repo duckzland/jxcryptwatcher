@@ -1,16 +1,20 @@
 #!/bin/bash
 
 ## ================================================================
-## JXWatcher Build Environment Setup Instructions
+## JXWatcher Linux Build Script
 ## ================================================================
 ##
-## Install requirements:
-## sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+## Required dependencies:
+##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
 ##
-## This is the minimal build script that will generate linux binary at /build folder
+## This script builds a minimal Linux binary in the /build directory.
 ##
-## flags -ldflags "-w -s" -gcflags="-l" is the minimum flags for small binary output
-## 
+## For smaller binaries, production flags are used:
+##   -ldflags="-w -s" -gcflags="-l"
+##
+## For debugging, run: ./build-linux.sh debug
+##
+## ================================================================
 
 set -e
 
@@ -26,7 +30,7 @@ echo_start() {
   echo -e "\033[1m$1\033[0m"
 }
 
-echo_start "Generating Linux binary"
+echo_start "Starting Linux build process..."
 
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
@@ -52,13 +56,13 @@ cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 # Debug compiling flags
 if [[ $1 == "debug" ]]; then
-    ldflags=""
-    gcflags="-l"
-    tags="desktop"
-    cflags="-pipe -Wall -g -pthread"
-    cldflags="-pthread"
+  ldflags=""
+  gcflags="-l"
+  tags="desktop"
+  cflags="-pipe -Wall -g -pthread"
+  cldflags="-pthread"
 
-    echo_success "Generating binary for debugging"
+  echo_start "Debug mode enabled: building with debug flags"
 fi
 
 CGO_ENABLED=1 \
@@ -66,4 +70,9 @@ CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \
 go build -tags="${tags}" -ldflags "${ldflags}" -gcflags="${gcflags}" -o $target_output .
 
-echo_success "Linux binary created at: ${target_output}"
+if [ $? -ne 0 ]; then
+    echo_error "Linux binary creation failed. Please check the build output above for details."
+    exit 1
+fi
+
+echo_success "Linux binary successfully created at: ${target_output}"
