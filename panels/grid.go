@@ -116,6 +116,11 @@ func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 		if !child.Visible() {
 			continue
 		}
+
+		if child == DragPlaceholder && DragPlaceholder != nil {
+			continue
+		}
+
 		if c != 0 && i%c == 0 {
 			r++
 		}
