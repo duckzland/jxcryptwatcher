@@ -44,6 +44,9 @@ func (e *numericalEntry) TypedShortcut(shortcut fyne.Shortcut) {
 
 func (e *numericalEntry) Keyboard() mobile.KeyboardType {
 	return mobile.DefaultKeyboard
+
+	// Fyne has bug, on android the dot key cant be pressed!
+	// return mobile.NumberKeyboard
 }
 
 func (e *numericalEntry) SetDefaultValue(s string) {
