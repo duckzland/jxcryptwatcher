@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -235,7 +234,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	for _, ex := range er.Rates {
 
 		// Debug to force display refresh!
-		ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+		// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
 		ExchangeCache.Insert(&ex)
 	}
