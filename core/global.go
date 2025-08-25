@@ -2,6 +2,7 @@ package core
 
 import (
 	"image/color"
+	"time"
 
 	"fyne.io/fyne/v2"
 )
@@ -32,6 +33,7 @@ var ActionBtnGap float32 = 6
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
+var UpdateDisplayTimestamp = time.Now()
 
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32

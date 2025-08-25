@@ -3,12 +3,14 @@ package types
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
 
 type ExchangeDataCacheType struct {
-	data sync.Map
+	data      sync.Map
+	Timestamp time.Time
 }
 
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
@@ -24,18 +26,21 @@ func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCache
 	ck := ec.CreateKeyFromExchangeData(ex)
 
 	ec.data.Store(ck, *ex)
+	ec.Timestamp = time.Now()
 
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
 	ec.data.Delete(ck)
+	ec.Timestamp = time.Now()
 
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 	ec.data = sync.Map{}
+	ec.Timestamp = time.Now()
 
 	return ec
 }

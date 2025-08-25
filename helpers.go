@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -59,7 +60,7 @@ func UpdateRates() bool {
 	for _, rk := range jb {
 		ex.GetRate(rk)
 
-		JC.RequestDisplayUpdate()
+		RefreshDisplay()
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
@@ -83,9 +84,12 @@ func RefreshRates() bool {
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
-	if UpdateRates() {
-		fyne.Do(UpdateDisplay)
-	}
+	// if UpdateRates() {
+	// 	fyne.Do(UpdateDisplay)
+	// }
+
+	// UpdateRates will call UpdateDisplay via RefreshDisplay
+	UpdateRates()
 
 	return true
 }
@@ -118,13 +122,14 @@ func SavePanelForm() {
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
-		JC.RequestDisplayUpdate()
+		RefreshDisplay()
 	})
 
 	go func() {
 		if JT.SavePanels() {
 			if UpdateRates() {
-				JC.RequestDisplayUpdate()
+				// UpdateRates will call RefreshDisplay
+				// RefreshDisplay()
 				JC.Notify("Panel settings saved.")
 			}
 
@@ -199,21 +204,28 @@ func ResetCryptosMap() {
 	if JT.BP.RefreshData() {
 		fyne.Do(func() {
 			JC.Grid.Refresh()
-			JC.RequestDisplayUpdate()
 		})
+
+		// Map may contain new coin?
+		UpdateRates()
 	}
 }
 
 func StartWorkers() {
+	var displayLock sync.Mutex
+
 	go func() {
 		for range JC.UpdateDisplayChan {
-			if !JT.Config.IsValid() {
-				continue
+			displayLock.Lock()
+			if JT.Config.IsValid() {
+				JC.UpdateDisplayTimestamp = time.Now()
+				JC.Logln("Refreshed Display")
+				fyne.Do(UpdateDisplay)
 			}
-
-			fyne.Do(UpdateDisplay)
+			displayLock.Unlock()
 		}
 	}()
+
 	go func() {
 		for range JC.UpdateRatesChan {
 			if !JT.Config.IsValid() {
@@ -228,8 +240,8 @@ func StartWorkers() {
 func StartUpdateDisplayWorker() {
 	go func() {
 		for {
-			JC.RequestDisplayUpdate()
-			time.Sleep(600 * time.Millisecond)
+			RefreshDisplay()
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 }
@@ -241,4 +253,10 @@ func StartUpdateRatesWorker() {
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
+}
+
+func RefreshDisplay() {
+	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) {
+		JC.RequestDisplayUpdate()
+	}
 }
