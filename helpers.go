@@ -28,7 +28,15 @@ func UpdateDisplay() {
 	// JC.Log("Display Refreshed")
 }
 
+var UpdatingRates = false
+
 func UpdateRates() bool {
+	if UpdatingRates {
+		return false
+	}
+
+	UpdatingRates = true
+
 	ex := JT.ExchangeResults{}
 	jb := make(map[string]string)
 	list := JT.BP.Get()
@@ -69,6 +77,8 @@ func UpdateRates() bool {
 	JC.Notify("Exchange rates updated successfully")
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
+
+	UpdatingRates = false
 
 	return true
 }
@@ -212,9 +222,9 @@ func ResetCryptosMap() {
 }
 
 func StartWorkers() {
-	var displayLock sync.Mutex
-
 	go func() {
+		var displayLock sync.Mutex
+
 		for range JC.UpdateDisplayChan {
 			displayLock.Lock()
 			if JT.Config.IsValid() {
