@@ -93,12 +93,6 @@ func RefreshRates() bool {
 
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
-
-	// if UpdateRates() {
-	// 	fyne.Do(UpdateDisplay)
-	// }
-
-	// UpdateRates will call UpdateDisplay via RequestDisplayUpdate
 	UpdateRates()
 
 	return true
@@ -138,8 +132,6 @@ func SavePanelForm() {
 	go func() {
 		if JT.SavePanels() {
 			if UpdateRates() {
-				// UpdateRates will call RequestDisplayUpdate
-				// RequestDisplayUpdate()
 				JC.Notify("Panel settings saved.")
 			}
 
@@ -216,7 +208,6 @@ func ResetCryptosMap() {
 			JC.Grid.Refresh()
 		})
 
-		// Map may contain new coin?
 		UpdateRates()
 	}
 }
@@ -248,12 +239,12 @@ func StartWorkers() {
 }
 
 func StartUpdateDisplayWorker() {
-	go func() {
-		for {
-			RequestDisplayUpdate()
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		RequestDisplayUpdate()
+	// 		time.Sleep(100 * time.Millisecond)
+	// 	}
+	// }()
 }
 
 func StartUpdateRatesWorker() {
@@ -266,7 +257,7 @@ func StartUpdateRatesWorker() {
 }
 
 func RequestDisplayUpdate() {
-	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) {
+	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData() {
 		JC.UpdateDisplayChan <- struct{}{}
 	}
 }

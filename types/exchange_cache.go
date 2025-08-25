@@ -51,6 +51,17 @@ func (ec *ExchangeDataCacheType) Has(ck string) bool {
 	return ok && d != nil
 }
 
+func (ec *ExchangeDataCacheType) HasData() bool {
+
+	isEmpty := true
+	ec.data.Range(func(key, value interface{}) bool {
+		isEmpty = false
+		return false
+	})
+
+	return !isEmpty
+}
+
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {
 	return ec.CreateKeyFromInt(ex.SourceId, ex.TargetId)
 }
