@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/driver/mobile"
@@ -21,7 +22,9 @@ func NewNumericalEntry(allow_decimals bool) *numericalEntry {
 }
 
 func (e *numericalEntry) TypedRune(r rune) {
-	if (r >= '0' && r <= '9') || (e.allow_decimals && r == '.') {
+	if r >= '0' && r <= '9' {
+		e.Entry.TypedRune(r)
+	} else if e.allow_decimals && r == '.' && !strings.Contains(e.Text, ".") {
 		e.Entry.TypedRune(r)
 	}
 }
@@ -40,7 +43,7 @@ func (e *numericalEntry) TypedShortcut(shortcut fyne.Shortcut) {
 }
 
 func (e *numericalEntry) Keyboard() mobile.KeyboardType {
-	return mobile.NumberKeyboard
+	return mobile.DefaultKeyboard
 }
 
 func (e *numericalEntry) SetDefaultValue(s string) {
