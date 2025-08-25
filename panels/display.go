@@ -296,21 +296,17 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	}
 
 	scrollY := JM.AppMainPanelScrollWindow.Offset.Y
+	newPos := fyne.NewPos(
+		ev.Position.X-h.dragCursorOffset.X,
+		ev.Position.Y-h.dragCursorOffset.Y,
+	)
 
 	if !h.dragging {
 		h.dragging = true
 
-		// Offset between cursor and widget's top-left corner
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-
-		// Initial move — use live scroll offset
 		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
-		initialPos := fyne.NewPos(
-			ev.Position.X-h.dragCursorOffset.X,
-			ev.Position.Y-h.dragCursorOffset.Y,
-		)
 
-		DragPlaceholder.Move(initialPos)
 		JC.Grid.Add(DragPlaceholder)
 
 		// Handling scroll event when still in drag mode
@@ -336,11 +332,6 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			}
 		}()
 	}
-
-	newPos := fyne.NewPos(
-		ev.Position.X-h.dragCursorOffset.X,
-		ev.Position.Y-h.dragCursorOffset.Y,
-	)
 
 	if scrollY != h.dragScroll {
 		newPos.Y += scrollY - h.dragScroll

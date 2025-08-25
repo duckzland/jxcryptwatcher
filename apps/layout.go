@@ -35,9 +35,9 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	topBar.Resize(fyne.NewSize(size.Width-2*a.Padding, topHeight))
 
 	// Content layout (scrollable)
-	contentY := topHeight + a.Padding
+	contentY := topHeight + 2*a.Padding
 	JC.MainLayoutContentWidth = size.Width - 2*a.Padding
-	JC.MainLayoutContentHeight = size.Height - contentY - a.Padding
+	JC.MainLayoutContentHeight = size.Height - contentY - 2*a.Padding
 
 	content.Move(fyne.NewPos(a.Padding, contentY))
 	content.Resize(fyne.NewSize(JC.MainLayoutContentWidth, JC.MainLayoutContentHeight))
@@ -49,7 +49,7 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	content := objects[1].MinSize()
 
 	width := fyne.Max(top.Width, content.Width) + 2*a.Padding
-	height := top.Height + content.Height + 2*a.Padding
+	height := top.Height + content.Height + 3*a.Padding
 
 	return fyne.NewSize(width, height)
 }

@@ -19,7 +19,7 @@ var GreenColor color.RGBA = color.RGBA{R: 2, G: 115, B: 78, A: 255}
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelPlaceholderBG color.RGBA = color.RGBA{R: 20, G: 22, B: 30, A: 200}
 var PanelBorderRadius float32 = 6
-var PanelPadding [4]float32 = [4]float32{20, 8, 0, 8}
+var PanelPadding [4]float32 = [4]float32{10, 8, 10, 8}
 
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
