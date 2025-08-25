@@ -79,12 +79,16 @@ cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 ## Debugging options, you will need to set -release to false
-# tags="jxandroid"
-# release="false"
+if [[ $1 == "debug" ]]; then
+    tags="jxandroid"
+    release="false"
 
-## Note: must have at least -pthread
-# cflags="-pipe -Wall -pthread"
-# cldflags="-pthread"
+    ## Note: must have at least -pthread
+    cflags="-pipe -Wall -pthread"
+    cldflags="-pthread"
+
+    echo_success "Generating binary for debugging"
+fi
 
 ## Target os, this will create only for android with arm64 processor
 os="android/arm64"

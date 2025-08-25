@@ -78,12 +78,17 @@ cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 # Debug compiling flags
-# ldflags=""
-# tags="desktop"
+if [[ $1 == "debug" ]]; then
+    ldflags=""
+    gcflags="-l"
+    tags="desktop"
 
-## Note: must have at least -pthread
-# cflags="-pipe -Wall -pthread"
-# cldflags="-pthread"
+    ## Note: must have at least -pthread
+    cflags="-pipe -Wall -g -pthread"
+    cldflags="-pthread"
+
+    echo_success "Generating binary for debugging"
+fi
 
 # Only no need to regenerate this
 # upgrade_guid=$(uuidgen)

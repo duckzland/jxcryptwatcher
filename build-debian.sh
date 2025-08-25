@@ -63,11 +63,14 @@ cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 # Debug compiling flags
-# ldflags=""
-# gcflags="-l"
-# tags="desktop"
-# cflags="-pipe -Wall -g -pthread"
-# cldflags="-pthread"
+if [[ $1 == "debug" ]]; then
+    ldflags=""
+    gcflags="-l"
+    tags="desktop"
+    cflags="-pipe -Wall -g -pthread"
+    cldflags="-pthread"
+    echo_success "Generating binary for debugging"
+fi
 
 # Create necessary directories
 mkdir -p "${pkg_dir}/DEBIAN" \
