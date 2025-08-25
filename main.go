@@ -38,10 +38,10 @@ func main() {
 	StartUpdateDisplayWorker()
 	StartUpdateRatesWorker()
 
-	JC.Notify("Starting Application...")
+	JC.Notify("Application is starting...")
 
 	if !JT.Config.IsValid() {
-		JC.Notify("Bad configuration file")
+		JC.Notify("Configuration file is invalid.")
 	}
 
 	JC.Window.ShowAndRun()

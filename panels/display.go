@@ -371,7 +371,7 @@ func (h *PanelDisplay) snapToNearest() {
 
 				if h.syncPanelData() {
 					if JT.SavePanels() {
-						JC.Notify("Panels updated")
+						JC.Notify("Panels have been reordered and updated.")
 						SyncingPanels = false
 					}
 				}

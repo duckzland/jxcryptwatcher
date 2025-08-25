@@ -154,7 +154,7 @@ func NewPanelForm(
 			if panelKey == "new" {
 				ns := JT.BP.Append(newKey)
 				if ns == nil {
-					JC.Notify("Failed to add new panel")
+					JC.Notify("Unable to add new panel. Please try again.")
 					return
 				}
 				if onNew != nil {
@@ -164,7 +164,7 @@ func NewPanelForm(
 			} else {
 				ns := JT.BP.GetData(uuid)
 				if ns == nil {
-					JC.Notify("Failed to update panel")
+					JC.Notify("Unable to update panel. Please try again.")
 					return
 				}
 				ns.Set(newKey)

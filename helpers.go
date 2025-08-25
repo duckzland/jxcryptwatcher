@@ -49,11 +49,11 @@ func UpdateRates() bool {
 	}
 
 	if len(jb) == 0 {
-		JC.Notify("Refuse to fetch rates due to no valid panels...")
+		JC.Notify("No valid panels found. Exchange rates were not updated.")
 		return false
 	}
 
-	JC.Notify("Start retrieving rates...")
+	JC.Notify("Fetching the latest exchange rates...")
 
 	// Fetching with delay
 	for _, rk := range jb {
@@ -65,7 +65,7 @@ func UpdateRates() bool {
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	JC.Notify("New rates retrieved")
+	JC.Notify("Exchange rates updated successfully")
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
@@ -76,7 +76,7 @@ func RefreshRates() bool {
 
 	if !JT.Config.IsValid() {
 		JC.Logln("Invalid configuration, cannot refresh rates")
-		JC.Notify("Invalid configuration, cannot refresh rates")
+		JC.Notify("Unable to refresh rates: invalid configuration.")
 		return false
 	}
 
@@ -104,7 +104,7 @@ func RemovePanel(uuid string) {
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
-						JC.Notify("Panel removed")
+						JC.Notify("Panel removed successfully.")
 					}
 				}
 			}
@@ -114,7 +114,7 @@ func RemovePanel(uuid string) {
 
 func SavePanelForm() {
 
-	JC.Notify("Saving panel configuration...")
+	JC.Notify("Saving panel settings...")
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
@@ -125,11 +125,11 @@ func SavePanelForm() {
 		if JT.SavePanels() {
 			if UpdateRates() {
 				JC.RequestDisplayUpdate()
-				JC.Notify("Panel configuration saved")
+				JC.Notify("Panel settings saved.")
 			}
 
 		} else {
-			JC.Notify("Failed to save panel")
+			JC.Notify("Failed to save panel settings.")
 		}
 	}()
 }
@@ -143,7 +143,7 @@ func OpenNewPanelForm() {
 			func(npdt *JT.PanelDataType) {
 				fyne.Do(func() {
 					JC.Grid.Add(CreatePanel(npdt))
-					JC.Notify("New Panel created")
+					JC.Notify("New panel created.")
 				})
 			},
 		)
@@ -168,9 +168,9 @@ func OpenSettingForm() {
 			JC.Notify("Saving configuration...")
 
 			if JT.Config.SaveFile() != nil {
-				JC.Notify("Configuration data saved...")
+				JC.Notify("Configuration saved successfully.")
 			} else {
-				JC.Notify("Failed to save configuration")
+				JC.Notify("Failed to save configuration.")
 			}
 		})
 
@@ -186,7 +186,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 func ResetCryptosMap() {
 	if !JT.Config.IsValid() {
 		JC.Logln("Invalid configuration, cannot reset cryptos map")
-		JC.Notify("Invalid configuration, cannot reset cryptos map")
+		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 		return
 	}
 
@@ -194,7 +194,7 @@ func ResetCryptosMap() {
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 
-	JC.Notify("Cryptos map regenerated")
+	JC.Notify("Cryptos map has been regenerated")
 
 	if JT.BP.RefreshData() {
 		fyne.Do(func() {
