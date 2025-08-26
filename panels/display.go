@@ -2,7 +2,6 @@ package panels
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -19,8 +18,6 @@ import (
 )
 
 var activeAction *PanelDisplay = nil
-var SyncDebounceTimer *time.Timer
-var SyncLock sync.Mutex
 
 type PanelLayout struct{}
 
@@ -371,14 +368,7 @@ func (h *PanelDisplay) snapToNearest() {
 		JC.Grid.Refresh()
 
 		go func() {
-			SyncLock.Lock()
-			defer SyncLock.Unlock()
-
-			if SyncDebounceTimer != nil {
-				SyncDebounceTimer.Stop()
-			}
-
-			SyncDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
+			JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
 				if h.syncPanelData() {
 					if JT.SavePanels() {
 						JC.Notify("Panels have been reordered and updated.")

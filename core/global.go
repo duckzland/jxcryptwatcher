@@ -35,5 +35,7 @@ var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
 var UpdateDisplayTimestamp = time.Now()
 
+var MainDebouncer = NewDebouncer()
+
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32

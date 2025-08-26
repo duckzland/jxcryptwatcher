@@ -81,7 +81,7 @@ func UpdateRates() bool {
 	for _, rk := range jb {
 		ex.GetRate(rk)
 
-		RequestDisplayUpdate()
+		RequestDisplayUpdate(false)
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
@@ -90,6 +90,24 @@ func UpdateRates() bool {
 	JC.Notify("Exchange rates updated successfully")
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
+
+	return true
+}
+
+func ValidateCache() bool {
+
+	list := JT.BP.Get()
+	for _, pot := range list {
+
+		// Always get linked data! do not use the copied
+		pkt := JT.BP.GetData(pot.ID)
+		pks := pkt.UsePanelKey()
+		ck := JT.ExchangeCache.CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+
+		if !JT.ExchangeCache.Has(ck) {
+			return false
+		}
+	}
 
 	return true
 }
@@ -123,12 +141,17 @@ func SavePanelForm() {
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
-		RequestDisplayUpdate()
+		RequestDisplayUpdate(true)
 	})
 
 	go func() {
 		if JT.SavePanels() {
-			RequestRateUpdate(false)
+
+			// Only fetch new rates if no cache exists!
+			if !ValidateCache() {
+				RequestRateUpdate(false)
+			}
+
 			JC.Notify("Panel settings saved.")
 
 		} else {
@@ -186,11 +209,6 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
 
-var (
-	rcMu            sync.Mutex
-	rcDebounceTimer *time.Timer
-)
-
 func ResetCryptosMap() {
 	if !JT.Config.IsValid() {
 		JC.Logln("Invalid configuration, cannot reset cryptos map")
@@ -198,14 +216,7 @@ func ResetCryptosMap() {
 		return
 	}
 
-	rcMu.Lock()
-	defer rcMu.Unlock()
-
-	if rcDebounceTimer != nil {
-		rcDebounceTimer.Stop()
-	}
-
-	rcDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
+	JC.MainDebouncer.Call("update_cryptos", 1000*time.Millisecond, func() {
 		Cryptos := JT.CryptosType{}
 		JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 		JT.BP.Maps.ClearMapCache()
@@ -259,27 +270,15 @@ func StartUpdateRatesWorker() {
 	}()
 }
 
-func RequestDisplayUpdate() {
-	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData() {
+func RequestDisplayUpdate(force bool) {
+	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData() || force {
 		JC.UpdateDisplayChan <- struct{}{}
 	}
 }
 
-var (
-	ruMu            sync.Mutex
-	ruDebounceTimer *time.Timer
-)
-
 func RequestRateUpdate(debounce bool) {
-	ruMu.Lock()
-	defer ruMu.Unlock()
-
 	if debounce {
-		if ruDebounceTimer != nil {
-			ruDebounceTimer.Stop()
-		}
-
-		ruDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
+		JC.MainDebouncer.Call("update_rates", 1000*time.Millisecond, func() {
 			JC.UpdateRatesChan <- struct{}{}
 		})
 	} else {
