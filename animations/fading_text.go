@@ -26,7 +26,7 @@ func StartFadingText(
 		}
 
 		for _, c := range *fadeSteps {
-			fyne.Do(func() {
+			fyne.DoAndWait(func() {
 				text.Color = c
 				text.Refresh()
 			})

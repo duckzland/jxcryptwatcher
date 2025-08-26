@@ -22,7 +22,7 @@ func FadeInBackground(rect *canvas.Rectangle, duration time.Duration, callback f
 
 			time.Sleep(interval)
 
-			fyne.Do(func() {
+			fyne.DoAndWait(func() {
 				rect.FillColor = JC.SetAlpha(rect.FillColor, origAlpha*progress)
 				rect.Refresh()
 			})
