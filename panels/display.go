@@ -409,6 +409,10 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", dragPos.X, dragPos.Y))
 
 	for i, panel := range panels {
+		if panel == h {
+			continue
+		}
+
 		panelPos := panel.Position()
 		panelSize := panel.Size()
 
