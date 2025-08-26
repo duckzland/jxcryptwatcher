@@ -68,7 +68,7 @@ func (m *AppLayout) Refresh() {
 	} else {
 		m.Scroll.Content = m.Content
 	}
-	m.Scroll.Refresh()
+	fyne.Do(m.Scroll.Refresh)
 }
 
 func (m *AppLayout) OffsetY() float32 {
@@ -77,6 +77,24 @@ func (m *AppLayout) OffsetY() float32 {
 
 func (m *AppLayout) OffsetX() float32 {
 	return m.Scroll.Offset.X
+}
+
+func (m *AppLayout) Height() float32 {
+	if m.Scroll == nil {
+		return -1
+	}
+	return m.Scroll.Size().Height
+}
+
+func (m *AppLayout) Width() float32 {
+	if m.Scroll == nil {
+		return -1
+	}
+	return m.Scroll.Size().Width
+}
+
+func (m *AppLayout) IsReady() bool {
+	return m.Scroll != nil && m.Content != nil
 }
 
 func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container, onNewPanel func()) fyne.CanvasObject {

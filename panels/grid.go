@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
@@ -23,6 +24,11 @@ type PanelGridLayout struct {
 
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
+	// Apps is not ready yet!
+	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() == -1 || JA.AppLayoutManager.Height() == -1 {
+		return
+	}
+
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
 
@@ -34,15 +40,13 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	mr := g.countRows(size, hPad, objects)
 	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
 
-	if th > JC.MainLayoutContentHeight {
+	if th > JA.AppLayoutManager.Height() {
 		size.Width -= 18
 	}
 
-	// Mobile only!
-	if JC.IsMobile {
-		if size.Width != 0 && size.Width < g.MinCellSize.Width {
-			g.MinCellSize.Width = size.Width - hPad
-		}
+	// Screen is too small for min width
+	if g.MinCellSize.Width > JA.AppLayoutManager.Width() {
+		g.MinCellSize.Width = JA.AppLayoutManager.Width() - hPad
 	}
 
 	if size.Width > g.MinCellSize.Width {
@@ -67,6 +71,11 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		if emptySpace > 0 {
 			g.DynCellSize.Width += emptySpace / float32(g.ColCount)
 		}
+	}
+
+	// Fix division by zero
+	if g.ColCount == 0 {
+		g.ColCount = 1
 	}
 
 	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
