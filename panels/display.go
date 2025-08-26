@@ -310,13 +310,15 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	if !h.dragging {
 		h.dragging = true
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-		h.dragScroll = JM.AppLayoutManager.OffsetY()
+		h.dragScroll = scrollY
 
-		// Prevent drag glitching
-		fyne.Do(func() {
+		// Initialize drag placeholder safely
+		fyne.DoAndWait(func() {
 			DragPlaceholder.Hide()
 			JC.Grid.Add(DragPlaceholder)
+			DragPlaceholder.Resize(h.Size())
 			DragPlaceholder.Move(newPos)
+			JC.Grid.Refresh()
 		})
 
 		if activeAction != nil {
@@ -327,7 +329,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			fyne.Do(h.dragActiveAction.HideTarget)
 		}
 
-		// Handling scroll event when still in drag mode
+		// Scroll tracking loop
 		go func() {
 			ticker := time.NewTicker(50 * time.Millisecond)
 			defer ticker.Stop()
@@ -336,38 +338,46 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 				<-ticker.C
 				currentScroll := JM.AppLayoutManager.OffsetY()
 				if currentScroll != scrollY {
-					newPos := fyne.NewPos(
+					adjustedPos := fyne.NewPos(
 						h.dragPosition.X-h.dragCursorOffset.X,
 						h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
 					)
-
 					scrollY = currentScroll
 
 					fyne.Do(func() {
-						DragPlaceholder.Move(newPos)
+						if DragPlaceholder.Position().X != adjustedPos.X || DragPlaceholder.Position().Y != adjustedPos.Y {
+							DragPlaceholder.Move(adjustedPos)
+						}
 					})
 				}
 			}
 		}()
 	}
 
+	// Apply scroll offset if changed
 	if scrollY != h.dragScroll {
 		newPos.Y += scrollY - h.dragScroll
 	}
 
-	fyne.Do(func() {
-		DragPlaceholder.Move(newPos)
-	})
+	// Move placeholder to new position
+	if DragPlaceholder.Position().X != newPos.X || DragPlaceholder.Position().Y != newPos.Y {
+		go func() {
+			fyne.DoAndWait(func() {
+				DragPlaceholder.Move(newPos)
+			})
+		}()
+	}
 
-	// Prevent drag glitching
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		fyne.Do(func() {
-			DragPlaceholder.Show()
-		})
-	}()
+	// Show placeholder after layout settles
+	if !DragPlaceholder.Visible() {
+		go func() {
+			fyne.DoAndWait(func() {
+				DragPlaceholder.Show()
+			})
+		}()
+	}
 
-	// Store the final position for snapping and reordering later!
+	// Save drag position for snapping/reordering
 	h.dragPosition = ev.Position
 }
 
