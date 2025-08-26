@@ -333,9 +333,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			shown := false
 			for !shown {
 				<-ticker.C
+				currentScroll := JM.AppLayoutManager.OffsetY()
 				adjustedPos := fyne.NewPos(
 					h.dragPosition.X-h.dragCursorOffset.X,
-					h.dragPosition.Y-h.dragCursorOffset.Y+h.dragScroll,
+					h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
 				)
 
 				if DragPlaceholder.Position().X == adjustedPos.X || DragPlaceholder.Position().Y == adjustedPos.Y {
@@ -367,6 +368,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 					fyne.Do(func() {
 						if DragPlaceholder.Position().X != adjustedPos.X || DragPlaceholder.Position().Y != adjustedPos.Y {
 							DragPlaceholder.Move(adjustedPos)
+							JC.Grid.Refresh()
 						}
 					})
 				}
@@ -384,6 +386,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		go func() {
 			fyne.DoAndWait(func() {
 				DragPlaceholder.Move(newPos)
+				JC.Grid.Refresh()
 			})
 		}()
 	}
