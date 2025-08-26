@@ -30,7 +30,7 @@ func main() {
 
 	topBar := JA.NewTopBar(ResetCryptosMap, func() { RequestRateUpdate(true) }, OpenSettingForm, OpenNewPanelForm)
 
-	JC.Window.SetContent(JA.NewAppLayout(&topBar, JC.Grid))
+	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, JC.Grid, OpenNewPanelForm))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 

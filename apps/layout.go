@@ -14,7 +14,7 @@ type AppMainLayout struct {
 	Padding float32
 }
 
-var AppMainPanelScrollWindow *container.Scroll = nil
+var AppLayoutManager *AppLayout = nil
 
 func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 2 {
@@ -54,16 +54,57 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(width, height)
 }
 
-func NewAppLayout(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
-	AppMainPanelScrollWindow = container.NewVScroll(content)
+type AppLayout struct {
+	TopBar     *fyne.CanvasObject
+	Content    *fyne.Container
+	Scroll     *container.Scroll
+	AddButton  *EmptyClickablePanel
+	OnNewPanel func()
+}
+
+func (m *AppLayout) Refresh() {
+	if len(m.Content.Objects) == 0 {
+		m.Scroll.Content = m.AddButton
+	} else {
+		m.Scroll.Content = m.Content
+	}
+	m.Scroll.Refresh()
+}
+
+func (m *AppLayout) OffsetY() float32 {
+	return m.Scroll.Offset.Y
+}
+
+func (m *AppLayout) OffsetX() float32 {
+	return m.Scroll.Offset.X
+}
+
+func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container, onNewPanel func()) fyne.CanvasObject {
+	manager := &AppLayout{
+		TopBar:     topbar,
+		Content:    content,
+		OnNewPanel: onNewPanel,
+	}
+
+	manager.AddButton = NewEmptyClickablePanel(func() {
+		if manager.OnNewPanel != nil {
+			manager.OnNewPanel()
+		}
+	})
+
+	// Create scroll container
+	manager.Scroll = container.NewVScroll(nil)
+	manager.Refresh()
+
+	AppLayoutManager = manager
 
 	return fynetooltip.AddWindowToolTipLayer(
 		container.New(
 			&AppMainLayout{
 				Padding: 10,
 			},
-			*topbar,
-			AppMainPanelScrollWindow,
+			*manager.TopBar,
+			manager.Scroll,
 		),
 		JC.Window.Canvas())
 }

@@ -123,7 +123,7 @@ func RemovePanel(uuid string) {
 				JC.Grid.Remove(obj)
 
 				fyne.Do(JC.Grid.Refresh)
-				fyne.Do(JM.AppMainPanelScrollWindow.Refresh)
+				fyne.Do(JM.AppLayoutManager.Refresh)
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
@@ -168,7 +168,12 @@ func OpenNewPanelForm() {
 			SavePanelForm,
 			func(npdt *JT.PanelDataType) {
 				fyne.Do(func() {
+					r := len(JC.Grid.Objects) == 0
 					JC.Grid.Add(CreatePanel(npdt))
+
+					if r {
+						fyne.Do(JA.AppLayoutManager.Refresh)
+					}
 					JC.Notify("New panel created.")
 				})
 			},

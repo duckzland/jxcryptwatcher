@@ -294,7 +294,7 @@ func (h *PanelDisplay) EnableClick() {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	scrollY := JM.AppMainPanelScrollWindow.Offset.Y
+	scrollY := JM.AppLayoutManager.OffsetY()
 	newPos := fyne.NewPos(
 		ev.Position.X-h.dragCursorOffset.X,
 		ev.Position.Y-h.dragCursorOffset.Y,
@@ -303,9 +303,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	if !h.dragging {
 		h.dragging = true
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
+		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
 		JC.Grid.Add(DragPlaceholder)
+
 		if activeAction != nil {
 			h.dragActiveAction = activeAction
 		}
@@ -321,7 +322,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
 			for h.dragging {
 				<-ticker.C
-				currentScroll := JM.AppMainPanelScrollWindow.Offset.Y
+				currentScroll := JM.AppLayoutManager.OffsetY()
 				if currentScroll != scrollY {
 					newPos := fyne.NewPos(
 						h.dragPosition.X-h.dragCursorOffset.X,
@@ -354,7 +355,7 @@ func (h *PanelDisplay) DragEnd() {
 	JC.Grid.Remove(DragPlaceholder)
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.AppMainPanelScrollWindow.Offset.Y
+	h.dragOffset.Y -= h.dragScroll - JM.AppLayoutManager.OffsetY()
 
 	h.snapToNearest()
 }
