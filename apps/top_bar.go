@@ -102,6 +102,8 @@ func NewTopBar(
 	topBg := canvas.NewRectangle(JC.PanelBG)
 	topBg.CornerRadius = 4
 
+	JC.NotificationContainer = topBg
+
 	return container.New(
 		&TopBarLayout{
 			fixedWidth: JC.ActionBtnWidth,

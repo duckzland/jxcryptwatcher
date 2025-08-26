@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 )
 
 const Epsilon = 1e-9
@@ -39,3 +40,5 @@ var MainDebouncer = NewDebouncer()
 
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
+
+var NotificationContainer *canvas.Rectangle = nil

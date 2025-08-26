@@ -16,6 +16,7 @@ type NotificationDisplayWidget struct {
 	text         *canvas.Text
 	msgChan      chan string
 	lastActivity time.Time
+	maxWidth     float32
 }
 
 func NewNotificationDisplayWidget(msgChan chan string) *fyne.Container {
@@ -36,11 +37,20 @@ func NewNotificationDisplayWidget(msgChan chan string) *fyne.Container {
 
 func (nd *NotificationDisplayWidget) animateMessages() {
 	for msg := range nd.msgChan {
+
+		// Somehow during first boot, fyne always report bad width??
+		time.Sleep(600 * time.Millisecond)
+
 		nd.lastActivity = time.Now()
+
+		maxWidth := JC.NotificationContainer.Size().Width - 20
+		if JC.MainLayoutContentWidth < maxWidth {
+			maxWidth = JC.MainLayoutContentWidth - 20
+		}
 
 		// Show message instantly
 		fyne.Do(func() {
-			nd.text.Text = msg
+			nd.text.Text = JC.TruncateText(msg, maxWidth)
 			nd.text.Color = color.White
 			nd.text.Refresh()
 		})
