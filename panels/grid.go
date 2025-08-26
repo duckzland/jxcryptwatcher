@@ -25,7 +25,7 @@ type PanelGridLayout struct {
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() == -1 || JA.AppLayoutManager.Height() == -1 {
+	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() <= 0 || JA.AppLayoutManager.Height() <= 0 {
 		return
 	}
 
@@ -39,7 +39,6 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
 	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
-
 	if th > JA.AppLayoutManager.Height() {
 		size.Width -= 18
 	}
