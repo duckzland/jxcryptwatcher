@@ -199,6 +199,13 @@ func NewPanelDisplay(
 
 func (h *PanelDisplay) updateContent() {
 
+	pwidth := h.Size().Width
+	if pwidth != 0 && pwidth < JC.PanelWidth {
+		h.refTitle.TextSize = JC.PanelTitleSizeSmall
+		h.refSubtitle.TextSize = JC.PanelSubTitleSizeSmall
+		h.refContent.TextSize = JC.PanelContentSizeSmall
+	}
+
 	pkt := JT.BP.GetData(h.GetTag())
 	if pkt == nil {
 		return
@@ -232,11 +239,9 @@ func (h *PanelDisplay) updateContent() {
 			return
 		}
 
-		pwidth := h.Size().Width - 20
-
-		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth, h.refTitle.TextSize)
-		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth, h.refSubtitle.TextSize)
-		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth, h.refContent.TextSize)
+		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.refTitle.TextSize)
+		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.refSubtitle.TextSize)
+		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.refContent.TextSize)
 
 		h.refSubtitle.Show()
 		h.refContent.Show()
