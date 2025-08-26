@@ -50,7 +50,7 @@ func (nd *NotificationDisplayWidget) animateMessages() {
 
 		// Show message instantly
 		fyne.Do(func() {
-			nd.text.Text = JC.TruncateText(msg, maxWidth)
+			nd.text.Text = JC.TruncateText(msg, maxWidth, nd.text.TextSize)
 			nd.text.Color = color.White
 			nd.text.Refresh()
 		})

@@ -182,13 +182,12 @@ func CreateUUID() string {
 	return id.String()
 }
 
-func TruncateText(str string, maxWidth float32) string {
-
-	// Measure full text width
+func TruncateText(str string, maxWidth float32, fontSize float32) string {
+	// Measure full text width with custom font size
 	full := canvas.NewText(str, color.White)
+	full.TextSize = fontSize
 	size := full.MinSize()
 
-	// If it fits, nothing to do
 	if size.Width <= maxWidth {
 		return str
 	}
@@ -199,12 +198,12 @@ func TruncateText(str string, maxWidth float32) string {
 	for i := len(runes); i > 0; i-- {
 		trial := string(runes[:i]) + ellipsis
 		tmp := canvas.NewText(trial, color.White)
+		tmp.TextSize = fontSize
 
 		if tmp.MinSize().Width <= maxWidth {
-			str = trial
-			break
+			return trial
 		}
 	}
 
-	return str
+	return ""
 }

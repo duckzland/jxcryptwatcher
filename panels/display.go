@@ -232,9 +232,11 @@ func (h *PanelDisplay) updateContent() {
 			return
 		}
 
-		h.refTitle.Text = pkt.FormatTitle()
-		h.refSubtitle.Text = pkt.FormatSubtitle()
-		h.refContent.Text = pkt.FormatContent()
+		pwidth := h.Size().Width - 20
+
+		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth, h.refTitle.TextSize)
+		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth, h.refSubtitle.TextSize)
+		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth, h.refContent.TextSize)
 
 		h.refSubtitle.Show()
 		h.refContent.Show()
