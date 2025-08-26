@@ -139,7 +139,7 @@ func SavePanelForm() {
 
 	JC.Notify("Saving panel settings...")
 
-	fyne.Do(func() {
+	fyne.DoAndWait(func() {
 		JC.Grid.Refresh()
 		RequestDisplayUpdate(true)
 	})
@@ -167,15 +167,17 @@ func OpenNewPanelForm() {
 			"",
 			SavePanelForm,
 			func(npdt *JT.PanelDataType) {
-				fyne.Do(func() {
-					r := len(JC.Grid.Objects) == 0
-					JC.Grid.Add(CreatePanel(npdt))
+				r := len(JC.Grid.Objects) == 0
 
-					if r {
-						fyne.Do(JA.AppLayoutManager.Refresh)
-					}
-					JC.Notify("New panel created.")
+				fyne.DoAndWait(func() {
+					JC.Grid.Add(CreatePanel(npdt))
 				})
+
+				if r {
+					fyne.DoAndWait(JA.AppLayoutManager.Refresh)
+				}
+
+				JC.Notify("New panel created.")
 			},
 		)
 
@@ -229,7 +231,7 @@ func ResetCryptosMap() {
 		JC.Notify("Cryptos map has been regenerated")
 
 		if JT.BP.RefreshData() {
-			fyne.Do(func() {
+			fyne.DoAndWait(func() {
 				JC.Grid.Refresh()
 			})
 
