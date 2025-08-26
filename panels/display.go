@@ -313,15 +313,8 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		h.dragScroll = scrollY
 
 		// Initialize drag placeholder safely
-		fyne.DoAndWait(func() {
-			JC.Grid.Add(DragPlaceholder)
-			JC.Grid.Refresh()
-		})
-
-		fyne.DoAndWait(func() {
-			DragPlaceholder.Move(newPos)
-			JC.Grid.Refresh()
-		})
+		JC.Grid.Add(DragPlaceholder)
+		DragPlaceholder.Move(newPos)
 
 		if activeAction != nil {
 			h.dragActiveAction = activeAction
