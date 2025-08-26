@@ -155,16 +155,6 @@ func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
 
-func NewPanelGridLayout(size fyne.Size, padding [4]float32) fyne.Layout {
-	return &PanelGridLayout{
-		MinCellSize:  size,
-		DynCellSize:  size,
-		ColCount:     1,
-		RowCount:     1,
-		InnerPadding: padding,
-	}
-}
-
 func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	JC.PrintMemUsage("Start building panels")
 
@@ -190,10 +180,16 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	}
 
 	// Using direct spread injection for objects to save multiple refresh calls
-	grid := container.New(NewPanelGridLayout(
-		fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-		JC.PanelPadding,
-	), o...)
+	grid := container.New(
+		&PanelGridLayout{
+			MinCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+			DynCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+			ColCount:     1,
+			RowCount:     1,
+			InnerPadding: JC.PanelPadding,
+		},
+		o...,
+	)
 
 	// Global dummy panel for placeholder
 	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
