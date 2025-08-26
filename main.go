@@ -28,7 +28,7 @@ func main() {
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)
 
-	topBar := JA.NewTopBar(ResetCryptosMap, func() { RefreshRates() }, OpenSettingForm, OpenNewPanelForm)
+	topBar := JA.NewTopBar(ResetCryptosMap, func() { RequestRateUpdate(true) }, OpenSettingForm, OpenNewPanelForm)
 
 	JC.Window.SetContent(JA.NewAppLayout(&topBar, JC.Grid))
 

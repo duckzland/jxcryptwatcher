@@ -13,7 +13,14 @@ import (
 	JT "jxwatcher/types"
 )
 
-func UpdateDisplay() {
+func UpdateDisplay() bool {
+
+	if !JT.Config.IsValid() {
+		JC.Logln("Invalid configuration, cannot refresh display")
+		JC.Notify("Unable to refresh display: invalid configuration.")
+
+		return false
+	}
 
 	list := JT.BP.Get()
 	for _, pot := range list {
@@ -26,17 +33,22 @@ func UpdateDisplay() {
 		time.Sleep(1 * time.Millisecond)
 	}
 
-	// JC.Log("Display Refreshed")
+	JC.Logln("Display Refreshed")
+
+	return true
 }
 
-var UpdatingRates = false
-
 func UpdateRates() bool {
-	if UpdatingRates {
+
+	if !JT.Config.IsValid() {
+		JC.Logln("Invalid configuration, cannot refresh rates")
+		JC.Notify("Unable to refresh rates: invalid configuration.")
+
 		return false
 	}
 
-	UpdatingRates = true
+	// Clear cached rates
+	JT.ExchangeCache.Reset()
 
 	ex := JT.ExchangeResults{}
 	jb := make(map[string]string)
@@ -79,23 +91,6 @@ func UpdateRates() bool {
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
-	UpdatingRates = false
-
-	return true
-}
-
-func RefreshRates() bool {
-
-	if !JT.Config.IsValid() {
-		JC.Logln("Invalid configuration, cannot refresh rates")
-		JC.Notify("Unable to refresh rates: invalid configuration.")
-		return false
-	}
-
-	// Clear cached rates
-	JT.ExchangeCache.Reset()
-	UpdateRates()
-
 	return true
 }
 
@@ -133,9 +128,8 @@ func SavePanelForm() {
 
 	go func() {
 		if JT.SavePanels() {
-			if UpdateRates() {
-				JC.Notify("Panel settings saved.")
-			}
+			RequestRateUpdate(false)
+			JC.Notify("Panel settings saved.")
 
 		} else {
 			JC.Notify("Failed to save panel settings.")
@@ -192,6 +186,11 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
 
+var (
+	rcMu            sync.Mutex
+	rcDebounceTimer *time.Timer
+)
+
 func ResetCryptosMap() {
 	if !JT.Config.IsValid() {
 		JC.Logln("Invalid configuration, cannot reset cryptos map")
@@ -199,19 +198,28 @@ func ResetCryptosMap() {
 		return
 	}
 
-	Cryptos := JT.CryptosType{}
-	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-	JT.BP.Maps.ClearMapCache()
+	rcMu.Lock()
+	defer rcMu.Unlock()
 
-	JC.Notify("Cryptos map has been regenerated")
-
-	if JT.BP.RefreshData() {
-		fyne.Do(func() {
-			JC.Grid.Refresh()
-		})
-
-		RefreshRates()
+	if rcDebounceTimer != nil {
+		rcDebounceTimer.Stop()
 	}
+
+	rcDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
+		Cryptos := JT.CryptosType{}
+		JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+		JT.BP.Maps.ClearMapCache()
+
+		JC.Notify("Cryptos map has been regenerated")
+
+		if JT.BP.RefreshData() {
+			fyne.Do(func() {
+				JC.Grid.Refresh()
+			})
+
+			RequestRateUpdate(false)
+		}
+	})
 }
 
 func StartWorkers() {
@@ -220,22 +228,24 @@ func StartWorkers() {
 
 		for range JC.UpdateDisplayChan {
 			displayLock.Lock()
-			if JT.Config.IsValid() {
+
+			if UpdateDisplay() {
 				JC.UpdateDisplayTimestamp = time.Now()
-				JC.Logln("Refreshed Display")
-				fyne.Do(UpdateDisplay)
 			}
+
 			displayLock.Unlock()
 		}
 	}()
 
 	go func() {
-		for range JC.UpdateRatesChan {
-			if !JT.Config.IsValid() {
-				continue
-			}
+		var displayLock sync.Mutex
 
-			RefreshRates()
+		for range JC.UpdateRatesChan {
+			displayLock.Lock()
+
+			UpdateRates()
+
+			displayLock.Unlock()
 		}
 	}()
 }
@@ -243,7 +253,7 @@ func StartWorkers() {
 func StartUpdateRatesWorker() {
 	go func() {
 		for {
-			RequestRateUpdate()
+			RequestRateUpdate(false)
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
 		}
 	}()
@@ -255,6 +265,24 @@ func RequestDisplayUpdate() {
 	}
 }
 
-func RequestRateUpdate() {
-	JC.UpdateRatesChan <- struct{}{}
+var (
+	ruMu            sync.Mutex
+	ruDebounceTimer *time.Timer
+)
+
+func RequestRateUpdate(debounce bool) {
+	ruMu.Lock()
+	defer ruMu.Unlock()
+
+	if debounce {
+		if ruDebounceTimer != nil {
+			ruDebounceTimer.Stop()
+		}
+
+		ruDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
+			JC.UpdateRatesChan <- struct{}{}
+		})
+	} else {
+		JC.UpdateRatesChan <- struct{}{}
+	}
 }
