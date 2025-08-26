@@ -2,6 +2,7 @@ package panels
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -17,8 +18,9 @@ import (
 	JT "jxwatcher/types"
 )
 
-var Draggable = true
-var SyncingPanels = false
+var activeAction *PanelDisplay = nil
+var SyncDebounceTimer *time.Timer
+var SyncLock sync.Mutex
 
 type PanelLayout struct{}
 
@@ -93,15 +95,13 @@ type PanelDisplay struct {
 	dragMoveEnd      fyne.Position
 	dragMoveStart    fyne.Position
 	dragCursorOffset fyne.Position
+	dragActiveAction *PanelDisplay
 	dragging         bool
 	background       *canvas.Rectangle
 	refTitle         *canvas.Text
 	refContent       *canvas.Text
 	refSubtitle      *canvas.Text
-	refData          *JT.PanelDataType
 }
-
-var activeAction *PanelDisplay = nil
 
 func NewPanelDisplay(
 	pdt *JT.PanelDataType,
@@ -133,18 +133,12 @@ func NewPanelDisplay(
 
 	action := NewPanelActionBar(
 		func() {
-			if SyncingPanels || !Draggable {
-				return
-			}
 			dynpk, _ := str.Get()
 			if onEdit != nil {
 				go onEdit(dynpk, uuid)
 			}
 		},
 		func() {
-			if SyncingPanels || !Draggable {
-				return
-			}
 			if onDelete != nil {
 				go JA.FadeOutBackground(background, 300*time.Millisecond, func() {
 					onDelete(uuid)
@@ -169,18 +163,23 @@ func NewPanelDisplay(
 		refTitle:    title,
 		refContent:  content,
 		refSubtitle: subtitle,
-		refData:     pdt,
 	}
 
 	panel.ExtendBaseWidget(panel)
 	action.Hide()
 
 	str.AddListener(binding.NewDataListener(func() {
-		if !panel.refData.DidChange() && panel.refData.Status == 1 {
+
+		pkt := JT.BP.GetData(panel.GetTag())
+		if pkt == nil {
 			return
 		}
 
-		switch panel.refData.IsValueIncrease() {
+		if !pkt.DidChange() && pkt.Status == 1 {
+			return
+		}
+
+		switch pkt.IsValueIncrease() {
 		case 1:
 			panel.background.FillColor = JC.GreenColor
 			panel.background.Refresh()
@@ -190,6 +189,7 @@ func NewPanelDisplay(
 		}
 
 		panel.updateContent()
+
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
@@ -201,11 +201,17 @@ func NewPanelDisplay(
 }
 
 func (h *PanelDisplay) updateContent() {
-	if h.refData.UsePanelKey().GetValueFloat() != -1 {
-		h.refData.Status = 1
+
+	pkt := JT.BP.GetData(h.GetTag())
+	if pkt == nil {
+		return
 	}
 
-	switch h.refData.Status {
+	if pkt.UsePanelKey().GetValueFloat() != -1 {
+		pkt.Status = 1
+	}
+
+	switch pkt.Status {
 	case -1:
 		h.refTitle.Text = "Fetching Rates..."
 		h.refSubtitle.Hide()
@@ -221,7 +227,7 @@ func (h *PanelDisplay) updateContent() {
 		h.background.FillColor = JC.PanelBG
 
 	default:
-		if !JT.BP.ValidatePanel(h.refData.Get()) {
+		if !JT.BP.ValidatePanel(pkt.Get()) {
 			h.refTitle.Text = "Invalid Panel"
 			h.refSubtitle.Hide()
 			h.refContent.Hide()
@@ -229,9 +235,9 @@ func (h *PanelDisplay) updateContent() {
 			return
 		}
 
-		h.refTitle.Text = h.refData.FormatTitle()
-		h.refSubtitle.Text = h.refData.FormatSubtitle()
-		h.refContent.Text = h.refData.FormatContent()
+		h.refTitle.Text = pkt.FormatTitle()
+		h.refSubtitle.Text = pkt.FormatSubtitle()
+		h.refContent.Text = pkt.FormatContent()
 
 		h.refSubtitle.Show()
 		h.refContent.Show()
@@ -291,10 +297,6 @@ func (h *PanelDisplay) EnableClick() {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	if !Draggable {
-		return
-	}
-
 	scrollY := JM.AppMainPanelScrollWindow.Offset.Y
 	newPos := fyne.NewPos(
 		ev.Position.X-h.dragCursorOffset.X,
@@ -303,11 +305,17 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
 	if !h.dragging {
 		h.dragging = true
-
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
 		h.dragScroll = JM.AppMainPanelScrollWindow.Offset.Y
 
 		JC.Grid.Add(DragPlaceholder)
+		if activeAction != nil {
+			h.dragActiveAction = activeAction
+		}
+
+		if h.dragActiveAction != nil {
+			fyne.Do(h.dragActiveAction.HideTarget)
+		}
 
 		// Handling scroll event when still in drag mode
 		go func() {
@@ -359,28 +367,29 @@ func (h *PanelDisplay) snapToNearest() {
 	// Convert target position to grid index
 	targetIndex := h.findDropTargetIndex()
 	if targetIndex != -1 {
-		Draggable = false
 		JC.Grid.Objects = h.reorder(targetIndex)
 		JC.Grid.Refresh()
 
-		if !SyncingPanels {
-			SyncingPanels = true
+		go func() {
+			SyncLock.Lock()
+			defer SyncLock.Unlock()
 
-			go func() {
-				time.Sleep(1000 * time.Millisecond)
+			if SyncDebounceTimer != nil {
+				SyncDebounceTimer.Stop()
+			}
 
+			SyncDebounceTimer = time.AfterFunc(1000*time.Millisecond, func() {
 				if h.syncPanelData() {
 					if JT.SavePanels() {
 						JC.Notify("Panels have been reordered and updated.")
-						SyncingPanels = false
+
+						if h.dragActiveAction != nil {
+							fyne.Do(h.dragActiveAction.ShowTarget)
+							h.dragActiveAction = nil
+						}
 					}
 				}
-			}()
-		}
-
-		go func() {
-			time.Sleep(1 * time.Millisecond)
-			Draggable = true
+			})
 		}()
 	}
 }
