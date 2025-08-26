@@ -168,14 +168,9 @@ func NewPanelGridLayout(size fyne.Size, padding [4]float32) fyne.Layout {
 func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	JC.PrintMemUsage("Start building panels")
 
-	// Create a grid container with custom layout
-	grid := container.New(NewPanelGridLayout(
-		fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-		JC.PanelPadding,
-	))
-
 	// Get the list of panel data
 	list := JT.BP.Get()
+	p := []*PanelDisplay{}
 
 	for _, pot := range list {
 		// Retrieve and initialize panel data
@@ -184,13 +179,26 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 
 		// Create the panel
 		panel := createPanel(pkt).(*PanelDisplay)
+		panel.Resize(fyne.NewSize(JC.PanelWidth, JC.PanelHeight))
 
-		// Add to grid
-		grid.Add(panel)
+		p = append(p, panel)
 	}
+
+	o := make([]fyne.CanvasObject, len(p))
+	for i := range p {
+		o[i] = p[i]
+	}
+
+	// Using direct spread injection for objects to save multiple refresh calls
+	grid := container.New(NewPanelGridLayout(
+		fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+		JC.PanelPadding,
+	), o...)
 
 	// Global dummy panel for placeholder
 	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
+	DragPlaceholder.Hide()
+
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.PanelBorderRadius
 	}
