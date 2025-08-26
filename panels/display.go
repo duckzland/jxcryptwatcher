@@ -313,10 +313,11 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
 		// Prevent drag glitching
-		DragPlaceholder.Hide()
-		DragPlaceholder.Move(newPos)
-
-		JC.Grid.Add(DragPlaceholder)
+		fyne.Do(func() {
+			DragPlaceholder.Hide()
+			JC.Grid.Add(DragPlaceholder)
+			DragPlaceholder.Move(newPos)
+		})
 
 		if activeAction != nil {
 			h.dragActiveAction = activeAction
@@ -354,12 +355,17 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		newPos.Y += scrollY - h.dragScroll
 	}
 
-	DragPlaceholder.Move(newPos)
+	fyne.Do(func() {
+		DragPlaceholder.Move(newPos)
+	})
 
 	// Prevent drag glitching
-	if !DragPlaceholder.Visible() {
-		DragPlaceholder.Show()
-	}
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		fyne.Do(func() {
+			DragPlaceholder.Show()
+		})
+	}()
 
 	// Store the final position for snapping and reordering later!
 	h.dragPosition = ev.Position
@@ -368,8 +374,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 func (h *PanelDisplay) DragEnd() {
 	// Call this early to cancel go routine
 	h.dragging = false
-	JC.Grid.Remove(DragPlaceholder)
-	DragPlaceholder.Hide()
+	fyne.Do(func() {
+		JC.Grid.Remove(DragPlaceholder)
+		DragPlaceholder.Hide()
+	})
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
 	h.dragOffset.Y -= h.dragScroll - JM.AppLayoutManager.OffsetY()
