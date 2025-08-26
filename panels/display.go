@@ -314,9 +314,11 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
 		// Initialize drag placeholder safely
 		fyne.DoAndWait(func() {
-			DragPlaceholder.Hide()
 			JC.Grid.Add(DragPlaceholder)
-			DragPlaceholder.Resize(h.Size())
+			JC.Grid.Refresh()
+		})
+
+		fyne.DoAndWait(func() {
 			DragPlaceholder.Move(newPos)
 			JC.Grid.Refresh()
 		})
@@ -328,6 +330,30 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		if h.dragActiveAction != nil {
 			fyne.Do(h.dragActiveAction.HideTarget)
 		}
+
+		// Show the placeholder when its on mouse cursor
+		go func() {
+			ticker := time.NewTicker(10 * time.Millisecond)
+			defer ticker.Stop()
+
+			shown := false
+			for !shown {
+				<-ticker.C
+				adjustedPos := fyne.NewPos(
+					h.dragPosition.X-h.dragCursorOffset.X,
+					h.dragPosition.Y-h.dragCursorOffset.Y+h.dragScroll,
+				)
+
+				if DragPlaceholder.Position().X == adjustedPos.X || DragPlaceholder.Position().Y == adjustedPos.Y {
+					shown = true
+					if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+						fyne.Do(func() {
+							rect.FillColor = JC.PanelPlaceholderBG
+						})
+					}
+				}
+			}
+		}()
 
 		// Scroll tracking loop
 		go func() {
@@ -368,15 +394,6 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		}()
 	}
 
-	// Show placeholder after layout settles
-	if !DragPlaceholder.Visible() {
-		go func() {
-			fyne.DoAndWait(func() {
-				DragPlaceholder.Show()
-			})
-		}()
-	}
-
 	// Save drag position for snapping/reordering
 	h.dragPosition = ev.Position
 }
@@ -384,9 +401,14 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 func (h *PanelDisplay) DragEnd() {
 	// Call this early to cancel go routine
 	h.dragging = false
-	fyne.Do(func() {
+	fyne.DoAndWait(func() {
 		JC.Grid.Remove(DragPlaceholder)
-		DragPlaceholder.Hide()
+	})
+
+	fyne.DoAndWait(func() {
+		if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+			rect.FillColor = JC.Transparent
+		}
 	})
 
 	h.dragOffset = h.Position().Add(h.dragPosition)

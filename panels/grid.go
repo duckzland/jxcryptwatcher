@@ -192,8 +192,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	)
 
 	// Global dummy panel for placeholder
-	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
-	DragPlaceholder.Hide()
+	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
 
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.PanelBorderRadius
