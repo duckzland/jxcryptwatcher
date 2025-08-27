@@ -331,7 +331,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			defer ticker.Stop()
 
 			shown := false
-			for !shown {
+			for h.dragging && !shown {
 				<-ticker.C
 				currentScroll := JM.AppLayoutManager.OffsetY()
 				adjustedPos := fyne.NewPos(
@@ -344,6 +344,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 					if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 						fyne.Do(func() {
 							rect.FillColor = JC.PanelPlaceholderBG
+							rect.Refresh()
 						})
 					}
 				}
