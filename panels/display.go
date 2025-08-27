@@ -18,6 +18,7 @@ import (
 )
 
 var activeAction *PanelDisplay = nil
+var activeDragging *PanelDisplay = nil
 
 type PanelLayout struct{}
 
@@ -258,6 +259,10 @@ func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
+	if activeDragging != nil {
+		return
+	}
+
 	if h.disabled {
 		return
 	}
@@ -301,20 +306,23 @@ func (h *PanelDisplay) EnableClick() {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	scrollY := JM.AppLayoutManager.OffsetY()
-	newPos := fyne.NewPos(
-		ev.Position.X-h.dragCursorOffset.X,
-		ev.Position.Y-h.dragCursorOffset.Y,
-	)
 
-	if !h.dragging {
+	// Other instance is dragging, stop it
+	// This isn't perfect but just in case for edge case
+	if activeDragging != nil && activeDragging != h {
+		activeDragging.DragEnd()
+	}
+
+	h.dragPosition = ev.Position
+
+	if activeDragging == nil {
+		JC.AllowActions = false
+		activeDragging = h
 		h.dragging = true
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-		h.dragScroll = scrollY
+		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
-		// Initialize drag placeholder safely
 		JC.Grid.Add(DragPlaceholder)
-		DragPlaceholder.Move(newPos)
 		JC.Grid.Refresh()
 
 		if activeAction != nil {
@@ -325,71 +333,65 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			fyne.Do(h.dragActiveAction.HideTarget)
 		}
 
-		// Scroll tracking loop and placeholder visibility
+		fps := 16 * time.Millisecond
+		if JC.IsMobile {
+			fps = 32 * time.Millisecond
+		}
+
 		go func() {
-			ticker := time.NewTicker(50 * time.Millisecond)
+			ticker := time.NewTicker(fps)
 			defer ticker.Stop()
 
 			shown := false
+			posX := DragPlaceholder.Position().X
+			posY := DragPlaceholder.Position().Y
+			rect, ok := DragPlaceholder.(*canvas.Rectangle)
+
+			if !ok {
+				return
+			}
 
 			for h.dragging {
 				<-ticker.C
+
 				currentScroll := JM.AppLayoutManager.OffsetY()
-				adjustedPos := fyne.NewPos(
-					h.dragPosition.X-h.dragCursorOffset.X,
-					h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
-				)
-
-				if currentScroll != scrollY {
-					scrollY = currentScroll
-
-					fyne.Do(func() {
-						if DragPlaceholder.Position().X != adjustedPos.X || DragPlaceholder.Position().Y != adjustedPos.Y {
-							DragPlaceholder.Move(adjustedPos)
-						}
-					})
-				}
+				targetX := h.dragPosition.X - h.dragCursorOffset.X
+				targetY := h.dragPosition.Y - h.dragCursorOffset.Y + (currentScroll - h.dragScroll)
 
 				if !shown {
-					if DragPlaceholder.Position().X == adjustedPos.X || DragPlaceholder.Position().Y == adjustedPos.Y {
-						shown = true
-						if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
-							fyne.Do(func() {
-								rect.FillColor = JC.PanelPlaceholderBG
-								rect.Refresh()
-							})
-						}
+					if targetX == posX || targetY == posY {
+						fyne.Do(func() {
+							rect.FillColor = JC.PanelPlaceholderBG
+							canvas.Refresh(rect)
+							shown = true
+						})
 					}
 				}
 
+				if posX != targetX || posY != targetY {
+					posX = targetX
+					posY = targetY
+					fyne.Do(func() {
+						rect.Move(fyne.NewPos(posX, posY))
+						canvas.Refresh(rect)
+					})
+				}
 			}
 		}()
 	}
-
-	// Apply scroll offset if changed
-	if scrollY != h.dragScroll {
-		newPos.Y += scrollY - h.dragScroll
-	}
-
-	// Move placeholder to new position
-	if DragPlaceholder.Position().X != newPos.X || DragPlaceholder.Position().Y != newPos.Y {
-		go func() {
-			fyne.DoAndWait(func() {
-				DragPlaceholder.Move(newPos)
-			})
-		}()
-	}
-
-	// Save drag position for snapping/reordering
-	h.dragPosition = ev.Position
 }
 
 func (h *PanelDisplay) DragEnd() {
 	// Call this early to cancel go routine
+
+	activeDragging = nil
 	h.dragging = false
+	JC.AllowActions = true
+
 	JC.Grid.Remove(DragPlaceholder)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.FillColor = JC.Transparent
+		canvas.Refresh(rect)
 	}
 	JC.Grid.Refresh()
 
@@ -403,52 +405,47 @@ func (h *PanelDisplay) snapToNearest() {
 
 	// Convert target position to grid index
 	targetIndex := h.findDropTargetIndex()
-	if targetIndex != -1 {
-		JC.Grid.Objects = h.reorder(targetIndex)
-		JC.Grid.Refresh()
+	if targetIndex == -1 {
+		return
+	}
 
-		go func() {
-			JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
-				if h.syncPanelData() {
-					if JT.SavePanels() {
-						JC.Notify("Panels have been reordered and updated.")
+	JC.Grid.Objects = h.reorder(targetIndex)
+	JC.Grid.Refresh()
 
-						if h.dragActiveAction != nil {
-							fyne.Do(h.dragActiveAction.ShowTarget)
-							h.dragActiveAction = nil
-						}
+	go func() {
+		JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
+			if h.syncPanelData() {
+				if JT.SavePanels() {
+					JC.Notify("Panels have been reordered and updated.")
+
+					if h.dragActiveAction != nil {
+						fyne.Do(h.dragActiveAction.ShowTarget)
+						h.dragActiveAction = nil
 					}
 				}
-			})
-		}()
-	}
+			}
+		})
+	}()
 }
 
 func (h *PanelDisplay) findDropTargetIndex() int {
-	panels := JC.Grid.Objects
-	dragPos := h.dragOffset
 
-	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", dragPos.X, dragPos.Y))
+	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", h.dragOffset.X, h.dragOffset.Y))
 
-	for i, panel := range panels {
-
-		panelPos := panel.Position()
-		panelSize := panel.Size()
-
-		left := panelPos.X
-		right := panelPos.X + panelSize.Width
-		top := panelPos.Y
-		bottom := panelPos.Y + panelSize.Height
+	for i, zone := range DragDropZones {
 
 		JC.Logln(fmt.Sprintf(
 			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",
-			i, left, right, top, bottom,
+			i, zone.left, zone.right, zone.top, zone.bottom,
 		))
 
-		if dragPos.X >= left && dragPos.X <= right &&
-			dragPos.Y >= top && dragPos.Y <= bottom {
+		if h.dragOffset.X >= zone.left &&
+			h.dragOffset.X <= zone.right &&
+			h.dragOffset.Y >= zone.top &&
+			h.dragOffset.Y <= zone.bottom {
 
-			if panel == h {
+			if zone.panel == h {
+				JC.Logln(fmt.Sprintf("Refusing to drop panel to the old position %d", i))
 				return -1
 			}
 
@@ -457,6 +454,8 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 			return i
 		}
 	}
+
+	JC.Logln("Refuse to drop panel to invalid drop position")
 
 	return -1
 }

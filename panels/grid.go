@@ -13,6 +13,15 @@ import (
 )
 
 var DragPlaceholder fyne.CanvasObject
+var DragDropZones []*PanelDropZone
+
+type PanelDropZone struct {
+	top    float32
+	left   float32
+	bottom float32
+	right  float32
+	panel  *PanelDisplay
+}
 
 type PanelGridLayout struct {
 	MinCellSize  fyne.Size
@@ -35,6 +44,7 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.ColCount = 1
 	g.RowCount = 0
 	g.DynCellSize = g.MinCellSize
+	DragDropZones = []*PanelDropZone{}
 
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
@@ -94,6 +104,16 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			x = 0
 			g.RowCount++
 		}
+
+		dz := PanelDropZone{
+			left:   x,
+			right:  x + g.DynCellSize.Width,
+			top:    y,
+			bottom: y + g.DynCellSize.Height,
+			panel:  child.(*PanelDisplay),
+		}
+
+		DragDropZones = append(DragDropZones, &dz)
 
 		child.Move(fyne.NewPos(x, y))
 		child.Resize(g.DynCellSize)
@@ -193,7 +213,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 
 	// Global dummy panel for placeholder
 	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
-
+	DragDropZones = []*PanelDropZone{}
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.PanelBorderRadius
 	}

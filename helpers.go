@@ -226,7 +226,7 @@ func ResetCryptosMap() {
 		JC.Notify("Cryptos map has been regenerated")
 
 		if JT.BP.RefreshData() {
-			fyne.DoAndWait(func() {
+			fyne.Do(func() {
 				JC.Grid.Refresh()
 			})
 

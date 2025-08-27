@@ -117,28 +117,28 @@ func NewTopBar(
 
 		// Refresh ticker data
 		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			if onCryptosRefresh != nil {
+			if onCryptosRefresh != nil && JC.AllowActions {
 				go onCryptosRefresh()
 			}
 		}),
 
 		// Refresh exchange rates
 		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			if onRatesRefresh != nil {
+			if onRatesRefresh != nil && JC.AllowActions {
 				go onRatesRefresh()
 			}
 		}),
 
 		// Open settings
 		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
-			if onSettingSave != nil {
+			if onSettingSave != nil && JC.AllowActions {
 				go onSettingSave()
 			}
 		}),
 
 		// Add new panel
 		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
-			if onAddNewPanel != nil {
+			if onAddNewPanel != nil && JC.AllowActions {
 				go onAddNewPanel()
 			}
 		}),

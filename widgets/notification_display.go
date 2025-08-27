@@ -49,7 +49,7 @@ func (nd *NotificationDisplayWidget) animateMessages() {
 		}
 
 		// Show message instantly
-		fyne.DoAndWait(func() {
+		fyne.Do(func() {
 			nd.text.Text = JC.TruncateText(msg, maxWidth, nd.text.TextSize)
 			nd.text.Color = color.White
 			nd.text.Refresh()
@@ -67,7 +67,7 @@ func (nd *NotificationDisplayWidget) watchIdleAndClear() {
 
 			// Clear text
 			JA.StartFadingText(nd.text, func() {
-				fyne.DoAndWait(func() {
+				fyne.Do(func() {
 					nd.text.Text = ""
 					nd.text.Color = color.White // Reset for next message
 					nd.text.Refresh()

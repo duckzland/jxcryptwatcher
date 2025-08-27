@@ -46,3 +46,5 @@ var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
 
 var NotificationContainer *canvas.Rectangle = nil
+
+var AllowActions = true

@@ -19,7 +19,7 @@ func StartFlashingText(
 	go func() {
 		for i := 0; i < flashes*2; i++ {
 			time.Sleep(interval)
-			fyne.DoAndWait(func() {
+			fyne.Do(func() {
 				if i%2 == 0 {
 					JC.SetTextAlpha(text, 200)
 				} else {
