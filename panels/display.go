@@ -325,13 +325,14 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			fyne.Do(h.dragActiveAction.HideTarget)
 		}
 
-		// Show the placeholder when its on mouse cursor
+		// Scroll tracking loop and placeholder visibility
 		go func() {
-			ticker := time.NewTicker(10 * time.Millisecond)
+			ticker := time.NewTicker(50 * time.Millisecond)
 			defer ticker.Stop()
 
 			shown := false
-			for h.dragging && !shown {
+
+			for h.dragging {
 				<-ticker.C
 				currentScroll := JM.AppLayoutManager.OffsetY()
 				adjustedPos := fyne.NewPos(
@@ -339,40 +340,28 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 					h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
 				)
 
-				if DragPlaceholder.Position().X == adjustedPos.X || DragPlaceholder.Position().Y == adjustedPos.Y {
-					shown = true
-					if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
-						fyne.Do(func() {
-							rect.FillColor = JC.PanelPlaceholderBG
-							rect.Refresh()
-						})
-					}
-				}
-			}
-		}()
-
-		// Scroll tracking loop
-		go func() {
-			ticker := time.NewTicker(50 * time.Millisecond)
-			defer ticker.Stop()
-
-			for h.dragging {
-				<-ticker.C
-				currentScroll := JM.AppLayoutManager.OffsetY()
 				if currentScroll != scrollY {
-					adjustedPos := fyne.NewPos(
-						h.dragPosition.X-h.dragCursorOffset.X,
-						h.dragPosition.Y-h.dragCursorOffset.Y+(currentScroll-h.dragScroll),
-					)
 					scrollY = currentScroll
 
 					fyne.Do(func() {
 						if DragPlaceholder.Position().X != adjustedPos.X || DragPlaceholder.Position().Y != adjustedPos.Y {
 							DragPlaceholder.Move(adjustedPos)
-							JC.Grid.Refresh()
 						}
 					})
 				}
+
+				if !shown {
+					if DragPlaceholder.Position().X == adjustedPos.X || DragPlaceholder.Position().Y == adjustedPos.Y {
+						shown = true
+						if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+							fyne.Do(func() {
+								rect.FillColor = JC.PanelPlaceholderBG
+								rect.Refresh()
+							})
+						}
+					}
+				}
+
 			}
 		}()
 	}
@@ -387,7 +376,6 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		go func() {
 			fyne.DoAndWait(func() {
 				DragPlaceholder.Move(newPos)
-				JC.Grid.Refresh()
 			})
 		}()
 	}
