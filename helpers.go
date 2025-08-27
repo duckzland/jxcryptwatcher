@@ -139,10 +139,8 @@ func SavePanelForm() {
 
 	JC.Notify("Saving panel settings...")
 
-	fyne.DoAndWait(func() {
-		JC.Grid.Refresh()
-		RequestDisplayUpdate(true)
-	})
+	JC.Grid.Refresh()
+	RequestDisplayUpdate(true)
 
 	go func() {
 		if JT.SavePanels() {
@@ -169,12 +167,9 @@ func OpenNewPanelForm() {
 			func(npdt *JT.PanelDataType) {
 				r := len(JC.Grid.Objects) == 0
 
-				fyne.DoAndWait(func() {
-					JC.Grid.Add(CreatePanel(npdt))
-				})
-
+				JC.Grid.Add(CreatePanel(npdt))
 				if r {
-					fyne.DoAndWait(JA.AppLayoutManager.Refresh)
+					JA.AppLayoutManager.Refresh()
 				}
 
 				JC.Notify("New panel created.")
