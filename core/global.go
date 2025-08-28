@@ -22,7 +22,7 @@ var Transparent color.RGBA = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelPlaceholderBG color.RGBA = color.RGBA{R: 20, G: 22, B: 30, A: 200}
 var PanelBorderRadius float32 = 6
-var PanelPadding [4]float32 = [4]float32{10, 8, 10, 8}
+var PanelPadding [4]float32 = [4]float32{8, 8, 8, 8}
 
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
@@ -31,7 +31,7 @@ var PanelTitleSizeSmall float32 = 13
 var PanelSubTitleSizeSmall float32 = 13
 var PanelContentSizeSmall float32 = 22
 var PanelWidth float32 = 320
-var PanelHeight float32 = 130
+var PanelHeight float32 = 116
 var ActionBtnWidth float32 = 40
 var ActionBtnGap float32 = 6
 
