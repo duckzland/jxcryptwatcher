@@ -59,15 +59,23 @@ type AppLayout struct {
 	Content    *fyne.Container
 	Scroll     *container.Scroll
 	AddButton  *EmptyClickablePanel
+	Loading    *LoadingPanel
 	OnNewPanel func()
 }
 
+func (m *AppLayout) SetContent(container *fyne.Container) {
+	m.Content = container
+}
+
 func (m *AppLayout) Refresh() {
-	if len(m.Content.Objects) == 0 {
+	if m.Content == nil {
+		m.Scroll.Content = m.Loading
+	} else if len(m.Content.Objects) == 0 {
 		m.Scroll.Content = m.AddButton
 	} else {
 		m.Scroll.Content = m.Content
 	}
+	JC.Logln("content:", m.Scroll.Content)
 	fyne.Do(m.Scroll.Refresh)
 }
 
@@ -104,6 +112,7 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container, onN
 		OnNewPanel: onNewPanel,
 	}
 
+	manager.Loading = NewLoadingPanel()
 	manager.AddButton = NewEmptyClickablePanel(func() {
 		if manager.OnNewPanel != nil {
 			manager.OnNewPanel()
