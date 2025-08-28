@@ -24,6 +24,7 @@ func main() {
 
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 10*time.Millisecond, func() {
+
 		JT.ConfigInit()
 
 		JT.PanelsInit()
@@ -33,6 +34,10 @@ func main() {
 			JA.AppLayoutManager.SetContent(JC.Grid)
 			JA.AppLayoutManager.Refresh()
 			JC.Grid.Refresh()
+
+			if !JT.BP.IsEmpty() && JT.Config.IsValid() {
+				RequestRateUpdate(true)
+			}
 		})
 	})
 

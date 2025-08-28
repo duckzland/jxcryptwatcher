@@ -87,6 +87,15 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		g.ColCount = 1
 	}
 
+	// Fix single column overflowing on android phone
+	if g.DynCellSize.Width > JA.AppLayoutManager.Width() {
+		g.DynCellSize.Width = JA.AppLayoutManager.Width()
+
+		if th > JA.AppLayoutManager.Height() {
+			g.DynCellSize.Width -= 18
+		}
+	}
+
 	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
 
 	for _, child := range objects {

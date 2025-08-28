@@ -21,26 +21,42 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	// Build background
+	// Background setup
 	bg := canvas.NewRectangle(JC.AppBG)
-	bg.SetMinSize(fyne.NewSize(920, 600))
+	bg.SetMinSize(size)
 	bg.Resize(size)
 
 	topBar := objects[0]
 	content := objects[1]
 
-	// TopBar layout
 	topHeight := topBar.MinSize().Height
-	topBar.Move(fyne.NewPos(a.Padding, a.Padding))
-	topBar.Resize(fyne.NewSize(size.Width-2*a.Padding, topHeight))
-
-	// Content layout (scrollable)
 	contentY := topHeight + 2*a.Padding
-	JC.MainLayoutContentWidth = size.Width - 2*a.Padding
-	JC.MainLayoutContentHeight = size.Height - contentY - 2*a.Padding
+	newContentWidth := size.Width - 2*a.Padding
+	newContentHeight := size.Height - contentY - 2*a.Padding
 
-	content.Move(fyne.NewPos(a.Padding, contentY))
-	content.Resize(fyne.NewSize(JC.MainLayoutContentWidth, JC.MainLayoutContentHeight))
+	// Update global layout dimensions
+	JC.MainLayoutContentWidth = newContentWidth
+	JC.MainLayoutContentHeight = newContentHeight
+
+	// TopBar layout
+	newTopBarPos := fyne.NewPos(a.Padding, a.Padding)
+	newTopBarSize := fyne.NewSize(newContentWidth, topHeight)
+
+	if topBar.Position() != newTopBarPos || topBar.Size() != newTopBarSize {
+		topBar.Move(newTopBarPos)
+		topBar.Resize(newTopBarSize)
+		topBar.Refresh()
+	}
+
+	// Content layout
+	newContentPos := fyne.NewPos(a.Padding, contentY)
+	newContentSize := fyne.NewSize(newContentWidth, newContentHeight)
+
+	if content.Position() != newContentPos || content.Size() != newContentSize {
+		content.Move(newContentPos)
+		content.Resize(newContentSize)
+		content.Refresh()
+	}
 }
 
 func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
@@ -77,7 +93,9 @@ func (m *AppLayout) Refresh() {
 		m.Scroll.Content = m.Content
 	}
 
-	fyne.Do(m.Scroll.Refresh)
+	fyne.Do(func() {
+		m.Scroll.Refresh()
+	})
 }
 
 func (m *AppLayout) OffsetY() float32 {
@@ -99,6 +117,7 @@ func (m *AppLayout) Width() float32 {
 	if m.Scroll == nil {
 		return -1
 	}
+
 	return m.Scroll.Size().Width
 }
 

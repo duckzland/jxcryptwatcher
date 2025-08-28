@@ -23,6 +23,9 @@ type CompletionEntry struct {
 	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
 	PopupPosition fyne.Position
 	EntryHeight   float32
+	EntryWidth    float32
+	Canvas        fyne.Canvas
+	Scale         float32
 }
 
 func NewCompletionEntry(
@@ -47,6 +50,7 @@ func NewCompletionEntry(
 func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	if c.pause {
+		JC.MainDebouncer.Cancel("show_suggestion")
 		return
 	}
 
@@ -78,7 +82,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	// Mobile uses virtual keyboard, give more time for user to type
 	if JC.IsMobile {
-		delay = 800 * time.Millisecond
+		delay = 600 * time.Millisecond
 	}
 
 	// then show them
@@ -109,6 +113,9 @@ func (c *CompletionEntry) Move(pos fyne.Position) {
 	// Candidate for removal, this cause glitching!
 	if c.Entry.Position().X != pos.X || c.Entry.Position().Y != pos.Y {
 		c.Entry.Move(pos)
+
+		c.calculatePosition()
+
 		if c.popupMenu != nil {
 			c.popupMenu.Resize(c.maxSize())
 			c.popupMenu.Move(c.popUpPos())
@@ -136,6 +143,9 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 }
 
 func (c *CompletionEntry) ShowCompletion() {
+
+	JC.MainDebouncer.Cancel("show_suggestion")
+
 	if c.pause {
 		return
 	}
@@ -171,59 +181,62 @@ func (c *CompletionEntry) ShowCompletion() {
 	holder.Focus(c.navigableList)
 }
 
-func (c *CompletionEntry) maxSize() fyne.Size {
-	canvas := fyne.CurrentApp().Driver().CanvasForObject(c)
-	scale := canvas.Scale()
+func (c *CompletionEntry) calculatePosition() bool {
 
-	if canvas == nil {
+	if c.Canvas == nil {
+		c.Canvas = fyne.CurrentApp().Driver().CanvasForObject(c)
+	}
+
+	if c.Canvas != nil {
+		c.Scale = c.Canvas.Scale()
+	}
+
+	if c.Canvas == nil || c.Scale == 0 {
+		return false
+	}
+
+	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
+	c.PopupPosition = fyne.NewPos(p.X, p.Y)
+
+	c.EntryHeight = c.Size().Height
+	c.EntryHeight += (theme.Padding() * 2) * c.Scale
+
+	if JC.IsMobile {
+		c.EntryHeight += (theme.InputBorderSize() * 2) * c.Scale
+
+		// Hackish, different device, different android version have different height..
+		// Not sure how to properly get precise height value across different device and android version yet.
+		c.EntryHeight += 8 * c.Scale
+	}
+
+	c.EntryWidth = c.Size().Width
+
+	return true
+}
+
+func (c *CompletionEntry) maxSize() fyne.Size {
+
+	if !c.calculatePosition() {
 		return fyne.NewSize(0, 0)
 	}
 
-	if c.itemHeight == 0 {
-		c.itemHeight = c.navigableList.CreateItem().MinSize().Height
+	if c.Canvas == nil {
+		return fyne.NewSize(0, 0)
 	}
 
-	if c.EntryHeight == -1 {
-		c.EntryHeight = c.Size().Height * scale
-
-		if JC.IsMobile {
-			c.EntryHeight -= 3 * scale
-		}
-	}
-
-	if c.PopupPosition.X == -1 && c.PopupPosition.Y == -1 {
-		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-		c.PopupPosition = fyne.NewPos(p.X, p.Y)
-	}
-
-	canvasSize := canvas.Size()
-	entrySize := c.Size()
-	entryPos := c.PopupPosition
 	listHeight := float32(len(c.Options))*(c.itemHeight+2*theme.Padding()+theme.SeparatorThicknessSize()) + 2*theme.Padding()
-	maxHeight := canvasSize.Height - entryPos.Y - c.EntryHeight - 2*theme.Padding()
+	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - 2*theme.Padding()
 
 	if listHeight > maxHeight {
 		listHeight = maxHeight
 	}
 
-	return fyne.NewSize(entrySize.Width, listHeight)
+	return fyne.NewSize(c.EntryWidth, listHeight)
 }
 
 func (c *CompletionEntry) popUpPos() fyne.Position {
-	if c.PopupPosition.X == -1 && c.PopupPosition.Y == -1 {
-		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-		c.PopupPosition = fyne.NewPos(p.X, p.Y)
-	}
-
-	canvas := fyne.CurrentApp().Driver().CanvasForObject(c)
-	scale := canvas.Scale()
-
-	if c.EntryHeight == -1 {
-		c.EntryHeight = c.Size().Height * scale
-
-		if JC.IsMobile {
-			c.EntryHeight -= 3 * scale
-		}
+	if !c.calculatePosition() {
+		return fyne.NewPos(0, 0)
 	}
 
 	entryPos := c.PopupPosition
