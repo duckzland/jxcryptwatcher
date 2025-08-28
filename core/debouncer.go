@@ -48,3 +48,14 @@ func (d *Debouncer) Call(key string, delay time.Duration, fn func()) {
 		fn()
 	})
 }
+
+func (d *Debouncer) Cancel(key string) {
+	m := d.getMutex(key)
+	m.Lock()
+	defer m.Unlock()
+
+	if timer, exists := d.timers[key]; exists {
+		timer.Stop()
+		delete(d.timers, key)
+	}
+}

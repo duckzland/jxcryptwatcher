@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
@@ -20,6 +21,8 @@ type CompletionEntry struct {
 	Suggestions   []string
 	CustomCreate  func() fyne.CanvasObject
 	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
+	PopupPosition *fyne.Position
+	EntryHeight   float32
 }
 
 func NewCompletionEntry(
@@ -29,19 +32,32 @@ func NewCompletionEntry(
 	c := &CompletionEntry{Suggestions: options}
 	c.ExtendBaseWidget(c)
 
-	if !JC.IsMobile {
-		c.OnChanged = c.SearchSuggestions
-	}
+	c.OnChanged = c.SearchSuggestions
+
+	c.EntryHeight = -1
 
 	c.SetOptions(options)
+
+	c.HideCompletion()
 
 	return c
 }
 
 func (c *CompletionEntry) SearchSuggestions(s string) {
 
+	if c.pause {
+		return
+	}
+
+	minText := 1
+
+	// Android is weird, when less than 3 calculated, the dropdown Y position always off!
+	if JC.IsMobile {
+		minText = 3
+	}
+
 	// completion start for text length >= 3
-	if len(s) < 1 {
+	if len(s) < minText {
 		c.HideCompletion()
 		return
 	}
@@ -64,17 +80,12 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	// then show them
 	c.SetOptions(results)
-	c.ShowCompletion()
+	JC.MainDebouncer.Call("show_suggestion", 300*time.Millisecond, func() {
+		fyne.Do(c.ShowCompletion)
+	})
 }
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
-	switch event.Name {
-	case fyne.KeyReturn, fyne.KeyEnter:
-		if JC.IsMobile {
-			c.SearchSuggestions(c.Text)
-		}
-	}
-
 	c.Entry.TypedKey(event)
 }
 
@@ -119,6 +130,7 @@ func (c *CompletionEntry) ShowCompletion() {
 	if c.pause {
 		return
 	}
+
 	if len(c.Options) == 0 {
 		c.HideCompletion()
 		return
@@ -137,13 +149,16 @@ func (c *CompletionEntry) ShowCompletion() {
 		c.navigableList.UnselectAll()
 		c.navigableList.selected = -1
 	}
+
 	holder := fyne.CurrentApp().Driver().CanvasForObject(c)
 
 	if c.popupMenu == nil {
 		c.popupMenu = widget.NewPopUp(c.navigableList, holder)
 	}
+
 	c.popupMenu.Resize(c.maxSize())
 	c.popupMenu.ShowAtPosition(c.popUpPos())
+
 	holder.Focus(c.navigableList)
 }
 
@@ -172,17 +187,38 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 }
 
 func (c *CompletionEntry) popUpPos() fyne.Position {
-	entryPos := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-	return entryPos.Add(fyne.NewPos(0, c.Size().Height))
+	if c.PopupPosition == nil {
+		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
+		c.PopupPosition = &p
+	}
+
+	if c.EntryHeight == -1 {
+		c.EntryHeight = c.Size().Height
+	}
+
+	if c.EntryHeight <= 40 {
+		c.EntryHeight = 40
+	}
+
+	entryPos := *c.PopupPosition
+	entryPos.Y += c.EntryHeight
+
+	if JC.IsMobile {
+		entryPos.Y += 20
+	}
+
+	return entryPos
+
 }
 
 func (c *CompletionEntry) setTextFromMenu(s string) {
+	JC.MainDebouncer.Cancel("show_suggestion")
 	c.pause = true
 	c.Entry.SetText(s)
 	c.Entry.CursorColumn = len([]rune(s))
 	c.Entry.Refresh()
-	c.pause = false
 	c.popupMenu.Hide()
+	c.pause = false
 }
 
 type navigableList struct {
