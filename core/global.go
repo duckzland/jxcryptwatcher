@@ -26,12 +26,12 @@ var PanelPadding [4]float32 = [4]float32{8, 8, 8, 8}
 
 var PanelTitleSize float32 = 16
 var PanelSubTitleSize float32 = 16
-var PanelContentSize float32 = 30
+var PanelContentSize float32 = 28
 var PanelTitleSizeSmall float32 = 13
 var PanelSubTitleSizeSmall float32 = 13
 var PanelContentSizeSmall float32 = 22
 var PanelWidth float32 = 320
-var PanelHeight float32 = 116
+var PanelHeight float32 = 104
 var ActionBtnWidth float32 = 40
 var ActionBtnGap float32 = 6
 

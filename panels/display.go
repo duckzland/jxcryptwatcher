@@ -31,6 +31,7 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	content := objects[2]
 	subtitle := objects[3]
 	action := objects[4]
+	spacer := float32(-3)
 
 	bg.Resize(size)
 	bg.Move(fyne.NewPos(0, 0))
@@ -47,6 +48,8 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		totalHeight += obj.MinSize().Height
 	}
 
+	totalHeight += spacer * float32(len(centerItems)-1)
+
 	startY := (size.Height - totalHeight) / 2
 	currentY := startY
 
@@ -54,7 +57,7 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		objSize := obj.MinSize()
 		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
 		obj.Resize(objSize)
-		currentY += objSize.Height
+		currentY += objSize.Height + spacer
 	}
 
 	actionSize := action.MinSize()
