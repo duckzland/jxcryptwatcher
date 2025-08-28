@@ -99,6 +99,14 @@ func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
 	return ""
 }
 
+func (cm *CryptosMapType) IsEmpty() bool {
+	cm.data.Range(func(_, _ any) bool {
+		return false
+	})
+
+	return true
+}
+
 func (cm *CryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data.Load(strconv.FormatInt(id, 10))
 

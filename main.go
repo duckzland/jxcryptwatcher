@@ -28,9 +28,50 @@ func main() {
 
 	JC.Grid = JP.NewPanelGrid(CreatePanel)
 
-	topBar := JA.NewTopBar(ResetCryptosMap, func() { RequestRateUpdate(true) }, OpenSettingForm, OpenNewPanelForm)
+	topBar := JA.NewTopBar(
+		func() {
 
-	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, JC.Grid, OpenNewPanelForm))
+			if !JT.Config.IsValid() {
+				JC.Notify("Please configure app first")
+				return
+			}
+
+			ResetCryptosMap()
+		},
+		func() {
+			if JT.BP.IsEmpty() {
+				JC.Notify("Please create panel first")
+				return
+			}
+
+			if !JT.Config.IsValid() {
+				JC.Notify("Please configure app first")
+				return
+			}
+
+			RequestRateUpdate(true)
+		},
+		func() {
+			OpenSettingForm()
+		},
+		func() {
+			if JT.BP.Maps.IsEmpty() {
+				JC.Notify("No Cryptos Map, please fetch from exchange first")
+				return
+			}
+
+			OpenNewPanelForm()
+		})
+
+	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, JC.Grid, func() {
+
+		if JT.BP.Maps.IsEmpty() {
+			JC.Notify("No Cryptos Map, please fetch from exchange first")
+			return
+		}
+
+		OpenNewPanelForm()
+	}))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
