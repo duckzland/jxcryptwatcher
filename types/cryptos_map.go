@@ -100,11 +100,13 @@ func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
 }
 
 func (cm *CryptosMapType) IsEmpty() bool {
+	empty := true
 	cm.data.Range(func(_, _ any) bool {
+		empty = false
 		return false
 	})
 
-	return true
+	return empty
 }
 
 func (cm *CryptosMapType) ValidateId(id int64) bool {
