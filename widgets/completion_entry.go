@@ -21,7 +21,7 @@ type CompletionEntry struct {
 	Suggestions   []string
 	CustomCreate  func() fyne.CanvasObject
 	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
-	PopupPosition *fyne.Position
+	PopupPosition fyne.Position
 	EntryHeight   float32
 }
 
@@ -35,6 +35,7 @@ func NewCompletionEntry(
 	c.OnChanged = c.SearchSuggestions
 
 	c.EntryHeight = -1
+	c.PopupPosition = fyne.NewPos(-1, -1)
 
 	c.SetOptions(options)
 
@@ -50,11 +51,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	}
 
 	minText := 1
-
-	// Android is weird, when less than 3 calculated, the dropdown Y position always off!
-	if JC.IsMobile {
-		minText = 3
-	}
 
 	// completion start for text length >= 3
 	if len(s) < minText {
@@ -78,15 +74,23 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	results = JC.ReorderByMatch(results, s)
 
+	delay := 300 * time.Millisecond
+
+	// Mobile uses virtual keyboard, give more time for user to type
+	if JC.IsMobile {
+		delay = 800 * time.Millisecond
+	}
+
 	// then show them
 	c.SetOptions(results)
-	JC.MainDebouncer.Call("show_suggestion", 300*time.Millisecond, func() {
+	JC.MainDebouncer.Call("show_suggestion", delay, func() {
 		fyne.Do(c.ShowCompletion)
 	})
 }
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
+	c.SearchSuggestions(c.Text)
 }
 
 func (c *CompletionEntry) SetDefaultValue(s string) {
@@ -97,13 +101,18 @@ func (c *CompletionEntry) HideCompletion() {
 	if c.popupMenu != nil {
 		c.popupMenu.Hide()
 	}
+
+	JC.MainDebouncer.Cancel("show_suggestion")
 }
 
 func (c *CompletionEntry) Move(pos fyne.Position) {
-	c.Entry.Move(pos)
-	if c.popupMenu != nil {
-		c.popupMenu.Resize(c.maxSize())
-		c.popupMenu.Move(c.popUpPos())
+	// Candidate for removal, this cause glitching!
+	if c.Entry.Position().X != pos.X || c.Entry.Position().Y != pos.Y {
+		c.Entry.Move(pos)
+		if c.popupMenu != nil {
+			c.popupMenu.Resize(c.maxSize())
+			c.popupMenu.Move(c.popUpPos())
+		}
 	}
 }
 
@@ -163,9 +172,10 @@ func (c *CompletionEntry) ShowCompletion() {
 }
 
 func (c *CompletionEntry) maxSize() fyne.Size {
-	cnv := fyne.CurrentApp().Driver().CanvasForObject(c)
+	canvas := fyne.CurrentApp().Driver().CanvasForObject(c)
+	scale := canvas.Scale()
 
-	if cnv == nil {
+	if canvas == nil {
 		return fyne.NewSize(0, 0)
 	}
 
@@ -173,11 +183,24 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		c.itemHeight = c.navigableList.CreateItem().MinSize().Height
 	}
 
-	canvasSize := cnv.Size()
+	if c.EntryHeight == -1 {
+		c.EntryHeight = c.Size().Height * scale
+
+		if JC.IsMobile {
+			c.EntryHeight -= 3 * scale
+		}
+	}
+
+	if c.PopupPosition.X == -1 && c.PopupPosition.Y == -1 {
+		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
+		c.PopupPosition = fyne.NewPos(p.X, p.Y)
+	}
+
+	canvasSize := canvas.Size()
 	entrySize := c.Size()
-	entryPos := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
+	entryPos := c.PopupPosition
 	listHeight := float32(len(c.Options))*(c.itemHeight+2*theme.Padding()+theme.SeparatorThicknessSize()) + 2*theme.Padding()
-	maxHeight := canvasSize.Height - entryPos.Y - entrySize.Height - 2*theme.Padding()
+	maxHeight := canvasSize.Height - entryPos.Y - c.EntryHeight - 2*theme.Padding()
 
 	if listHeight > maxHeight {
 		listHeight = maxHeight
@@ -187,25 +210,24 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 }
 
 func (c *CompletionEntry) popUpPos() fyne.Position {
-	if c.PopupPosition == nil {
+	if c.PopupPosition.X == -1 && c.PopupPosition.Y == -1 {
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-		c.PopupPosition = &p
+		c.PopupPosition = fyne.NewPos(p.X, p.Y)
 	}
+
+	canvas := fyne.CurrentApp().Driver().CanvasForObject(c)
+	scale := canvas.Scale()
 
 	if c.EntryHeight == -1 {
-		c.EntryHeight = c.Size().Height
+		c.EntryHeight = c.Size().Height * scale
+
+		if JC.IsMobile {
+			c.EntryHeight -= 3 * scale
+		}
 	}
 
-	if c.EntryHeight <= 40 {
-		c.EntryHeight = 40
-	}
-
-	entryPos := *c.PopupPosition
+	entryPos := c.PopupPosition
 	entryPos.Y += c.EntryHeight
-
-	if JC.IsMobile {
-		entryPos.Y += 20
-	}
 
 	return entryPos
 
