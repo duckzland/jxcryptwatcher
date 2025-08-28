@@ -199,6 +199,13 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	return nil
 }
 
+func (pc *PanelsMapType) IsEmpty() bool {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	return len(pc.Data) == 0
+}
+
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {
 	pko := PanelKeyType{value: pk}
 

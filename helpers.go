@@ -279,6 +279,10 @@ func RequestDisplayUpdate(force bool) {
 }
 
 func RequestRateUpdate(debounce bool) {
+	if JT.BP.IsEmpty() {
+		return
+	}
+
 	if debounce {
 		JC.MainDebouncer.Call("update_rates", 1000*time.Millisecond, func() {
 			JC.UpdateRatesChan <- struct{}{}

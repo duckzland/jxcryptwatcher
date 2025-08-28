@@ -123,6 +123,7 @@ cat > AndroidManifest.xml <<EOF
     <application android:label="$name">
         <activity android:name="org.golang.app.GoNativeActivity"
             android:label="$name"
+            android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
             
@@ -136,7 +137,6 @@ cat > AndroidManifest.xml <<EOF
     </application>
 </manifest>
 EOF
-
 
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \
