@@ -68,6 +68,7 @@ func (m *AppLayout) SetContent(container *fyne.Container) {
 }
 
 func (m *AppLayout) Refresh() {
+
 	if m.Content == nil {
 		m.Scroll.Content = m.Loading
 	} else if len(m.Content.Objects) == 0 {
@@ -75,7 +76,7 @@ func (m *AppLayout) Refresh() {
 	} else {
 		m.Scroll.Content = m.Content
 	}
-	JC.Logln("content:", m.Scroll.Content)
+
 	fyne.Do(m.Scroll.Refresh)
 }
 
