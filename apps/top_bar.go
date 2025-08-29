@@ -4,7 +4,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 
 	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
@@ -92,53 +91,12 @@ func (s *TopBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(width, maxHeight)
 }
 
-func NewTopBar(
-	onCryptosRefresh func(),
-	onRatesRefresh func(),
-	onSettingSave func(),
-	onAddNewPanel func(),
-	onDragAllowToggle func(),
-) fyne.CanvasObject {
+func NewTopBar() fyne.CanvasObject {
 
 	topBg := canvas.NewRectangle(JC.PanelBG)
 	topBg.CornerRadius = 4
 
 	JC.NotificationContainer = topBg
-
-	// Refresh ticker data
-	AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-		if onCryptosRefresh != nil {
-			go onCryptosRefresh()
-		}
-	}))
-
-	// Refresh exchange rates
-	AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-		if onRatesRefresh != nil {
-			go onRatesRefresh()
-		}
-	}))
-
-	// Open settings
-	AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings", func() {
-		if onSettingSave != nil {
-			go onSettingSave()
-		}
-	}))
-
-	// Panel drag toggle
-	AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", func() {
-		if onDragAllowToggle != nil {
-			go onDragAllowToggle()
-		}
-	}))
-
-	// Add new panel
-	AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", func() {
-		if onAddNewPanel != nil {
-			go onAddNewPanel()
-		}
-	}))
 
 	return container.New(
 		&TopBarLayout{

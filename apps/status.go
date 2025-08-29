@@ -10,11 +10,15 @@ import (
 var AppStatusManager *AppStatus = &AppStatus{}
 
 type AppStatus struct {
-	ready       bool
-	bad_config  bool
-	bad_cryptos bool
-	no_panels   bool
-	timestamp   time.Time
+	ready            bool
+	bad_config       bool
+	bad_cryptos      bool
+	no_panels        bool
+	allow_dragging   bool
+	fetching_cryptos bool
+	fetching_rates   bool
+	is_dirty         bool
+	timestamp        time.Time
 }
 
 func (a *AppStatus) Init() {
@@ -23,10 +27,60 @@ func (a *AppStatus) Init() {
 	a.bad_config = false
 	a.bad_cryptos = false
 	a.no_panels = false
+	a.allow_dragging = false
+	a.is_dirty = false
 }
 
 func (a *AppStatus) IsReady() bool {
 	return a.ready
+}
+
+func (a *AppStatus) IsDraggable() bool {
+	return a.allow_dragging
+}
+
+func (a *AppStatus) IsFetchingCryptos() bool {
+	return a.fetching_cryptos
+}
+
+func (a *AppStatus) IsFetchingRates() bool {
+	return a.fetching_rates
+}
+
+func (a *AppStatus) StartFetchingCryptos() *AppStatus {
+	a.fetching_cryptos = true
+	a.is_dirty = true
+	return a
+}
+
+func (a *AppStatus) StartFetchingRates() *AppStatus {
+	a.fetching_rates = true
+	a.is_dirty = true
+	return a
+}
+
+func (a *AppStatus) EndFetchingCryptos() *AppStatus {
+	a.fetching_cryptos = false
+	a.is_dirty = true
+	return a
+}
+
+func (a *AppStatus) EndFetchingRates() *AppStatus {
+	a.fetching_rates = false
+	a.is_dirty = true
+	return a
+}
+
+func (a *AppStatus) AllowDragging() *AppStatus {
+	a.allow_dragging = true
+	a.is_dirty = true
+	return a
+}
+
+func (a *AppStatus) DisallowDragging() *AppStatus {
+	a.allow_dragging = false
+	a.is_dirty = true
+	return a
 }
 
 func (a *AppStatus) HasError() bool {
@@ -46,11 +100,34 @@ func (a *AppStatus) ValidPanels() bool {
 }
 
 func (a *AppStatus) Refresh() *AppStatus {
-	a.ready = !(JT.BP.Maps == nil)
-	a.no_panels = JT.BP.IsEmpty()
-	a.bad_config = !JT.Config.IsValid()
-	a.bad_cryptos = JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
-	a.timestamp = time.Now()
+	a.is_dirty = false
+
+	newReady := JT.BP.Maps != nil
+	newNoPanels := JT.BP.IsEmpty()
+	newBadConfig := !JT.Config.IsValid()
+	newBadCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	newTimestamp := time.Now()
+
+	if a.ready != newReady {
+		a.ready = newReady
+		a.is_dirty = true
+	}
+	if a.no_panels != newNoPanels {
+		a.no_panels = newNoPanels
+		a.is_dirty = true
+	}
+	if a.bad_config != newBadConfig {
+		a.bad_config = newBadConfig
+		a.is_dirty = true
+	}
+	if a.bad_cryptos != newBadCryptos {
+		a.bad_cryptos = newBadCryptos
+		a.is_dirty = true
+	}
+	if !a.timestamp.Equal(newTimestamp) {
+		a.timestamp = newTimestamp
+		a.is_dirty = true
+	}
 
 	// If app is not ready, disable everything
 	if !a.ready {
@@ -58,44 +135,10 @@ func (a *AppStatus) Refresh() *AppStatus {
 		return a
 	}
 
-	AppActionManager.EnableButton("open_settings")
-
-	if a.bad_cryptos {
-		AppActionManager.DisableButton("add_panel")
-	} else {
-		AppActionManager.EnableButton("add_panel")
-	}
-
-	if a.no_panels {
-		AppActionManager.DisableButton("toggle_drag")
-	} else {
-		AppActionManager.EnableButton("toggle_drag")
-
-		if JC.AllowDragging {
-			AppActionManager.ChangeButtonState("toggle_drag", "active")
-		} else {
-			AppActionManager.ChangeButtonState("toggle_drag", "reset")
-		}
-	}
-
-	if !a.bad_config && !a.bad_cryptos && !a.no_panels {
-		AppActionManager.EnableButton("refresh_rates")
-	} else {
-		AppActionManager.DisableButton("refresh_rates")
-	}
-
-	if a.bad_cryptos {
-		AppActionManager.ChangeButtonState("refresh_cryptos", "error")
-	} else {
-		AppActionManager.ChangeButtonState("refresh_cryptos", "reset")
-	}
-
-	if a.bad_config {
-		AppActionManager.DisableButton("refresh_cryptos")
-		AppActionManager.ChangeButtonState("open_settings", "error")
-	} else {
-		AppActionManager.EnableButton("refresh_cryptos")
-		AppActionManager.ChangeButtonState("open_settings", "reset")
+	// Attempt to refresh main layout to change content
+	if a.is_dirty {
+		AppLayoutManager.Refresh()
+		AppActionManager.Refresh()
 	}
 
 	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | Timestamp: %s",

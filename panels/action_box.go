@@ -42,17 +42,17 @@ func NewPanelActionBar(
 	onDelete func(),
 ) fyne.CanvasObject {
 
-	editBtn := JW.NewHoverCursorIconButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", func() {
+	editBtn := JW.NewHoverCursorIconButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", func(*JW.HoverCursorIconButton) {
 		if onEdit != nil {
 			onEdit()
 		}
-	})
+	}, nil)
 
-	deleteBtn := JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", func() {
+	deleteBtn := JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", func(*JW.HoverCursorIconButton) {
 		if onDelete != nil {
 			onDelete()
 		}
-	})
+	}, nil)
 
 	return container.New(&PanelActionLayout{height: 30, margin: 3}, editBtn, deleteBtn)
 }

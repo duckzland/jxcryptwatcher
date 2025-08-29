@@ -5,7 +5,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/theme"
 
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
@@ -20,7 +19,7 @@ func main() {
 
 	a := app.NewWithID(JC.AppID)
 
-	a.Settings().SetTheme(theme.DarkTheme())
+	a.Settings().SetTheme(JA.NewTheme())
 
 	JA.AppActionManager.Init()
 
@@ -54,22 +53,9 @@ func main() {
 
 	JC.AllowDragging = false
 
-	topBar := JA.NewTopBar(
-		func() {
-			ResetCryptosMap()
-		},
-		func() {
-			RequestRateUpdate(true)
-		},
-		func() {
-			OpenSettingForm()
-		},
-		func() {
-			OpenNewPanelForm()
-		},
-		func() {
-			ToggleDraggable()
-		})
+	RegisterActions()
+
+	topBar := JA.NewTopBar()
 
 	JA.AppStatusManager.Refresh()
 

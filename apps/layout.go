@@ -88,6 +88,9 @@ func (m *AppLayout) SetContent(container *fyne.Container) {
 }
 
 func (m *AppLayout) Refresh() {
+	if m == nil {
+		return
+	}
 
 	if m.Content == nil || !AppStatusManager.IsReady() {
 		JC.Logln("No Content")

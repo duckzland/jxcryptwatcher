@@ -206,6 +206,13 @@ func (pc *PanelsMapType) IsEmpty() bool {
 	return len(pc.Data) == 0
 }
 
+func (pc *PanelsMapType) TotalData() int {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	return len(pc.Data)
+}
+
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {
 	pko := PanelKeyType{value: pk}
 

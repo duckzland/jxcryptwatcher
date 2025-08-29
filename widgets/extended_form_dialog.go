@@ -28,12 +28,12 @@ func NewExtendedFormDialog(
 
 	fd = &ExtendedFormDialog{
 		dialog: dialog.NewCustomWithoutButtons(title, form, parent),
-		confirm: NewHoverCursorIconButton("save_panel", "Save", theme.ConfirmIcon(), "", func() {
+		confirm: NewHoverCursorIconButton("save_panel", "Save", theme.ConfirmIcon(), "", func(*HoverCursorIconButton) {
 			fd.hideWithResponse(true)
-		}),
-		cancel: NewHoverCursorIconButton("cancel_save_panel", "Cancel", theme.CancelIcon(), "", func() {
+		}, nil),
+		cancel: NewHoverCursorIconButton("cancel_save_panel", "Cancel", theme.CancelIcon(), "", func(*HoverCursorIconButton) {
 			fd.dialog.Hide()
-		}),
+		}, nil),
 		items:    items,
 		callback: func(resp bool) { callback(resp) },
 		form:     form,

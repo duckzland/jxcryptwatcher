@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/theme"
 
 	JA "jxwatcher/apps"
-	JM "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JT "jxwatcher/types"
+	JW "jxwatcher/widgets"
 )
 
 func UpdateDisplay() bool {
@@ -47,8 +48,6 @@ func UpdateRates() bool {
 		return false
 	}
 
-	JA.AppActionManager.ChangeButtonState("refresh_rates", "in_progress")
-
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
@@ -74,11 +73,12 @@ func UpdateRates() bool {
 
 	if len(jb) == 0 {
 		JC.Notify("No valid panels found. Exchange rates were not updated.")
-		JA.AppActionManager.ChangeButtonState("refresh_rates", "error")
 		return false
 	}
 
 	JC.Notify("Fetching the latest exchange rates...")
+
+	JA.AppStatusManager.StartFetchingRates()
 
 	// Fetching with delay
 	for _, rk := range jb {
@@ -93,8 +93,8 @@ func UpdateRates() bool {
 	JC.Notify("Exchange rates updated successfully")
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
-	JA.AppActionManager.ChangeButtonState("refresh_rates", "reset")
 
+	JA.AppStatusManager.EndFetchingRates()
 	JA.AppStatusManager.Refresh()
 
 	return true
@@ -129,13 +129,13 @@ func RemovePanel(uuid string) {
 				JC.Grid.Remove(obj)
 
 				fyne.Do(JC.Grid.Refresh)
-				fyne.Do(JM.AppLayoutManager.Refresh)
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
 						JC.Notify("Panel removed successfully.")
 					}
 				}
+
 			}
 		}
 	}
@@ -174,13 +174,9 @@ func OpenNewPanelForm() {
 			SavePanelForm,
 			func(npdt *JT.PanelDataType) {
 
-				r := len(JC.Grid.Objects) == 0
 				JC.Grid.Add(CreatePanel(npdt))
 				JC.Grid.Refresh()
 				JA.AppStatusManager.Refresh()
-				if r {
-					JA.AppLayoutManager.Refresh()
-				}
 
 				JC.Notify("New panel created.")
 			},
@@ -211,11 +207,7 @@ func OpenSettingForm() {
 				JC.Notify("Failed to save configuration.")
 			}
 
-			if !JA.AppStatusManager.Refresh().ValidConfig() {
-				JA.AppActionManager.ChangeButtonState("open_settings", "error")
-			} else if !JA.AppLayoutManager.FinalContent {
-				JA.AppLayoutManager.Refresh()
-			}
+			JA.AppStatusManager.Refresh()
 		})
 
 		d.Show()
@@ -224,17 +216,18 @@ func OpenSettingForm() {
 }
 
 func ToggleDraggable() {
-	JC.AllowDragging = !JC.AllowDragging
+
+	if JA.AppStatusManager.IsDraggable() {
+		JA.AppStatusManager.DisallowDragging()
+	} else {
+		JA.AppStatusManager.AllowDragging()
+	}
 
 	fyne.Do(func() {
 		JC.Grid.Refresh()
 	})
 
-	if JC.AllowDragging {
-		JA.AppActionManager.ChangeButtonState("toggle_drag", "active")
-	} else {
-		JA.AppActionManager.ChangeButtonState("toggle_drag", "reset")
-	}
+	JA.AppStatusManager.Refresh()
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
@@ -248,34 +241,31 @@ func ResetCryptosMap() {
 		return
 	}
 
-	JA.AppActionManager.ChangeButtonState("refresh_cryptos", "in_progress")
+	if JA.AppStatusManager.IsFetchingCryptos() {
+		return
+	}
 
-	JC.MainDebouncer.Call("update_cryptos", 1000*time.Millisecond, func() {
-		Cryptos := JT.CryptosType{}
-		JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
-		JT.BP.Maps.ClearMapCache()
+	JA.AppStatusManager.StartFetchingCryptos()
 
-		if JA.AppStatusManager.Refresh().ValidCryptos() {
-			JC.Notify("Cryptos map has been regenerated")
-		}
+	Cryptos := JT.CryptosType{}
+	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
+	JT.BP.Maps.ClearMapCache()
 
-		if JT.BP.RefreshData() {
-			fyne.Do(func() {
-				JC.Grid.Refresh()
-			})
+	if JA.AppStatusManager.Refresh().ValidCryptos() {
+		JC.Notify("Cryptos map has been regenerated")
+	}
 
-			JA.AppActionManager.ChangeButtonState("refresh_cryptos", "reset")
+	if JT.BP.RefreshData() {
+		fyne.Do(func() {
+			JC.Grid.Refresh()
+		})
 
-			RequestRateUpdate(false)
+		RequestRateUpdate(false)
 
-		}
+	}
 
-		if !JA.AppStatusManager.Refresh().ValidCryptos() {
-			JA.AppActionManager.ChangeButtonState("refresh_cryptos", "error")
-		} else if !JA.AppLayoutManager.FinalContent {
-			JA.AppLayoutManager.Refresh()
-		}
-	})
+	JA.AppStatusManager.EndFetchingCryptos()
+	JA.AppStatusManager.Refresh()
 }
 
 func StartWorkers() {
@@ -322,7 +312,7 @@ func RequestDisplayUpdate(force bool) {
 }
 
 func RequestRateUpdate(debounce bool) {
-	if JT.BP.IsEmpty() {
+	if !JA.AppStatusManager.ValidPanels() {
 		return
 	}
 
@@ -333,4 +323,89 @@ func RequestRateUpdate(debounce bool) {
 	} else {
 		JC.UpdateRatesChan <- struct{}{}
 	}
+}
+
+func RegisterActions() {
+	// Refresh ticker data
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data",
+		func(btn *JW.HoverCursorIconButton) {
+			go ResetCryptosMap()
+		},
+		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.ValidConfig() {
+				btn.Disable()
+			} else if !JA.AppStatusManager.ValidCryptos() {
+				if JA.AppStatusManager.IsFetchingCryptos() {
+					btn.ChangeState("in_progress")
+				} else {
+					btn.ChangeState("error")
+				}
+			} else {
+
+				if JA.AppStatusManager.IsFetchingCryptos() {
+					btn.ChangeState("in_progress")
+				} else {
+					btn.ChangeState("reset")
+				}
+			}
+		}))
+
+	// Refresh exchange rates
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange",
+		func(btn *JW.HoverCursorIconButton) {
+			go RequestRateUpdate(true)
+		},
+		func(btn *JW.HoverCursorIconButton) {
+			if JA.AppStatusManager.ValidConfig() && JA.AppStatusManager.ValidCryptos() && JA.AppStatusManager.ValidPanels() {
+				if JA.AppStatusManager.IsFetchingRates() {
+					btn.ChangeState("in_progress")
+				} else {
+					btn.Enable()
+				}
+			} else {
+				btn.Disable()
+			}
+		}))
+
+	// Open settings
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings",
+		func(btn *JW.HoverCursorIconButton) {
+			go OpenSettingForm()
+		},
+		func(btn *JW.HoverCursorIconButton) {
+			if JA.AppStatusManager.ValidConfig() {
+				btn.ChangeState("reset")
+			} else {
+				btn.ChangeState("error")
+			}
+		}))
+
+	// Panel drag toggle
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering",
+		func(btn *JW.HoverCursorIconButton) {
+			go ToggleDraggable()
+		},
+		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.ValidPanels() || JT.BP.TotalData() <= 1 {
+				JA.AppStatusManager.DisallowDragging()
+				btn.Disable()
+			} else if JA.AppStatusManager.IsDraggable() {
+				btn.ChangeState("active")
+			} else {
+				btn.ChangeState("reset")
+			}
+		}))
+
+	// Add new panel
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel",
+		func(btn *JW.HoverCursorIconButton) {
+			go OpenNewPanelForm()
+		},
+		func(btn *JW.HoverCursorIconButton) {
+			if JA.AppStatusManager.ValidCryptos() {
+				btn.Enable()
+			} else {
+				btn.Disable()
+			}
+		}))
 }

@@ -93,3 +93,12 @@ func (a *AppActions) EnableAllButton(exclude string) {
 		fyne.Do(btn.Enable)
 	}
 }
+
+func (a *AppActions) Refresh() {
+	for _, btn := range a.Buttons {
+		// if btn.GetTag() == exclude {
+		// 	continue
+		// }
+		fyne.Do(btn.Refresh)
+	}
+}

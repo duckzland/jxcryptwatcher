@@ -9,10 +9,11 @@ import (
 )
 
 type HoverCursorIconButton struct {
-	tag string
 	widget.Button
 	tooltip.ToolTipWidgetExtend
+	tag      string
 	disabled bool
+	validate func(*HoverCursorIconButton)
 }
 
 func NewHoverCursorIconButton(
@@ -20,7 +21,8 @@ func NewHoverCursorIconButton(
 	text string,
 	icon fyne.Resource,
 	tip string,
-	onTapped func(),
+	onTapped func(*HoverCursorIconButton),
+	validate func(*HoverCursorIconButton),
 ) *HoverCursorIconButton {
 
 	b := &HoverCursorIconButton{
@@ -33,10 +35,11 @@ func NewHoverCursorIconButton(
 
 	b.tag = tag
 	b.disabled = false
+	b.validate = validate
 
 	b.Button.OnTapped = func() {
 		if b.disabled == false {
-			onTapped()
+			onTapped(b)
 		}
 	}
 
@@ -55,21 +58,36 @@ func (b *HoverCursorIconButton) ExtendBaseWidget(wid fyne.Widget) {
 
 func (b *HoverCursorIconButton) MouseIn(e *desktop.MouseEvent) {
 	b.ToolTipWidgetExtend.MouseIn(e)
-	b.Button.MouseIn(e)
+
+	if !b.disabled {
+		b.Button.MouseIn(e)
+	}
 }
 
 func (b *HoverCursorIconButton) MouseOut() {
 	b.ToolTipWidgetExtend.MouseOut()
-	b.Button.MouseOut()
+
+	if !b.disabled {
+		b.Button.MouseOut()
+	}
 }
 
 func (b *HoverCursorIconButton) MouseMoved(e *desktop.MouseEvent) {
 	b.ToolTipWidgetExtend.MouseMoved(e)
-	b.Button.MouseMoved(e)
+	if !b.disabled {
+		b.Button.MouseMoved(e)
+	}
+}
+
+func (b *HoverCursorIconButton) Tapped(_ *fyne.PointEvent) {
+	if b.disabled {
+		return
+	}
+	b.Button.Tapped(nil)
 }
 
 func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
-	if !b.Disabled() {
+	if !b.disabled {
 		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
@@ -109,6 +127,13 @@ func (b *HoverCursorIconButton) ChangeState(state string) {
 		b.Button.Importance = widget.MediumImportance
 	}
 
+	b.Button.Refresh()
+}
+
+func (b *HoverCursorIconButton) Refresh() {
+	if b.validate != nil {
+		b.validate(b)
+	}
 	b.Button.Refresh()
 }
 
