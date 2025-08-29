@@ -22,6 +22,8 @@ func main() {
 
 	a.Settings().SetTheme(theme.DarkTheme())
 
+	JA.AppActionManager.Init()
+
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 10*time.Millisecond, func() {
 
@@ -29,13 +31,18 @@ func main() {
 
 		JT.PanelsInit()
 
+		JA.AppStatusManager.Refresh()
+
 		fyne.Do(func() {
+
 			JC.Grid = JP.NewPanelGrid(CreatePanel)
+
 			JA.AppLayoutManager.SetContent(JC.Grid)
 			JA.AppLayoutManager.Refresh()
+
 			JC.Grid.Refresh()
 
-			if !JT.BP.IsEmpty() && JT.Config.IsValid() {
+			if !JA.AppStatusManager.HasError() {
 				RequestRateUpdate(true)
 			}
 		})
@@ -49,72 +56,24 @@ func main() {
 
 	topBar := JA.NewTopBar(
 		func() {
-			if !JT.Config.IsValid() {
-				JC.Notify("Please configure app first")
-				return
-			}
-
 			ResetCryptosMap()
 		},
 		func() {
-			if JT.BP.IsEmpty() {
-				JC.Notify("Please create panel first")
-				return
-			}
-
-			if !JT.Config.IsValid() {
-				JC.Notify("Please configure app first")
-				return
-			}
-
 			RequestRateUpdate(true)
 		},
 		func() {
 			OpenSettingForm()
 		},
 		func() {
-			if JT.BP.Maps == nil {
-				JC.Notify("App not ready yet")
-				return
-			}
-
-			if JT.BP.Maps.IsEmpty() {
-				JC.Notify("No Cryptos Map, please fetch from exchange first")
-				return
-			}
-
 			OpenNewPanelForm()
 		},
 		func() {
-			if JT.BP.IsEmpty() {
-				JC.Notify("Please create panel first")
-				return
-			}
-
-			if JT.BP.Maps == nil {
-				JC.Notify("App not ready yet")
-				return
-			}
-
-			JC.AllowDragging = !JC.AllowDragging
-			JC.Grid.Refresh()
-
-			if JC.AllowDragging {
-				JA.AppActionManager.ChangeButtonState("toggle_drag", "in_progress")
-			} else {
-				JA.AppActionManager.ChangeButtonState("toggle_drag", "reset")
-			}
+			ToggleDraggable()
 		})
 
-	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, nil, func() {
+	JA.AppStatusManager.Refresh()
 
-		if JT.BP.Maps.IsEmpty() {
-			JC.Notify("No Cryptos Map, please fetch from exchange first")
-			return
-		}
-
-		OpenNewPanelForm()
-	}))
+	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, nil))
 
 	JC.Window.Resize(fyne.NewSize(920, 400))
 
@@ -122,10 +81,6 @@ func main() {
 	StartUpdateRatesWorker()
 
 	JC.Notify("Application is starting...")
-
-	if !JT.Config.IsValid() {
-		JC.Notify("Configuration file is invalid.")
-	}
 
 	if JC.IsMobile {
 		JC.Window.SetFixedSize(true)

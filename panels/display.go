@@ -298,7 +298,11 @@ func (h *PanelDisplay) HideTarget() {
 }
 
 func (h *PanelDisplay) Cursor() desktop.Cursor {
-	return desktop.PointerCursor
+	if JC.AllowDragging {
+		return desktop.PointerCursor
+	}
+
+	return desktop.DefaultCursor
 }
 
 func (h *PanelDisplay) DisableClick() {
@@ -324,7 +328,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	h.dragPosition = ev.Position
 
 	if activeDragging == nil {
-		JP.AppActionManager.DisableAllButton()
+		JP.AppActionManager.DisableAllButton("toggle_drag")
 		activeDragging = h
 		h.dragging = true
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
@@ -390,11 +394,15 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) DragEnd() {
+	if JC.AllowDragging == false {
+		return
+	}
+
 	// Call this early to cancel go routine
 	activeDragging = nil
 	h.dragging = false
 
-	JP.AppActionManager.EnableAllButton()
+	JP.AppActionManager.EnableAllButton("toggle_drag")
 
 	JC.Grid.Remove(DragPlaceholder)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {

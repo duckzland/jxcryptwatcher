@@ -20,7 +20,7 @@ func NewHoverCursorIconButton(
 	text string,
 	icon fyne.Resource,
 	tip string,
-	onTapped func(btn *widget.Button),
+	onTapped func(),
 ) *HoverCursorIconButton {
 
 	b := &HoverCursorIconButton{
@@ -36,7 +36,7 @@ func NewHoverCursorIconButton(
 
 	b.Button.OnTapped = func() {
 		if b.disabled == false {
-			onTapped(&b.Button)
+			onTapped()
 		}
 	}
 
@@ -77,10 +77,14 @@ func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 
 func (b *HoverCursorIconButton) Disable() {
 	b.disabled = true
+	b.Button.Importance = widget.LowImportance
+	b.Button.Refresh()
 }
 
 func (b *HoverCursorIconButton) Enable() {
 	b.disabled = false
+	b.Button.Importance = widget.MediumImportance
+	b.Button.Refresh()
 }
 
 func (b *HoverCursorIconButton) GetTag() string {
@@ -94,6 +98,8 @@ func (b *HoverCursorIconButton) ChangeState(state string) {
 		b.Button.Importance = widget.LowImportance
 	case "in_progress":
 		b.disabled = true
+		b.Button.Importance = widget.HighImportance
+	case "active":
 		b.Button.Importance = widget.HighImportance
 	case "error":
 		b.disabled = false

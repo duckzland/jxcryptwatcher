@@ -6,21 +6,21 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-var AppActionManager *AppMainActions = &AppMainActions{}
+var AppActionManager *AppActions = &AppActions{}
 
-type AppMainActions struct {
+type AppActions struct {
 	Buttons []*JW.HoverCursorIconButton
 }
 
-func (a *AppMainActions) Init() {
+func (a *AppActions) Init() {
 	a.Buttons = []*JW.HoverCursorIconButton{}
 }
 
-func (a *AppMainActions) AddButton(btn *JW.HoverCursorIconButton) {
+func (a *AppActions) AddButton(btn *JW.HoverCursorIconButton) {
 	a.Buttons = append(a.Buttons, btn)
 }
 
-func (a *AppMainActions) GetButton(tag string) *JW.HoverCursorIconButton {
+func (a *AppActions) GetButton(tag string) *JW.HoverCursorIconButton {
 	for _, btn := range a.Buttons {
 		if btn.GetTag() == tag {
 			return btn
@@ -30,7 +30,7 @@ func (a *AppMainActions) GetButton(tag string) *JW.HoverCursorIconButton {
 	return nil
 }
 
-func (a *AppMainActions) ChangeButtonState(tag string, state string) bool {
+func (a *AppActions) ChangeButtonState(tag string, state string) bool {
 	btn := a.GetButton(tag)
 	if btn == nil {
 		return false
@@ -43,7 +43,7 @@ func (a *AppMainActions) ChangeButtonState(tag string, state string) bool {
 	return true
 }
 
-func (a *AppMainActions) CallButton(tag string) bool {
+func (a *AppActions) CallButton(tag string) bool {
 	btn := a.GetButton(tag)
 	if btn == nil {
 		return false
@@ -54,36 +54,42 @@ func (a *AppMainActions) CallButton(tag string) bool {
 	return true
 }
 
-func (a *AppMainActions) DisableButton(tag string) bool {
+func (a *AppActions) DisableButton(tag string) bool {
 	btn := a.GetButton(tag)
 	if btn == nil {
 		return false
 	}
 
-	btn.Disable()
+	fyne.Do(btn.Disable)
 
 	return true
 }
 
-func (a *AppMainActions) EnableButton(tag string) bool {
+func (a *AppActions) EnableButton(tag string) bool {
 	btn := a.GetButton(tag)
 	if btn == nil {
 		return false
 	}
 
-	btn.Enable()
+	fyne.Do(btn.Enable)
 
 	return true
 }
 
-func (a *AppMainActions) DisableAllButton() {
+func (a *AppActions) DisableAllButton(exclude string) {
 	for _, btn := range a.Buttons {
-		btn.Disable()
+		if btn.GetTag() == exclude {
+			continue
+		}
+		fyne.Do(btn.Disable)
 	}
 }
 
-func (a *AppMainActions) EnableAllButton() {
+func (a *AppActions) EnableAllButton(exclude string) {
 	for _, btn := range a.Buttons {
-		btn.Enable()
+		if btn.GetTag() == exclude {
+			continue
+		}
+		fyne.Do(btn.Enable)
 	}
 }

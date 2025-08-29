@@ -9,9 +9,9 @@ import (
 	JC "jxwatcher/core"
 )
 
-type LoadingPanelLayout struct{}
+type TextOnlyPanelLayout struct{}
 
-func (p *LoadingPanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (p *TextOnlyPanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 2 {
 		return
 	}
@@ -35,7 +35,7 @@ func (p *LoadingPanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size)
 	content.Resize(contentSize)
 }
 
-func (p *LoadingPanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (p *TextOnlyPanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
@@ -50,18 +50,21 @@ func (p *LoadingPanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(width, height)
 }
 
-type LoadingPanel struct {
+type TextOnlyPanel struct {
 	widget.BaseWidget
+	text string
 }
 
-func NewLoadingPanel() *LoadingPanel {
-	p := &LoadingPanel{}
+func NewTextOnlyPanel(text string) *TextOnlyPanel {
+	p := &TextOnlyPanel{
+		text: text,
+	}
 	p.ExtendBaseWidget(p)
 	return p
 }
 
-func (p *LoadingPanel) CreateRenderer() fyne.WidgetRenderer {
-	label := canvas.NewText("Loading...", JC.TextColor)
+func (p *TextOnlyPanel) CreateRenderer() fyne.WidgetRenderer {
+	label := canvas.NewText(p.text, JC.TextColor)
 	label.Alignment = fyne.TextAlignCenter
 	label.TextSize = 20
 
@@ -69,7 +72,7 @@ func (p *LoadingPanel) CreateRenderer() fyne.WidgetRenderer {
 	background.SetMinSize(fyne.NewSize(100, 100))
 	background.CornerRadius = JC.PanelBorderRadius
 
-	content := container.New(&LoadingPanelLayout{},
+	content := container.New(&TextOnlyPanelLayout{},
 		background,
 		label,
 	)

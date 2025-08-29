@@ -15,7 +15,7 @@ import (
 
 func UpdateDisplay() bool {
 
-	if !JT.Config.IsValid() {
+	if !JA.AppStatusManager.Refresh().ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh display")
 		JC.Notify("Unable to refresh display: invalid configuration.")
 
@@ -40,7 +40,7 @@ func UpdateDisplay() bool {
 
 func UpdateRates() bool {
 
-	if !JT.Config.IsValid() {
+	if !JA.AppStatusManager.Refresh().ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh rates")
 		JC.Notify("Unable to refresh rates: invalid configuration.")
 
@@ -94,6 +94,9 @@ func UpdateRates() bool {
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 	JA.AppActionManager.ChangeButtonState("refresh_rates", "reset")
+
+	JA.AppStatusManager.Refresh()
+
 	return true
 }
 
@@ -136,6 +139,8 @@ func RemovePanel(uuid string) {
 			}
 		}
 	}
+
+	JA.AppStatusManager.Refresh()
 }
 
 func SavePanelForm() {
@@ -168,9 +173,11 @@ func OpenNewPanelForm() {
 			"",
 			SavePanelForm,
 			func(npdt *JT.PanelDataType) {
-				r := len(JC.Grid.Objects) == 0
 
+				r := len(JC.Grid.Objects) == 0
 				JC.Grid.Add(CreatePanel(npdt))
+				JC.Grid.Refresh()
+				JA.AppStatusManager.Refresh()
 				if r {
 					JA.AppLayoutManager.Refresh()
 				}
@@ -203,6 +210,12 @@ func OpenSettingForm() {
 			} else {
 				JC.Notify("Failed to save configuration.")
 			}
+
+			if !JA.AppStatusManager.Refresh().ValidConfig() {
+				JA.AppActionManager.ChangeButtonState("open_settings", "error")
+			} else if !JA.AppLayoutManager.FinalContent {
+				JA.AppLayoutManager.Refresh()
+			}
 		})
 
 		d.Show()
@@ -210,12 +223,26 @@ func OpenSettingForm() {
 	})
 }
 
+func ToggleDraggable() {
+	JC.AllowDragging = !JC.AllowDragging
+
+	fyne.Do(func() {
+		JC.Grid.Refresh()
+	})
+
+	if JC.AllowDragging {
+		JA.AppActionManager.ChangeButtonState("toggle_drag", "active")
+	} else {
+		JA.AppActionManager.ChangeButtonState("toggle_drag", "reset")
+	}
+}
+
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
 
 func ResetCryptosMap() {
-	if !JT.Config.IsValid() {
+	if !JA.AppStatusManager.Refresh().ValidConfig() {
 		JC.Logln("Invalid configuration, cannot reset cryptos map")
 		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 		return
@@ -228,7 +255,9 @@ func ResetCryptosMap() {
 		JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 		JT.BP.Maps.ClearMapCache()
 
-		JC.Notify("Cryptos map has been regenerated")
+		if JA.AppStatusManager.Refresh().ValidCryptos() {
+			JC.Notify("Cryptos map has been regenerated")
+		}
 
 		if JT.BP.RefreshData() {
 			fyne.Do(func() {
@@ -239,8 +268,12 @@ func ResetCryptosMap() {
 
 			RequestRateUpdate(false)
 
-		} else {
+		}
+
+		if !JA.AppStatusManager.Refresh().ValidCryptos() {
 			JA.AppActionManager.ChangeButtonState("refresh_cryptos", "error")
+		} else if !JA.AppLayoutManager.FinalContent {
+			JA.AppLayoutManager.Refresh()
 		}
 	})
 }

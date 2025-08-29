@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
@@ -71,12 +72,15 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 }
 
 type AppLayout struct {
-	TopBar     *fyne.CanvasObject
-	Content    *fyne.Container
-	Scroll     *container.Scroll
-	AddButton  *EmptyClickablePanel
-	Loading    *LoadingPanel
-	OnNewPanel func()
+	TopBar           *fyne.CanvasObject
+	Content          *fyne.Container
+	Scroll           *container.Scroll
+	ActionAddPanel   *ActionNeededClickablePanel
+	ActionFixSetting *ActionNeededClickablePanel
+	ActionGetCryptos *ActionNeededClickablePanel
+	Loading          *TextOnlyPanel
+	Error            *TextOnlyPanel
+	FinalContent     bool
 }
 
 func (m *AppLayout) SetContent(container *fyne.Container) {
@@ -85,12 +89,30 @@ func (m *AppLayout) SetContent(container *fyne.Container) {
 
 func (m *AppLayout) Refresh() {
 
-	if m.Content == nil {
+	if m.Content == nil || !AppStatusManager.IsReady() {
+		JC.Logln("No Content")
 		m.Scroll.Content = m.Loading
-	} else if len(m.Content.Objects) == 0 {
-		m.Scroll.Content = m.AddButton
-	} else {
+		m.FinalContent = false
+	} else if !AppStatusManager.ValidConfig() {
+		JC.Logln("No Valid Config")
+		m.Scroll.Content = m.ActionFixSetting
+		m.FinalContent = false
+	} else if !AppStatusManager.ValidCryptos() {
+		JC.Logln("No Valid Cryptos")
+		m.Scroll.Content = m.ActionGetCryptos
+		m.FinalContent = false
+	} else if !AppStatusManager.ValidPanels() {
+		JC.Logln("No Valid Panels")
+		m.Scroll.Content = m.ActionAddPanel
+		m.FinalContent = false
+	} else if !AppStatusManager.HasError() {
+		JC.Logln("No Errors")
 		m.Scroll.Content = m.Content
+		m.FinalContent = true
+	} else {
+		JC.Logln("Panic dont know what to do")
+		m.Scroll.Content = m.Error
+		m.FinalContent = false
 	}
 
 	fyne.Do(func() {
@@ -125,18 +147,24 @@ func (m *AppLayout) IsReady() bool {
 	return m.Scroll != nil && m.Content != nil
 }
 
-func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container, onNewPanel func()) fyne.CanvasObject {
+func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
 	manager := &AppLayout{
-		TopBar:     topbar,
-		Content:    content,
-		OnNewPanel: onNewPanel,
+		TopBar:  topbar,
+		Content: content,
 	}
 
-	manager.Loading = NewLoadingPanel()
-	manager.AddButton = NewEmptyClickablePanel(func() {
-		if manager.OnNewPanel != nil {
-			manager.OnNewPanel()
-		}
+	manager.Loading = NewTextOnlyPanel("Loading...")
+	manager.Error = NewTextOnlyPanel("Failed to start application...")
+	manager.ActionAddPanel = NewActionNeededClickablePanel(theme.ContentAddIcon(), "Add Panel", func() {
+		AppActionManager.CallButton("add_panel")
+	})
+
+	manager.ActionFixSetting = NewActionNeededClickablePanel(theme.SettingsIcon(), "Open Settings", func() {
+		AppActionManager.CallButton("open_settings")
+	})
+
+	manager.ActionGetCryptos = NewActionNeededClickablePanel(theme.ViewRestoreIcon(), "Fetch Crypto Data", func() {
+		AppActionManager.CallButton("refresh_cryptos")
 	})
 
 	// Create scroll container
