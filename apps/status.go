@@ -164,7 +164,7 @@ func (a *AppStatus) Refresh() *AppStatus {
 
 	a.lastRefresh = time.Now()
 
-	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | LastChange: %s | LastRefresh: %s",
+	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | LastChange: %d | LastRefresh: %d",
 		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
 
 	return a
