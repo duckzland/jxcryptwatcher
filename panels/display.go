@@ -13,6 +13,7 @@ import (
 
 	JA "jxwatcher/animations"
 	JM "jxwatcher/apps"
+	JP "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
@@ -310,6 +311,10 @@ func (h *PanelDisplay) EnableClick() {
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
+	if JC.AllowDragging == false {
+		return
+	}
+
 	// Other instance is dragging, stop it
 	// This isn't perfect but just in case for edge case
 	if activeDragging != nil && activeDragging != h {
@@ -319,7 +324,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	h.dragPosition = ev.Position
 
 	if activeDragging == nil {
-		JC.AllowActions = false
+		JP.AppActionManager.DisableAllButton()
 		activeDragging = h
 		h.dragging = true
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
@@ -386,10 +391,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
 func (h *PanelDisplay) DragEnd() {
 	// Call this early to cancel go routine
-
 	activeDragging = nil
 	h.dragging = false
-	JC.AllowActions = true
+
+	JP.AppActionManager.EnableAllButton()
 
 	JC.Grid.Remove(DragPlaceholder)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {

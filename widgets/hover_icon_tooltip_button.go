@@ -9,23 +9,35 @@ import (
 )
 
 type HoverCursorIconButton struct {
+	tag string
 	widget.Button
 	tooltip.ToolTipWidgetExtend
+	disabled bool
 }
 
 func NewHoverCursorIconButton(
+	tag string,
 	text string,
 	icon fyne.Resource,
 	tip string,
-	onTapped func(),
+	onTapped func(btn *widget.Button),
 ) *HoverCursorIconButton {
 
 	b := &HoverCursorIconButton{
 		Button: widget.Button{
-			Text:     text,
-			Icon:     icon,
-			OnTapped: onTapped,
+			Text:       text,
+			Icon:       icon,
+			Importance: widget.MediumImportance,
 		},
+	}
+
+	b.tag = tag
+	b.disabled = false
+
+	b.Button.OnTapped = func() {
+		if b.disabled == false {
+			onTapped(&b.Button)
+		}
 	}
 
 	b.ExtendBaseWidget(b)
@@ -64,9 +76,36 @@ func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 }
 
 func (b *HoverCursorIconButton) Disable() {
-	b.Button.Disable()
+	b.disabled = true
 }
 
 func (b *HoverCursorIconButton) Enable() {
-	b.Button.Enable()
+	b.disabled = false
+}
+
+func (b *HoverCursorIconButton) GetTag() string {
+	return b.tag
+}
+
+func (b *HoverCursorIconButton) ChangeState(state string) {
+	switch state {
+	case "disabled":
+		b.disabled = true
+		b.Button.Importance = widget.LowImportance
+	case "in_progress":
+		b.disabled = true
+		b.Button.Importance = widget.HighImportance
+	case "error":
+		b.disabled = false
+		b.Button.Importance = widget.DangerImportance
+	case "reset":
+		b.disabled = false
+		b.Button.Importance = widget.MediumImportance
+	}
+
+	b.Button.Refresh()
+}
+
+func (b *HoverCursorIconButton) Call() {
+	b.Button.OnTapped()
 }

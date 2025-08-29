@@ -47,4 +47,4 @@ var MainLayoutContentHeight float32
 
 var NotificationContainer *canvas.Rectangle = nil
 
-var AllowActions = true
+var AllowDragging = true

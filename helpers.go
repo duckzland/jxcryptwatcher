@@ -47,6 +47,8 @@ func UpdateRates() bool {
 		return false
 	}
 
+	JA.AppActionManager.ChangeButtonState("refresh_rates", "in_progress")
+
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
@@ -72,6 +74,7 @@ func UpdateRates() bool {
 
 	if len(jb) == 0 {
 		JC.Notify("No valid panels found. Exchange rates were not updated.")
+		JA.AppActionManager.ChangeButtonState("refresh_rates", "error")
 		return false
 	}
 
@@ -90,7 +93,7 @@ func UpdateRates() bool {
 	JC.Notify("Exchange rates updated successfully")
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
-
+	JA.AppActionManager.ChangeButtonState("refresh_rates", "reset")
 	return true
 }
 
@@ -218,6 +221,8 @@ func ResetCryptosMap() {
 		return
 	}
 
+	JA.AppActionManager.ChangeButtonState("refresh_cryptos", "in_progress")
+
 	JC.MainDebouncer.Call("update_cryptos", 1000*time.Millisecond, func() {
 		Cryptos := JT.CryptosType{}
 		JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
@@ -230,7 +235,12 @@ func ResetCryptosMap() {
 				JC.Grid.Refresh()
 			})
 
+			JA.AppActionManager.ChangeButtonState("refresh_cryptos", "reset")
+
 			RequestRateUpdate(false)
+
+		} else {
+			JA.AppActionManager.ChangeButtonState("refresh_cryptos", "error")
 		}
 	})
 }

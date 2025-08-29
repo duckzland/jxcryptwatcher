@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	JW "jxwatcher/widgets"
 )
@@ -42,13 +43,13 @@ func NewPanelActionBar(
 	onDelete func(),
 ) fyne.CanvasObject {
 
-	editBtn := JW.NewHoverCursorIconButton("", theme.DocumentCreateIcon(), "Edit panel", func() {
+	editBtn := JW.NewHoverCursorIconButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", func(btn *widget.Button) {
 		if onEdit != nil {
 			onEdit()
 		}
 	})
 
-	deleteBtn := JW.NewHoverCursorIconButton("", theme.DeleteIcon(), "Delete panel", func() {
+	deleteBtn := JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", func(btn *widget.Button) {
 		if onDelete != nil {
 			onDelete()
 		}

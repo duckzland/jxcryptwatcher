@@ -45,6 +45,8 @@ func main() {
 
 	JC.Grid = &fyne.Container{}
 
+	JC.AllowDragging = false
+
 	topBar := JA.NewTopBar(
 		func() {
 			if !JT.Config.IsValid() {
@@ -82,6 +84,26 @@ func main() {
 			}
 
 			OpenNewPanelForm()
+		},
+		func() {
+			if JT.BP.IsEmpty() {
+				JC.Notify("Please create panel first")
+				return
+			}
+
+			if JT.BP.Maps == nil {
+				JC.Notify("App not ready yet")
+				return
+			}
+
+			JC.AllowDragging = !JC.AllowDragging
+			JC.Grid.Refresh()
+
+			if JC.AllowDragging {
+				JA.AppActionManager.ChangeButtonState("toggle_drag", "in_progress")
+			} else {
+				JA.AppActionManager.ChangeButtonState("toggle_drag", "reset")
+			}
 		})
 
 	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, nil, func() {

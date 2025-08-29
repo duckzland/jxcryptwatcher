@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
@@ -97,6 +98,7 @@ func NewTopBar(
 	onRatesRefresh func(),
 	onSettingSave func(),
 	onAddNewPanel func(),
+	onDragAllowToggle func(),
 ) fyne.CanvasObject {
 
 	topBg := canvas.NewRectangle(JC.PanelBG)
@@ -104,43 +106,54 @@ func NewTopBar(
 
 	JC.NotificationContainer = topBg
 
+	// Refresh ticker data
+	AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data", func(btn *widget.Button) {
+		if onCryptosRefresh != nil {
+			go onCryptosRefresh()
+		}
+	}))
+
+	// Refresh exchange rates
+	AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", func(btn *widget.Button) {
+		if onRatesRefresh != nil {
+			go onRatesRefresh()
+		}
+	}))
+
+	// Open settings
+	AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings", func(btn *widget.Button) {
+		if onSettingSave != nil {
+			go onSettingSave()
+		}
+	}))
+
+	// Panel drag toggle
+	AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", func(btn *widget.Button) {
+		if onDragAllowToggle != nil {
+			go onDragAllowToggle()
+		}
+	}))
+
+	// Add new panel
+	AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", func(btn *widget.Button) {
+		if onAddNewPanel != nil {
+			go onAddNewPanel()
+		}
+	}))
+
 	return container.New(
 		&TopBarLayout{
 			fixedWidth: JC.ActionBtnWidth,
 			spacer:     JC.ActionBtnGap,
 		},
-
 		container.NewStack(
 			topBg,
 			JW.NewNotificationDisplayWidget(JC.UpdateStatusChan),
 		),
-
-		// Refresh ticker data
-		JW.NewHoverCursorIconButton("", theme.ViewRestoreIcon(), "Refresh ticker data", func() {
-			if onCryptosRefresh != nil && JC.AllowActions {
-				go onCryptosRefresh()
-			}
-		}),
-
-		// Refresh exchange rates
-		JW.NewHoverCursorIconButton("", theme.ViewRefreshIcon(), "Update rates from exchange", func() {
-			if onRatesRefresh != nil && JC.AllowActions {
-				go onRatesRefresh()
-			}
-		}),
-
-		// Open settings
-		JW.NewHoverCursorIconButton("", theme.SettingsIcon(), "Open settings", func() {
-			if onSettingSave != nil && JC.AllowActions {
-				go onSettingSave()
-			}
-		}),
-
-		// Add new panel
-		JW.NewHoverCursorIconButton("", theme.ContentAddIcon(), "Add new panel", func() {
-			if onAddNewPanel != nil && JC.AllowActions {
-				go onAddNewPanel()
-			}
-		}),
+		AppActionManager.GetButton("refresh_cryptos"),
+		AppActionManager.GetButton("refresh_rates"),
+		AppActionManager.GetButton("open_settings"),
+		AppActionManager.GetButton("toggle_drag"),
+		AppActionManager.GetButton("add_panel"),
 	)
 }
