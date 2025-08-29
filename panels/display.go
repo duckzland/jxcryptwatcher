@@ -63,6 +63,14 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	actionSize := action.MinSize()
 	action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
 	action.Resize(actionSize)
+
+	if JM.AppStatusManager.IsDraggable() {
+		action.Hide()
+		if activeAction != nil {
+			activeAction.visible = false
+			activeAction = nil
+		}
+	}
 }
 
 func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
@@ -109,6 +117,7 @@ func NewPanelDisplay(
 	onEdit func(pk string, uuid string),
 	onDelete func(uuid string),
 ) *PanelDisplay {
+
 	uuid := JC.CreateUUID()
 	pdt.ID = uuid
 
@@ -262,6 +271,16 @@ func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
+	if JM.AppStatusManager.IsDraggable() {
+		h.HideTarget()
+		return
+	}
+
+	if h.visible && !h.child.Visible() {
+		h.ShowTarget()
+		return
+	}
+
 	if activeDragging != nil {
 		return
 	}
@@ -334,14 +353,6 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 
 		JC.Grid.Add(DragPlaceholder)
 		JC.Grid.Refresh()
-
-		if activeAction != nil {
-			h.dragActiveAction = activeAction
-		}
-
-		if h.dragActiveAction != nil {
-			fyne.Do(h.dragActiveAction.HideTarget)
-		}
 
 		fps := 16 * time.Millisecond
 		if JC.IsMobile {
@@ -429,11 +440,6 @@ func (h *PanelDisplay) snapToNearest() {
 			if h.syncPanelData() {
 				if JT.SavePanels() {
 					JC.Notify("Panels have been reordered and updated.")
-
-					if h.dragActiveAction != nil {
-						fyne.Do(h.dragActiveAction.ShowTarget)
-						h.dragActiveAction = nil
-					}
 				}
 			}
 		})

@@ -24,20 +24,21 @@ func main() {
 	JA.AppActionManager.Init()
 
 	// Prevent locking when initialized at first install
-	JC.MainDebouncer.Call("initializing", 10*time.Millisecond, func() {
+	JC.MainDebouncer.Call("initializing", 33*time.Millisecond, func() {
 
 		JT.ConfigInit()
 
 		JT.PanelsInit()
 
-		JA.AppStatusManager.Refresh()
-
 		fyne.Do(func() {
 
 			JC.Grid = JP.NewPanelGrid(CreatePanel)
 
+			JA.AppStatusManager.DetectData()
 			JA.AppLayoutManager.SetContent(JC.Grid)
 			JA.AppLayoutManager.Refresh()
+
+			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())
 
 			JC.Grid.Refresh()
 
@@ -56,8 +57,6 @@ func main() {
 	RegisterActions()
 
 	topBar := JA.NewTopBar()
-
-	JA.AppStatusManager.Refresh()
 
 	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar, nil))
 

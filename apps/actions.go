@@ -1,6 +1,7 @@
 package apps
 
 import (
+	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 
 	"fyne.io/fyne/v2"
@@ -81,6 +82,7 @@ func (a *AppActions) DisableAllButton(exclude string) {
 		if btn.GetTag() == exclude {
 			continue
 		}
+		JC.Logln("Disabling button", btn.GetTag(), exclude)
 		fyne.Do(btn.Disable)
 	}
 }

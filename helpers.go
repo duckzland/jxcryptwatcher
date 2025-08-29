@@ -16,7 +16,7 @@ import (
 
 func UpdateDisplay() bool {
 
-	if !JA.AppStatusManager.Refresh().ValidConfig() {
+	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh display")
 		JC.Notify("Unable to refresh display: invalid configuration.")
 
@@ -41,7 +41,7 @@ func UpdateDisplay() bool {
 
 func UpdateRates() bool {
 
-	if !JA.AppStatusManager.Refresh().ValidConfig() {
+	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh rates")
 		JC.Notify("Unable to refresh rates: invalid configuration.")
 
@@ -95,7 +95,6 @@ func UpdateRates() bool {
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
 	JA.AppStatusManager.EndFetchingRates()
-	JA.AppStatusManager.Refresh()
 
 	return true
 }
@@ -140,7 +139,7 @@ func RemovePanel(uuid string) {
 		}
 	}
 
-	JA.AppStatusManager.Refresh()
+	JA.AppStatusManager.DetectData()
 }
 
 func SavePanelForm() {
@@ -176,7 +175,7 @@ func OpenNewPanelForm() {
 
 				JC.Grid.Add(CreatePanel(npdt))
 				JC.Grid.Refresh()
-				JA.AppStatusManager.Refresh()
+				JA.AppStatusManager.DetectData()
 
 				JC.Notify("New panel created.")
 			},
@@ -207,7 +206,7 @@ func OpenSettingForm() {
 				JC.Notify("Failed to save configuration.")
 			}
 
-			JA.AppStatusManager.Refresh()
+			JA.AppStatusManager.DetectData()
 		})
 
 		d.Show()
@@ -226,8 +225,6 @@ func ToggleDraggable() {
 	fyne.Do(func() {
 		JC.Grid.Refresh()
 	})
-
-	JA.AppStatusManager.Refresh()
 }
 
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
@@ -235,7 +232,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 }
 
 func ResetCryptosMap() {
-	if !JA.AppStatusManager.Refresh().ValidConfig() {
+	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot reset cryptos map")
 		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 		return
@@ -251,7 +248,7 @@ func ResetCryptosMap() {
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 
-	if JA.AppStatusManager.Refresh().ValidCryptos() {
+	if JA.AppStatusManager.ValidCryptos() {
 		JC.Notify("Cryptos map has been regenerated")
 	}
 
@@ -265,7 +262,6 @@ func ResetCryptosMap() {
 	}
 
 	JA.AppStatusManager.EndFetchingCryptos()
-	JA.AppStatusManager.Refresh()
 }
 
 func StartWorkers() {
@@ -332,6 +328,16 @@ func RegisterActions() {
 			go ResetCryptosMap()
 		},
 		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsDraggable() {
+				btn.Disable()
+				return
+			}
+
 			if !JA.AppStatusManager.ValidConfig() {
 				btn.Disable()
 			} else if !JA.AppStatusManager.ValidCryptos() {
@@ -356,6 +362,16 @@ func RegisterActions() {
 			go RequestRateUpdate(true)
 		},
 		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsDraggable() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.ValidConfig() && JA.AppStatusManager.ValidCryptos() && JA.AppStatusManager.ValidPanels() {
 				if JA.AppStatusManager.IsFetchingRates() {
 					btn.ChangeState("in_progress")
@@ -373,6 +389,16 @@ func RegisterActions() {
 			go OpenSettingForm()
 		},
 		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsDraggable() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.ValidConfig() {
 				btn.ChangeState("reset")
 			} else {
@@ -386,8 +412,15 @@ func RegisterActions() {
 			go ToggleDraggable()
 		},
 		func(btn *JW.HoverCursorIconButton) {
-			if !JA.AppStatusManager.ValidPanels() || JT.BP.TotalData() <= 1 {
-				JA.AppStatusManager.DisallowDragging()
+			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if !JA.AppStatusManager.ValidPanels() || JT.BP.TotalData() < 2 {
+				if JA.AppStatusManager.IsDraggable() {
+					JA.AppStatusManager.DisallowDragging()
+				}
 				btn.Disable()
 			} else if JA.AppStatusManager.IsDraggable() {
 				btn.ChangeState("active")
@@ -402,6 +435,16 @@ func RegisterActions() {
 			go OpenNewPanelForm()
 		},
 		func(btn *JW.HoverCursorIconButton) {
+			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsDraggable() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.ValidCryptos() {
 				btn.Enable()
 			} else {

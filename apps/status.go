@@ -18,17 +18,20 @@ type AppStatus struct {
 	fetching_cryptos bool
 	fetching_rates   bool
 	is_dirty         bool
-	timestamp        time.Time
+	panels_count     int
+	lastChange       time.Time
+	lastRefresh      time.Time
 }
 
 func (a *AppStatus) Init() {
 	a.ready = false
-	a.timestamp = time.Now()
 	a.bad_config = false
 	a.bad_cryptos = false
 	a.no_panels = false
 	a.allow_dragging = false
 	a.is_dirty = false
+	a.panels_count = 0
+	a.lastChange = time.Now()
 }
 
 func (a *AppStatus) IsReady() bool {
@@ -47,39 +50,83 @@ func (a *AppStatus) IsFetchingRates() bool {
 	return a.fetching_rates
 }
 
+func (a *AppStatus) IsDirty() bool {
+	return a.lastChange.After(a.lastRefresh)
+}
+
+func (a *AppStatus) AppReady() *AppStatus {
+	a.ready = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
+	return a
+}
+
 func (a *AppStatus) StartFetchingCryptos() *AppStatus {
 	a.fetching_cryptos = true
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) StartFetchingRates() *AppStatus {
 	a.fetching_rates = true
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) EndFetchingCryptos() *AppStatus {
 	a.fetching_cryptos = false
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DetectData()
 	return a
 }
 
 func (a *AppStatus) EndFetchingRates() *AppStatus {
 	a.fetching_rates = false
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) AllowDragging() *AppStatus {
 	a.allow_dragging = true
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) DisallowDragging() *AppStatus {
 	a.allow_dragging = false
-	a.is_dirty = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
+	return a
+}
+
+func (a *AppStatus) DetectData() *AppStatus {
+	// Capture new state
+	newReady := JT.BP.Maps != nil
+	newNoPanels := JT.BP.IsEmpty()
+	newBadConfig := !JT.Config.IsValid()
+	newBadCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	newPanelsCount := JT.BP.TotalData()
+
+	// Detect changes
+	if a.ready != newReady ||
+		a.no_panels != newNoPanels ||
+		a.bad_config != newBadConfig ||
+		a.bad_cryptos != newBadCryptos ||
+		a.panels_count != newPanelsCount {
+
+		// Apply changes
+		a.ready = newReady
+		a.no_panels = newNoPanels
+		a.bad_config = newBadConfig
+		a.bad_cryptos = newBadCryptos
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
@@ -99,50 +146,26 @@ func (a *AppStatus) ValidPanels() bool {
 	return !a.no_panels
 }
 
+func (a *AppStatus) DebounceRefresh() *AppStatus {
+	JC.MainDebouncer.Call("refreshing_status", 33*time.Millisecond, func() {
+		a.Refresh()
+	})
+
+	return a
+}
+
 func (a *AppStatus) Refresh() *AppStatus {
-	a.is_dirty = false
-
-	newReady := JT.BP.Maps != nil
-	newNoPanels := JT.BP.IsEmpty()
-	newBadConfig := !JT.Config.IsValid()
-	newBadCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
-	newTimestamp := time.Now()
-
-	if a.ready != newReady {
-		a.ready = newReady
-		a.is_dirty = true
-	}
-	if a.no_panels != newNoPanels {
-		a.no_panels = newNoPanels
-		a.is_dirty = true
-	}
-	if a.bad_config != newBadConfig {
-		a.bad_config = newBadConfig
-		a.is_dirty = true
-	}
-	if a.bad_cryptos != newBadCryptos {
-		a.bad_cryptos = newBadCryptos
-		a.is_dirty = true
-	}
-	if !a.timestamp.Equal(newTimestamp) {
-		a.timestamp = newTimestamp
-		a.is_dirty = true
-	}
-
-	// If app is not ready, disable everything
-	if !a.ready {
-		AppActionManager.DisableAllButton("open_settings")
-		return a
-	}
 
 	// Attempt to refresh main layout to change content
-	if a.is_dirty {
+	if a.IsDirty() {
 		AppLayoutManager.Refresh()
 		AppActionManager.Refresh()
 	}
 
-	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | Timestamp: %s",
-		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.timestamp.Format(time.RFC3339))
+	a.lastRefresh = time.Now()
+
+	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | LastChange: %s | LastRefresh: %s",
+		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
 
 	return a
 }
