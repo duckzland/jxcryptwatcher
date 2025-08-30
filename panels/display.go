@@ -110,6 +110,7 @@ type PanelDisplay struct {
 	refTitle         *canvas.Text
 	refContent       *canvas.Text
 	refSubtitle      *canvas.Text
+	fps              time.Duration
 }
 
 func NewPanelDisplay(
@@ -173,6 +174,11 @@ func NewPanelDisplay(
 		refTitle:    title,
 		refContent:  content,
 		refSubtitle: subtitle,
+	}
+
+	panel.fps = 16 * time.Millisecond
+	if JC.IsMobile {
+		panel.fps = 32 * time.Millisecond
 	}
 
 	panel.ExtendBaseWidget(panel)
@@ -331,11 +337,7 @@ func (h *PanelDisplay) EnableClick() {
 	h.disabled = false
 }
 
-func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	if !JM.AppStatusManager.IsDraggable() {
-		return
-	}
-
+func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	if activeDragging != nil && activeDragging != h {
 		activeDragging.DragEnd()
 	}
@@ -351,22 +353,16 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 		JC.Grid.Add(DragPlaceholder)
 		JC.Grid.Refresh()
 
-		fps := 16 * time.Millisecond
-		if JC.IsMobile {
-			fps = 32 * time.Millisecond
-		}
-
 		go func() {
-			ticker := time.NewTicker(fps)
+			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
-
-			const scrollStep = 10
-			const edgeThreshold = 30
 
 			shown := false
 			posX := DragPlaceholder.Position().X
 			posY := DragPlaceholder.Position().Y
 			viewHeight := JC.MainLayoutContentHeight
+			edgeThreshold := DragPlaceholder.Size().Height / 2
+			scrollStep := float32(10)
 			rect, ok := DragPlaceholder.(*canvas.Rectangle)
 
 			if !ok {
@@ -379,6 +375,9 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 				currentScroll := JM.AppLayoutManager.OffsetY()
 				targetX := h.dragPosition.X - h.dragCursorOffset.X
 				targetY := h.dragPosition.Y - h.dragCursorOffset.Y + (currentScroll - h.dragScroll)
+
+				edgeTopY := currentScroll - edgeThreshold
+				edgeBottomY := currentScroll + viewHeight - edgeThreshold
 
 				// Show placeholder
 				if !shown && (targetX == posX || targetY == posY) {
@@ -399,10 +398,10 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 					})
 				}
 
-				// Auto-scroll if dragging near top or bottom
-				if h.dragPosition.Y < edgeThreshold {
+				// Scroll when placeholder is half out of viewport
+				if posY < edgeTopY {
 					JM.AppLayoutManager.ScrollBy(-scrollStep)
-				} else if h.dragPosition.Y > viewHeight-edgeThreshold {
+				} else if posY > edgeBottomY {
 					JM.AppLayoutManager.ScrollBy(scrollStep)
 				}
 			}
@@ -410,8 +409,50 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	}
 }
 
+func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
+
+	h.dragPosition = ev.Position
+
+	if !h.dragging {
+		h.dragging = true
+		h.dragCursorOffset = ev.Position.Subtract(h.Position())
+		sourceY := h.Position().Y
+		scrollStep := float32(10)
+		edgeThreshold := float32(30)
+
+		go func() {
+
+			ticker := time.NewTicker(h.fps)
+			defer ticker.Stop()
+
+			for h.dragging {
+				<-ticker.C
+
+				// Need to get the absolute position as the sourceY is an absolute panel position related to main container
+				targetY := h.dragPosition.Y - h.dragCursorOffset.Y
+
+				// Scroll logic just by movement up or down
+				if targetY < sourceY-edgeThreshold {
+					JM.AppLayoutManager.ScrollBy(-scrollStep)
+				} else if targetY > sourceY+edgeThreshold {
+					JM.AppLayoutManager.ScrollBy(scrollStep)
+				}
+			}
+		}()
+	}
+}
+
+func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
+	if JM.AppStatusManager.IsDraggable() {
+		h.PanelDrag(ev)
+	} else {
+		h.ContainerDrag(ev)
+	}
+}
+
 func (h *PanelDisplay) DragEnd() {
 	if !JM.AppStatusManager.IsDraggable() {
+		h.dragging = false
 		return
 	}
 
