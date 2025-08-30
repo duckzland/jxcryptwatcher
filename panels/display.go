@@ -409,8 +409,40 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	}
 }
 
-func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
+// func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
 
+// 	h.dragPosition = ev.Position
+
+// 	if !h.dragging {
+// 		h.dragging = true
+// 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
+// 		sourceY := h.Position().Y
+// 		scrollStep := float32(10)
+// 		edgeThreshold := float32(30)
+
+// 		go func() {
+
+// 			ticker := time.NewTicker(h.fps)
+// 			defer ticker.Stop()
+
+// 			for h.dragging {
+// 				<-ticker.C
+
+// 				// Need to get the absolute position as the sourceY is an absolute panel position related to main container
+// 				targetY := h.dragPosition.Y - h.dragCursorOffset.Y
+
+// 				// Scroll logic just by movement up or down
+// 				if targetY < sourceY-edgeThreshold {
+// 					JM.AppLayoutManager.ScrollBy(-scrollStep)
+// 				} else if targetY > sourceY+edgeThreshold {
+// 					JM.AppLayoutManager.ScrollBy(scrollStep)
+// 				}
+// 			}
+// 		}()
+// 	}
+// }
+
+func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
 	h.dragPosition = ev.Position
 
 	if !h.dragging {
@@ -419,24 +451,35 @@ func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
 		sourceY := h.Position().Y
 		scrollStep := float32(10)
 		edgeThreshold := float32(30)
+		lastDirection := 0
 
 		go func() {
-
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
 			for h.dragging {
 				<-ticker.C
 
-				// Need to get the absolute position as the sourceY is an absolute panel position related to main container
 				targetY := h.dragPosition.Y - h.dragCursorOffset.Y
+				direction := 0
 
-				// Scroll logic just by movement up or down
 				if targetY < sourceY-edgeThreshold {
-					JM.AppLayoutManager.ScrollBy(-scrollStep)
+					direction = -1
 				} else if targetY > sourceY+edgeThreshold {
-					JM.AppLayoutManager.ScrollBy(scrollStep)
+					direction = 1
 				}
+
+				// Only scroll if direction is stable and non-zero
+				if direction != 0 && direction == lastDirection {
+					switch direction {
+					case -1:
+						JM.AppLayoutManager.ScrollBy(-scrollStep)
+					case 1:
+						JM.AppLayoutManager.ScrollBy(scrollStep)
+					}
+				}
+
+				lastDirection = direction
 			}
 		}()
 	}

@@ -1,6 +1,8 @@
 package apps
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
@@ -183,9 +185,11 @@ func (m *AppLayout) SetOffsetY(offset float32) {
 }
 
 func (m *AppLayout) RefreshLayout() {
-	if m.Scroll != nil {
-		fyne.Do(m.Scroll.Refresh)
-	}
+	JC.MainDebouncer.Call("refreshing_layout", 5*time.Millisecond, func() {
+		if m.Scroll != nil {
+			fyne.Do(m.Scroll.Refresh)
+		}
+	})
 }
 
 func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
