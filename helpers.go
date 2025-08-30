@@ -129,6 +129,9 @@ func RemovePanel(uuid string) {
 
 				fyne.Do(JC.Grid.Refresh)
 
+				// We need to rebuild Layout!
+				JA.AppLayoutManager.RefreshLayout()
+
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
 						JC.Notify("Panel removed successfully.")

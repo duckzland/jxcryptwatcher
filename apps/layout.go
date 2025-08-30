@@ -60,6 +60,8 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		content.Resize(newContentSize)
 		content.Refresh()
 	}
+
+	AppLayoutManager.MaxOffset = -1
 }
 
 func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
@@ -82,6 +84,7 @@ type AppLayout struct {
 	ActionGetCryptos *AppPage
 	Loading          *AppPage
 	Error            *AppPage
+	MaxOffset        float32
 	state            int
 }
 
@@ -94,6 +97,7 @@ func (m *AppLayout) Refresh() {
 		return
 	}
 
+	m.MaxOffset = -1
 	currentState := m.state
 
 	if m.Content == nil || !AppStatusManager.IsReady() {
@@ -152,34 +156,51 @@ func (m *AppLayout) ScrollBy(delta float32) {
 	current := m.OffsetY()
 	newOffset := current + delta
 
-	// Clamp to valid scroll range
-	maxOffset := m.MaxScrollOffset()
+	if m.MaxOffset == -1 {
+		m.ComputeMaxScrollOffset()
+	}
+
+	maxOffset := m.MaxOffset
+
 	if newOffset < 0 {
-		newOffset = 0
+		if current > 0 {
+			newOffset = 0
+		} else {
+			return
+		}
 	} else if newOffset > maxOffset {
-		newOffset = maxOffset
+		if current < maxOffset {
+			newOffset = maxOffset
+		} else {
+			return
+		}
 	}
 
 	m.SetOffsetY(newOffset)
 	m.RefreshLayout()
 }
 
-func (m *AppLayout) MaxScrollOffset() float32 {
+func (m *AppLayout) ComputeMaxScrollOffset() {
+
 	if m.Scroll == nil || m.Scroll.Content == nil {
-		return 0
+		return
 	}
+
 	contentHeight := m.Scroll.Content.MinSize().Height
-	viewHeight := m.Scroll.Size().Height
-	if contentHeight <= viewHeight {
-		return 0
+	viewportHeight := m.Scroll.Size().Height
+
+	if contentHeight <= viewportHeight {
+		m.MaxOffset = 0
+	} else {
+		m.MaxOffset = contentHeight - viewportHeight
 	}
-	return contentHeight - viewHeight
 }
 
 func (m *AppLayout) SetOffsetY(offset float32) {
-	if m.Scroll == nil {
+	if m.Scroll == nil || m.Scroll.Offset.Y == offset {
 		return
 	}
+
 	m.Scroll.Offset.Y = offset
 	m.RefreshLayout()
 }
