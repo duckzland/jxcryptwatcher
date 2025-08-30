@@ -160,17 +160,15 @@ func (m *AppLayout) ScrollBy(delta float32) {
 		m.ComputeMaxScrollOffset()
 	}
 
-	maxOffset := m.MaxOffset
-
 	if newOffset < 0 {
 		if current > 0 {
 			newOffset = 0
 		} else {
 			return
 		}
-	} else if newOffset > maxOffset {
-		if current < maxOffset {
-			newOffset = maxOffset
+	} else if newOffset > m.MaxOffset {
+		if current < m.MaxOffset {
+			newOffset = m.MaxOffset
 		} else {
 			return
 		}
