@@ -115,9 +115,7 @@ func (m *AppLayout) Refresh() {
 	}
 
 	if m.state != currentState {
-		fyne.Do(func() {
-			m.Scroll.Refresh()
-		})
+		m.RefreshLayout()
 	}
 }
 
@@ -146,6 +144,48 @@ func (m *AppLayout) Width() float32 {
 
 func (m *AppLayout) IsReady() bool {
 	return m.Scroll != nil && m.Content != nil
+}
+
+func (m *AppLayout) ScrollBy(delta float32) {
+	current := m.OffsetY()
+	newOffset := current + delta
+
+	// Clamp to valid scroll range
+	maxOffset := m.MaxScrollOffset()
+	if newOffset < 0 {
+		newOffset = 0
+	} else if newOffset > maxOffset {
+		newOffset = maxOffset
+	}
+
+	m.SetOffsetY(newOffset)
+	m.RefreshLayout()
+}
+
+func (m *AppLayout) MaxScrollOffset() float32 {
+	if m.Scroll == nil || m.Scroll.Content == nil {
+		return 0
+	}
+	contentHeight := m.Scroll.Content.MinSize().Height
+	viewHeight := m.Scroll.Size().Height
+	if contentHeight <= viewHeight {
+		return 0
+	}
+	return contentHeight - viewHeight
+}
+
+func (m *AppLayout) SetOffsetY(offset float32) {
+	if m.Scroll == nil {
+		return
+	}
+	m.Scroll.Offset.Y = offset
+	m.RefreshLayout()
+}
+
+func (m *AppLayout) RefreshLayout() {
+	if m.Scroll != nil {
+		fyne.Do(m.Scroll.Refresh)
+	}
 }
 
 func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {

@@ -332,13 +332,10 @@ func (h *PanelDisplay) EnableClick() {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-
 	if !JM.AppStatusManager.IsDraggable() {
 		return
 	}
 
-	// Other instance is dragging, stop it
-	// This isn't perfect but just in case for edge case
 	if activeDragging != nil && activeDragging != h {
 		activeDragging.DragEnd()
 	}
@@ -363,9 +360,13 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 			ticker := time.NewTicker(fps)
 			defer ticker.Stop()
 
+			const scrollStep = 10
+			const edgeThreshold = 30
+
 			shown := false
 			posX := DragPlaceholder.Position().X
 			posY := DragPlaceholder.Position().Y
+			viewHeight := JC.MainLayoutContentHeight
 			rect, ok := DragPlaceholder.(*canvas.Rectangle)
 
 			if !ok {
@@ -379,16 +380,16 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 				targetX := h.dragPosition.X - h.dragCursorOffset.X
 				targetY := h.dragPosition.Y - h.dragCursorOffset.Y + (currentScroll - h.dragScroll)
 
-				if !shown {
-					if targetX == posX || targetY == posY {
-						fyne.Do(func() {
-							rect.FillColor = JC.PanelPlaceholderBG
-							canvas.Refresh(rect)
-							shown = true
-						})
-					}
+				// Show placeholder
+				if !shown && (targetX == posX || targetY == posY) {
+					fyne.Do(func() {
+						rect.FillColor = JC.PanelPlaceholderBG
+						canvas.Refresh(rect)
+						shown = true
+					})
 				}
 
+				// Move placeholder
 				if posX != targetX || posY != targetY {
 					posX = targetX
 					posY = targetY
@@ -396,6 +397,13 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 						rect.Move(fyne.NewPos(posX, posY))
 						canvas.Refresh(rect)
 					})
+				}
+
+				// Auto-scroll if dragging near top or bottom
+				if h.dragPosition.Y < edgeThreshold {
+					JM.AppLayoutManager.ScrollBy(-scrollStep)
+				} else if h.dragPosition.Y > viewHeight-edgeThreshold {
+					JM.AppLayoutManager.ScrollBy(scrollStep)
 				}
 			}
 		}()
