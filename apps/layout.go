@@ -75,12 +75,12 @@ type AppLayout struct {
 	TopBar           *fyne.CanvasObject
 	Content          *fyne.Container
 	Scroll           *container.Scroll
-	ActionAddPanel   *ActionNeededClickablePanel
-	ActionFixSetting *ActionNeededClickablePanel
-	ActionGetCryptos *ActionNeededClickablePanel
-	Loading          *TextOnlyPanel
-	Error            *TextOnlyPanel
-	FinalContent     bool
+	ActionAddPanel   *AppPage
+	ActionFixSetting *AppPage
+	ActionGetCryptos *AppPage
+	Loading          *AppPage
+	Error            *AppPage
+	state            int
 }
 
 func (m *AppLayout) SetContent(container *fyne.Container) {
@@ -92,35 +92,33 @@ func (m *AppLayout) Refresh() {
 		return
 	}
 
+	currentState := m.state
+
 	if m.Content == nil || !AppStatusManager.IsReady() {
-		JC.Logln("No Content")
 		m.Scroll.Content = m.Loading
-		m.FinalContent = false
+		m.state = 0
 	} else if !AppStatusManager.ValidConfig() {
-		JC.Logln("No Valid Config")
 		m.Scroll.Content = m.ActionFixSetting
-		m.FinalContent = false
+		m.state = 1
 	} else if !AppStatusManager.ValidCryptos() {
-		JC.Logln("No Valid Cryptos")
 		m.Scroll.Content = m.ActionGetCryptos
-		m.FinalContent = false
+		m.state = 2
 	} else if !AppStatusManager.ValidPanels() {
-		JC.Logln("No Valid Panels")
 		m.Scroll.Content = m.ActionAddPanel
-		m.FinalContent = false
+		m.state = 3
 	} else if !AppStatusManager.HasError() {
-		JC.Logln("No Errors")
 		m.Scroll.Content = m.Content
-		m.FinalContent = true
+		m.state = 4
 	} else {
-		JC.Logln("Panic dont know what to do")
 		m.Scroll.Content = m.Error
-		m.FinalContent = false
+		m.state = 5
 	}
 
-	fyne.Do(func() {
-		m.Scroll.Refresh()
-	})
+	if m.state != currentState {
+		fyne.Do(func() {
+			m.Scroll.Refresh()
+		})
+	}
 }
 
 func (m *AppLayout) OffsetY() float32 {
@@ -156,17 +154,21 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container) fyn
 		Content: content,
 	}
 
-	manager.Loading = NewTextOnlyPanel("Loading...")
-	manager.Error = NewTextOnlyPanel("Failed to start application...")
-	manager.ActionAddPanel = NewActionNeededClickablePanel(theme.ContentAddIcon(), "Add Panel", func() {
+	manager.Loading = NewAppPage(nil, "Loading...", nil)
+	manager.Error = NewAppPage(nil, "Failed to start application...", nil)
+
+	contentIcon := theme.ContentAddIcon()
+	manager.ActionAddPanel = NewAppPage(&contentIcon, "Add Panel", func() {
 		AppActionManager.CallButton("add_panel")
 	})
 
-	manager.ActionFixSetting = NewActionNeededClickablePanel(theme.SettingsIcon(), "Open Settings", func() {
+	settingIcon := theme.SettingsIcon()
+	manager.ActionFixSetting = NewAppPage(&settingIcon, "Open Settings", func() {
 		AppActionManager.CallButton("open_settings")
 	})
 
-	manager.ActionGetCryptos = NewActionNeededClickablePanel(theme.ViewRestoreIcon(), "Fetch Crypto Data", func() {
+	restoreIcon := theme.ViewRestoreIcon()
+	manager.ActionGetCryptos = NewAppPage(&restoreIcon, "Fetch Crypto Data", func() {
 		AppActionManager.CallButton("refresh_cryptos")
 	})
 
