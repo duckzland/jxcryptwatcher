@@ -1,12 +1,13 @@
 package panels
 
 import (
-	JM "jxwatcher/apps"
-	JC "jxwatcher/core"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
+
+	JM "jxwatcher/apps"
+	JC "jxwatcher/core"
 )
 
 type panelGridRenderer struct {
@@ -29,7 +30,9 @@ func (r *panelGridRenderer) Objects() []fyne.CanvasObject {
 	return r.container.Objects
 }
 
-func (r *panelGridRenderer) Destroy() {}
+func (r *panelGridRenderer) Destroy() {
+	r.container.dragging = false
+}
 
 type PanelGridContainer struct {
 	widget.BaseWidget
@@ -113,7 +116,6 @@ func (c *PanelGridContainer) DragEnd() {
 	c.dragging = false
 }
 
-// Constructor
 func NewPanelGridContainer(
 	layout *PanelGridLayout,
 	Objects []fyne.CanvasObject,

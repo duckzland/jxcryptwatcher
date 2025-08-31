@@ -111,7 +111,7 @@ func (m *AppLayout) Refresh() {
 		m.state = -3
 	} else if !AppStatusManager.ValidPanels() {
 		m.Scroll.Content = m.ActionAddPanel
-		m.state = -4
+		m.state = 0
 	} else if !AppStatusManager.HasError() {
 		m.Scroll.Content = *m.Content
 		m.state = AppStatusManager.panels_count
@@ -120,7 +120,7 @@ func (m *AppLayout) Refresh() {
 		m.state = -5
 	}
 
-	JC.Logln("Current layout state", m.state)
+	JC.Logln("Current layout state", currentState, m.state)
 
 	if m.state != currentState {
 		m.RefreshLayout()

@@ -12,6 +12,7 @@ type HoverCursorIconButton struct {
 	widget.Button
 	tooltip.ToolTipWidgetExtend
 	tag      string
+	state    string
 	disabled bool
 	validate func(*HoverCursorIconButton)
 }
@@ -36,6 +37,7 @@ func NewHoverCursorIconButton(
 	b.tag = tag
 	b.disabled = false
 	b.validate = validate
+	b.state = ""
 
 	b.Button.OnTapped = func() {
 		if b.disabled == false {
@@ -94,22 +96,46 @@ func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
 }
 
 func (b *HoverCursorIconButton) Disable() {
-	b.disabled = true
-	b.Button.Importance = widget.LowImportance
-	b.Button.Refresh()
+	b.changeState("disabled")
 }
 
 func (b *HoverCursorIconButton) Enable() {
-	b.disabled = false
-	b.Button.Importance = widget.MediumImportance
-	b.Button.Refresh()
+	b.changeState("reset")
+}
+
+func (b *HoverCursorIconButton) Error() {
+	b.changeState("error")
+}
+
+func (b *HoverCursorIconButton) Progress() {
+	b.changeState("in_progress")
+}
+
+func (b *HoverCursorIconButton) Active() {
+	b.changeState("active")
 }
 
 func (b *HoverCursorIconButton) GetTag() string {
 	return b.tag
 }
 
-func (b *HoverCursorIconButton) ChangeState(state string) {
+func (b *HoverCursorIconButton) Refresh() {
+	if b.validate != nil {
+		b.validate(b)
+	}
+	b.Button.Refresh()
+}
+
+func (b *HoverCursorIconButton) Call() {
+	b.Button.OnTapped()
+}
+
+func (b *HoverCursorIconButton) changeState(state string) {
+
+	if b.state == state {
+		return
+	}
+
 	switch state {
 	case "disabled":
 		b.disabled = true
@@ -127,16 +153,6 @@ func (b *HoverCursorIconButton) ChangeState(state string) {
 		b.Button.Importance = widget.MediumImportance
 	}
 
+	b.state = state
 	b.Button.Refresh()
-}
-
-func (b *HoverCursorIconButton) Refresh() {
-	if b.validate != nil {
-		b.validate(b)
-	}
-	b.Button.Refresh()
-}
-
-func (b *HoverCursorIconButton) Call() {
-	b.Button.OnTapped()
 }

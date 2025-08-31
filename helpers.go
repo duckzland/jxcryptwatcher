@@ -248,6 +248,8 @@ func ResetCryptosMap() {
 	JT.BP.SetMaps(Cryptos.CreateFile().LoadFile().ConvertToMap())
 	JT.BP.Maps.ClearMapCache()
 
+	JA.AppStatusManager.EndFetchingCryptos()
+
 	if JA.AppStatusManager.ValidCryptos() {
 		JC.Notify("Cryptos map has been regenerated")
 	}
@@ -260,8 +262,6 @@ func ResetCryptosMap() {
 		RequestRateUpdate(false)
 
 	}
-
-	JA.AppStatusManager.EndFetchingCryptos()
 }
 
 func StartWorkers() {
@@ -340,20 +340,20 @@ func RegisterActions() {
 
 			if !JA.AppStatusManager.ValidConfig() {
 				btn.Disable()
-			} else if !JA.AppStatusManager.ValidCryptos() {
-				if JA.AppStatusManager.IsFetchingCryptos() {
-					btn.ChangeState("in_progress")
-				} else {
-					btn.ChangeState("error")
-				}
-			} else {
-
-				if JA.AppStatusManager.IsFetchingCryptos() {
-					btn.ChangeState("in_progress")
-				} else {
-					btn.ChangeState("reset")
-				}
+				return
 			}
+
+			if JA.AppStatusManager.IsFetchingCryptos() {
+				btn.Progress()
+				return
+			}
+
+			if !JA.AppStatusManager.ValidCryptos() {
+				btn.Error()
+				return
+			}
+
+			btn.Enable()
 		}))
 
 	// Refresh exchange rates
@@ -372,15 +372,26 @@ func RegisterActions() {
 				return
 			}
 
-			if JA.AppStatusManager.ValidConfig() && JA.AppStatusManager.ValidCryptos() && JA.AppStatusManager.ValidPanels() {
-				if JA.AppStatusManager.IsFetchingRates() {
-					btn.ChangeState("in_progress")
-				} else {
-					btn.Enable()
-				}
-			} else {
+			if !JA.AppStatusManager.ValidConfig() {
 				btn.Disable()
+				return
 			}
+
+			if !JA.AppStatusManager.ValidCryptos() {
+				btn.Disable()
+				return
+			}
+
+			if !JA.AppStatusManager.ValidPanels() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingRates() {
+				btn.Progress()
+			}
+
+			btn.Enable()
 		}))
 
 	// Open settings
@@ -399,11 +410,12 @@ func RegisterActions() {
 				return
 			}
 
-			if JA.AppStatusManager.ValidConfig() {
-				btn.ChangeState("reset")
-			} else {
-				btn.ChangeState("error")
+			if !JA.AppStatusManager.ValidConfig() {
+				btn.Error()
+				return
 			}
+
+			btn.Enable()
 		}))
 
 	// Panel drag toggle
@@ -417,16 +429,24 @@ func RegisterActions() {
 				return
 			}
 
-			if !JA.AppStatusManager.ValidPanels() || JT.BP.TotalData() < 2 {
-				if JA.AppStatusManager.IsDraggable() {
-					JA.AppStatusManager.DisallowDragging()
-				}
+			if !JA.AppStatusManager.ValidPanels() {
+				JA.AppStatusManager.DisallowDragging()
 				btn.Disable()
-			} else if JA.AppStatusManager.IsDraggable() {
-				btn.ChangeState("active")
-			} else {
-				btn.ChangeState("reset")
+				return
 			}
+
+			if JT.BP.TotalData() < 2 {
+				JA.AppStatusManager.DisallowDragging()
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsDraggable() {
+				btn.Active()
+				return
+			}
+
+			btn.Enable()
 		}))
 
 	// Add new panel
@@ -445,10 +465,11 @@ func RegisterActions() {
 				return
 			}
 
-			if JA.AppStatusManager.ValidCryptos() {
-				btn.Enable()
-			} else {
+			if !JA.AppStatusManager.ValidCryptos() {
 				btn.Disable()
+				return
 			}
+
+			btn.Enable()
 		}))
 }

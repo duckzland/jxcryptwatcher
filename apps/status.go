@@ -55,51 +55,81 @@ func (a *AppStatus) IsDirty() bool {
 }
 
 func (a *AppStatus) AppReady() *AppStatus {
-	a.ready = true
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.ready == false {
+		a.ready = true
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) StartFetchingCryptos() *AppStatus {
-	a.fetching_cryptos = true
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.fetching_cryptos == false {
+		a.fetching_cryptos = true
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) StartFetchingRates() *AppStatus {
-	a.fetching_rates = true
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.fetching_rates == false {
+		a.fetching_rates = true
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) EndFetchingCryptos() *AppStatus {
-	a.fetching_cryptos = false
-	a.lastChange = time.Now()
-	a.DetectData()
+
+	if a.fetching_cryptos == true {
+		a.fetching_cryptos = false
+		a.lastChange = time.Now()
+		a.DetectData()
+		// Dont rely on detect data only!
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) EndFetchingRates() *AppStatus {
-	a.fetching_rates = false
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.fetching_rates == true {
+		a.fetching_rates = false
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) AllowDragging() *AppStatus {
-	a.allow_dragging = true
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.allow_dragging == false {
+		a.allow_dragging = true
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
 func (a *AppStatus) DisallowDragging() *AppStatus {
-	a.allow_dragging = false
-	a.lastChange = time.Now()
-	a.DebounceRefresh()
+
+	if a.allow_dragging == true {
+		a.allow_dragging = false
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
 	return a
 }
 
