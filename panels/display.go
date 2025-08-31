@@ -342,13 +342,27 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	h.dragPosition = ev.Position
 
 	if activeDragging == nil {
+
+		rect, ok := JM.DragPlaceholder.(*canvas.Rectangle)
+		if !ok {
+			return
+		}
+
 		activeDragging = h
 		h.dragging = true
 		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
-		JM.DragPlaceholder.Move(p)
-		canvas.Refresh(JM.DragPlaceholder)
+
+		rect.Move(p)
+		canvas.Refresh(rect)
+
+		// Try to show placeholder as soon as possible
+		if p.X == rect.Position().X || p.Y == rect.Position().Y {
+			rect, _ := JM.DragPlaceholder.(*canvas.Rectangle)
+			rect.FillColor = JC.PanelPlaceholderBG
+			canvas.Refresh(rect)
+		}
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
@@ -360,7 +374,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 				return
 			}
 
-			shown := false
+			shown := rect.FillColor == JC.PanelPlaceholderBG
 			posX := rect.Position().X
 			posY := rect.Position().Y
 			placeholderSize := rect.Size()
@@ -376,7 +390,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 				edgeTopY := JM.AppLayoutManager.ContentTopY - edgeThreshold
 				edgeBottomY := JM.AppLayoutManager.ContentBottomY - edgeThreshold
 
-				// Show placeholder
+				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
 					fyne.Do(func() {
 						rect.FillColor = JC.PanelPlaceholderBG
