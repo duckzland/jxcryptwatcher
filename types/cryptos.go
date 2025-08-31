@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2/storage"
+
+	JC "jxwatcher/core"
 )
 
 type CryptosType struct {
