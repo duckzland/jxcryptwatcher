@@ -50,7 +50,6 @@ type PanelGridContainer struct {
 
 func (c *PanelGridContainer) Add(obj fyne.CanvasObject) {
 	c.Objects = append(c.Objects, obj)
-	c.Refresh()
 }
 
 func (c *PanelGridContainer) Remove(obj fyne.CanvasObject) {
@@ -60,7 +59,6 @@ func (c *PanelGridContainer) Remove(obj fyne.CanvasObject) {
 			break
 		}
 	}
-	c.Refresh()
 }
 
 func (c *PanelGridContainer) CreateRenderer() fyne.WidgetRenderer {
