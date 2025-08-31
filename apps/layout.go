@@ -18,6 +18,7 @@ type AppMainLayout struct {
 }
 
 var AppLayoutManager *AppLayout = nil
+var DragPlaceholder fyne.CanvasObject
 
 func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 2 {
@@ -61,7 +62,13 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		content.Refresh()
 	}
 
+	placeholder := objects[2]
+	placeholder.Move(fyne.NewPos(0, -JC.PanelHeight))
+
 	AppLayoutManager.MaxOffset = -1
+	AppLayoutManager.ContentTopY = newContentPos.Y
+	AppLayoutManager.ContentBottomY = newContentPos.Y + newContentHeight
+
 }
 
 func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
@@ -85,6 +92,8 @@ type AppLayout struct {
 	Loading          *AppPage
 	Error            *AppPage
 	MaxOffset        float32
+	ContentTopY      float32
+	ContentBottomY   float32
 	state            int
 }
 
@@ -243,6 +252,12 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) 
 
 	AppLayoutManager = manager
 
+	//DragPlaceholder = canvas.NewRectangle(JC.Transparent)
+	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
+	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+		rect.CornerRadius = JC.PanelBorderRadius
+	}
+
 	return fynetooltip.AddWindowToolTipLayer(
 		container.New(
 			&AppMainLayout{
@@ -250,6 +265,7 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) 
 			},
 			*manager.TopBar,
 			manager.Scroll,
+			DragPlaceholder,
 		),
 		JC.Window.Canvas())
 }

@@ -92,26 +92,22 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type PanelDisplay struct {
 	widget.BaseWidget
-	tag              string
-	content          fyne.CanvasObject
-	child            fyne.CanvasObject
-	container        *PanelGridContainer
-	lastClick        time.Time
-	visible          bool
-	disabled         bool
-	dragScroll       float32
-	dragPosition     fyne.Position
-	dragOffset       fyne.Position
-	dragMoveEnd      fyne.Position
-	dragMoveStart    fyne.Position
-	dragCursorOffset fyne.Position
-	dragActiveAction *PanelDisplay
-	dragging         bool
-	background       *canvas.Rectangle
-	refTitle         *canvas.Text
-	refContent       *canvas.Text
-	refSubtitle      *canvas.Text
-	fps              time.Duration
+	tag          string
+	content      fyne.CanvasObject
+	child        fyne.CanvasObject
+	container    *PanelGridContainer
+	lastClick    time.Time
+	visible      bool
+	disabled     bool
+	dragScroll   float32
+	dragPosition fyne.Position
+	dragOffset   fyne.Position
+	dragging     bool
+	background   *canvas.Rectangle
+	refTitle     *canvas.Text
+	refContent   *canvas.Text
+	refSubtitle  *canvas.Text
+	fps          time.Duration
 }
 
 func NewPanelDisplay(
@@ -348,23 +344,23 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	if activeDragging == nil {
 		activeDragging = h
 		h.dragging = true
-		h.dragCursorOffset = ev.Position.Subtract(h.Position())
 		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
-		Grid.Add(DragPlaceholder)
-		Grid.Refresh()
+		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
+		JM.DragPlaceholder.Move(p)
+		canvas.Refresh(JM.DragPlaceholder)
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
 			shown := false
-			posX := DragPlaceholder.Position().X
-			posY := DragPlaceholder.Position().Y
-			viewHeight := JC.MainLayoutContentHeight
-			edgeThreshold := DragPlaceholder.Size().Height / 2
+			posX := JM.DragPlaceholder.Position().X
+			posY := JM.DragPlaceholder.Position().Y
+			placeholderSize := JM.DragPlaceholder.Size()
+			edgeThreshold := placeholderSize.Height / 2
 			scrollStep := float32(10)
-			rect, ok := DragPlaceholder.(*canvas.Rectangle)
+			rect, ok := JM.DragPlaceholder.(*canvas.Rectangle)
 
 			if !ok {
 				return
@@ -373,12 +369,11 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 			for h.dragging {
 				<-ticker.C
 
-				currentScroll := JM.AppLayoutManager.OffsetY()
-				targetX := h.dragPosition.X - h.dragCursorOffset.X
-				targetY := h.dragPosition.Y - h.dragCursorOffset.Y + (currentScroll - h.dragScroll)
+				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
+				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := currentScroll - edgeThreshold
-				edgeBottomY := currentScroll + viewHeight - edgeThreshold
+				edgeTopY := JM.AppLayoutManager.ContentTopY - edgeThreshold
+				edgeBottomY := JM.AppLayoutManager.ContentBottomY - edgeThreshold
 
 				// Show placeholder
 				if !shown && (targetX == posX || targetY == posY) {
@@ -429,12 +424,11 @@ func (h *PanelDisplay) DragEnd() {
 	activeDragging = nil
 	h.dragging = false
 
-	Grid.Remove(DragPlaceholder)
-	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.FillColor = JC.Transparent
+		rect.Move(fyne.NewPos(0, -JC.PanelHeight))
 		canvas.Refresh(rect)
 	}
-	Grid.Refresh()
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
 	h.dragOffset.Y -= h.dragScroll - JM.AppLayoutManager.OffsetY()

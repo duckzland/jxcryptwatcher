@@ -4,14 +4,12 @@ import (
 	"math"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
 
-var DragPlaceholder fyne.CanvasObject
 var DragDropZones []*PanelDropZone
 var Grid *PanelGridContainer
 
@@ -98,13 +96,12 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
 
+	if JA.DragPlaceholder != nil {
+		JA.DragPlaceholder.Resize(g.DynCellSize)
+	}
+
 	for _, child := range objects {
 		if !child.Visible() {
-			continue
-		}
-
-		if child == DragPlaceholder && DragPlaceholder != nil {
-			child.Resize(g.DynCellSize)
 			continue
 		}
 
@@ -151,10 +148,6 @@ func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 
 	for _, child := range objects {
 		if !child.Visible() {
-			continue
-		}
-
-		if child == DragPlaceholder && DragPlaceholder != nil {
 			continue
 		}
 
@@ -221,11 +214,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 	)
 
 	// Global dummy panel for placeholder
-	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
 	DragDropZones = []*PanelDropZone{}
-	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.CornerRadius = JC.PanelBorderRadius
-	}
 
 	JC.PrintMemUsage("End building panels")
 
