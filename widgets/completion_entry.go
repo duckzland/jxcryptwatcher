@@ -40,6 +40,8 @@ func NewCompletionEntry(
 	c.EntryHeight = -1
 	c.PopupPosition = fyne.NewPos(-1, -1)
 
+	c.itemHeight = 30
+
 	c.SetOptions(options)
 
 	c.HideCompletion()
@@ -86,9 +88,11 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	}
 
 	// then show them
-	c.SetOptions(results)
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
-		fyne.Do(c.ShowCompletion)
+		fyne.Do(func() {
+			c.SetOptions(results)
+			c.ShowCompletion()
+		})
 	})
 }
 
@@ -224,8 +228,13 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	listHeight := float32(len(c.Options))*(c.itemHeight+2*theme.Padding()+theme.SeparatorThicknessSize()) + 2*theme.Padding()
-	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - 2*theme.Padding()
+	padding := (theme.Padding() * 2) * c.Scale
+	separator := theme.SeparatorThicknessSize() * c.Scale
+
+	listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
+	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
+
+	JC.Logln("proposed size:", len(c.Options), c.itemHeight, c.EntryHeight, listHeight, maxHeight)
 
 	if listHeight > maxHeight {
 		listHeight = maxHeight

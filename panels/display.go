@@ -173,9 +173,9 @@ func NewPanelDisplay(
 		refSubtitle: subtitle,
 	}
 
-	panel.fps = 1 * time.Millisecond
+	panel.fps = 3 * time.Millisecond
 	if JC.IsMobile {
-		panel.fps = 5 * time.Millisecond
+		panel.fps = 6 * time.Millisecond
 	}
 
 	panel.ExtendBaseWidget(panel)
