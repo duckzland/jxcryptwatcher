@@ -354,17 +354,18 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
-			shown := false
-			posX := JM.DragPlaceholder.Position().X
-			posY := JM.DragPlaceholder.Position().Y
-			placeholderSize := JM.DragPlaceholder.Size()
-			edgeThreshold := placeholderSize.Height / 2
-			scrollStep := float32(10)
 			rect, ok := JM.DragPlaceholder.(*canvas.Rectangle)
 
 			if !ok {
 				return
 			}
+
+			shown := false
+			posX := rect.Position().X
+			posY := rect.Position().Y
+			placeholderSize := rect.Size()
+			edgeThreshold := placeholderSize.Height / 2
+			scrollStep := float32(10)
 
 			for h.dragging {
 				<-ticker.C

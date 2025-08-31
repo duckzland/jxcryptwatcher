@@ -252,8 +252,7 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) 
 
 	AppLayoutManager = manager
 
-	//DragPlaceholder = canvas.NewRectangle(JC.Transparent)
-	DragPlaceholder = canvas.NewRectangle(JC.PanelPlaceholderBG)
+	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.PanelBorderRadius
 	}
