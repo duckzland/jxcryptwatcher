@@ -23,7 +23,11 @@ func (r *panelGridRenderer) MinSize() fyne.Size {
 }
 
 func (r *panelGridRenderer) Refresh() {
-	r.Layout(r.container.Size())
+	JC.MainDebouncer.Call("panel_container_refresh", 10*time.Millisecond, func() {
+		fyne.Do(func() {
+			r.Layout(r.container.Size())
+		})
+	})
 }
 
 func (r *panelGridRenderer) Objects() []fyne.CanvasObject {
