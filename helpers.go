@@ -389,6 +389,7 @@ func RegisterActions() {
 
 			if JA.AppStatusManager.IsFetchingRates() {
 				btn.Progress()
+				return
 			}
 
 			btn.Enable()
