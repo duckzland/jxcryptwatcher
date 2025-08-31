@@ -95,6 +95,7 @@ type PanelDisplay struct {
 	tag              string
 	content          fyne.CanvasObject
 	child            fyne.CanvasObject
+	container        *PanelGridContainer
 	lastClick        time.Time
 	visible          bool
 	disabled         bool
@@ -176,7 +177,7 @@ func NewPanelDisplay(
 		refSubtitle: subtitle,
 	}
 
-	panel.fps = 16 * time.Millisecond
+	panel.fps = 8 * time.Millisecond
 	if JC.IsMobile {
 		panel.fps = 32 * time.Millisecond
 	}
@@ -322,7 +323,7 @@ func (h *PanelDisplay) HideTarget() {
 }
 
 func (h *PanelDisplay) Cursor() desktop.Cursor {
-	if JC.AllowDragging {
+	if JM.AppStatusManager.IsDraggable() {
 		return desktop.PointerCursor
 	}
 
@@ -350,8 +351,8 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
 		h.dragScroll = JM.AppLayoutManager.OffsetY()
 
-		JC.Grid.Add(DragPlaceholder)
-		JC.Grid.Refresh()
+		Grid.Add(DragPlaceholder)
+		Grid.Refresh()
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
@@ -409,93 +410,18 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	}
 }
 
-// func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
-
-// 	h.dragPosition = ev.Position
-
-// 	if !h.dragging {
-// 		h.dragging = true
-// 		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-// 		sourceY := h.Position().Y
-// 		scrollStep := float32(10)
-// 		edgeThreshold := float32(30)
-
-// 		go func() {
-
-// 			ticker := time.NewTicker(h.fps)
-// 			defer ticker.Stop()
-
-// 			for h.dragging {
-// 				<-ticker.C
-
-// 				// Need to get the absolute position as the sourceY is an absolute panel position related to main container
-// 				targetY := h.dragPosition.Y - h.dragCursorOffset.Y
-
-// 				// Scroll logic just by movement up or down
-// 				if targetY < sourceY-edgeThreshold {
-// 					JM.AppLayoutManager.ScrollBy(-scrollStep)
-// 				} else if targetY > sourceY+edgeThreshold {
-// 					JM.AppLayoutManager.ScrollBy(scrollStep)
-// 				}
-// 			}
-// 		}()
-// 	}
-// }
-
-func (h *PanelDisplay) ContainerDrag(ev *fyne.DragEvent) {
-	h.dragPosition = ev.Position
-
-	if !h.dragging {
-		h.dragging = true
-		h.dragCursorOffset = ev.Position.Subtract(h.Position())
-		sourceY := h.Position().Y
-		scrollStep := float32(10)
-		edgeThreshold := float32(30)
-		lastDirection := 0
-
-		go func() {
-			ticker := time.NewTicker(h.fps)
-			defer ticker.Stop()
-
-			for h.dragging {
-				<-ticker.C
-
-				targetY := h.dragPosition.Y - h.dragCursorOffset.Y
-				direction := 0
-
-				if targetY < sourceY-edgeThreshold {
-					direction = -1
-				} else if targetY > sourceY+edgeThreshold {
-					direction = 1
-				}
-
-				// Only scroll if direction is stable and non-zero
-				if direction != 0 && direction == lastDirection {
-					switch direction {
-					case -1:
-						JM.AppLayoutManager.ScrollBy(-scrollStep)
-					case 1:
-						JM.AppLayoutManager.ScrollBy(scrollStep)
-					}
-				}
-
-				lastDirection = direction
-			}
-		}()
-	}
-}
-
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	if JM.AppStatusManager.IsDraggable() {
 		h.PanelDrag(ev)
 	} else {
-		h.ContainerDrag(ev)
+		h.container.Dragged(ev)
 	}
 }
 
 func (h *PanelDisplay) DragEnd() {
 	if !JM.AppStatusManager.IsDraggable() {
 		h.dragging = false
+		h.container.DragEnd()
 		return
 	}
 
@@ -503,12 +429,12 @@ func (h *PanelDisplay) DragEnd() {
 	activeDragging = nil
 	h.dragging = false
 
-	JC.Grid.Remove(DragPlaceholder)
+	Grid.Remove(DragPlaceholder)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.FillColor = JC.Transparent
 		canvas.Refresh(rect)
 	}
-	JC.Grid.Refresh()
+	Grid.Refresh()
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
 	h.dragOffset.Y -= h.dragScroll - JM.AppLayoutManager.OffsetY()
@@ -524,8 +450,8 @@ func (h *PanelDisplay) snapToNearest() {
 		return
 	}
 
-	JC.Grid.Objects = h.reorder(targetIndex)
-	JC.Grid.Refresh()
+	Grid.Objects = h.reorder(targetIndex)
+	Grid.Refresh()
 
 	go func() {
 		JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
@@ -571,7 +497,7 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 }
 
 func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
-	panels := JC.Grid.Objects
+	panels := Grid.Objects
 	var result []fyne.CanvasObject
 	for _, obj := range panels {
 		if obj != h {
@@ -593,7 +519,7 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 func (h *PanelDisplay) syncPanelData() bool {
 	nd := []*JT.PanelDataType{}
 
-	for _, obj := range JC.Grid.Objects {
+	for _, obj := range Grid.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
 			uuid := panel.GetTag()
 			pdt := JT.BP.GetData(uuid)

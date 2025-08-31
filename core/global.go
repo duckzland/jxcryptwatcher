@@ -10,7 +10,6 @@ import (
 
 const Epsilon = 1e-9
 
-var Grid *fyne.Container
 var Window fyne.Window
 
 var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}

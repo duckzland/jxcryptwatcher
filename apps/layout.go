@@ -77,7 +77,7 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type AppLayout struct {
 	TopBar           *fyne.CanvasObject
-	Content          *fyne.Container
+	Content          *fyne.CanvasObject
 	Scroll           *container.Scroll
 	ActionAddPanel   *AppPage
 	ActionFixSetting *AppPage
@@ -88,8 +88,8 @@ type AppLayout struct {
 	state            int
 }
 
-func (m *AppLayout) SetContent(container *fyne.Container) {
-	m.Content = container
+func (m *AppLayout) SetContent(container fyne.CanvasObject) {
+	m.Content = &container
 }
 
 func (m *AppLayout) Refresh() {
@@ -113,7 +113,7 @@ func (m *AppLayout) Refresh() {
 		m.Scroll.Content = m.ActionAddPanel
 		m.state = -4
 	} else if !AppStatusManager.HasError() {
-		m.Scroll.Content = m.Content
+		m.Scroll.Content = *m.Content
 		m.state = AppStatusManager.panels_count
 	} else {
 		m.Scroll.Content = m.Error
@@ -213,7 +213,7 @@ func (m *AppLayout) RefreshLayout() {
 	})
 }
 
-func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.Container) fyne.CanvasObject {
+func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) fyne.CanvasObject {
 	manager := &AppLayout{
 		TopBar:  topbar,
 		Content: content,

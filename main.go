@@ -32,15 +32,15 @@ func main() {
 
 		fyne.Do(func() {
 
-			JC.Grid = JP.NewPanelGrid(CreatePanel)
+			JP.Grid = JP.NewPanelGrid(CreatePanel)
 
 			JA.AppStatusManager.DetectData()
-			JA.AppLayoutManager.SetContent(JC.Grid)
+			JA.AppLayoutManager.SetContent(JP.Grid)
 			JA.AppLayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())
 
-			JC.Grid.Refresh()
+			JP.Grid.Refresh()
 
 			if !JA.AppStatusManager.HasError() {
 				RequestRateUpdate(true)
@@ -50,7 +50,7 @@ func main() {
 
 	JC.Window = a.NewWindow("JXCrypto Watcher")
 
-	JC.Grid = &fyne.Container{}
+	JP.Grid = &JP.PanelGridContainer{}
 
 	JC.AllowDragging = false
 

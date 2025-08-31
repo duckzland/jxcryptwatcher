@@ -119,15 +119,15 @@ func ValidateCache() bool {
 
 func RemovePanel(uuid string) {
 
-	for _, obj := range JC.Grid.Objects {
+	for _, obj := range JP.Grid.Objects {
 		if panel, ok := obj.(*JP.PanelDisplay); ok {
 			if panel.GetTag() == uuid {
 
 				JC.Logf("Removing panel %s", uuid)
 
-				JC.Grid.Remove(obj)
+				JP.Grid.Remove(obj)
 
-				fyne.Do(JC.Grid.Refresh)
+				fyne.Do(JP.Grid.Refresh)
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
@@ -146,7 +146,7 @@ func SavePanelForm() {
 
 	JC.Notify("Saving panel settings...")
 
-	JC.Grid.Refresh()
+	JP.Grid.Refresh()
 	RequestDisplayUpdate(true)
 
 	go func() {
@@ -173,8 +173,8 @@ func OpenNewPanelForm() {
 			SavePanelForm,
 			func(npdt *JT.PanelDataType) {
 
-				JC.Grid.Add(CreatePanel(npdt))
-				JC.Grid.Refresh()
+				JP.Grid.Add(CreatePanel(npdt))
+				JP.Grid.Refresh()
 				JA.AppStatusManager.DetectData()
 
 				JC.Notify("New panel created.")
@@ -223,7 +223,7 @@ func ToggleDraggable() {
 	}
 
 	fyne.Do(func() {
-		JC.Grid.Refresh()
+		JP.Grid.Refresh()
 	})
 }
 
@@ -254,7 +254,7 @@ func ResetCryptosMap() {
 
 	if JT.BP.RefreshData() {
 		fyne.Do(func() {
-			JC.Grid.Refresh()
+			JP.Grid.Refresh()
 		})
 
 		RequestRateUpdate(false)

@@ -5,7 +5,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
 
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
@@ -14,6 +13,7 @@ import (
 
 var DragPlaceholder fyne.CanvasObject
 var DragDropZones []*PanelDropZone
+var Grid *PanelGridContainer
 
 type PanelDropZone struct {
 	top    float32
@@ -184,7 +184,7 @@ func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
 
-func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
+func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 	JC.PrintMemUsage("Start building panels")
 
 	// Get the list of panel data
@@ -209,7 +209,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 	}
 
 	// Using direct spread injection for objects to save multiple refresh calls
-	grid := container.New(
+	grid := NewPanelGridContainer(
 		&PanelGridLayout{
 			MinCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
 			DynCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
@@ -217,7 +217,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *fyne.Container {
 			RowCount:     1,
 			InnerPadding: JC.PanelPadding,
 		},
-		o...,
+		o,
 	)
 
 	// Global dummy panel for placeholder
