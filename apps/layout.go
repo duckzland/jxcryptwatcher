@@ -102,23 +102,25 @@ func (m *AppLayout) Refresh() {
 
 	if m.Content == nil || !AppStatusManager.IsReady() {
 		m.Scroll.Content = m.Loading
-		m.state = 0
+		m.state = -1
 	} else if !AppStatusManager.ValidConfig() {
 		m.Scroll.Content = m.ActionFixSetting
-		m.state = 1
+		m.state = -2
 	} else if !AppStatusManager.ValidCryptos() {
 		m.Scroll.Content = m.ActionGetCryptos
-		m.state = 2
+		m.state = -3
 	} else if !AppStatusManager.ValidPanels() {
 		m.Scroll.Content = m.ActionAddPanel
-		m.state = 3
+		m.state = -4
 	} else if !AppStatusManager.HasError() {
 		m.Scroll.Content = m.Content
-		m.state = 4
+		m.state = AppStatusManager.panels_count
 	} else {
 		m.Scroll.Content = m.Error
-		m.state = 5
+		m.state = -5
 	}
+
+	JC.Logln("Current layout state", m.state)
 
 	if m.state != currentState {
 		m.RefreshLayout()

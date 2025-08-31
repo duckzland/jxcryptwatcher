@@ -124,6 +124,7 @@ func (a *AppStatus) DetectData() *AppStatus {
 		a.bad_config = newBadConfig
 		a.bad_cryptos = newBadCryptos
 		a.lastChange = time.Now()
+		a.panels_count = newPanelsCount
 		a.DebounceRefresh()
 	}
 
