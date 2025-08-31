@@ -229,13 +229,14 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	}
 
 	padding := (theme.Padding() * 2) * c.Scale
-	separator := theme.SeparatorThicknessSize() * c.Scale
+	separator := theme.SeparatorThicknessSize()
 
 	listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
 	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
 
-	JC.Logln("proposed size:", len(c.Options), c.itemHeight, c.EntryHeight, listHeight, maxHeight)
-
+	if JC.IsMobile {
+		maxHeight = 200
+	}
 	if listHeight > maxHeight {
 		listHeight = maxHeight
 	}
