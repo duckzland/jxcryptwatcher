@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -21,9 +22,11 @@ func NewPanelForm(
 
 	cm := JT.BP.GetOptions()
 
+	popupTarget := container.NewStack()
+
 	valueEntry := JW.NewNumericalEntry(true)
-	sourceEntry := JW.NewCompletionEntry(cm)
-	targetEntry := JW.NewCompletionEntry(cm)
+	sourceEntry := JW.NewCompletionEntry(cm, popupTarget)
+	targetEntry := JW.NewCompletionEntry(cm, popupTarget)
 	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
@@ -138,7 +141,7 @@ func NewPanelForm(
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	return JW.NewExtendedFormDialog(title, formItems, func(b bool) {
+	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) {
 		if b {
 			var npk JT.PanelKeyType
 			newKey := npk.GenerateKey(
@@ -176,4 +179,9 @@ func NewPanelForm(
 			}
 		}
 	}, JC.Window)
+
+	sourceEntry.Parent = parent
+	targetEntry.Parent = parent
+
+	return parent
 }

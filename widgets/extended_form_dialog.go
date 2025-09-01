@@ -8,17 +8,23 @@ import (
 )
 
 type ExtendedFormDialog struct {
-	dialog   *dialog.CustomDialog
-	confirm  *HoverCursorIconButton
-	cancel   *HoverCursorIconButton
-	items    []*widget.FormItem
-	callback func(bool)
-	form     *widget.Form
+	dialog         *dialog.CustomDialog
+	confirm        *HoverCursorIconButton
+	cancel         *HoverCursorIconButton
+	items          []*widget.FormItem
+	callback       func(bool)
+	form           *widget.Form
+	parent         fyne.Window
+	topContent     *fyne.Container
+	bottomContent  *fyne.Container
+	overlayContent *fyne.Container
 }
 
 func NewExtendedFormDialog(
 	title string,
 	items []*widget.FormItem,
+	topContent *fyne.Container,
+	bottomContent *fyne.Container,
 	callback func(bool),
 	parent fyne.Window,
 ) *ExtendedFormDialog {
@@ -34,9 +40,12 @@ func NewExtendedFormDialog(
 		cancel: NewHoverCursorIconButton("cancel_save_panel", "Cancel", theme.CancelIcon(), "", func(*HoverCursorIconButton) {
 			fd.dialog.Hide()
 		}, nil),
-		items:    items,
-		callback: func(resp bool) { callback(resp) },
-		form:     form,
+		items:         items,
+		callback:      func(resp bool) { callback(resp) },
+		form:          form,
+		parent:        parent,
+		topContent:    topContent,
+		bottomContent: bottomContent,
 	}
 
 	fd.dialog.SetButtons([]fyne.CanvasObject{fd.cancel, fd.confirm})
@@ -72,8 +81,32 @@ func (d *ExtendedFormDialog) hideWithResponse(resp bool) {
 
 func (d *ExtendedFormDialog) Show() {
 	d.dialog.Show()
+
+	if d.overlayContent == nil {
+		for _, overlay := range d.parent.Canvas().Overlays().List() {
+			if popup, ok := overlay.(*widget.PopUp); ok {
+
+				if cont, ok := popup.Content.(*fyne.Container); ok {
+					d.overlayContent = cont
+				}
+			}
+		}
+
+		// We just prepend or append, its up to other to reposition them!
+		if d.overlayContent != nil && d.topContent != nil {
+			d.overlayContent.Objects = append([]fyne.CanvasObject{d.topContent}, d.overlayContent.Objects...)
+		}
+
+		if d.overlayContent != nil && d.bottomContent != nil {
+			d.overlayContent.Add(d.bottomContent)
+		}
+	}
 }
 
 func (d *ExtendedFormDialog) Resize(newSize fyne.Size) {
 	d.dialog.Resize(newSize)
+}
+
+func (d *ExtendedFormDialog) GetContent() *fyne.Container {
+	return d.overlayContent
 }

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -13,11 +15,13 @@ import (
 
 type CompletionEntry struct {
 	widget.Entry
-	popupMenu     *widget.PopUp
+	popup         *fyne.Container
+	container     *fyne.Container
 	navigableList *navigableList
-	Options       []string
 	pause         bool
 	itemHeight    float32
+	Parent        *ExtendedFormDialog
+	Options       []string
 	Suggestions   []string
 	CustomCreate  func() fyne.CanvasObject
 	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
@@ -30,9 +34,10 @@ type CompletionEntry struct {
 
 func NewCompletionEntry(
 	options []string,
+	popup *fyne.Container,
 ) *CompletionEntry {
 
-	c := &CompletionEntry{Suggestions: options}
+	c := &CompletionEntry{Suggestions: options, popup: popup}
 	c.ExtendBaseWidget(c)
 
 	c.OnChanged = c.SearchSuggestions
@@ -43,8 +48,6 @@ func NewCompletionEntry(
 	c.itemHeight = 30
 
 	c.SetOptions(options)
-
-	c.HideCompletion()
 
 	return c
 }
@@ -101,30 +104,28 @@ func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.SearchSuggestions(c.Text)
 }
 
+func (c *CompletionEntry) FocusLost() {
+	c.HideCompletion()
+}
+
+func (c *CompletionEntry) FocusGained() {
+	if len(c.Text) > 0 {
+		c.ShowCompletion()
+	}
+}
+
 func (c *CompletionEntry) SetDefaultValue(s string) {
 	c.Text = s
 }
 
 func (c *CompletionEntry) HideCompletion() {
-	if c.popupMenu != nil {
-		c.popupMenu.Hide()
+	if c.popup != nil {
+		c.popup.Objects = nil
+		c.popup.Hide()
+		c.popup.Refresh()
 	}
 
 	JC.MainDebouncer.Cancel("show_suggestion")
-}
-
-func (c *CompletionEntry) Move(pos fyne.Position) {
-	// Candidate for removal, this cause glitching!
-	if c.Entry.Position().X != pos.X || c.Entry.Position().Y != pos.Y {
-		c.Entry.Move(pos)
-
-		c.calculatePosition()
-
-		if c.popupMenu != nil {
-			c.popupMenu.Resize(c.maxSize())
-			c.popupMenu.Move(c.popUpPos())
-		}
-	}
 }
 
 func (c *CompletionEntry) Refresh() {
@@ -136,14 +137,50 @@ func (c *CompletionEntry) Refresh() {
 
 func (c *CompletionEntry) Resize(size fyne.Size) {
 	c.Entry.Resize(size)
-	if c.popupMenu != nil {
-		c.popupMenu.Resize(c.maxSize())
+	if c.popup != nil {
+		c.popup.Resize(c.maxSize())
+		c.popup.Move(c.popUpPos())
 	}
 }
 
 func (c *CompletionEntry) SetOptions(itemList []string) {
 	c.Options = itemList
 	c.Refresh()
+}
+
+func (c *CompletionEntry) CreateList() {
+	if c.navigableList == nil {
+		c.navigableList = newNavigableList(
+			c.Options,
+			c.setTextFromMenu,
+			c.HideCompletion,
+			c.CustomCreate,
+			c.CustomUpdate,
+		)
+	}
+
+	if c.container == nil {
+		closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+			c.HideCompletion()
+		})
+
+		cc := container.New(
+			&CompletionListEntryLayout{},
+			c.navigableList,
+			closeBtn,
+		)
+
+		bg := canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground))
+
+		c.container = container.NewStack(bg, cc)
+
+		closeBtn.Resize(fyne.NewSize(24, 24))
+		closeBtn.Move(fyne.NewPos(0, 0))
+	}
+
+	if len(c.popup.Objects) == 0 {
+		c.popup.Add(c.container)
+	}
 }
 
 func (c *CompletionEntry) ShowCompletion() {
@@ -159,30 +196,19 @@ func (c *CompletionEntry) ShowCompletion() {
 		return
 	}
 
-	if c.navigableList == nil {
-		c.navigableList = newNavigableList(
-			c.Options,
-			&c.Entry,
-			c.setTextFromMenu,
-			c.HideCompletion,
-			c.CustomCreate,
-			c.CustomUpdate,
-		)
-	} else {
-		c.navigableList.UnselectAll()
-		c.navigableList.selected = -1
-	}
+	c.CreateList()
 
-	holder := fyne.CurrentApp().Driver().CanvasForObject(c)
+	c.navigableList.UnselectAll()
+	c.navigableList.selected = -1
 
-	if c.popupMenu == nil {
-		c.popupMenu = widget.NewPopUp(c.navigableList, holder)
-	}
+	mx := c.maxSize()
 
-	c.popupMenu.Resize(c.maxSize())
-	c.popupMenu.ShowAtPosition(c.popUpPos())
+	c.popup.Resize(mx)
+	c.popup.Move(c.popUpPos())
 
-	holder.Focus(c.navigableList)
+	canvas.Refresh(c.popup)
+
+	c.popup.Show()
 }
 
 func (c *CompletionEntry) calculatePosition() bool {
@@ -200,7 +226,10 @@ func (c *CompletionEntry) calculatePosition() bool {
 	}
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-	c.PopupPosition = fyne.NewPos(p.X, p.Y)
+	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.Parent.overlayContent)
+	px := p.Subtract(x)
+
+	c.PopupPosition = px
 
 	c.EntryHeight = c.Size().Height
 	c.EntryHeight += (theme.Padding() * 2) * c.Scale
@@ -234,6 +263,10 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
 	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
 
+	if maxHeight > 300 {
+		maxHeight = 300
+	}
+
 	if JC.IsMobile {
 		maxHeight = 200
 	}
@@ -262,13 +295,12 @@ func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.Entry.SetText(s)
 	c.Entry.CursorColumn = len([]rune(s))
 	c.Entry.Refresh()
-	c.popupMenu.Hide()
+	c.popup.Hide()
 	c.pause = false
 }
 
 type navigableList struct {
 	widget.List
-	entry           *widget.Entry
 	selected        int
 	setTextFromMenu func(string)
 	hide            func()
@@ -281,7 +313,6 @@ type navigableList struct {
 
 func newNavigableList(
 	items []string,
-	entry *widget.Entry,
 	setTextFromMenu func(string),
 	hide func(),
 	create func() fyne.CanvasObject,
@@ -289,7 +320,6 @@ func newNavigableList(
 ) *navigableList {
 
 	n := &navigableList{
-		entry:           entry,
 		selected:        -1,
 		setTextFromMenu: setTextFromMenu,
 		hide:            hide,
@@ -322,7 +352,9 @@ func newNavigableList(
 			n.navigating = false
 		},
 	}
+
 	n.ExtendBaseWidget(n)
+
 	return n
 }
 
@@ -358,22 +390,49 @@ func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
 		}
 		n.navigating = true
 		n.Select(n.selected)
-	case fyne.KeyReturn, fyne.KeyEnter:
-		if n.selected == -1 {
-			n.hide()
-			n.entry.TypedKey(event)
-		} else {
-			n.navigating = false
-			n.OnSelected(n.selected)
-		}
 	case fyne.KeyEscape:
 		n.hide()
-	default:
-		n.entry.TypedKey(event)
 
 	}
 }
 
-func (n *navigableList) TypedRune(r rune) {
-	n.entry.TypedRune(r)
+func (n *navigableList) TypedRune(r rune) {}
+
+type CompletionListEntryLayout struct{}
+
+func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	if len(objects) < 2 {
+		return
+	}
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	height := size.Height
+	closeWidth := float32(16)
+
+	// Layout close button on the right
+	closeBtn.Resize(fyne.NewSize(closeWidth, height))
+	closeBtn.Move(fyne.NewPos(size.Width-closeWidth, 0))
+
+	// Layout list entry to fill remaining space
+	listEntry.Resize(fyne.NewSize(size.Width-closeWidth, height))
+	listEntry.Move(fyne.NewPos(0, 0))
+}
+
+func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	if len(objects) < 2 {
+		return fyne.NewSize(0, 0)
+	}
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	listMin := listEntry.MinSize()
+	closeMin := closeBtn.MinSize()
+
+	width := listMin.Width + 24 // fixed close button width
+	height := fyne.Max(listMin.Height, closeMin.Height)
+
+	return fyne.NewSize(width, height)
 }

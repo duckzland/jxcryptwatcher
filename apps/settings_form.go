@@ -65,7 +65,7 @@ func NewSettingsForm(onSave func()) *JW.ExtendedFormDialog {
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
-	return JW.NewExtendedFormDialog("Settings", formItems, func(b bool) {
+	return JW.NewExtendedFormDialog("Settings", formItems, nil, nil, func(b bool) {
 		if b {
 			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 			JT.Config.DataEndpoint = dataEndPointEntry.Text
