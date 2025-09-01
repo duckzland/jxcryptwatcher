@@ -129,8 +129,6 @@ func (m *AppLayout) Refresh() {
 		m.state = -5
 	}
 
-	JC.Logln("Current layout state", currentState, m.state)
-
 	if m.state != currentState {
 		m.RefreshLayout()
 	}

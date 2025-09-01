@@ -13,6 +13,8 @@ import (
 	JC "jxwatcher/core"
 )
 
+var ActiveEntry *CompletionEntry = nil
+
 type CompletionEntry struct {
 	widget.Entry
 	popup         *fyne.Container
@@ -87,7 +89,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	// Mobile uses virtual keyboard, give more time for user to type
 	if JC.IsMobile {
-		delay = 600 * time.Millisecond
+		delay = 200 * time.Millisecond
 	}
 
 	// then show them
@@ -105,10 +107,30 @@ func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 }
 
 func (c *CompletionEntry) FocusLost() {
-	c.HideCompletion()
+
+	c.Entry.FocusLost()
+
+	if JC.IsMobile {
+
+		// Fix for when android keyboard hiding, position got bad
+		JC.MainDebouncer.Call("completion_entry_positioning", 100*time.Millisecond, func() {
+			fyne.Do(func() {
+				if c.popup.Visible() {
+					c.popup.Move(c.popUpPos())
+					canvas.Refresh(c.popup)
+				}
+			})
+		})
+	}
 }
 
 func (c *CompletionEntry) FocusGained() {
+	c.Entry.FocusGained()
+
+	if ActiveEntry != nil && ActiveEntry != c {
+		ActiveEntry.HideCompletion()
+	}
+
 	if len(c.Text) > 0 {
 		c.ShowCompletion()
 	}
@@ -174,7 +196,7 @@ func (c *CompletionEntry) CreateList() {
 
 		c.container = container.NewStack(bg, cc)
 
-		closeBtn.Resize(fyne.NewSize(24, 24))
+		closeBtn.Resize(fyne.NewSize(32, 32))
 		closeBtn.Move(fyne.NewPos(0, 0))
 	}
 
@@ -209,6 +231,8 @@ func (c *CompletionEntry) ShowCompletion() {
 	canvas.Refresh(c.popup)
 
 	c.popup.Show()
+
+	ActiveEntry = c
 }
 
 func (c *CompletionEntry) calculatePosition() bool {
@@ -225,6 +249,10 @@ func (c *CompletionEntry) calculatePosition() bool {
 		return false
 	}
 
+	if c.Parent == nil || c.Parent.overlayContent == nil {
+		return false
+	}
+
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
 	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.Parent.overlayContent)
 	px := p.Subtract(x)
@@ -232,15 +260,15 @@ func (c *CompletionEntry) calculatePosition() bool {
 	c.PopupPosition = px
 
 	c.EntryHeight = c.Size().Height
-	c.EntryHeight += (theme.Padding() * 2) * c.Scale
+	// c.EntryHeight += (theme.Padding() * 2) * c.Scale
 
-	if JC.IsMobile {
-		c.EntryHeight += (theme.InputBorderSize() * 2) * c.Scale
+	// if JC.IsMobile {
+	// 	c.EntryHeight += (theme.InputBorderSize() * 2) * c.Scale
 
-		// Hackish, different device, different android version have different height..
-		// Not sure how to properly get precise height value across different device and android version yet.
-		c.EntryHeight += 8 * c.Scale
-	}
+	// 	// Hackish, different device, different android version have different height..
+	// 	// Not sure how to properly get precise height value across different device and android version yet.
+	// 	c.EntryHeight += 8 * c.Scale
+	// }
 
 	c.EntryWidth = c.Size().Width
 
@@ -409,7 +437,7 @@ func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyn
 	closeBtn := objects[1]
 
 	height := size.Height
-	closeWidth := float32(16)
+	closeWidth := closeBtn.Size().Width
 
 	// Layout close button on the right
 	closeBtn.Resize(fyne.NewSize(closeWidth, height))
@@ -431,7 +459,7 @@ func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Si
 	listMin := listEntry.MinSize()
 	closeMin := closeBtn.MinSize()
 
-	width := listMin.Width + 24 // fixed close button width
+	width := listMin.Width + closeMin.Width // fixed close button width
 	height := fyne.Max(listMin.Height, closeMin.Height)
 
 	return fyne.NewSize(width, height)

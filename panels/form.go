@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
@@ -22,11 +23,12 @@ func NewPanelForm(
 
 	cm := JT.BP.GetOptions()
 
-	popupTarget := container.NewStack()
+	popupSourceEntryTarget := container.NewStack()
+	popupTargetEntryTarget := container.NewStack()
 
 	valueEntry := JW.NewNumericalEntry(true)
-	sourceEntry := JW.NewCompletionEntry(cm, popupTarget)
-	targetEntry := JW.NewCompletionEntry(cm, popupTarget)
+	sourceEntry := JW.NewCompletionEntry(cm, popupSourceEntryTarget)
+	targetEntry := JW.NewCompletionEntry(cm, popupTargetEntryTarget)
 	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
@@ -140,6 +142,8 @@ func NewPanelForm(
 		widget.NewFormItem("Target", targetEntry),
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
+
+	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
 
 	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) {
 		if b {

@@ -15,16 +15,17 @@ type ExtendedFormDialog struct {
 	callback       func(bool)
 	form           *widget.Form
 	parent         fyne.Window
-	topContent     *fyne.Container
-	bottomContent  *fyne.Container
+	topContent     []*fyne.Container
+	bottomContent  []*fyne.Container
 	overlayContent *fyne.Container
+	popup          *widget.PopUp
 }
 
 func NewExtendedFormDialog(
 	title string,
 	items []*widget.FormItem,
-	topContent *fyne.Container,
-	bottomContent *fyne.Container,
+	topContent []*fyne.Container,
+	bottomContent []*fyne.Container,
 	callback func(bool),
 	parent fyne.Window,
 ) *ExtendedFormDialog {
@@ -85,7 +86,7 @@ func (d *ExtendedFormDialog) Show() {
 	if d.overlayContent == nil {
 		for _, overlay := range d.parent.Canvas().Overlays().List() {
 			if popup, ok := overlay.(*widget.PopUp); ok {
-
+				d.popup = popup
 				if cont, ok := popup.Content.(*fyne.Container); ok {
 					d.overlayContent = cont
 				}
@@ -94,11 +95,20 @@ func (d *ExtendedFormDialog) Show() {
 
 		// We just prepend or append, its up to other to reposition them!
 		if d.overlayContent != nil && d.topContent != nil {
-			d.overlayContent.Objects = append([]fyne.CanvasObject{d.topContent}, d.overlayContent.Objects...)
-		}
+			// Convert []*fyne.Container to []fyne.CanvasObject
+			topObjects := make([]fyne.CanvasObject, len(d.topContent))
+			for i, c := range d.topContent {
+				topObjects[i] = c // Implicit interface conversion
+			}
 
+			// Append converted slice to overlayContent.Objects
+			d.overlayContent.Objects = append(topObjects, d.overlayContent.Objects...)
+		}
 		if d.overlayContent != nil && d.bottomContent != nil {
-			d.overlayContent.Add(d.bottomContent)
+			for _, c := range d.bottomContent {
+				var obj fyne.CanvasObject = c // Explicit interface assignment
+				d.overlayContent.Add(obj)
+			}
 		}
 	}
 }

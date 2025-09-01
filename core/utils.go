@@ -90,7 +90,6 @@ func BuildPathRelatedToUserDirectory(additionalPath []string) string {
 	fullpath := filepath.Join(allPaths...)
 	uri := storage.NewFileURI(fullpath)
 
-	// Logln("User Root Directory:", uri.String())
 	return uri.String()
 }
 
