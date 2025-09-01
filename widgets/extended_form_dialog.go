@@ -93,20 +93,17 @@ func (d *ExtendedFormDialog) Show() {
 			}
 		}
 
-		// We just prepend or append, its up to other to reposition them!
 		if d.overlayContent != nil && d.topContent != nil {
-			// Convert []*fyne.Container to []fyne.CanvasObject
 			topObjects := make([]fyne.CanvasObject, len(d.topContent))
 			for i, c := range d.topContent {
-				topObjects[i] = c // Implicit interface conversion
+				topObjects[i] = c
 			}
 
-			// Append converted slice to overlayContent.Objects
 			d.overlayContent.Objects = append(topObjects, d.overlayContent.Objects...)
 		}
 		if d.overlayContent != nil && d.bottomContent != nil {
 			for _, c := range d.bottomContent {
-				var obj fyne.CanvasObject = c // Explicit interface assignment
+				var obj fyne.CanvasObject = c
 				d.overlayContent.Add(obj)
 			}
 		}
