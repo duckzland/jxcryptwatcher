@@ -24,15 +24,15 @@ var PanelBorderRadius float32 = 6
 var PanelPadding [4]float32 = [4]float32{8, 8, 8, 8}
 
 var PanelTitleSize float32 = 16
-var PanelSubTitleSize float32 = 15
-var PanelBottomTextSize float32 = 15
+var PanelSubTitleSize float32 = 16
+var PanelBottomTextSize float32 = 12
 var PanelContentSize float32 = 28
 var PanelTitleSizeSmall float32 = 13
 var PanelSubTitleSizeSmall float32 = 13
-var PanelBottomTextSizeSmall float32 = 13
+var PanelBottomTextSizeSmall float32 = 10
 var PanelContentSizeSmall float32 = 22
 var PanelWidth float32 = 320
-var PanelHeight float32 = 120
+var PanelHeight float32 = 110
 var ActionBtnWidth float32 = 40
 var ActionBtnGap float32 = 6
 
