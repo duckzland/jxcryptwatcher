@@ -75,6 +75,16 @@ func (p *PanelKeyType) GetValueFloat() float64 {
 	return 0
 }
 
+func (p *PanelKeyType) GetReverseValueFloat() float64 {
+
+	value, err := strconv.ParseFloat(p.GetValueString(), 64)
+	if err == nil {
+		return 1 / value
+	}
+
+	return 0
+}
+
 func (p *PanelKeyType) GetValueString() string {
 
 	pkv := strings.Split(p.value, "|")
@@ -83,6 +93,17 @@ func (p *PanelKeyType) GetValueString() string {
 	}
 
 	return ""
+}
+
+func (p *PanelKeyType) GetReverseValueString() string {
+
+	pkv := p.GetReverseValueFloat()
+	frac := JC.NumDecPlaces(pkv)
+	if frac < 3 {
+		frac = 2
+	}
+
+	return strconv.FormatFloat(pkv, 'f', frac, 64)
 }
 
 func (p *PanelKeyType) GetValueFormattedString() string {
@@ -94,6 +115,18 @@ func (p *PanelKeyType) GetValueFormattedString() string {
 	}
 
 	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt()))))
+
+}
+
+func (p *PanelKeyType) GetReverseValueFormattedString() string {
+
+	pr := message.NewPrinter(language.English)
+	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	if frac < 3 {
+		frac = 2
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetReverseValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt()))))
 
 }
 

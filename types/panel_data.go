@@ -125,6 +125,18 @@ func (p *PanelDataType) FormatSubtitle() string {
 	)
 }
 
+func (p *PanelDataType) FormatBottomText() string {
+
+	pk := p.UsePanelKey()
+
+	return fmt.Sprintf(
+		"1 %s = %s %s",
+		pk.GetTargetSymbolString(),
+		pk.GetReverseValueFormattedString(),
+		pk.GetSourceSymbolString(),
+	)
+}
+
 func (p *PanelDataType) FormatContent() string {
 
 	pk := p.UsePanelKey()

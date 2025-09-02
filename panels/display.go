@@ -30,14 +30,15 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	title := objects[1]
 	content := objects[2]
 	subtitle := objects[3]
-	action := objects[4]
-	spacer := float32(-3)
+	bottom := objects[4]
+	action := objects[5]
+	spacer := float32(-2)
 
 	bg.Resize(size)
 	bg.Move(fyne.NewPos(0, 0))
 
 	centerItems := []fyne.CanvasObject{}
-	for _, obj := range []fyne.CanvasObject{title, content, subtitle} {
+	for _, obj := range []fyne.CanvasObject{title, content, subtitle, bottom} {
 		if obj.Visible() && obj.MinSize().Height > 0 {
 			centerItems = append(centerItems, obj)
 		}
@@ -77,7 +78,7 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
-	for _, obj := range objects[1:4] {
+	for _, obj := range objects[1:5] {
 		if obj.Visible() && obj.MinSize().Height > 0 {
 			size := obj.MinSize()
 			if size.Width > width {
@@ -92,22 +93,23 @@ func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type PanelDisplay struct {
 	widget.BaseWidget
-	tag          string
-	content      fyne.CanvasObject
-	child        fyne.CanvasObject
-	container    *PanelGridContainer
-	lastClick    time.Time
-	visible      bool
-	disabled     bool
-	dragScroll   float32
-	dragPosition fyne.Position
-	dragOffset   fyne.Position
-	dragging     bool
-	background   *canvas.Rectangle
-	refTitle     *canvas.Text
-	refContent   *canvas.Text
-	refSubtitle  *canvas.Text
-	fps          time.Duration
+	tag           string
+	content       fyne.CanvasObject
+	child         fyne.CanvasObject
+	container     *PanelGridContainer
+	lastClick     time.Time
+	visible       bool
+	disabled      bool
+	dragScroll    float32
+	dragPosition  fyne.Position
+	dragOffset    fyne.Position
+	dragging      bool
+	background    *canvas.Rectangle
+	refTitle      *canvas.Text
+	refContent    *canvas.Text
+	refSubtitle   *canvas.Text
+	refBottomText *canvas.Text
+	fps           time.Duration
 }
 
 func NewPanelDisplay(
@@ -137,6 +139,10 @@ func NewPanelDisplay(
 	background.SetMinSize(fyne.NewSize(100, 100))
 	background.CornerRadius = JC.PanelBorderRadius
 
+	bottomtext := canvas.NewText("", JC.TextColor)
+	bottomtext.Alignment = fyne.TextAlignCenter
+	bottomtext.TextSize = JC.PanelBottomTextSize
+
 	str := pdt.GetData()
 
 	action := NewPanelActionBar(
@@ -162,15 +168,17 @@ func NewPanelDisplay(
 			title,
 			content,
 			subtitle,
+			bottomtext,
 			action,
 		),
-		child:       action,
-		visible:     false,
-		disabled:    false,
-		background:  background,
-		refTitle:    title,
-		refContent:  content,
-		refSubtitle: subtitle,
+		child:         action,
+		visible:       false,
+		disabled:      false,
+		background:    background,
+		refTitle:      title,
+		refContent:    content,
+		refSubtitle:   subtitle,
+		refBottomText: bottomtext,
 	}
 
 	panel.fps = 3 * time.Millisecond
@@ -219,6 +227,7 @@ func (h *PanelDisplay) updateContent() {
 	if pwidth != 0 && pwidth < JC.PanelWidth {
 		h.refTitle.TextSize = JC.PanelTitleSizeSmall
 		h.refSubtitle.TextSize = JC.PanelSubTitleSizeSmall
+		h.refBottomText.TextSize = JC.PanelBottomTextSizeSmall
 		h.refContent.TextSize = JC.PanelContentSizeSmall
 	}
 
@@ -235,6 +244,7 @@ func (h *PanelDisplay) updateContent() {
 	case -1:
 		h.refTitle.Text = "Fetching Rates..."
 		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
 		h.refContent.Hide()
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
@@ -242,6 +252,7 @@ func (h *PanelDisplay) updateContent() {
 	case 0:
 		h.refTitle.Text = "Loading..."
 		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
 		h.refContent.Hide()
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
@@ -250,6 +261,7 @@ func (h *PanelDisplay) updateContent() {
 		if !JT.BP.ValidatePanel(pkt.Get()) {
 			h.refTitle.Text = "Invalid Panel"
 			h.refSubtitle.Hide()
+			h.refBottomText.Hide()
 			h.refContent.Hide()
 			h.background.FillColor = JC.PanelBG
 			return
@@ -257,9 +269,11 @@ func (h *PanelDisplay) updateContent() {
 
 		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.refTitle.TextSize)
 		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.refSubtitle.TextSize)
+		h.refBottomText.Text = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.refBottomText.TextSize)
 		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.refContent.TextSize)
 
 		h.refSubtitle.Show()
+		h.refBottomText.Show()
 		h.refContent.Show()
 		h.EnableClick()
 	}
