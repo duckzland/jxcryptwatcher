@@ -36,7 +36,7 @@ var PanelHeight float32 = 110
 var ActionBtnWidth float32 = 40
 var ActionBtnGap float32 = 6
 
-var TickerBG color.RGBA = color.RGBA{R: 34, G: 37, B: 49, A: 255}
+var TickerBG color.RGBA = color.RGBA{R: 17, G: 119, B: 170, A: 255}
 var TickerBorderRadius float32 = 6
 var TickerPadding [4]float32 = [4]float32{8, 8, 8, 8}
 
