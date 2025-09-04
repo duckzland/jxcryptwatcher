@@ -67,5 +67,5 @@ func (ec *TickerDataCacheType) ShouldRefresh() bool {
 		return true
 	}
 
-	return time.Now().After(ec.LastUpdated.Add(TickerUpdateThreshold))
+	return time.Now().After(ec.LastUpdated.Add(TickerUpdateThreshold)) && time.Now().After(ec.Timestamp.Add(TickerUpdateThreshold))
 }

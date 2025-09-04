@@ -464,6 +464,7 @@ func RegisterActions() {
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange",
 		func(btn *JW.HoverCursorIconButton) {
 			go RequestRateUpdate(true)
+			go RequestTickersUpdate()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {

@@ -41,7 +41,7 @@ var TickerBorderRadius float32 = 6
 var TickerPadding [4]float32 = [4]float32{8, 8, 8, 8}
 
 var TickerWidth float32 = 120
-var TickerHeight float32 = 60
+var TickerHeight float32 = 50
 var TickerTitleSize float32 = 11
 var TickerContentSize float32 = 20
 
