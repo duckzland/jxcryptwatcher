@@ -60,7 +60,6 @@ func (p *TickerDataType) GetData() binding.String {
 	return p.Data
 }
 
-// @TODO: Inject this with proper update logic
 func (p *TickerDataType) Update() bool {
 	if TickerCache.Has(p.Type) {
 		nd := TickerCache.Get(p.Type)

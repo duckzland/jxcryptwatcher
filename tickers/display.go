@@ -195,15 +195,15 @@ func (h *TickerDisplay) updateContent() {
 
 			switch {
 			case index >= 75:
-				h.background.FillColor = JC.GreenColor // Extreme Greed
+				h.background.FillColor = JC.GreenColor
 			case index >= 55:
-				h.background.FillColor = JC.TealGreenColor // Greed
+				h.background.FillColor = JC.TealGreenColor
 			case index >= 45:
-				h.background.FillColor = JC.YellowColor // Neutral
+				h.background.FillColor = JC.YellowColor
 			case index >= 25:
-				h.background.FillColor = JC.OrangeColor // Fear
+				h.background.FillColor = JC.OrangeColor
 			default:
-				h.background.FillColor = JC.RedColor // Extreme Fear
+				h.background.FillColor = JC.RedColor
 			}
 		}
 
@@ -212,7 +212,7 @@ func (h *TickerDisplay) updateContent() {
 			index, _ := strconv.ParseFloat(raw, 64)
 
 			if index > 0 {
-				h.background.FillColor = JC.GreenColor // Extreme Greed
+				h.background.FillColor = JC.GreenColor
 			} else if index < 0 {
 				h.background.FillColor = JC.RedColor
 			}
