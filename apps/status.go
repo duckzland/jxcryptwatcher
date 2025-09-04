@@ -13,12 +13,14 @@ type AppStatus struct {
 	ready            bool
 	bad_config       bool
 	bad_cryptos      bool
+	bad_tickers      bool
 	no_panels        bool
 	allow_dragging   bool
 	fetching_cryptos bool
 	fetching_rates   bool
 	is_dirty         bool
 	panels_count     int
+	valid_pro_key    bool
 	lastChange       time.Time
 	lastRefresh      time.Time
 }
@@ -27,10 +29,12 @@ func (a *AppStatus) Init() {
 	a.ready = false
 	a.bad_config = false
 	a.bad_cryptos = false
+	a.bad_tickers = false
 	a.no_panels = false
 	a.allow_dragging = false
 	a.is_dirty = false
 	a.panels_count = 0
+	a.valid_pro_key = true
 	a.lastChange = time.Now()
 }
 
@@ -48,6 +52,10 @@ func (a *AppStatus) IsFetchingCryptos() bool {
 
 func (a *AppStatus) IsFetchingRates() bool {
 	return a.fetching_rates
+}
+
+func (a *AppStatus) IsValidProKey() bool {
+	return a.valid_pro_key == true
 }
 
 func (a *AppStatus) IsDirty() bool {
@@ -133,6 +141,17 @@ func (a *AppStatus) DisallowDragging() *AppStatus {
 	return a
 }
 
+func (a *AppStatus) SetCryptoKeyStatus(status bool) *AppStatus {
+
+	if status != a.valid_pro_key {
+		a.valid_pro_key = status
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
 func (a *AppStatus) DetectData() *AppStatus {
 	// Capture new state
 	newReady := JT.BP.Maps != nil
@@ -140,12 +159,14 @@ func (a *AppStatus) DetectData() *AppStatus {
 	newBadConfig := !JT.Config.IsValid()
 	newBadCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
 	newPanelsCount := JT.BP.TotalData()
+	newBadTickers := !JT.Config.IsValidTickers()
 
 	// Detect changes
 	if a.ready != newReady ||
 		a.no_panels != newNoPanels ||
 		a.bad_config != newBadConfig ||
 		a.bad_cryptos != newBadCryptos ||
+		a.bad_tickers != newBadTickers ||
 		a.panels_count != newPanelsCount {
 
 		// Apply changes
@@ -153,8 +174,9 @@ func (a *AppStatus) DetectData() *AppStatus {
 		a.no_panels = newNoPanels
 		a.bad_config = newBadConfig
 		a.bad_cryptos = newBadCryptos
-		a.lastChange = time.Now()
+		a.bad_tickers = newBadTickers
 		a.panels_count = newPanelsCount
+		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
 
@@ -195,8 +217,8 @@ func (a *AppStatus) Refresh() *AppStatus {
 
 	a.lastRefresh = time.Now()
 
-	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | LastChange: %d | LastRefresh: %d",
-		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
+	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | ValidProKey: %v | LastChange: %d | LastRefresh: %d",
+		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.bad_cryptos, a.valid_pro_key, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
 
 	return a
 }

@@ -36,9 +36,19 @@ var PanelHeight float32 = 110
 var ActionBtnWidth float32 = 40
 var ActionBtnGap float32 = 6
 
+var TickerBG color.RGBA = color.RGBA{R: 34, G: 37, B: 49, A: 255}
+var TickerBorderRadius float32 = 6
+var TickerPadding [4]float32 = [4]float32{8, 8, 8, 8}
+
+var TickerWidth float32 = 120
+var TickerHeight float32 = 60
+var TickerTitleSize float32 = 11
+var TickerContentSize float32 = 20
+
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
+var UpdateTickersChan = make(chan struct{})
 var UpdateDisplayTimestamp = time.Now()
 
 var MainDebouncer = NewDebouncer()
@@ -48,4 +58,4 @@ var MainLayoutContentHeight float32
 
 var NotificationContainer *canvas.Rectangle = nil
 
-var AllowDragging = true
+var Tickers *fyne.Container

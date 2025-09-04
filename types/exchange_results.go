@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	JC "jxwatcher/core"
 )
@@ -30,6 +31,10 @@ func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 	sc := v["data"]
 	tc := v["data"].(map[string]any)["quote"].([]any)
 
+	st := v["status"]
+	tm := st.(map[string]any)["timestamp"].(string)
+	tx, _ := time.Parse(time.RFC3339Nano, tm)
+
 	for _, rate := range tc {
 
 		if er.validateRate(rate) == false {
@@ -46,6 +51,7 @@ func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 		ex.TargetSymbol = rate.(map[string]any)["symbol"].(string)
 		ex.TargetId = int64(rate.(map[string]any)["cryptoId"].(float64))
 		ex.TargetAmount = rate.(map[string]any)["price"].(float64)
+		ex.Timestamp = tx
 
 		er.Rates = append(er.Rates, ex)
 	}
@@ -57,6 +63,11 @@ func (er *ExchangeResults) validateData(v map[string]any) bool {
 
 	if _, ok := v["data"]; !ok {
 		JC.Logln("Missing 'data' field in exchange results")
+		return false
+	}
+
+	if _, ok := v["status"]; !ok {
+		JC.Logln("Missing 'status' field in exchange results")
 		return false
 	}
 
@@ -102,6 +113,21 @@ func (er *ExchangeResults) validateData(v map[string]any) bool {
 
 	if _, ok := v["data"].(map[string]any)["quote"].([]any); !ok {
 		JC.Logln("Invalid 'quote' field type in 'data'")
+		return false
+	}
+
+	if _, ok := v["status"].(map[string]any)["timestamp"]; !ok {
+		JC.Logln("Missing 'timestamp' field in 'status'")
+		return false
+	}
+
+	if tm, ok := v["status"].(map[string]any)["timestamp"].(string); !ok {
+		JC.Logln("Invalid 'timestamp' field type in 'status'")
+
+		_, err := time.Parse(time.RFC3339Nano, tm)
+		if err != nil {
+			JC.Logln("Invalid 'timestamp' value in 'status'")
+		}
 		return false
 	}
 

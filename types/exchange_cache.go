@@ -7,10 +7,12 @@ import (
 )
 
 var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
+var CMCUpdateThreshold = 1 * time.Minute
 
 type ExchangeDataCacheType struct {
-	data      sync.Map
-	Timestamp time.Time
+	data        sync.Map
+	Timestamp   time.Time
+	LastUpdated *time.Time
 }
 
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
@@ -27,6 +29,7 @@ func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCache
 
 	ec.data.Store(ck, *ex)
 	ec.Timestamp = time.Now()
+	ec.LastUpdated = &ex.Timestamp
 
 	return ec
 }
@@ -60,6 +63,14 @@ func (ec *ExchangeDataCacheType) HasData() bool {
 	})
 
 	return !isEmpty
+}
+
+func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
+	if ec.LastUpdated == nil {
+		return true
+	}
+
+	return time.Now().After(ec.LastUpdated.Add(CMCUpdateThreshold))
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {

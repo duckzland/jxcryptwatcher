@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type ExchangeDataType struct {
 	SourceSymbol string
 	SourceId     int64
@@ -7,4 +9,5 @@ type ExchangeDataType struct {
 	TargetSymbol string
 	TargetId     int64
 	TargetAmount float64
+	Timestamp    time.Time
 }

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"image/color"
 	"os"
 	"os/user"
@@ -205,4 +206,24 @@ func TruncateText(str string, maxWidth float32, fontSize float32) string {
 	}
 
 	return ""
+}
+
+func FormatShortCurrency(value string) string {
+	num, err := strconv.ParseFloat(strings.Replace(value, "$", "", 1), 64)
+	if err != nil {
+		return value // fallback if parsing fails
+	}
+
+	switch {
+	case num >= 1_000_000_000_000:
+		return fmt.Sprintf("$%.2fT", num/1_000_000_000_000)
+	case num >= 1_000_000_000:
+		return fmt.Sprintf("$%.2fB", num/1_000_000_000)
+	case num >= 1_000_000:
+		return fmt.Sprintf("$%.2fM", num/1_000_000)
+	case num >= 1_000:
+		return fmt.Sprintf("$%.2fK", num/1_000)
+	default:
+		return fmt.Sprintf("$%.2f", num)
+	}
 }

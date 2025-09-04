@@ -10,6 +10,7 @@ import (
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
+	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
@@ -48,6 +49,10 @@ func UpdateRates() bool {
 		return false
 	}
 
+	if !JT.ExchangeCache.ShouldRefresh() {
+		return false
+	}
+
 	// Clear cached rates
 	JT.ExchangeCache.Reset()
 
@@ -71,7 +76,7 @@ func UpdateRates() bool {
 		}
 	}
 
-	if len(jb) == 0 {
+	if len(jb) == 0 && JA.AppStatusManager.IsReady() {
 		JC.Notify("No valid panels found. Exchange rates were not updated.")
 		return false
 	}
@@ -95,6 +100,82 @@ func UpdateRates() bool {
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
 	JA.AppStatusManager.EndFetchingRates()
+
+	return true
+}
+
+func UpdateTickers() bool {
+
+	if !JT.Config.IsValidTickers() {
+		JC.Logln("Invalid ticker configuration, cannot refresh tickers")
+		JC.Notify("Unable to refresh tickers: invalid configuration.")
+
+		return false
+	}
+
+	// Updating Cache
+	if JT.TickerCache.ShouldRefresh() {
+		JC.Notify("Fetching the latest ticker data...")
+		JA.AppStatusManager.StartFetchingRates()
+
+		// Clear cached rates
+		JT.TickerCache.Reset()
+
+		rs := int64(0)
+
+		if JA.AppStatusManager.IsValidProKey() {
+			cc := JT.TickerCMC100Fetcher{}
+			rs = cc.GetRate()
+			switch rs {
+			case 401, 429:
+				JA.AppStatusManager.SetCryptoKeyStatus(false)
+			case 200:
+				JA.AppStatusManager.SetCryptoKeyStatus(true)
+			}
+		}
+
+		if JA.AppStatusManager.IsValidProKey() {
+			fg := JT.TickerFearGreedFetcher{}
+			rs = fg.GetRate()
+			switch rs {
+			case 401, 429:
+				JA.AppStatusManager.SetCryptoKeyStatus(false)
+			case 200:
+				JA.AppStatusManager.SetCryptoKeyStatus(true)
+			}
+		}
+
+		if JA.AppStatusManager.IsValidProKey() {
+			mm := JT.TickerMetricsFetcher{}
+			rs = mm.GetRate()
+			switch rs {
+			case 401, 403, 429:
+				JA.AppStatusManager.SetCryptoKeyStatus(false)
+			case 200:
+				JA.AppStatusManager.SetCryptoKeyStatus(true)
+			}
+		}
+
+		if JA.AppStatusManager.IsValidProKey() {
+			lt := JT.TickerListingsFetcher{}
+			rs = lt.GetRate()
+			switch rs {
+			case 401, 429:
+				JA.AppStatusManager.SetCryptoKeyStatus(false)
+			case 200:
+				JA.AppStatusManager.SetCryptoKeyStatus(true)
+			}
+		}
+
+		JA.AppStatusManager.EndFetchingRates()
+		JC.Notify("Ticker data updated successfully")
+	}
+
+	// Refreshing Display
+	list := JT.BT.Get()
+	for _, tkt := range list {
+		tkt.Update()
+	}
 
 	return true
 }
@@ -202,11 +283,19 @@ func OpenSettingForm() {
 
 			if JT.Config.SaveFile() != nil {
 				JC.Notify("Configuration saved successfully.")
+				JA.AppStatusManager.DetectData()
+				if JT.Config.IsValidTickers() {
+					if JT.BT.IsEmpty() {
+						JC.Logln("Rebuilding tickers due to empty ticker list")
+						JT.TickersInit()
+						JC.Tickers = JX.NewTickerGrid()
+					}
+					JA.AppStatusManager.SetCryptoKeyStatus(true)
+					RequestTickersUpdate()
+				}
 			} else {
 				JC.Notify("Failed to save configuration.")
 			}
-
-			JA.AppStatusManager.DetectData()
 		})
 
 		d.Show()
@@ -290,6 +379,18 @@ func StartWorkers() {
 			displayLock.Unlock()
 		}
 	}()
+
+	go func() {
+		var displayLock sync.Mutex
+
+		for range JC.UpdateTickersChan {
+			displayLock.Lock()
+
+			UpdateTickers()
+
+			displayLock.Unlock()
+		}
+	}()
 }
 
 func StartUpdateRatesWorker() {
@@ -297,6 +398,15 @@ func StartUpdateRatesWorker() {
 		for {
 			RequestRateUpdate(false)
 			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
+		}
+	}()
+}
+
+func StartUpdateTickersWorker() {
+	go func() {
+		for {
+			RequestTickersUpdate()
+			time.Sleep(time.Duration(JT.Config.TickerDelay) * time.Second)
 		}
 	}()
 }
@@ -318,6 +428,14 @@ func RequestRateUpdate(debounce bool) {
 		})
 	} else {
 		JC.UpdateRatesChan <- struct{}{}
+	}
+}
+
+func RequestTickersUpdate() {
+	if JT.TickerCache.ShouldRefresh() {
+		JC.MainDebouncer.Call("update_tickers", 1000*time.Millisecond, func() {
+			JC.UpdateTickersChan <- struct{}{}
+		})
 	}
 }
 
@@ -412,6 +530,11 @@ func RegisterActions() {
 			}
 
 			if !JA.AppStatusManager.ValidConfig() {
+				btn.Error()
+				return
+			}
+
+			if !JA.AppStatusManager.IsValidProKey() {
 				btn.Error()
 				return
 			}

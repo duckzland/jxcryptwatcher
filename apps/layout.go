@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
@@ -31,16 +32,13 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	bg.Resize(size)
 
 	topBar := objects[0]
-	content := objects[1]
+	content := objects[2]
 
 	topHeight := topBar.MinSize().Height
 	contentY := topHeight + 2*a.Padding
+
 	newContentWidth := size.Width - 2*a.Padding
 	newContentHeight := size.Height - contentY - 2*a.Padding
-
-	// Update global layout dimensions
-	JC.MainLayoutContentWidth = newContentWidth
-	JC.MainLayoutContentHeight = newContentHeight
 
 	// TopBar layout
 	newTopBarPos := fyne.NewPos(a.Padding, a.Padding)
@@ -50,6 +48,23 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		topBar.Move(newTopBarPos)
 		topBar.Resize(newTopBarSize)
 		topBar.Refresh()
+	}
+
+	// Tickers Layout
+	tickers, ok := objects[1].(*fyne.Container)
+	if ok && len(tickers.Objects) > 0 {
+		tickerHeight := tickers.MinSize().Height
+		newTickersPos := fyne.NewPos(a.Padding, contentY)
+		newTickersSize := fyne.NewSize(newContentWidth, tickerHeight)
+
+		if tickers.Position() != newTickersPos || tickers.Size() != newTickersSize {
+			tickers.Move(newTickersPos)
+			tickers.Resize(newTickersSize)
+			tickers.Refresh()
+		}
+
+		contentY += tickerHeight
+		newContentHeight -= tickerHeight
 	}
 
 	// Content layout
@@ -62,8 +77,12 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		content.Refresh()
 	}
 
-	placeholder := objects[2]
+	placeholder := objects[3]
 	placeholder.Move(fyne.NewPos(0, -JC.PanelHeight))
+
+	// Update global layout dimensions
+	JC.MainLayoutContentWidth = newContentWidth
+	JC.MainLayoutContentHeight = newContentHeight
 
 	AppLayoutManager.MaxOffset = -1
 	AppLayoutManager.ContentTopY = newContentPos.Y
@@ -74,10 +93,15 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	top := objects[0].MinSize()
-	content := objects[1].MinSize()
+	content := objects[2].MinSize()
 
 	width := fyne.Max(top.Width, content.Width) + 2*a.Padding
 	height := top.Height + content.Height + 3*a.Padding
+
+	tickers, ok := objects[1].(*fyne.Container)
+	if ok && len(tickers.Objects) > 0 {
+		height += tickers.MinSize().Height
+	}
 
 	return fyne.NewSize(width, height)
 }
@@ -85,7 +109,9 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 type AppLayout struct {
 	TopBar           *fyne.CanvasObject
 	Content          *fyne.CanvasObject
+	Tickers          *fyne.Container
 	Scroll           *container.Scroll
+	Container        fyne.Container
 	ActionAddPanel   *AppPage
 	ActionFixSetting *AppPage
 	ActionGetCryptos *AppPage
@@ -97,8 +123,17 @@ type AppLayout struct {
 	state            int
 }
 
-func (m *AppLayout) SetContent(container fyne.CanvasObject) {
+func (m *AppLayout) SetPage(container fyne.CanvasObject) {
 	m.Content = &container
+}
+
+func (m *AppLayout) SetTickers(container *fyne.Container) {
+	if container == nil {
+		return
+	}
+	m.Tickers = container
+	m.Container.Objects[1] = container
+	m.RefreshContainer()
 }
 
 func (m *AppLayout) Refresh() {
@@ -132,6 +167,32 @@ func (m *AppLayout) Refresh() {
 	if m.state != currentState {
 		m.RefreshLayout()
 	}
+
+	if AppStatusManager.IsReady() {
+
+		if !AppStatusManager.IsValidProKey() {
+			m.SetTickers(container.NewCenter(
+				widget.NewLabelWithStyle("Please update your CMC Pro API Key in Settings.", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			))
+			return
+		}
+
+		if m.Tickers != nil && m.Tickers != JC.Tickers && AppStatusManager.bad_tickers == false {
+			m.SetTickers(JC.Tickers)
+			return
+		}
+
+		if m.Tickers != nil && m.Tickers == JC.Tickers && AppStatusManager.bad_tickers == true {
+			m.SetTickers(container.NewWithoutLayout())
+			return
+		}
+
+		if m.Tickers == nil && AppStatusManager.bad_tickers == false {
+			m.SetTickers(JC.Tickers)
+			return
+		}
+	}
+
 }
 
 func (m *AppLayout) OffsetY() float32 {
@@ -213,18 +274,33 @@ func (m *AppLayout) SetOffsetY(offset float32) {
 }
 
 func (m *AppLayout) RefreshLayout() {
-	JC.MainDebouncer.Call("refreshing_layout", 5*time.Millisecond, func() {
+	JC.MainDebouncer.Call("refreshing_layout_layout", 5*time.Millisecond, func() {
 		if m.Scroll != nil {
 			fyne.Do(m.Scroll.Refresh)
 		}
 	})
 }
 
-func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) fyne.CanvasObject {
-	manager := &AppLayout{
-		TopBar:  topbar,
-		Content: content,
+func (m *AppLayout) RefreshContainer() {
+	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
+		if m.Scroll != nil {
+			fyne.Do(m.Container.Refresh)
+		}
+	})
+}
+
+func NewAppLayoutManager(topbar *fyne.CanvasObject) fyne.CanvasObject {
+
+	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
+	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+		rect.CornerRadius = JC.PanelBorderRadius
 	}
+
+	manager := &AppLayout{
+		TopBar: topbar,
+	}
+
+	AppLayoutManager = manager
 
 	manager.Loading = NewAppPage(nil, "Loading...", nil)
 	manager.Error = NewAppPage(nil, "Failed to start application...", nil)
@@ -248,21 +324,21 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject, content *fyne.CanvasObject) 
 	manager.Scroll = container.NewVScroll(nil)
 	manager.Refresh()
 
-	AppLayoutManager = manager
+	// Create tickers container
+	manager.Tickers = container.NewWithoutLayout()
 
-	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
-	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.CornerRadius = JC.PanelBorderRadius
-	}
+	// Tracking main container
+	manager.Container = *container.New(
+		&AppMainLayout{
+			Padding: 10,
+		},
+		*manager.TopBar,
+		manager.Tickers,
+		manager.Scroll,
+		DragPlaceholder,
+	)
 
 	return fynetooltip.AddWindowToolTipLayer(
-		container.New(
-			&AppMainLayout{
-				Padding: 10,
-			},
-			*manager.TopBar,
-			manager.Scroll,
-			DragPlaceholder,
-		),
+		&manager.Container,
 		JC.Window.Canvas())
 }
