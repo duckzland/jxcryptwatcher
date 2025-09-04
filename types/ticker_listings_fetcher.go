@@ -43,10 +43,13 @@ func (er *TickerListingsFetcher) CalculateAltcoinIndex() {
 
 		// Stablecoins
 		"USDT": true, "USDC": true, "DAI": true, "TUSD": true, "FDUSD": true,
-		"PYUSD": true, "EURC": true, "GUSD": true,
+		"PYUSD": true, "GUSD": true, "USDe": true, "USDE": true,
+		"USD1": true,
+
+		// "EURC": true,
 
 		// Gold-backed
-		"XAUT": true, "PAXG": true, "DGX": true,
+		//"XAUT": true, "PAXG": true, "DGX": true,
 
 		// Wrapped BTC/ETH variants
 		"WBTC": true, "BTCB": true, "WETH": true, "ETHW": true,
@@ -86,7 +89,7 @@ func (er *TickerListingsFetcher) CalculateAltcoinIndex() {
 		}
 		quote, ok := coin.Quote["USD"]
 		if !ok || quote.PercentChange90d == 0 {
-			continue // Skip if no valid 90d change
+			continue
 		}
 		totalCount++
 		if quote.PercentChange90d > btcChange {

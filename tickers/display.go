@@ -222,8 +222,6 @@ func (h *TickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 
-			JC.Logln("cmc100 index", index, raw)
-
 			if index > 0 {
 				h.background.FillColor = JC.GreenColor
 			} else if index < 0 {
