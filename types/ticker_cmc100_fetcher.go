@@ -16,7 +16,7 @@ type TickerCMC100Fetcher struct {
 
 type TickerCMC100DataFields struct {
 	Value                       float64   `json:"value"`
-	Value24HourPercentageChange float64   `json:"value_24_percentage_change"`
+	Value24HourPercentageChange float64   `json:"value_24h_percentage_change"`
 	LastUpdate                  time.Time `json:"last_update"`
 	NextUpdate                  time.Time `json:"next_update"`
 }

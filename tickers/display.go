@@ -1,6 +1,7 @@
 package tickers
 
 import (
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -163,7 +164,7 @@ func (h *TickerDisplay) updateContent() {
 		h.refStatus.Text = "Loading..."
 		h.refTitle.Hide()
 		h.refContent.Hide()
-		h.background.FillColor = JC.TickerBG
+		h.background.FillColor = JC.PanelBG
 
 	default:
 		h.refTitle.Text = JC.TruncateText(h.title, pwidth-20, h.refTitle.TextSize)
@@ -171,7 +172,66 @@ func (h *TickerDisplay) updateContent() {
 		h.refStatus.Hide()
 		h.refTitle.Show()
 		h.refContent.Show()
+
+		h.background.FillColor = JC.TickerBG
+
+		if pkt.Type == "altcoin_index" {
+			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
+
+			switch {
+			case percentage >= 75:
+				h.background.FillColor = JC.OrangeColor
+			case percentage >= 60:
+				h.background.FillColor = JC.LightOrangeColor
+			case percentage >= 40:
+				h.background.FillColor = JC.LightPurpleColor
+			default:
+				h.background.FillColor = JC.BlueColor
+			}
+		}
+
+		if pkt.Type == "feargreed" {
+			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
+
+			switch {
+			case index >= 75:
+				h.background.FillColor = JC.GreenColor // Extreme Greed
+			case index >= 55:
+				h.background.FillColor = JC.TealGreenColor // Greed
+			case index >= 45:
+				h.background.FillColor = JC.YellowColor // Neutral
+			case index >= 25:
+				h.background.FillColor = JC.OrangeColor // Fear
+			default:
+				h.background.FillColor = JC.RedColor // Extreme Fear
+			}
+		}
+
+		if pkt.Type == "market_cap" {
+			raw := JT.TickerCache.Get("market_cap_24_percentage")
+			index, _ := strconv.ParseFloat(raw, 64)
+
+			if index > 0 {
+				h.background.FillColor = JC.GreenColor // Extreme Greed
+			} else if index < 0 {
+				h.background.FillColor = JC.RedColor
+			}
+		}
+
+		if pkt.Type == "cmc100" {
+			raw := JT.TickerCache.Get("cmc100_24_percentage")
+			index, _ := strconv.ParseFloat(raw, 64)
+
+			JC.Logln("cmc100 index", index, raw)
+
+			if index > 0 {
+				h.background.FillColor = JC.GreenColor
+			} else if index < 0 {
+				h.background.FillColor = JC.RedColor
+			}
+		}
 	}
+
 }
 
 func (h *TickerDisplay) GetTag() string {

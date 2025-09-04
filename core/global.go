@@ -14,9 +14,16 @@ var Window fyne.Window
 
 var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
 var TextColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
-var RedColor color.RGBA = color.RGBA{R: 191, G: 8, B: 8, A: 255}
-var GreenColor color.RGBA = color.RGBA{R: 2, G: 115, B: 78, A: 255}
 var Transparent color.RGBA = color.RGBA{R: 0, G: 0, B: 0, A: 0}
+var RedColor = color.RGBA{R: 220, G: 60, B: 60, A: 255}
+var GreenColor = color.RGBA{R: 28, G: 132, B: 87, A: 255}
+var BlueColor = color.RGBA{R: 60, G: 120, B: 220, A: 255}
+var LightBlueColor = color.RGBA{R: 100, G: 160, B: 230, A: 255}
+var LightPurpleColor = color.RGBA{R: 160, G: 140, B: 200, A: 255}
+var LightOrangeColor = color.RGBA{R: 240, G: 160, B: 100, A: 255}
+var OrangeColor = color.RGBA{R: 230, G: 120, B: 60, A: 255}
+var YellowColor = color.RGBA{R: 240, G: 210, B: 80, A: 255}
+var TealGreenColor = color.RGBA{R: 40, G: 170, B: 140, A: 255}
 
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelPlaceholderBG color.RGBA = color.RGBA{R: 20, G: 22, B: 30, A: 200}

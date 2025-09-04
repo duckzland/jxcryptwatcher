@@ -102,7 +102,7 @@ func TickersInit() {
 		BT.Add(&TickerDataType{
 			Title:  "Fear & Greed",
 			Type:   "feargreed",
-			Format: "nodecimal",
+			Format: "percentage",
 		})
 	}
 }

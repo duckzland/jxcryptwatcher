@@ -27,6 +27,7 @@ type TickerMetricsQuoteFields struct {
 
 type TickerMetricsQuoteUSDFields struct {
 	MarketCap float64 `json:"total_market_cap"`
+	Change24h float64 `json:"derivatives_24h_percentage_change"`
 }
 
 func (er *TickerMetricsFetcher) GetRate() int64 {
@@ -96,8 +97,10 @@ func (er *TickerMetricsFetcher) GetRate() int64 {
 	}
 
 	mc := strconv.FormatFloat(er.Data.Quote.USD.MarketCap, 'f', 0, 64)
+	md := strconv.FormatFloat(er.Data.Quote.USD.Change24h, 'f', 0, 64)
 
 	TickerCache.Insert("market_cap", mc, er.Data.NextUpdate)
+	TickerCache.Insert("market_cap_24_percentage", md, er.Data.NextUpdate)
 
 	JC.PrintMemUsage("End fetching Metrics data")
 
