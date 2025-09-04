@@ -121,50 +121,24 @@ func UpdateTickers() bool {
 		// Clear cached rates
 		JT.TickerCache.Reset()
 
-		rs := int64(0)
-
 		if JA.AppStatusManager.IsValidProKey() {
 			cc := JT.TickerCMC100Fetcher{}
-			rs = cc.GetRate()
-			switch rs {
-			case 401, 429:
-				JA.AppStatusManager.SetCryptoKeyStatus(false)
-			case 200:
-				JA.AppStatusManager.SetCryptoKeyStatus(true)
-			}
+			DetectProKeyValidityViaHTTPResponse(cc.GetRate())
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			fg := JT.TickerFearGreedFetcher{}
-			rs = fg.GetRate()
-			switch rs {
-			case 401, 429:
-				JA.AppStatusManager.SetCryptoKeyStatus(false)
-			case 200:
-				JA.AppStatusManager.SetCryptoKeyStatus(true)
-			}
+			DetectProKeyValidityViaHTTPResponse(fg.GetRate())
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			mm := JT.TickerMetricsFetcher{}
-			rs = mm.GetRate()
-			switch rs {
-			case 401, 403, 429:
-				JA.AppStatusManager.SetCryptoKeyStatus(false)
-			case 200:
-				JA.AppStatusManager.SetCryptoKeyStatus(true)
-			}
+			DetectProKeyValidityViaHTTPResponse(mm.GetRate())
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			lt := JT.TickerListingsFetcher{}
-			rs = lt.GetRate()
-			switch rs {
-			case 401, 429:
-				JA.AppStatusManager.SetCryptoKeyStatus(false)
-			case 200:
-				JA.AppStatusManager.SetCryptoKeyStatus(true)
-			}
+			DetectProKeyValidityViaHTTPResponse(lt.GetRate())
 		}
 
 		JA.AppStatusManager.EndFetchingRates()
@@ -178,6 +152,18 @@ func UpdateTickers() bool {
 	}
 
 	return true
+}
+
+func DetectProKeyValidityViaHTTPResponse(rs int64) bool {
+	switch rs {
+	case 401, 403, 429:
+		JA.AppStatusManager.SetCryptoKeyStatus(false)
+	case 200:
+		JA.AppStatusManager.SetCryptoKeyStatus(true)
+		return true
+	}
+
+	return false
 }
 
 func ValidateCache() bool {
