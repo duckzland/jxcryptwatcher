@@ -33,6 +33,8 @@ type PanelGridLayout struct {
 	dirty        bool
 }
 
+var ForceLayoutRefresh bool = false
+
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
@@ -40,13 +42,14 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	if g.cWidth == size.Width && g.objectCount == len(objects) {
+	if g.cWidth == size.Width && g.objectCount == len(objects) && !ForceLayoutRefresh {
 		return
 	}
 
 	g.cWidth = size.Width
 	g.objectCount = len(objects)
 	g.dirty = true
+	ForceLayoutRefresh = false
 
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom

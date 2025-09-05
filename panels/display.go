@@ -473,6 +473,9 @@ func (h *PanelDisplay) snapToNearest() {
 		return
 	}
 
+	// Break the cached layout
+	ForceLayoutRefresh = true
+
 	Grid.Objects = h.reorder(targetIndex)
 	Grid.Refresh()
 
@@ -541,6 +544,9 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 
 func (h *PanelDisplay) syncPanelData() bool {
 	nd := []*JT.PanelDataType{}
+
+	// Break the cached layout
+	ForceLayoutRefresh = true
 
 	for _, obj := range Grid.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
