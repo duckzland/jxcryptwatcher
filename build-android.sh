@@ -83,6 +83,7 @@ release="true"
 ## Note: must have at least -pthread
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+androidXMLDebug="false"
 
 ## Debugging options, you will need to set -release to false
 if [[ $1 == "debug" ]]; then
@@ -92,6 +93,8 @@ if [[ $1 == "debug" ]]; then
     # Use simpler flags for debugging
     cflags="-pipe -Wall -pthread"
     cldflags="-pthread"
+    
+    androidXMLDebug="true"
 
     echo_start "Debug mode enabled: building with debug flags"
 fi
@@ -120,7 +123,7 @@ cat > AndroidManifest.xml <<EOF
         android:maxSdkVersion="29" />
 
     <!-- Application block -->
-    <application android:label="$name">
+    <application android:label="$name" android:debuggable="$androidXMLDebug">
         <activity
             android:name="org.golang.app.GoNativeActivity"
             android:label="$name"
