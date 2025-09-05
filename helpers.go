@@ -409,7 +409,7 @@ func OpenSettingForm() {
 					JA.AppStatusManager.SetTickerConfigStatus(true)
 					JA.AppStatusManager.SetRatesConfigStatus(true)
 
-					JT.TickerCache.Reset()
+					JT.TickerCache.LastUpdated = nil
 					RequestTickersUpdate()
 				}
 			} else {
@@ -596,8 +596,16 @@ func RegisterActions() {
 	// Refresh exchange rates
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange",
 		func(btn *JW.HoverCursorIconButton) {
-			go RequestRateUpdate(true)
-			go RequestTickersUpdate()
+			go func() {
+				// Force update
+				JT.ExchangeCache.LastUpdated = nil
+				RequestRateUpdate(true)
+			}()
+
+			go func() {
+				JT.TickerCache.LastUpdated = nil
+				RequestTickersUpdate()
+			}()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
