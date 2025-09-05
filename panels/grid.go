@@ -27,6 +27,10 @@ type PanelGridLayout struct {
 	ColCount     int
 	RowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
+	objectCount  int
+	cWidth       float32
+	minSize      fyne.Size
+	dirty        bool
 }
 
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -35,6 +39,14 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() <= 0 || JA.AppLayoutManager.Height() <= 0 {
 		return
 	}
+
+	if g.cWidth == size.Width && g.objectCount == len(objects) {
+		return
+	}
+
+	g.cWidth = size.Width
+	g.objectCount = len(objects)
+	g.dirty = true
 
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
@@ -163,6 +175,10 @@ func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 
 func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
+	if !g.dirty {
+		return g.minSize
+	}
+
 	rows := max(g.RowCount, 1)
 	width := g.DynCellSize.Width
 	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
@@ -172,7 +188,8 @@ func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 		width -= 16
 	}
 
-	return fyne.NewSize(width, height)
+	g.minSize = fyne.NewSize(width, height)
+	return g.minSize
 }
 
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject

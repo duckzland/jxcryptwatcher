@@ -18,8 +18,8 @@ type TickerGridLayout struct {
 	RowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
 	cWidth       float32
-	aWidth       float32
 	minSize      fyne.Size
+	dirty        bool
 }
 
 func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -40,7 +40,7 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	g.cWidth = size.Width
-	g.aWidth = JA.AppLayoutManager.Container.Size().Width
+	g.dirty = true
 
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
@@ -140,16 +140,18 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	// App has the same width as last time, just give cached size!
-	if g.aWidth == JA.AppLayoutManager.Container.Size().Width {
+	if !g.dirty {
 		return g.minSize
 	}
 
+	g.dirty = false
+
 	// This calculation is not accurate as the Layout one.
 	// Use this only for approx. calculation of width and height
-	g.aWidth = JA.AppLayoutManager.Container.Size().Width
+	aWidth := JA.AppLayoutManager.Container.Size().Width
 
 	// Make the same logic as in Layout
-	c := int(math.Floor(float64(g.aWidth) / float64(g.DynCellSize.Width)))
+	c := int(math.Floor(float64(aWidth) / float64(g.DynCellSize.Width)))
 
 	switch len(objects) {
 	case 4:
