@@ -114,6 +114,11 @@ func UpdateTickers() bool {
 	}
 
 	// Updating Cache
+	cmc100HasError := false
+	feargreedHasError := false
+	metricsHasError := false
+	listingsHasError := false
+
 	if JT.TickerCache.ShouldRefresh() {
 		JC.Notify("Fetching the latest ticker data...")
 		JA.AppStatusManager.StartFetchingRates()
@@ -123,32 +128,78 @@ func UpdateTickers() bool {
 
 		if JA.AppStatusManager.IsValidProKey() {
 			cc := JT.TickerCMC100Fetcher{}
-			DetectProKeyValidityViaHTTPResponse(cc.GetRate())
+			if !DetectProKeyValidityViaHTTPResponse(cc.GetRate()) {
+				cmc100HasError = true
+			}
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			fg := JT.TickerFearGreedFetcher{}
-			DetectProKeyValidityViaHTTPResponse(fg.GetRate())
+			if !DetectProKeyValidityViaHTTPResponse(fg.GetRate()) {
+				feargreedHasError = true
+			}
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			mm := JT.TickerMetricsFetcher{}
-			DetectProKeyValidityViaHTTPResponse(mm.GetRate())
+			if !DetectProKeyValidityViaHTTPResponse(mm.GetRate()) {
+				metricsHasError = true
+			}
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
 			lt := JT.TickerListingsFetcher{}
-			DetectProKeyValidityViaHTTPResponse(lt.GetRate())
+			if !DetectProKeyValidityViaHTTPResponse(lt.GetRate()) {
+				listingsHasError = true
+			}
 		}
 
 		JA.AppStatusManager.EndFetchingRates()
-		JC.Notify("Ticker data updated successfully")
+		if !cmc100HasError && !feargreedHasError && !metricsHasError && !listingsHasError {
+			JC.Notify("Ticker data updated successfully")
+		} else {
+			JC.Notify("Please check your settings and network connection.")
+
+			go func() {
+				time.Sleep(50 * time.Millisecond)
+				fyne.Do(JA.AppActionManager.GetButton("open_settings").Error)
+			}()
+		}
 	}
 
 	// Refreshing Display
 	list := JT.BT.Get()
 	for _, tkt := range list {
-		tkt.Update()
+		switch tkt.Type {
+		case "cmc100":
+			if cmc100HasError {
+				tkt.Set("-1")
+				tkt.Status = -1
+			} else {
+				tkt.Update()
+			}
+		case "feargreed":
+			if feargreedHasError {
+				tkt.Set("-1")
+				tkt.Status = -1
+			} else {
+				tkt.Update()
+			}
+		case "market_cap":
+			if metricsHasError {
+				tkt.Set("-1")
+				tkt.Status = -1
+			} else {
+				tkt.Update()
+			}
+		case "altcoin_index":
+			if listingsHasError {
+				tkt.Set("-1")
+				tkt.Status = -1
+			} else {
+				tkt.Update()
+			}
+		}
 	}
 
 	return true
@@ -277,6 +328,7 @@ func OpenSettingForm() {
 						JC.Tickers = JX.NewTickerGrid()
 					}
 					JA.AppStatusManager.SetCryptoKeyStatus(true)
+					JT.TickerCache.Reset()
 					RequestTickersUpdate()
 				}
 			} else {

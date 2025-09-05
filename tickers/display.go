@@ -160,8 +160,16 @@ func (h *TickerDisplay) updateContent() {
 	}
 
 	switch pkt.Status {
+	case -1:
+		h.refStatus.Text = "Error loading data"
+		h.refStatus.Show()
+		h.refTitle.Hide()
+		h.refContent.Hide()
+		h.background.FillColor = JC.ErrorColor
+
 	case 0:
 		h.refStatus.Text = "Loading..."
+		h.refStatus.Show()
 		h.refTitle.Hide()
 		h.refContent.Hide()
 		h.background.FillColor = JC.PanelBG

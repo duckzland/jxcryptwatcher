@@ -14,6 +14,7 @@ var Window fyne.Window
 
 var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
 var TextColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
+var ErrorColor color.RGBA = color.RGBA{R: 198, G: 40, B: 40, A: 255}
 var Transparent color.RGBA = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 var RedColor = color.RGBA{R: 133, G: 36, B: 36, A: 255}
 var GreenColor = color.RGBA{R: 22, G: 106, B: 69, A: 255}

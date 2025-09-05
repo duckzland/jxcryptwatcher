@@ -12,6 +12,7 @@ import (
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
 	JC "jxwatcher/core"
+	JT "jxwatcher/types"
 )
 
 type AppMainLayout struct {
@@ -26,16 +27,12 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	JC.Logln("** AppMainLayout Layout ", size.Width, "x", size.Height)
-
 	// Background setup
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(size)
 	bg.Resize(size)
 
 	topBar := objects[0]
-	content := objects[2]
-
 	topHeight := topBar.MinSize().Height
 	contentY := topHeight + 2*a.Padding
 
@@ -47,10 +44,8 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	newTopBarSize := fyne.NewSize(newContentWidth, topHeight)
 
 	if topBar.Position() != newTopBarPos || topBar.Size() != newTopBarSize {
-		JC.Logln("** AppMainLayout TopBar Layout ", newTopBarPos.X, "x", newTopBarPos.Y, " ", newTopBarSize.Width, "x", newTopBarSize.Height)
 		topBar.Move(newTopBarPos)
 		topBar.Resize(newTopBarSize)
-		topBar.Refresh()
 	}
 
 	// Tickers Layout
@@ -70,6 +65,7 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	// Content layout
+	content := objects[2]
 	newContentPos := fyne.NewPos(a.Padding, contentY)
 	newContentSize := fyne.NewSize(newContentWidth, newContentHeight)
 
@@ -172,9 +168,16 @@ func (m *AppLayout) Refresh() {
 	if AppStatusManager.IsReady() {
 
 		if !AppStatusManager.IsValidProKey() {
-			m.SetTickers(container.NewCenter(
-				widget.NewLabelWithStyle("Please update your CMC Pro API Key in Settings.", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-			))
+			if m.Tickers == nil || m.Tickers == JC.Tickers {
+				m.SetTickers(container.NewCenter(
+					widget.NewLabelWithStyle("Please update your CMC Pro API Key in Settings.", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+				))
+			}
+
+			if !JT.BT.IsEmpty() {
+				JT.BT.Reset()
+			}
+
 			return
 		}
 
@@ -285,7 +288,6 @@ func (m *AppLayout) RefreshLayout() {
 func (m *AppLayout) RefreshContainer() {
 	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
 		fyne.Do(m.Container.Refresh)
-		JC.Logln("== Refreshing Container")
 	})
 }
 

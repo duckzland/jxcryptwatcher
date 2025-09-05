@@ -71,6 +71,18 @@ func (pc *TickersMapType) IsEmpty() bool {
 	return len(pc.Data) == 0
 }
 
+func (pc *TickersMapType) Reset() {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for i, tdt := range pc.Data {
+		tdt.Set("")
+		tdt.Status = 0
+
+		pc.Data[i] = tdt
+	}
+}
+
 func TickersInit() {
 	BT.Init()
 
