@@ -173,14 +173,14 @@ func (er *ExchangeResults) validateRate(rate any) bool {
 	return true
 }
 
-func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
+func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	JC.PrintMemUsage("Start fetching exchange rates")
 
 	rko := strings.Split(rk, "|")
 
 	if len(rko) != 2 {
-		return nil
+		return -1
 	}
 
 	sid := rko[0]
@@ -198,7 +198,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 
 	// Seems all the query is cached don't invoke http request
 	if len(rkv) == 0 {
-		return nil
+		return 0
 	}
 
 	tid := strings.Join(rkv, ",")
@@ -208,7 +208,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 
 	if err != nil {
 		JC.Logln("Error encountered:", err)
-		return nil
+		return -2
 	}
 
 	q := url.Values{}
@@ -219,18 +219,34 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	req.URL.RawQuery = q.Encode()
 
 	// Debug
-	JC.Logf("Fetching data from %v", req.URL.RawQuery)
+	// JC.Logf("Fetching data from %v", req.URL.RawQuery)
+	JC.Logf("Fetching data from %v?%v", req.URL, req.URL.RawQuery)
 
 	resp, err := client.Do(req)
 	if err != nil {
 		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
 		JC.Logln(wrappedErr)
-		return nil
+		return -3
 	} else {
 		// JC.Log("Fetched exchange data from CMC:", req.URL.RawQuery)
 	}
 
 	defer resp.Body.Close()
+
+	// Handle HTTP status codes
+	switch resp.StatusCode {
+	case 401:
+		JC.Logln(fmt.Sprintf("Error %d: Unauthorized", resp.StatusCode))
+		return 401
+	case 429:
+		JC.Logln(fmt.Sprintf("Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode))
+		return 429
+	case 200:
+		// return 200
+	default:
+		JC.Logln(fmt.Sprintf("Error %d: Request failed", resp.StatusCode))
+		return int64(resp.StatusCode)
+	}
 
 	c := resp.Body
 
@@ -253,7 +269,7 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 	decoder := json.NewDecoder(c)
 	if err := decoder.Decode(er); err != nil {
 		JC.Logln(fmt.Errorf("Failed to examine exchange data: %w", err))
-		return nil
+		return -4
 	}
 
 	// Cache the result
@@ -267,5 +283,5 @@ func (er *ExchangeResults) GetRate(rk string) *ExchangeResults {
 
 	JC.PrintMemUsage("End fetching exchange rates")
 
-	return er
+	return 200
 }

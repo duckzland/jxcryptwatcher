@@ -85,17 +85,45 @@ func UpdateRates() bool {
 
 	JA.AppStatusManager.StartFetchingRates()
 
+	hasError := 0
+
 	// Fetching with delay
 	for _, rk := range jb {
-		ex.GetRate(rk)
+		rs := ex.GetRate(rk)
 
-		RequestDisplayUpdate(false)
+		switch rs {
+		case -1:
+			// Invalid request key
+		case -2, -3, -4:
+			JC.Notify("Please check your settings and network connection.")
+			if hasError == 0 {
+				hasError = 1
+			}
+
+		case 0, 200:
+			RequestDisplayUpdate(false)
+
+		case 401, 403, 429:
+			if hasError == 0 {
+				hasError = 2
+			}
+		}
 
 		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	JC.Notify("Exchange rates updated successfully")
+	switch hasError {
+	case 0:
+		JC.Notify("Exchange rates updated successfully")
+		JA.AppStatusManager.SetRatesConfigStatus(true)
+	case 1:
+		JC.Notify("Please check your settings and network connection.")
+		JA.AppStatusManager.SetRatesConfigStatus(false)
+	case 2:
+		JC.Notify("Please check your settings.")
+		JA.AppStatusManager.SetRatesConfigStatus(false)
+	}
 
 	JC.Logf("Exchange Rate updated: %v/%v", len(jb), len(list))
 
@@ -108,7 +136,10 @@ func UpdateTickers() bool {
 
 	if !JT.Config.IsValidTickers() {
 		JC.Logln("Invalid ticker configuration, cannot refresh tickers")
-		JC.Notify("Unable to refresh tickers: invalid configuration.")
+
+		if JA.AppStatusManager.IsReady() {
+			JC.Notify("Unable to refresh tickers: invalid configuration.")
+		}
 
 		return false
 	}
@@ -157,10 +188,10 @@ func UpdateTickers() bool {
 		JA.AppStatusManager.EndFetchingRates()
 		if !cmc100HasError && !feargreedHasError && !metricsHasError && !listingsHasError {
 			JC.Notify("Ticker data updated successfully")
-			JA.AppStatusManager.SetConfigStatus(true)
+			JA.AppStatusManager.SetTickerConfigStatus(true)
 		} else {
 			JC.Notify("Please check your settings and network connection.")
-			JA.AppStatusManager.SetConfigStatus(false)
+			JA.AppStatusManager.SetTickerConfigStatus(false)
 		}
 	}
 
@@ -324,8 +355,11 @@ func OpenSettingForm() {
 						JT.TickersInit()
 						JC.Tickers = JX.NewTickerGrid()
 					}
+
 					JA.AppStatusManager.SetCryptoKeyStatus(true)
-					JA.AppStatusManager.SetConfigStatus(true)
+					JA.AppStatusManager.SetTickerConfigStatus(true)
+					JA.AppStatusManager.SetRatesConfigStatus(true)
+
 					JT.TickerCache.Reset()
 					RequestTickersUpdate()
 				}
@@ -542,6 +576,11 @@ func RegisterActions() {
 				return
 			}
 
+			if !JA.AppStatusManager.IsValidRatesConfig() {
+				btn.Error()
+				return
+			}
+
 			if JA.AppStatusManager.IsFetchingRates() {
 				btn.Progress()
 				return
@@ -572,6 +611,11 @@ func RegisterActions() {
 			}
 
 			if !JA.AppStatusManager.IsValidTickerConfig() {
+				btn.Error()
+				return
+			}
+
+			if !JA.AppStatusManager.IsValidRatesConfig() {
 				btn.Error()
 				return
 			}

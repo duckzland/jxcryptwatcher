@@ -22,6 +22,7 @@ type AppStatus struct {
 	panels_count        int
 	valid_pro_key       bool
 	valid_ticker_config bool
+	valid_rates_config  bool
 	lastChange          time.Time
 	lastRefresh         time.Time
 }
@@ -37,6 +38,7 @@ func (a *AppStatus) Init() {
 	a.panels_count = 0
 	a.valid_pro_key = true
 	a.valid_ticker_config = true
+	a.valid_rates_config = true
 	a.lastChange = time.Now()
 }
 
@@ -62,6 +64,10 @@ func (a *AppStatus) IsValidProKey() bool {
 
 func (a *AppStatus) IsValidTickerConfig() bool {
 	return a.valid_ticker_config == true
+}
+
+func (a *AppStatus) IsValidRatesConfig() bool {
+	return a.valid_rates_config == true
 }
 
 func (a *AppStatus) IsDirty() bool {
@@ -158,10 +164,21 @@ func (a *AppStatus) SetCryptoKeyStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
+func (a *AppStatus) SetTickerConfigStatus(status bool) *AppStatus {
 
 	if status != a.valid_ticker_config {
 		a.valid_ticker_config = status
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
+func (a *AppStatus) SetRatesConfigStatus(status bool) *AppStatus {
+
+	if status != a.valid_rates_config {
+		a.valid_rates_config = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
