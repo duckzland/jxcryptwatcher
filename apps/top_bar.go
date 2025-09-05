@@ -13,19 +13,33 @@ type TopBarLayout struct {
 	fixedWidth float32
 	spacer     float32
 	rows       int
+	cWidth     float32
+	minSize    fyne.Size
+	dirty      bool
 }
 
 func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	// Apps is not ready yet!
+	if AppLayoutManager == nil || AppLayoutManager.Container.Size().Width <= 0 || AppLayoutManager.Container.Size().Height <= 0 {
+		return
+	}
+
 	count := len(objects)
 	if count == 0 {
 		return
 	}
 
-	// First object fills the rest of the space
-	remaining := size.Width - (s.fixedWidth+s.spacer)*float32(count-1)
+	if s.cWidth == size.Width {
+		return
+	}
 
+	s.cWidth = size.Width
+	s.dirty = true
 	s.rows = 1
-	xh := size.Height / 2
+
+	// First object fills the rest of the space
+	remaining := s.cWidth - (s.fixedWidth+s.spacer)*float32(count-1)
 
 	if remaining < 500 {
 
@@ -41,8 +55,8 @@ func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 			switch i {
 			case 0:
-				w = size.Width
-				y = xh + s.spacer
+				w = s.cWidth
+				y = s.fixedWidth + s.spacer
 				curPos = 0
 
 			case 1:
@@ -52,11 +66,12 @@ func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 				curPos += w + s.spacer
 			}
 
-			obj.Resize(fyne.NewSize(w, xh))
+			obj.Resize(fyne.NewSize(w, s.fixedWidth))
 			obj.Move(fyne.NewPos(curPos, y))
 		}
 
 	} else {
+
 		// Layout objects
 		curPos := float32(0)
 		for i, obj := range objects {
@@ -67,7 +82,7 @@ func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 				w = s.fixedWidth
 			}
 
-			obj.Resize(fyne.NewSize(w, size.Height))
+			obj.Resize(fyne.NewSize(w, s.fixedWidth))
 			obj.Move(fyne.NewPos(curPos, 0))
 
 			curPos += w + s.spacer
@@ -76,19 +91,28 @@ func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (s *TopBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	var maxHeight float32
-	for _, obj := range objects {
-		h := obj.MinSize().Height
-		if h > maxHeight {
-			maxHeight = h
-		}
-	}
-	width := s.fixedWidth*float32(len(objects)-1) + 400
-	if s.rows > 1 {
-		maxHeight = float32(s.rows)*maxHeight + s.spacer
+	if !s.dirty {
+		return s.minSize
 	}
 
-	return fyne.NewSize(width, maxHeight)
+	s.dirty = false
+	count := len(objects)
+	remaining := s.cWidth - (s.fixedWidth+s.spacer)*float32(count-1)
+	rows := 1
+	maxHeight := s.fixedWidth
+
+	if remaining < 500 {
+		rows = 2
+	}
+
+	width := s.fixedWidth*float32(len(objects)-1) + 400
+	if s.rows > 1 {
+		maxHeight = float32(rows)*maxHeight + s.spacer
+	}
+
+	s.minSize = fyne.NewSize(width, maxHeight)
+
+	return s.minSize
 }
 
 func NewTopBar() fyne.CanvasObject {

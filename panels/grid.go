@@ -36,7 +36,7 @@ type PanelGridLayout struct {
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() <= 0 || JA.AppLayoutManager.Height() <= 0 {
+	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Container.Size().Width <= 0 || JA.AppLayoutManager.Container.Size().Height <= 0 {
 		return
 	}
 
@@ -56,11 +56,13 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.DynCellSize = g.MinCellSize
 	DragDropZones = []*PanelDropZone{}
 
+	sw := size.Width
+
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
 	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
 	if th > JA.AppLayoutManager.Height() {
-		size.Width -= 18
+		sw -= 18
 	}
 
 	// Screen is too small for min width
@@ -68,8 +70,8 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		g.MinCellSize.Width = JA.AppLayoutManager.Width() - hPad
 	}
 
-	if size.Width > g.MinCellSize.Width {
-		g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+	if sw > g.MinCellSize.Width {
+		g.ColCount = int(math.Floor(float64(sw+hPad) / float64(g.MinCellSize.Width+hPad)))
 
 		pads := float32(0)
 		for i := 0; i < g.ColCount; i++ {
@@ -86,7 +88,7 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			}
 		}
 
-		emptySpace := size.Width - (float32(g.ColCount) * g.MinCellSize.Width) - pads
+		emptySpace := sw - (float32(g.ColCount) * g.MinCellSize.Width) - pads
 		if emptySpace > 0 {
 			g.DynCellSize.Width += emptySpace / float32(g.ColCount)
 		}
@@ -189,6 +191,7 @@ func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	}
 
 	g.minSize = fyne.NewSize(width, height)
+
 	return g.minSize
 }
 

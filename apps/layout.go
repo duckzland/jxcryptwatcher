@@ -26,6 +26,8 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
+	JC.Logln("** AppMainLayout Layout ", size.Width, "x", size.Height)
+
 	// Background setup
 	bg := canvas.NewRectangle(JC.AppBG)
 	bg.SetMinSize(size)
@@ -45,8 +47,10 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	newTopBarSize := fyne.NewSize(newContentWidth, topHeight)
 
 	if topBar.Position() != newTopBarPos || topBar.Size() != newTopBarSize {
+		JC.Logln("** AppMainLayout TopBar Layout ", newTopBarPos.X, "x", newTopBarPos.Y, " ", newTopBarSize.Width, "x", newTopBarSize.Height)
 		topBar.Move(newTopBarPos)
 		topBar.Resize(newTopBarSize)
+		topBar.Refresh()
 	}
 
 	// Tickers Layout

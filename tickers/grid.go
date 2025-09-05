@@ -139,6 +139,9 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
+	// This calculation is not accurate as the Layout one.
+	// Use this only for approx. calculation of width and height
+
 	// App has the same width as last time, just give cached size!
 	if !g.dirty {
 		return g.minSize
@@ -146,8 +149,7 @@ func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	g.dirty = false
 
-	// This calculation is not accurate as the Layout one.
-	// Use this only for approx. calculation of width and height
+	// Using main container width instead of the cached size.width
 	aWidth := JA.AppLayoutManager.Container.Size().Width
 
 	// Make the same logic as in Layout
