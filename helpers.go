@@ -157,13 +157,10 @@ func UpdateTickers() bool {
 		JA.AppStatusManager.EndFetchingRates()
 		if !cmc100HasError && !feargreedHasError && !metricsHasError && !listingsHasError {
 			JC.Notify("Ticker data updated successfully")
+			JA.AppStatusManager.SetConfigStatus(true)
 		} else {
 			JC.Notify("Please check your settings and network connection.")
-
-			go func() {
-				time.Sleep(50 * time.Millisecond)
-				fyne.Do(JA.AppActionManager.GetButton("open_settings").Error)
-			}()
+			JA.AppStatusManager.SetConfigStatus(false)
 		}
 	}
 
@@ -328,6 +325,7 @@ func OpenSettingForm() {
 						JC.Tickers = JX.NewTickerGrid()
 					}
 					JA.AppStatusManager.SetCryptoKeyStatus(true)
+					JA.AppStatusManager.SetConfigStatus(true)
 					JT.TickerCache.Reset()
 					RequestTickersUpdate()
 				}
@@ -569,6 +567,11 @@ func RegisterActions() {
 			}
 
 			if !JA.AppStatusManager.ValidConfig() {
+				btn.Error()
+				return
+			}
+
+			if !JA.AppStatusManager.IsValidTickerConfig() {
 				btn.Error()
 				return
 			}

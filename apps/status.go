@@ -10,19 +10,20 @@ import (
 var AppStatusManager *AppStatus = &AppStatus{}
 
 type AppStatus struct {
-	ready            bool
-	bad_config       bool
-	bad_cryptos      bool
-	bad_tickers      bool
-	no_panels        bool
-	allow_dragging   bool
-	fetching_cryptos bool
-	fetching_rates   bool
-	is_dirty         bool
-	panels_count     int
-	valid_pro_key    bool
-	lastChange       time.Time
-	lastRefresh      time.Time
+	ready               bool
+	bad_config          bool
+	bad_cryptos         bool
+	bad_tickers         bool
+	no_panels           bool
+	allow_dragging      bool
+	fetching_cryptos    bool
+	fetching_rates      bool
+	is_dirty            bool
+	panels_count        int
+	valid_pro_key       bool
+	valid_ticker_config bool
+	lastChange          time.Time
+	lastRefresh         time.Time
 }
 
 func (a *AppStatus) Init() {
@@ -35,6 +36,7 @@ func (a *AppStatus) Init() {
 	a.is_dirty = false
 	a.panels_count = 0
 	a.valid_pro_key = true
+	a.valid_ticker_config = true
 	a.lastChange = time.Now()
 }
 
@@ -56,6 +58,10 @@ func (a *AppStatus) IsFetchingRates() bool {
 
 func (a *AppStatus) IsValidProKey() bool {
 	return a.valid_pro_key == true
+}
+
+func (a *AppStatus) IsValidTickerConfig() bool {
+	return a.valid_ticker_config == true
 }
 
 func (a *AppStatus) IsDirty() bool {
@@ -145,6 +151,17 @@ func (a *AppStatus) SetCryptoKeyStatus(status bool) *AppStatus {
 
 	if status != a.valid_pro_key {
 		a.valid_pro_key = status
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
+func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
+
+	if status != a.valid_ticker_config {
+		a.valid_ticker_config = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
