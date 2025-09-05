@@ -50,6 +50,7 @@ func UpdateRates() bool {
 	}
 
 	if !JT.ExchangeCache.ShouldRefresh() {
+		JC.Logln("Unable to refresh rates: not cleared should refresh yet.")
 		return false
 	}
 
@@ -76,8 +77,10 @@ func UpdateRates() bool {
 		}
 	}
 
-	if len(jb) == 0 && JA.AppStatusManager.IsReady() {
-		JC.Notify("No valid panels found. Exchange rates were not updated.")
+	if len(jb) == 0 {
+		if JA.AppStatusManager.IsReady() {
+			JC.Notify("No valid panels found. Exchange rates were not updated.")
+		}
 		return false
 	}
 
@@ -85,41 +88,58 @@ func UpdateRates() bool {
 
 	JA.AppStatusManager.StartFetchingRates()
 
-	hasError := 0
+	var hasError int = 0
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 
-	// Fetching with delay
+	wg.Add(len(jb))
+
 	for _, rk := range jb {
-		rs := ex.GetRate(rk)
 
-		switch rs {
-		case -1:
-			// Invalid request key
-		case -2, -3, -4:
-			JC.Notify("Please check your settings and network connection.")
-			if hasError == 0 {
-				hasError = 1
+		go func(rk string) {
+			defer wg.Done()
+
+			rs := ex.GetRate(rk)
+
+			mu.Lock()
+			switch rs {
+			case -1:
+				// Invalid request key
+			case -5, -6, -7:
+				if hasError == 0 {
+					hasError = 2
+				}
+
+			case -2, -3, -4, -8:
+				if hasError == 0 {
+					hasError = 1
+				}
+
+			case 0, 200:
+				RequestDisplayUpdate(false)
+
+			case 401, 403, 429:
+				if hasError == 0 {
+					hasError = 2
+				}
 			}
 
-		case 0, 200:
-			RequestDisplayUpdate(false)
+			mu.Unlock()
+		}(rk)
 
-		case 401, 403, 429:
-			if hasError == 0 {
-				hasError = 2
-			}
-		}
-
-		// Give pause to prevent too many connection open at once
 		time.Sleep(200 * time.Millisecond)
 	}
+
+	wg.Wait()
 
 	switch hasError {
 	case 0:
 		JC.Notify("Exchange rates updated successfully")
-		JA.AppStatusManager.SetRatesConfigStatus(true)
+		RequestDisplayUpdate(false)
+		JA.AppStatusManager.SetRatesNetworkStatus(true)
 	case 1:
-		JC.Notify("Please check your settings and network connection.")
-		JA.AppStatusManager.SetRatesConfigStatus(false)
+		JC.Notify("Please check your network connection.")
+		JA.AppStatusManager.SetRatesNetworkStatus(false)
 	case 2:
 		JC.Notify("Please check your settings.")
 		JA.AppStatusManager.SetRatesConfigStatus(false)
@@ -145,52 +165,84 @@ func UpdateTickers() bool {
 	}
 
 	// Updating Cache
-	cmc100HasError := false
-	feargreedHasError := false
-	metricsHasError := false
-	listingsHasError := false
+	var cmc100Status int = -1
+	var feargreedStatus int = -1
+	var metricsStatus int = -1
+	var listingsStatus int = -1
 
 	if JT.TickerCache.ShouldRefresh() {
+		var wg sync.WaitGroup
+
+		wg.Add(4)
+
 		JC.Notify("Fetching the latest ticker data...")
-		JA.AppStatusManager.StartFetchingRates()
+		JA.AppStatusManager.StartFetchingTickers()
 
 		// Clear cached rates
 		JT.TickerCache.Reset()
 
 		if JA.AppStatusManager.IsValidProKey() {
-			cc := JT.TickerCMC100Fetcher{}
-			if !DetectProKeyValidityViaHTTPResponse(cc.GetRate()) {
-				cmc100HasError = true
-			}
+			go func() {
+				defer wg.Done()
+				cc := JT.TickerCMC100Fetcher{}
+				cmc100Status = DetectProKeyValidityViaHTTPResponse(cc.GetRate())
+			}()
+
+			time.Sleep(200 * time.Millisecond)
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
-			fg := JT.TickerFearGreedFetcher{}
-			if !DetectProKeyValidityViaHTTPResponse(fg.GetRate()) {
-				feargreedHasError = true
-			}
+			go func() {
+				defer wg.Done()
+				fg := JT.TickerFearGreedFetcher{}
+				feargreedStatus = DetectProKeyValidityViaHTTPResponse(fg.GetRate())
+			}()
+
+			time.Sleep(200 * time.Millisecond)
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
-			mm := JT.TickerMetricsFetcher{}
-			if !DetectProKeyValidityViaHTTPResponse(mm.GetRate()) {
-				metricsHasError = true
-			}
+			go func() {
+				defer wg.Done()
+				mm := JT.TickerMetricsFetcher{}
+				metricsStatus = DetectProKeyValidityViaHTTPResponse(mm.GetRate())
+			}()
+
+			time.Sleep(200 * time.Millisecond)
 		}
 
 		if JA.AppStatusManager.IsValidProKey() {
-			lt := JT.TickerListingsFetcher{}
-			if !DetectProKeyValidityViaHTTPResponse(lt.GetRate()) {
-				listingsHasError = true
-			}
+			go func() {
+				defer wg.Done()
+				lt := JT.TickerListingsFetcher{}
+				listingsStatus = DetectProKeyValidityViaHTTPResponse(lt.GetRate())
+			}()
+
+			time.Sleep(200 * time.Millisecond)
 		}
 
-		JA.AppStatusManager.EndFetchingRates()
-		if !cmc100HasError && !feargreedHasError && !metricsHasError && !listingsHasError {
+		wg.Wait()
+
+		JA.AppStatusManager.EndFetchingTickers()
+
+		fetchStatus := 0
+
+		if cmc100Status == -1 || feargreedStatus == -1 || metricsStatus == -1 || listingsStatus == -1 {
+			fetchStatus = -1
+		}
+
+		if cmc100Status == 1 || feargreedStatus == 1 || metricsStatus == 1 || listingsStatus == 1 {
+			fetchStatus = 1
+		}
+
+		switch fetchStatus {
+		case -1:
+			JC.Notify("Please check your network connection.")
+		case 0:
 			JC.Notify("Ticker data updated successfully")
-			JA.AppStatusManager.SetTickerConfigStatus(true)
-		} else {
-			JC.Notify("Please check your settings and network connection.")
+			// JA.AppStatusManager.SetTickerConfigStatus(true)
+		case 1:
+			JC.Notify("Please check your settings.")
 			JA.AppStatusManager.SetTickerConfigStatus(false)
 		}
 	}
@@ -200,49 +252,46 @@ func UpdateTickers() bool {
 	for _, tkt := range list {
 		switch tkt.Type {
 		case "cmc100":
-			if cmc100HasError {
-				tkt.Set("-1")
-				tkt.Status = -1
-			} else {
-				tkt.Update()
-			}
+			ProcessTickerStatus(cmc100Status, tkt)
 		case "feargreed":
-			if feargreedHasError {
-				tkt.Set("-1")
-				tkt.Status = -1
-			} else {
-				tkt.Update()
-			}
+			ProcessTickerStatus(feargreedStatus, tkt)
 		case "market_cap":
-			if metricsHasError {
-				tkt.Set("-1")
-				tkt.Status = -1
-			} else {
-				tkt.Update()
-			}
+			ProcessTickerStatus(metricsStatus, tkt)
 		case "altcoin_index":
-			if listingsHasError {
-				tkt.Set("-1")
-				tkt.Status = -1
-			} else {
-				tkt.Update()
-			}
+			ProcessTickerStatus(listingsStatus, tkt)
 		}
 	}
 
 	return true
 }
 
-func DetectProKeyValidityViaHTTPResponse(rs int64) bool {
+func ProcessTickerStatus(status int, tkt *JT.TickerDataType) {
+	switch status {
+	case -1:
+		if !JT.TickerCache.Has(tkt.Type) && tkt.Get() == "" {
+			tkt.Set("-1")
+			tkt.Status = -1
+		}
+	case 0:
+		tkt.Update()
+	case 1:
+		tkt.Set("-1")
+		tkt.Status = -1
+	}
+}
+
+func DetectProKeyValidityViaHTTPResponse(rs int64) int {
 	switch rs {
+	case -3, -2, -4, -5, -6:
+		return 1
 	case 401, 403, 429:
 		JA.AppStatusManager.SetCryptoKeyStatus(false)
+		return 1
 	case 200:
-		JA.AppStatusManager.SetCryptoKeyStatus(true)
-		return true
+		return 0
 	}
 
-	return false
+	return -1
 }
 
 func ValidateCache() bool {
@@ -581,7 +630,17 @@ func RegisterActions() {
 				return
 			}
 
+			if !JA.AppStatusManager.IsGoodRatesNetworkStatus() {
+				btn.Error()
+				return
+			}
+
 			if JA.AppStatusManager.IsFetchingRates() {
+				btn.Progress()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingTickers() {
 				btn.Progress()
 				return
 			}

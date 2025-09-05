@@ -2,9 +2,13 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	JC "jxwatcher/core"
@@ -26,16 +30,22 @@ func (er *TickerFearGreedFetcher) GetRate() int64 {
 
 	if !Config.HasProKey() {
 		JC.Logln("Failed to fetch Fear & Greed data due to no Pro API Key provided")
-		return -1
+		return -2
 	}
 
 	if !Config.CanDoFearGreed() {
 		JC.Logln("Failed to fetch Fear & Greed data due to no valid endpoint configured")
-		return -1
+		return -3
+	}
+
+	parsedURL, err := url.Parse(Config.TickerFearGreedEndpoint)
+	if err != nil {
+		JC.Logln("Invalid URL:", err)
+		return -4
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", Config.TickerFearGreedEndpoint, nil)
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
 	if err != nil {
 		JC.Logln("Error encountered:", err)
 		return -1
@@ -53,8 +63,23 @@ func (er *TickerFearGreedFetcher) GetRate() int64 {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to fetch fear & greed data from CMC: %w", err)
-		JC.Logln(wrappedErr)
+		// Deep error inspection
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			// DNS error: no such host
+			var dnsErr *net.DNSError
+			if errors.As(urlErr.Err, &dnsErr) && dnsErr.IsNotFound {
+				JC.Logln("DNS error: no such host")
+				return -5
+			}
+
+			if strings.Contains(urlErr.Err.Error(), "tls") {
+				JC.Logln("TLS handshake error:", urlErr.Err)
+				return -6
+			}
+		}
+
+		JC.Logln(fmt.Errorf("Failed to fetch Fear & Greed data from CMC: %w", err))
 		return -1
 	} else {
 		// JC.Logln("Fetched Fear & Greed Data from:", req.URL)

@@ -10,21 +10,23 @@ import (
 var AppStatusManager *AppStatus = &AppStatus{}
 
 type AppStatus struct {
-	ready               bool
-	bad_config          bool
-	bad_cryptos         bool
-	bad_tickers         bool
-	no_panels           bool
-	allow_dragging      bool
-	fetching_cryptos    bool
-	fetching_rates      bool
-	is_dirty            bool
-	panels_count        int
-	valid_pro_key       bool
-	valid_ticker_config bool
-	valid_rates_config  bool
-	lastChange          time.Time
-	lastRefresh         time.Time
+	ready                bool
+	bad_config           bool
+	bad_cryptos          bool
+	bad_tickers          bool
+	no_panels            bool
+	allow_dragging       bool
+	fetching_cryptos     bool
+	fetching_rates       bool
+	fetching_tickers     bool
+	is_dirty             bool
+	panels_count         int
+	valid_pro_key        bool
+	valid_ticker_config  bool
+	valid_rates_config   bool
+	rates_network_status bool
+	lastChange           time.Time
+	lastRefresh          time.Time
 }
 
 func (a *AppStatus) Init() {
@@ -39,6 +41,7 @@ func (a *AppStatus) Init() {
 	a.valid_pro_key = true
 	a.valid_ticker_config = true
 	a.valid_rates_config = true
+	a.rates_network_status = true
 	a.lastChange = time.Now()
 }
 
@@ -58,6 +61,10 @@ func (a *AppStatus) IsFetchingRates() bool {
 	return a.fetching_rates
 }
 
+func (a *AppStatus) IsFetchingTickers() bool {
+	return a.fetching_tickers
+}
+
 func (a *AppStatus) IsValidProKey() bool {
 	return a.valid_pro_key == true
 }
@@ -68,6 +75,10 @@ func (a *AppStatus) IsValidTickerConfig() bool {
 
 func (a *AppStatus) IsValidRatesConfig() bool {
 	return a.valid_rates_config == true
+}
+
+func (a *AppStatus) IsGoodRatesNetworkStatus() bool {
+	return a.rates_network_status == true
 }
 
 func (a *AppStatus) IsDirty() bool {
@@ -107,6 +118,17 @@ func (a *AppStatus) StartFetchingRates() *AppStatus {
 	return a
 }
 
+func (a *AppStatus) StartFetchingTickers() *AppStatus {
+
+	if a.fetching_tickers == false {
+		a.fetching_tickers = true
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
 func (a *AppStatus) EndFetchingCryptos() *AppStatus {
 
 	if a.fetching_cryptos == true {
@@ -124,6 +146,17 @@ func (a *AppStatus) EndFetchingRates() *AppStatus {
 
 	if a.fetching_rates == true {
 		a.fetching_rates = false
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
+func (a *AppStatus) EndFetchingTickers() *AppStatus {
+
+	if a.fetching_tickers == true {
+		a.fetching_tickers = false
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
@@ -179,6 +212,17 @@ func (a *AppStatus) SetRatesConfigStatus(status bool) *AppStatus {
 
 	if status != a.valid_rates_config {
 		a.valid_rates_config = status
+		a.lastChange = time.Now()
+		a.DebounceRefresh()
+	}
+
+	return a
+}
+
+func (a *AppStatus) SetRatesNetworkStatus(status bool) *AppStatus {
+
+	if status != a.rates_network_status {
+		a.rates_network_status = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}

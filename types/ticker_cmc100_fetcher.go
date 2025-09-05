@@ -2,9 +2,13 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	JC "jxwatcher/core"
@@ -27,19 +31,43 @@ func (er *TickerCMC100Fetcher) GetRate() int64 {
 
 	if !Config.HasProKey() {
 		JC.Logln("Failed to fetch cmc100 data due to no Pro API Key provided")
-		return -1
+		return -2
 	}
 
 	if !Config.CanDoCMC100() {
 		JC.Logln("Failed to fetch cmc100 data due to no valid endpoint configured")
-		return -1
+		return -3
+	}
+
+	parsedURL, err := url.Parse(Config.TickerCMC100Endpoint)
+	if err != nil {
+		JC.Logln("Invalid URL:", err)
+		return -4
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", Config.TickerCMC100Endpoint, nil)
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
 	if err != nil {
-		JC.Logln("Error encountered:", err)
+		// Deep error inspection
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			// DNS error: no such host
+			var dnsErr *net.DNSError
+			if errors.As(urlErr.Err, &dnsErr) && dnsErr.IsNotFound {
+				JC.Logln("DNS error: no such host")
+				return -5
+			}
+
+			if strings.Contains(urlErr.Err.Error(), "tls") {
+				JC.Logln("TLS handshake error:", urlErr.Err)
+				return -6
+			}
+		}
+
+		JC.Logln(fmt.Errorf("Failed to fetch CMC100 data from CMC: %w", err))
 		return -1
+	} else {
+		// JC.Logln("Fetched Fear & Greed Data from:", req.URL)
 	}
 
 	// Add headers

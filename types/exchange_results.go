@@ -2,7 +2,9 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -203,9 +205,14 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	tid := strings.Join(rkv, ",")
 
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", Config.ExchangeEndpoint, nil)
+	parsedURL, err := url.Parse(Config.ExchangeEndpoint)
+	if err != nil {
+		JC.Logln("Invalid URL:", err)
+		return -5
+	}
 
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
 	if err != nil {
 		JC.Logln("Error encountered:", err)
 		return -2
@@ -224,11 +231,31 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		wrappedErr := fmt.Errorf("Failed to fetch exchange data from CMC: %w", err)
-		JC.Logln(wrappedErr)
+		// Deep error inspection
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			// DNS error: no such host
+			var dnsErr *net.DNSError
+			if errors.As(urlErr.Err, &dnsErr) && dnsErr.IsNotFound {
+				JC.Logln("DNS error: no such host")
+				return -6
+			}
+
+			if strings.Contains(urlErr.Err.Error(), "tls") {
+				JC.Logln("TLS handshake error:", urlErr.Err)
+				return -7
+			}
+
+			if urlErr.Timeout() {
+				JC.Logln("Request timed out: %w", err)
+				return -8
+			}
+		}
+
+		JC.Logln(fmt.Errorf("Failed to fetch exchange data from CMC: %w", err))
 		return -3
 	} else {
-		// JC.Log("Fetched exchange data from CMC:", req.URL.RawQuery)
+		// JC.Logln("Fetched Fear & Greed Data from:", req.URL)
 	}
 
 	defer resp.Body.Close()
