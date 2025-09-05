@@ -41,7 +41,10 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if size.Width > g.MinCellSize.Width {
 		g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
 
-		if len(objects) < g.ColCount {
+		JC.Logln("Calculated columns:", g.ColCount)
+		if g.ColCount < 2 {
+			g.ColCount = 2
+		} else if g.ColCount > len(objects) {
 			g.ColCount = len(objects)
 		}
 
