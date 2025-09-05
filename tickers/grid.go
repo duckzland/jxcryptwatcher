@@ -17,14 +17,30 @@ type TickerGridLayout struct {
 	ColCount     int
 	RowCount     int
 	InnerPadding [4]float32 // top, right, bottom, left
+	cWidth       float32
+	aWidth       float32
+	minSize      fyne.Size
 }
 
 func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Width() <= 0 || JA.AppLayoutManager.Height() <= 0 {
+	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Container.Size().Width <= 0 || JA.AppLayoutManager.Container.Size().Height <= 0 {
 		return
 	}
+
+	// No objects to layout
+	if len(objects) == 0 {
+		return
+	}
+
+	// Dont relayout as we got same width
+	if size.Width == g.cWidth {
+		return
+	}
+
+	g.cWidth = size.Width
+	g.aWidth = JA.AppLayoutManager.Container.Size().Width
 
 	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
 	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
@@ -34,17 +50,29 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.DynCellSize = g.MinCellSize
 
 	// Screen is too small for min width
-	if g.MinCellSize.Width > JA.AppLayoutManager.Width() {
-		g.MinCellSize.Width = JA.AppLayoutManager.Width() - hPad
+	if g.MinCellSize.Width > g.cWidth {
+		g.MinCellSize.Width = g.cWidth - hPad
 	}
 
 	if size.Width > g.MinCellSize.Width {
-		g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
 
-		JC.Logln("Calculated columns:", g.ColCount)
-		if g.ColCount < 2 {
-			g.ColCount = 2
-		} else if g.ColCount > len(objects) {
+		// Use logics based on the total tickers will only be from 1 to 4 ticker
+		switch len(objects) {
+		case 4:
+			g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+			if g.ColCount < 2 {
+				g.ColCount = 2
+			} else if g.ColCount > len(objects) {
+				g.ColCount = len(objects)
+			}
+
+			// Force odd column count to be even for better layout
+			if g.ColCount > 2 && g.ColCount%2 != 0 {
+				g.ColCount--
+			}
+
+		default:
+			// Make single row
 			g.ColCount = len(objects)
 		}
 
@@ -75,8 +103,8 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	// Fix single column overflowing on android phone
-	if g.DynCellSize.Width > JA.AppLayoutManager.Width() {
-		g.DynCellSize.Width = JA.AppLayoutManager.Width()
+	if g.DynCellSize.Width > g.cWidth {
+		g.DynCellSize.Width = g.cWidth
 	}
 
 	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
@@ -111,11 +139,38 @@ func (g *TickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
-	rows := max(g.RowCount, 1)
-	width := g.DynCellSize.Width
+	// App has the same width as last time, just give cached size!
+	if g.aWidth == JA.AppLayoutManager.Container.Size().Width {
+		return g.minSize
+	}
+
+	// This calculation is not accurate as the Layout one.
+	// Use this only for approx. calculation of width and height
+	g.aWidth = JA.AppLayoutManager.Container.Size().Width
+
+	// Make the same logic as in Layout
+	c := int(math.Floor(float64(g.aWidth) / float64(g.DynCellSize.Width)))
+
+	switch len(objects) {
+	case 4:
+		if c > 2 && c%2 != 0 {
+			c--
+		}
+	default:
+		c = len(objects)
+	}
+
+	r := int(math.Ceil(float64(len(objects)) / float64(c)))
+
+	rows := max(r, 1)
+	cols := max(c, 1)
+
+	width := (g.DynCellSize.Width * float32(cols)) + (g.InnerPadding[1] + g.InnerPadding[3])
 	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
 
-	return fyne.NewSize(width, height)
+	g.minSize = fyne.NewSize(width, height)
+
+	return g.minSize
 }
 
 func NewTickerGrid() *fyne.Container {

@@ -47,7 +47,6 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if topBar.Position() != newTopBarPos || topBar.Size() != newTopBarSize {
 		topBar.Move(newTopBarPos)
 		topBar.Resize(newTopBarSize)
-		topBar.Refresh()
 	}
 
 	// Tickers Layout
@@ -60,7 +59,6 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		if tickers.Position() != newTickersPos || tickers.Size() != newTickersSize {
 			tickers.Move(newTickersPos)
 			tickers.Resize(newTickersSize)
-			tickers.Refresh()
 		}
 
 		contentY += tickerHeight
@@ -74,7 +72,6 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if content.Position() != newContentPos || content.Size() != newContentSize {
 		content.Move(newContentPos)
 		content.Resize(newContentSize)
-		content.Refresh()
 	}
 
 	placeholder := objects[3]
@@ -283,9 +280,8 @@ func (m *AppLayout) RefreshLayout() {
 
 func (m *AppLayout) RefreshContainer() {
 	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
-		if m.Scroll != nil {
-			fyne.Do(m.Container.Refresh)
-		}
+		fyne.Do(m.Container.Refresh)
+		JC.Logln("== Refreshing Container")
 	})
 }
 
