@@ -2,7 +2,6 @@ package core
 
 import (
 	"image/color"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -58,9 +57,10 @@ var UpdateRatesChan = make(chan struct{})
 var UpdateTickersChan = make(chan struct{})
 var UpdateDisplayTimestamp = time.Now()
 
-var UpdateTickersLock sync.Mutex
-var UpdateRatesLock sync.Mutex
-var UpdateDisplayLock sync.Mutex
+// var UpdateTickersLock sync.Mutex
+// var UpdateRatesLock sync.Mutex
+
+// var UpdateDisplayLock sync.Mutex
 
 var MainDebouncer = NewDebouncer()
 

@@ -17,8 +17,8 @@ import (
 
 func UpdateDisplay() bool {
 
-	JC.UpdateDisplayLock.Lock()
-	defer JC.UpdateDisplayLock.Unlock()
+	// JC.UpdateDisplayLock.Lock()
+	// defer JC.UpdateDisplayLock.Unlock()
 
 	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh display")
@@ -34,6 +34,8 @@ func UpdateDisplay() bool {
 		pk := pkt.Get()
 		pkt.Update(pk)
 
+		// JC.Logln("Updating: ", pk)
+
 		// Give pause to prevent race condition
 		time.Sleep(1 * time.Millisecond)
 	}
@@ -45,8 +47,8 @@ func UpdateDisplay() bool {
 
 func UpdateRates() bool {
 
-	JC.UpdateRatesLock.Lock()
-	defer JC.UpdateRatesLock.Unlock()
+	// JC.UpdateRatesLock.Lock()
+	// defer JC.UpdateRatesLock.Unlock()
 
 	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh rates")
@@ -95,27 +97,36 @@ func UpdateRates() bool {
 	JA.AppStatusManager.StartFetchingRates()
 
 	var hasError int = 0
-	var mu sync.Mutex
+	// var mu sync.Mutex
 	succesCount := 0
 
 	for _, rk := range jb {
 
+		JT.ExchangeCache.SoftReset()
 		rs := ex.GetRate(rk)
 
-		mu.Lock()
+		// mu.Lock()
 		ns := DetectHTTPResponse(rs)
+		// JC.Logln("Processing : ", rk, " with ns: ", ns)
 
 		if hasError == 0 || hasError < ns {
 			hasError = ns
 		}
 		if hasError == 0 {
-			RequestDisplayUpdate(true)
 			succesCount++
 		}
 
-		mu.Unlock()
+		RequestDisplayUpdate(true)
 
-		time.Sleep(100 * time.Millisecond)
+		// mu.Unlock()
+
+		// time.Sleep(100 * time.Millisecond)
+	}
+
+	JP.Grid.UpdatePanelsContent()
+
+	if hasError != 0 {
+		JC.Logln("Error when fetching rates:", hasError)
 	}
 
 	switch hasError {
@@ -130,7 +141,6 @@ func UpdateRates() bool {
 		// JA.AppStatusManager.SetConfigStatus(true)
 
 		if !JT.ExchangeCache.HasData() {
-			JC.Logln("Making shit error")
 			JP.PanelForceUpdate = true
 			JT.BP.ChangeAllStatus(JC.STATE_ERROR)
 			JP.Grid.UpdatePanelsContent()
@@ -143,7 +153,6 @@ func UpdateRates() bool {
 		JA.AppStatusManager.SetConfigStatus(false)
 
 		if !JT.ExchangeCache.HasData() {
-			JC.Logln("Making shit error")
 			JP.PanelForceUpdate = true
 			JT.BP.ChangeAllStatus(JC.STATE_ERROR)
 			JP.Grid.UpdatePanelsContent()
@@ -163,8 +172,8 @@ func UpdateRates() bool {
 
 func UpdateTickers() bool {
 
-	JC.UpdateTickersLock.Lock()
-	defer JC.UpdateTickersLock.Unlock()
+	// JC.UpdateTickersLock.Lock()
+	// defer JC.UpdateTickersLock.Unlock()
 
 	if !JT.Config.IsValidTickers() {
 		JC.Logln("Invalid ticker configuration, cannot refresh tickers")
@@ -183,7 +192,7 @@ func UpdateTickers() bool {
 		return false
 	}
 
-	var mu sync.Mutex
+	// var mu sync.Mutex
 
 	JC.Notify("Fetching the latest ticker data...")
 	JA.AppStatusManager.StartFetchingTickers()
@@ -193,6 +202,7 @@ func UpdateTickers() bool {
 
 	if JT.Config.CanDoCMC100() {
 		ft := JT.CMC100Fetcher{}
+		JT.TickerCache.SoftReset()
 		rs := ft.GetRate()
 
 		tktt := JT.BT.GetDataByType("cmc100")
@@ -202,17 +212,18 @@ func UpdateTickers() bool {
 			ProcessTickerStatus(ns, tkt)
 		}
 
-		mu.Lock()
+		// mu.Lock()
 		if hasError == 0 {
 			hasError = ns
 		}
-		mu.Unlock()
+		// mu.Unlock()
 
-		time.Sleep(100 * time.Millisecond)
+		// time.Sleep(100 * time.Millisecond)
 	}
 
 	if JT.Config.CanDoFearGreed() {
 		ft := JT.FearGreedFetcher{}
+		JT.TickerCache.SoftReset()
 		rs := ft.GetRate()
 
 		tktt := JT.BT.GetDataByType("feargreed")
@@ -222,18 +233,19 @@ func UpdateTickers() bool {
 			ProcessTickerStatus(ns, tkt)
 		}
 
-		mu.Lock()
+		// mu.Lock()
 		if hasError == 0 {
 			hasError = ns
 		}
-		mu.Unlock()
+		// mu.Unlock()
 
-		time.Sleep(200 * time.Millisecond)
+		// time.Sleep(200 * time.Millisecond)
 	}
 
 	if JT.Config.CanDoMarketCap() {
 
 		ft := JT.MarketCapFetcher{}
+		JT.TickerCache.SoftReset()
 		rs := ft.GetRate()
 
 		tktt := JT.BT.GetDataByType("market_cap")
@@ -243,18 +255,19 @@ func UpdateTickers() bool {
 			ProcessTickerStatus(ns, tkt)
 		}
 
-		mu.Lock()
+		// mu.Lock()
 		if hasError == 0 || hasError < ns {
 			hasError = ns
 		}
-		mu.Unlock()
+		// mu.Unlock()
 
-		time.Sleep(200 * time.Millisecond)
+		// time.Sleep(200 * time.Millisecond)
 	}
 
 	if JT.Config.CanDoAltSeason() {
 
 		ft := JT.AltSeasonFetcher{}
+		JT.TickerCache.SoftReset()
 		rs := ft.GetRate()
 
 		tktt := JT.BT.GetDataByType("altcoin_index")
@@ -264,13 +277,13 @@ func UpdateTickers() bool {
 			ProcessTickerStatus(ns, tkt)
 		}
 
-		mu.Lock()
+		// mu.Lock()
 		if hasError == 0 {
 			hasError = ns
 		}
-		mu.Unlock()
+		// mu.Unlock()
 
-		time.Sleep(200 * time.Millisecond)
+		// time.Sleep(200 * time.Millisecond)
 	}
 
 	JA.AppStatusManager.EndFetchingTickers()
@@ -312,6 +325,8 @@ func ProcessTickerStatus(status int, tkt *JT.TickerDataType) {
 }
 
 func DetectHTTPResponse(rs int64) int {
+
+	// JC.Logln("Raw rs value: ", rs)
 	switch rs {
 	case JC.NETWORKING_SUCCESS:
 		return 0
