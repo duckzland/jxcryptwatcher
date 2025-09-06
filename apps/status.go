@@ -278,7 +278,7 @@ func (a *AppStatus) ValidPanels() bool {
 }
 
 func (a *AppStatus) DebounceRefresh() *AppStatus {
-	JC.MainDebouncer.Call("refreshing_status", 33*time.Millisecond, func() {
+	JC.MainDebouncer.Call("refreshing_status", 16*time.Millisecond, func() {
 		a.Refresh()
 	})
 

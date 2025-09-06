@@ -50,6 +50,9 @@ func main() {
 			JP.Grid.Refresh()
 
 			if !JA.AppStatusManager.HasError() {
+
+				// Force Refresh
+				JT.ExchangeCache.SoftReset()
 				RequestRateUpdate(true)
 			}
 		})

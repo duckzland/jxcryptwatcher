@@ -42,10 +42,9 @@ func (a *AppActions) CallButton(tag string) bool {
 }
 
 func (a *AppActions) Refresh() {
-	for _, btn := range a.Buttons {
-		// if btn.GetTag() == exclude {
-		// 	continue
-		// }
-		fyne.Do(btn.Refresh)
-	}
+	fyne.Do(func() {
+		for _, btn := range a.Buttons {
+			btn.Refresh()
+		}
+	})
 }

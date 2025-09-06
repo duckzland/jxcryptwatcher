@@ -38,6 +38,13 @@ func (ec *TickerDataCacheType) Remove(key string) *TickerDataCacheType {
 	return ec
 }
 
+func (ec *TickerDataCacheType) SoftReset() *TickerDataCacheType {
+	ec.Timestamp = time.Now()
+	ec.LastUpdated = nil
+
+	return ec
+}
+
 func (ec *TickerDataCacheType) Reset() *TickerDataCacheType {
 	ec.data = sync.Map{}
 	ec.Timestamp = time.Now()

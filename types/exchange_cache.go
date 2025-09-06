@@ -41,9 +41,16 @@ func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
 	return ec
 }
 
+func (ec *ExchangeDataCacheType) SoftReset() *ExchangeDataCacheType {
+	ec.Timestamp = time.Now()
+	ec.LastUpdated = nil
+	return ec
+}
+
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 	ec.data = sync.Map{}
 	ec.Timestamp = time.Now()
+	ec.LastUpdated = nil
 
 	return ec
 }

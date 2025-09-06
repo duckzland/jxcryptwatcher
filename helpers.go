@@ -349,6 +349,8 @@ func SavePanelForm() {
 
 			// Only fetch new rates if no cache exists!
 			if !ValidateCache() {
+				// Force Refresh
+				JT.ExchangeCache.SoftReset()
 				RequestRateUpdate(false)
 			}
 
@@ -409,7 +411,7 @@ func OpenSettingForm() {
 					JA.AppStatusManager.SetTickerConfigStatus(true)
 					JA.AppStatusManager.SetRatesConfigStatus(true)
 
-					JT.TickerCache.LastUpdated = nil
+					JT.TickerCache.SoftReset()
 					RequestTickersUpdate()
 				}
 			} else {
@@ -467,6 +469,8 @@ func ResetCryptosMap() {
 			JP.Grid.Refresh()
 		})
 
+		// Force Refresh
+		JT.ExchangeCache.SoftReset()
 		RequestRateUpdate(false)
 
 	}
@@ -598,12 +602,13 @@ func RegisterActions() {
 		func(btn *JW.HoverCursorIconButton) {
 			go func() {
 				// Force update
-				JT.ExchangeCache.LastUpdated = nil
+				JT.ExchangeCache.SoftReset()
 				RequestRateUpdate(true)
 			}()
 
 			go func() {
-				JT.TickerCache.LastUpdated = nil
+				// Force update
+				JT.TickerCache.SoftReset()
 				RequestTickersUpdate()
 			}()
 		},
