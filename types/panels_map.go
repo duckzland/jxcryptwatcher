@@ -27,10 +27,7 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 			pk.Parent = pc
 		}
 
-		// Not sure if we need handle status here?
-		// if pk.Status < -1 {
-		// 	pk.Status = -1
-		// }
+		pk.Status = JC.STATE_LOADING
 	}
 
 	pc.Data = data
@@ -75,7 +72,7 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref.Init()
 	ref.Update(pk)
 	ref.Parent = pc
-	ref.Status = -1
+	ref.Status = JC.STATE_FETCHING_NEW
 
 	return ref
 }
@@ -211,6 +208,15 @@ func (pc *PanelsMapType) TotalData() int {
 	defer pc.mu.RUnlock()
 
 	return len(pc.Data)
+}
+
+func (pc *PanelsMapType) ChangeAllStatus(newStatus int) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for _, pdt := range pc.Data {
+		pdt.Status = newStatus
+	}
 }
 
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {

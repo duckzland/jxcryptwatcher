@@ -135,7 +135,7 @@ func NewTickerDisplay(
 			return
 		}
 
-		if !pkt.DidChange() && pkt.Status == 1 {
+		if !pkt.DidChange() && pkt.Status == JC.STATE_LOADED {
 			return
 		}
 
@@ -160,14 +160,14 @@ func (h *TickerDisplay) updateContent() {
 	}
 
 	switch pkt.Status {
-	case -1:
+	case JC.STATE_ERROR:
 		h.refStatus.Text = "Error loading data"
 		h.refStatus.Show()
 		h.refTitle.Hide()
 		h.refContent.Hide()
 		h.background.FillColor = JC.ErrorColor
 
-	case 0:
+	case JC.STATE_LOADING:
 		h.refStatus.Text = "Loading..."
 		h.refStatus.Show()
 		h.refTitle.Hide()
@@ -230,7 +230,7 @@ func (h *TickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 
-			if index > 0 {
+			if index >= 0 {
 				h.background.FillColor = JC.GreenColor
 			} else if index < 0 {
 				h.background.FillColor = JC.RedColor

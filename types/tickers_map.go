@@ -1,6 +1,7 @@
 package types
 
 import (
+	JC "jxwatcher/core"
 	"sync"
 )
 
@@ -24,7 +25,7 @@ func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	}
 
 	ticker.Init()
-	ticker.Status = 0
+	ticker.Status = JC.STATE_LOADING
 
 	pc.Data = append(pc.Data, ticker)
 }
@@ -64,6 +65,21 @@ func (pc *TickersMapType) GetData(uuid string) *TickerDataType {
 	return nil
 }
 
+func (pc *TickersMapType) GetDataByType(ticker_type string) []*TickerDataType {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	nd := []*TickerDataType{}
+
+	for i, tdt := range pc.Data {
+		if tdt.Type == ticker_type {
+			nd = append(nd, pc.Data[i])
+		}
+	}
+
+	return nd
+}
+
 func (pc *TickersMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
@@ -77,7 +93,7 @@ func (pc *TickersMapType) Reset() {
 
 	for i, tdt := range pc.Data {
 		tdt.Set("")
-		tdt.Status = 0
+		tdt.Status = JC.STATE_LOADING
 
 		pc.Data[i] = tdt
 	}
@@ -86,11 +102,12 @@ func (pc *TickersMapType) Reset() {
 func TickersInit() {
 	BT.Init()
 
-	if Config.CanDoMetrics() {
+	if Config.CanDoMarketCap() {
 		BT.Add(&TickerDataType{
 			Title:  "Market Cap",
 			Type:   "market_cap",
 			Format: "shortcurrency",
+			Status: JC.STATE_LOADING,
 		})
 	}
 
@@ -99,14 +116,16 @@ func TickersInit() {
 			Title:  "CMC100",
 			Type:   "cmc100",
 			Format: "currency",
+			Status: JC.STATE_LOADING,
 		})
 	}
 
-	if Config.CanDoMetrics() {
+	if Config.CanDoAltSeason() {
 		BT.Add(&TickerDataType{
 			Title:  "Altcoin Index",
 			Type:   "altcoin_index",
 			Format: "percentage",
+			Status: JC.STATE_LOADING,
 		})
 	}
 
@@ -115,6 +134,7 @@ func TickersInit() {
 			Title:  "Fear & Greed",
 			Type:   "feargreed",
 			Format: "percentage",
+			Status: JC.STATE_LOADING,
 		})
 	}
 }

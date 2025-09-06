@@ -7,12 +7,10 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
-	"fyne.io/fyne/v2/widget"
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
 	JC "jxwatcher/core"
-	JT "jxwatcher/types"
 )
 
 type AppMainLayout struct {
@@ -167,17 +165,8 @@ func (m *AppLayout) Refresh() {
 
 	if AppStatusManager.IsReady() {
 
-		if !AppStatusManager.IsValidProKey() {
-			if m.Tickers == nil || m.Tickers == JC.Tickers {
-				m.SetTickers(container.NewCenter(
-					widget.NewLabelWithStyle("Please update your CMC Pro API Key in Settings.", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-				))
-			}
-
-			if !JT.BT.IsEmpty() {
-				JT.BT.Reset()
-			}
-
+		if AppStatusManager.bad_cryptos == true {
+			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
 

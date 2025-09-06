@@ -72,6 +72,11 @@ func (c *PanelGridContainer) Dragged(ev *fyne.DragEvent) {
 		return
 	}
 
+	// Crash fix nil pointer
+	if c == nil || ev == nil {
+		return
+	}
+
 	c.dragPosition = ev.Position
 
 	if !c.dragging {
@@ -118,6 +123,15 @@ func (c *PanelGridContainer) DragEnd() {
 	c.dragging = false
 }
 
+func (c *PanelGridContainer) UpdatePanelsContent() {
+	fyne.Do(func() {
+		for _, obj := range c.Objects {
+			if panel, ok := obj.(*PanelDisplay); ok {
+				panel.UpdateContent()
+			}
+		}
+	})
+}
 func NewPanelGridContainer(
 	layout *PanelGridLayout,
 	Objects []fyne.CanvasObject,

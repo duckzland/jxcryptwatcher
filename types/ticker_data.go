@@ -65,7 +65,7 @@ func (p *TickerDataType) Update() bool {
 		nd := TickerCache.Get(p.Type)
 		if nd != "" {
 			p.Set(nd)
-			p.Status = 1
+			p.Status = JC.STATE_LOADED
 		}
 	}
 	return true

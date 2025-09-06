@@ -66,6 +66,11 @@ func (p *PanelDataType) GetOldValueString() string {
 	return pko.GetValueString()
 }
 
+func (p *PanelDataType) RefreshData() {
+	npk := p.UsePanelKey().UpdateValue(-3)
+	p.Data.Set(npk)
+}
+
 func (p *PanelDataType) UsePanelKey() *PanelKeyType {
 	pko := PanelKeyType{value: p.Get()}
 	return &pko
@@ -91,6 +96,8 @@ func (p *PanelDataType) Update(pk string) bool {
 	if npk != opk {
 		p.Set(npk)
 		p.OldKey = opk
+
+		p.Status = JC.STATE_LOADED
 	}
 
 	return true
@@ -158,28 +165,28 @@ func (p *PanelDataType) IsValueIncrease() int {
 	a := p.GetOldValueString()
 
 	if a == b {
-		return 0
+		return JC.VALUE_NO_CHANGE
 	}
 
 	numA, errA := strconv.ParseFloat(a, 32)
 	numB, errB := strconv.ParseFloat(b, 32)
 
 	if errA != nil || errB != nil {
-		JC.Logf("Error Formatting")
-		return 0
+		// JC.Logf("Error Formatting")
+		return JC.VALUE_NO_CHANGE
 	}
 
 	if numA > numB {
 		JC.Logf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
-		return -1
+		return JC.VALUE_DECREASE
 	}
 
 	if numA < numB {
 		JC.Logf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
-		return 1
+		return JC.VALUE_INCREASE
 	}
 
-	return 0
+	return JC.VALUE_NO_CHANGE
 }
 
 func (p *PanelDataType) IsEqualContentString(pk string) bool {

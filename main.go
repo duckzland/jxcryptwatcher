@@ -54,6 +54,10 @@ func main() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
 				RequestRateUpdate(true)
+
+				// Force Refresh
+				JT.TickerCache.SoftReset()
+				RequestTickersUpdate()
 			}
 		})
 	})

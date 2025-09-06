@@ -182,7 +182,7 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 	rko := strings.Split(rk, "|")
 
 	if len(rko) != 2 {
-		return -1
+		return JC.NETWORKING_BAD_PAYLOAD
 	}
 
 	sid := rko[0]
@@ -199,24 +199,32 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 	}
 
 	// Seems all the query is cached don't invoke http request
-	if len(rkv) == 0 {
-		return 0
+	if len(rkv) == 0 && ExchangeCache.LastUpdated != nil {
+		return JC.NETWORKING_DATA_IN_CACHE
 	}
 
-	tid := strings.Join(rkv, ",")
+	tid := strings.Join(rkt, ",")
 
 	parsedURL, err := url.Parse(Config.ExchangeEndpoint)
 	if err != nil {
 		JC.Logln("Invalid URL:", err)
-		return -5
+		return JC.NETWORKING_URL_ERROR
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
+		Timeout: 10 * time.Second,
+	}
 	req, err := http.NewRequest("GET", parsedURL.String(), nil)
 	if err != nil {
 		JC.Logln("Error encountered:", err)
-		return -2
+		return JC.NETWORKING_ERROR_CONNECTION
 	}
+
+	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
+	req.Header.Set("Accept", "application/json")
 
 	q := url.Values{}
 	q.Add("amount", "1")
@@ -226,34 +234,32 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 	req.URL.RawQuery = q.Encode()
 
 	// Debug
-	// JC.Logf("Fetching data from %v", req.URL.RawQuery)
-	JC.Logf("Fetching data from %v?%v", req.URL, req.URL.RawQuery)
+	JC.Logf("Fetching data from %v", req.URL)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		// Deep error inspection
+
+		var opErr *net.OpError
+		if errors.As(err, &opErr) {
+			var dnsErr *net.DNSError
+			if opErr != nil {
+				if errors.As(opErr.Err, &dnsErr) && dnsErr.IsNotFound {
+					JC.Logln("DNS error: no such host")
+					return JC.NETWORKING_BAD_CONFIG
+				}
+			}
+		}
+
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
-			// DNS error: no such host
-			var dnsErr *net.DNSError
-			if errors.As(urlErr.Err, &dnsErr) && dnsErr.IsNotFound {
-				JC.Logln("DNS error: no such host")
-				return -6
-			}
-
 			if strings.Contains(urlErr.Err.Error(), "tls") {
 				JC.Logln("TLS handshake error:", urlErr.Err)
-				return -7
-			}
-
-			if urlErr.Timeout() {
-				JC.Logln("Request timed out: %w", err)
-				return -8
+				return JC.NETWORKING_BAD_CONFIG
 			}
 		}
 
 		JC.Logln(fmt.Errorf("Failed to fetch exchange data from CMC: %w", err))
-		return -3
+		return JC.NETWORKING_ERROR_CONNECTION
 	} else {
 		// JC.Logln("Fetched Fear & Greed Data from:", req.URL)
 	}
@@ -262,17 +268,17 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	// Handle HTTP status codes
 	switch resp.StatusCode {
-	case 401:
+	case 401, 404:
 		JC.Logln(fmt.Sprintf("Error %d: Unauthorized", resp.StatusCode))
-		return 401
+		return JC.NETWORKING_BAD_CONFIG
 	case 429:
 		JC.Logln(fmt.Sprintf("Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode))
-		return 429
+		return JC.NETWORKING_ERROR_CONNECTION
 	case 200:
 		// return 200
 	default:
 		JC.Logln(fmt.Sprintf("Error %d: Request failed", resp.StatusCode))
-		return int64(resp.StatusCode)
+		return JC.NETWORKING_ERROR_CONNECTION
 	}
 
 	c := resp.Body
@@ -296,7 +302,7 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 	decoder := json.NewDecoder(c)
 	if err := decoder.Decode(er); err != nil {
 		JC.Logln(fmt.Errorf("Failed to examine exchange data: %w", err))
-		return -4
+		return JC.NETWORKING_BAD_DATA_RECEIVED
 	}
 
 	// Cache the result
@@ -310,5 +316,5 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	JC.PrintMemUsage("End fetching exchange rates")
 
-	return 200
+	return JC.NETWORKING_SUCCESS
 }

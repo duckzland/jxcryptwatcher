@@ -10,23 +10,22 @@ import (
 var AppStatusManager *AppStatus = &AppStatus{}
 
 type AppStatus struct {
-	ready                bool
-	bad_config           bool
-	bad_cryptos          bool
-	bad_tickers          bool
-	no_panels            bool
-	allow_dragging       bool
-	fetching_cryptos     bool
-	fetching_rates       bool
-	fetching_tickers     bool
-	is_dirty             bool
-	panels_count         int
-	valid_pro_key        bool
-	valid_ticker_config  bool
-	valid_rates_config   bool
-	rates_network_status bool
-	lastChange           time.Time
-	lastRefresh          time.Time
+	ready            bool
+	bad_config       bool
+	bad_cryptos      bool
+	bad_tickers      bool
+	no_panels        bool
+	allow_dragging   bool
+	fetching_cryptos bool
+	fetching_rates   bool
+	fetching_tickers bool
+	is_dirty         bool
+	panels_count     int
+	valid_config     bool
+	valid_cryptos    bool
+	network_status   bool
+	lastChange       time.Time
+	lastRefresh      time.Time
 }
 
 func (a *AppStatus) Init() {
@@ -38,10 +37,9 @@ func (a *AppStatus) Init() {
 	a.allow_dragging = false
 	a.is_dirty = false
 	a.panels_count = 0
-	a.valid_pro_key = true
-	a.valid_ticker_config = true
-	a.valid_rates_config = true
-	a.rates_network_status = true
+	a.valid_config = true
+	a.valid_cryptos = true
+	a.network_status = true
 	a.lastChange = time.Now()
 }
 
@@ -65,20 +63,16 @@ func (a *AppStatus) IsFetchingTickers() bool {
 	return a.fetching_tickers
 }
 
-func (a *AppStatus) IsValidProKey() bool {
-	return a.valid_pro_key == true
+func (a *AppStatus) IsValidConfig() bool {
+	return a.valid_config == true
 }
 
-func (a *AppStatus) IsValidTickerConfig() bool {
-	return a.valid_ticker_config == true
+func (a *AppStatus) IsValidCrypto() bool {
+	return a.valid_cryptos == true
 }
 
-func (a *AppStatus) IsValidRatesConfig() bool {
-	return a.valid_rates_config == true
-}
-
-func (a *AppStatus) IsGoodRatesNetworkStatus() bool {
-	return a.rates_network_status == true
+func (a *AppStatus) IsGoodNetworkStatus() bool {
+	return a.network_status == true
 }
 
 func (a *AppStatus) IsDirty() bool {
@@ -186,10 +180,10 @@ func (a *AppStatus) DisallowDragging() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetCryptoKeyStatus(status bool) *AppStatus {
+func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
 
-	if status != a.valid_pro_key {
-		a.valid_pro_key = status
+	if status != a.valid_config {
+		a.valid_config = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
@@ -197,10 +191,10 @@ func (a *AppStatus) SetCryptoKeyStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetTickerConfigStatus(status bool) *AppStatus {
+func (a *AppStatus) SetCryptoStatus(status bool) *AppStatus {
 
-	if status != a.valid_ticker_config {
-		a.valid_ticker_config = status
+	if status != a.valid_cryptos {
+		a.valid_cryptos = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
@@ -208,21 +202,10 @@ func (a *AppStatus) SetTickerConfigStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetRatesConfigStatus(status bool) *AppStatus {
+func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
 
-	if status != a.valid_rates_config {
-		a.valid_rates_config = status
-		a.lastChange = time.Now()
-		a.DebounceRefresh()
-	}
-
-	return a
-}
-
-func (a *AppStatus) SetRatesNetworkStatus(status bool) *AppStatus {
-
-	if status != a.rates_network_status {
-		a.rates_network_status = status
+	if status != a.network_status {
+		a.network_status = status
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
@@ -295,8 +278,8 @@ func (a *AppStatus) Refresh() *AppStatus {
 
 	a.lastRefresh = time.Now()
 
-	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | ValidProKey: %v | LastChange: %d | LastRefresh: %d",
-		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.bad_cryptos, a.valid_pro_key, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
+	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d",
+		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.bad_cryptos, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
 
 	return a
 }

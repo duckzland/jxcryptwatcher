@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -226,4 +227,15 @@ func FormatShortCurrency(value string) string {
 	default:
 		return fmt.Sprintf("$%.2f", num)
 	}
+}
+
+// Get start and end of current month in Unix time
+func GetMonthBounds(t time.Time) (startUnix, endUnix int64) {
+	year, month, _ := t.Date()
+	location := t.Location()
+
+	start := time.Date(year, month, 1, 0, 0, 0, 0, location)
+	end := start.AddDate(0, 1, 0).Add(-time.Second) // last second of the month
+
+	return start.Unix(), end.Unix()
 }

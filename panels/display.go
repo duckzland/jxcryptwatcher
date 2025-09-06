@@ -20,6 +20,8 @@ import (
 var activeAction *PanelDisplay = nil
 var activeDragging *PanelDisplay = nil
 
+var PanelForceUpdate = false
+
 type PanelLayout struct{}
 
 func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -196,32 +198,32 @@ func NewPanelDisplay(
 			return
 		}
 
-		if !pkt.DidChange() && pkt.Status == 1 {
+		if !pkt.DidChange() && pkt.Status == JC.STATE_LOADED {
 			return
 		}
 
 		switch pkt.IsValueIncrease() {
-		case 1:
+		case JC.VALUE_INCREASE:
 			panel.background.FillColor = JC.GreenColor
 			panel.background.Refresh()
-		case -1:
+		case JC.VALUE_DECREASE:
 			panel.background.FillColor = JC.RedColor
 			panel.background.Refresh()
 		}
 
-		panel.updateContent()
+		panel.UpdateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	panel.updateContent()
+	panel.UpdateContent()
 
 	JA.FadeInBackground(background, 300*time.Millisecond, nil)
 
 	return panel
 }
 
-func (h *PanelDisplay) updateContent() {
+func (h *PanelDisplay) UpdateContent() {
 
 	pwidth := h.Size().Width
 	if pwidth != 0 && pwidth < JC.PanelWidth {
@@ -236,12 +238,34 @@ func (h *PanelDisplay) updateContent() {
 		return
 	}
 
-	if pkt.UsePanelKey().GetValueFloat() != -1 {
-		pkt.Status = 1
+	if !PanelForceUpdate {
+		if pkt.UsePanelKey().GetValueFloat() >= 0 {
+			pkt.Status = JC.STATE_LOADED
+		}
+
+		if pkt.UsePanelKey().GetValueFloat() == -1 && JM.AppStatusManager.IsGoodNetworkStatus() {
+			pkt.Status = JC.STATE_LOADING
+		}
+
+		if pkt.UsePanelKey().GetValueFloat() == -1 && !JM.AppStatusManager.IsGoodNetworkStatus() {
+			pkt.Status = JC.STATE_ERROR
+		}
+
+		if pkt.UsePanelKey().GetValueFloat() == -1 && !JM.AppStatusManager.IsValidConfig() {
+			pkt.Status = JC.STATE_ERROR
+		}
 	}
 
 	switch pkt.Status {
-	case -1:
+	case JC.STATE_ERROR:
+		h.refTitle.Text = "Error loading data"
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.DisableClick()
+		h.background.FillColor = JC.ErrorColor
+
+	case JC.STATE_FETCHING_NEW:
 		h.refTitle.Text = "Fetching Rates..."
 		h.refSubtitle.Hide()
 		h.refBottomText.Hide()
@@ -249,7 +273,7 @@ func (h *PanelDisplay) updateContent() {
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
 
-	case 0:
+	case JC.STATE_LOADING:
 		h.refTitle.Text = "Loading..."
 		h.refSubtitle.Hide()
 		h.refBottomText.Hide()

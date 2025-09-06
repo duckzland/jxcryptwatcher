@@ -2,13 +2,12 @@ package core
 
 import (
 	"image/color"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 )
-
-const Epsilon = 1e-9
 
 var Window fyne.Window
 
@@ -58,6 +57,10 @@ var UpdateDisplayChan = make(chan struct{})
 var UpdateRatesChan = make(chan struct{})
 var UpdateTickersChan = make(chan struct{})
 var UpdateDisplayTimestamp = time.Now()
+
+var UpdateTickersLock sync.Mutex
+var UpdateRatesLock sync.Mutex
+var UpdateDisplayLock sync.Mutex
 
 var MainDebouncer = NewDebouncer()
 

@@ -180,11 +180,6 @@ func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 func NewTickerGrid() *fyne.Container {
 	JC.PrintMemUsage("Start building tickers")
 
-	if !JT.Config.HasProKey() || !JA.AppStatusManager.IsValidProKey() {
-		JC.Logln("Refusing to create tickers due to no pro key")
-		return nil
-	}
-
 	// Get the list of panel data
 	list := JT.BT.Get()
 	p := []*TickerDisplay{}

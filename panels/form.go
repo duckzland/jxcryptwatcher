@@ -70,7 +70,7 @@ func NewPanelForm(
 			return fmt.Errorf("Only numerical number with decimals allowed")
 		}
 
-		if math.Abs(value) < JC.Epsilon || value <= 0 {
+		if math.Abs(value) < JC.EPSILON || value <= 0 {
 			return fmt.Errorf("Only number larger than zero allowed")
 		}
 
@@ -167,7 +167,7 @@ func NewPanelForm(
 				if onNew != nil {
 					onNew(ns)
 				}
-				ns.Status = -1
+				ns.Status = JC.STATE_FETCHING_NEW
 			} else {
 				ns := JT.BP.GetData(uuid)
 				if ns == nil {
