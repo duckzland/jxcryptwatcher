@@ -124,7 +124,7 @@ func UpdateRates() bool {
 	}
 
 	JP.Grid.UpdatePanelsContent()
-
+	JC.Logln("Fetching has error: ", hasError)
 	if hasError != 0 {
 		JC.Logln("Error when fetching rates:", hasError)
 	}
@@ -461,7 +461,6 @@ func OpenSettingForm() {
 						JC.Tickers = JX.NewTickerGrid()
 					}
 
-					JA.AppStatusManager.SetConfigStatus(true)
 					JA.AppStatusManager.SetConfigStatus(true)
 
 					JT.TickerCache.SoftReset()

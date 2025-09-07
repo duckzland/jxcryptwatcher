@@ -238,24 +238,6 @@ func (h *PanelDisplay) UpdateContent() {
 		return
 	}
 
-	if !PanelForceUpdate {
-		if pkt.UsePanelKey().GetValueFloat() >= 0 {
-			pkt.Status = JC.STATE_LOADED
-		}
-
-		if pkt.UsePanelKey().GetValueFloat() == -1 && JM.AppStatusManager.IsGoodNetworkStatus() {
-			pkt.Status = JC.STATE_LOADING
-		}
-
-		if pkt.UsePanelKey().GetValueFloat() == -1 && !JM.AppStatusManager.IsGoodNetworkStatus() {
-			pkt.Status = JC.STATE_ERROR
-		}
-
-		if pkt.UsePanelKey().GetValueFloat() == -1 && !JM.AppStatusManager.IsValidConfig() {
-			pkt.Status = JC.STATE_ERROR
-		}
-	}
-
 	switch pkt.Status {
 	case JC.STATE_ERROR:
 		h.refTitle.Text = "Error loading data"
