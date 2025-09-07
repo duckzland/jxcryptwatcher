@@ -133,7 +133,11 @@ func (c *CryptosType) FetchData() string {
 		Timeout: 10 * time.Second,
 	}
 	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0")
+	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Expires", "0")
 
 	if err != nil {
 		JC.Logln("Error creating request:", err)
@@ -202,6 +206,9 @@ func (c *CryptosType) GetCryptos() int64 {
 
 	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Expires", "0")
 
 	JC.Logf("Fetching data from %v", req.URL)
 
