@@ -144,7 +144,7 @@ func (w *AppWorker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, sh
 				return
 			}
 			if cond := w.conditions[key]; cond != nil && !cond() {
-				w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Sleeper:%s] Skipped: condition not met", key))
+				// w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Sleeper:%s] Skipped: condition not met", key))
 				continue
 			}
 			if delayMs > 0 {
@@ -160,7 +160,7 @@ func (w *AppWorker) Call(key string, mode CallMode) {
 	if mode != CallBypassImmediate {
 		if cond, ok := w.conditions[key]; ok && cond != nil {
 			if !cond() {
-				w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Worker:%s] Skipped: condition not met", key))
+				// w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Worker:%s] Skipped: condition not met", key))
 				return
 			}
 		}

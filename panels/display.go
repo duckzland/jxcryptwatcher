@@ -238,6 +238,8 @@ func (h *PanelDisplay) UpdateContent() {
 		return
 	}
 
+	JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
+
 	switch pkt.Status {
 	case JC.STATE_ERROR:
 		h.refTitle.Text = "Error loading data"

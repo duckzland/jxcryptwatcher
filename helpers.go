@@ -673,13 +673,13 @@ func SetupWorkers() {
 	JA.AppWorkerManager.Register("update_rates", func() {
 		UpdateRates()
 	}, JT.Config.Delay*1000, 1000, func() bool {
-		return JA.AppStatusManager.ValidPanels()
+		return JA.AppStatusManager.ValidPanels() && JA.AppStatusManager.IsGoodNetworkStatus()
 	})
 
 	JA.AppWorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
 	}, JT.Config.Delay*1000, 1000, func() bool {
-		return JT.Config.IsValidTickers()
+		return JT.Config.IsValidTickers() && JA.AppStatusManager.IsGoodNetworkStatus()
 	})
 
 	JA.AppWorkerManager.RegisterBuffered("notification", func(messages []string) bool {
