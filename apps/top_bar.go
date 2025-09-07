@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
-	JW "jxwatcher/widgets"
 )
 
 type TopBarLayout struct {
@@ -119,8 +118,6 @@ func NewTopBar() fyne.CanvasObject {
 
 	topBg := canvas.NewRectangle(JC.PanelBG)
 	topBg.CornerRadius = 4
-
-	JC.NotificationContainer = JW.NewNotificationDisplayWidget()
 
 	return container.New(
 		&TopBarLayout{

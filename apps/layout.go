@@ -11,6 +11,7 @@ import (
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
 	JC "jxwatcher/core"
+	JW "jxwatcher/widgets"
 )
 
 type AppMainLayout struct {
@@ -282,6 +283,7 @@ func (m *AppLayout) RefreshContainer() {
 
 func NewAppLayoutManager() fyne.CanvasObject {
 
+	JC.NotificationContainer = JW.NewNotificationDisplayWidget()
 	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.PanelBorderRadius
