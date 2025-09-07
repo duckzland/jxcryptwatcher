@@ -165,6 +165,25 @@ func (m *AppFetcher) Call(key string, payload any, immediate bool) {
 	}
 }
 
+func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, callback func(AppFetchResult)) {
+	m.mu.Lock()
+	fetcher, exists := m.fetchers[key]
+	m.mu.Unlock()
+
+	if !exists || fetcher == nil {
+		JC.Logf("[CallWithCallback] Fetcher not found for key: %s", key)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	go fetcher.Fetch(ctx, payload, func(result AppFetchResult) {
+		result.Source = key
+		callback(result)
+	})
+}
+
 // --- Scheduled Payload Logic ---
 func (m *AppFetcher) SchedulePayload(key string, interval time.Duration, logic func() any) {
 	go func() {

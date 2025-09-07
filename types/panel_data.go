@@ -93,11 +93,25 @@ func (p *PanelDataType) Update(pk string) bool {
 		}
 	}
 
+	// oso := PanelKeyType{value: opk}
+	nso := PanelKeyType{value: npk}
+
+	//  JC.Logln("Trying to update with value:", "old value:", oso.GetValueFloat(), "old status:", p.Status, "new value:", nso.GetValueFloat())
+
+	switch p.Status {
+	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
+		if nso.GetValueFloat() >= 0 {
+			p.Status = JC.STATE_LOADED
+		}
+	case JC.STATE_LOADED:
+		// if nso.GetValueFloat() < 0 {
+		// 	p.Status = JC.STATE_LOADING
+		// }
+	}
+
 	if npk != opk {
 		p.Set(npk)
 		p.OldKey = opk
-
-		p.Status = JC.STATE_LOADED
 	}
 
 	return true

@@ -20,9 +20,6 @@ import (
 
 func UpdateDisplay() bool {
 
-	// JC.UpdateDisplayLock.Lock()
-	// defer JC.UpdateDisplayLock.Unlock()
-
 	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh display")
 		JC.Notify("Unable to refresh display: invalid configuration.")
@@ -37,13 +34,9 @@ func UpdateDisplay() bool {
 		pk := pkt.Get()
 		pkt.Update(pk)
 
-		// JC.Logln("Updating: ", pk)
-
 		// Give pause to prevent race condition
 		time.Sleep(1 * time.Millisecond)
 	}
-
-	// JC.Logln("Display Refreshed")
 
 	return true
 }
@@ -107,12 +100,11 @@ func UpdateRates() bool {
 			if ns == 0 {
 				successCount++
 			}
+
 			JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
 		}
 
 		JC.Logln("Fetching has error:", hasError)
-
-		JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
 
 		switch hasError {
 		case 0:
@@ -298,6 +290,7 @@ func RemovePanel(uuid string) {
 					fyne.Do(func() {
 						JP.Grid.ForceRefresh()
 
+						// Give time for grid to relayout first!
 						JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
 							JA.AppLayoutManager.RefreshLayout()
 						})
@@ -329,7 +322,7 @@ func SavePanelForm() {
 			if !ValidateCache() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+				JA.AppWorkerManager.Call("update_rates", JA.CallBypassImmediate)
 			}
 
 			JC.Notify("Panel settings saved.")
@@ -413,7 +406,10 @@ func ToggleDraggable() {
 	}
 
 	fyne.Do(func() {
-		JP.Grid.Refresh()
+		JP.Grid.ForceRefresh()
+		if JP.ActiveAction != nil {
+			JP.ActiveAction.HideTarget()
+		}
 	})
 }
 
@@ -423,67 +419,82 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 
 func ResetCryptosMap() {
 	if !JA.AppStatusManager.ValidConfig() {
-		JC.Logln("Invalid configuration, cannot reset cryptos map")
 		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 		return
 	}
-
 	if JA.AppStatusManager.IsFetchingCryptos() {
 		return
 	}
 
 	JA.AppStatusManager.StartFetchingCryptos()
 
-	Cryptos := JT.CryptosType{}
+	JA.AppFetcherManager.CallWithCallback("cryptos_map", nil, true, func(result JA.AppFetchResult) {
+		defer JA.AppStatusManager.EndFetchingCryptos()
 
-	// Fetch and generate json
-	status := DetectHTTPResponse(Cryptos.GetCryptos())
+		code := DetectHTTPResponse(result.Code)
 
-	switch status {
-	case 0:
-		CM := Cryptos.LoadFile().ConvertToMap()
-		if CM != nil {
-			JT.BP.SetMaps(CM)
-			JT.BP.Maps.ClearMapCache()
+		if code != 0 {
+			switch code {
+			case 1:
+				JC.Notify("Please check your network connection.")
+				JA.AppStatusManager.SetNetworkStatus(false)
+				JA.AppStatusManager.SetConfigStatus(true)
+			case 2, 3:
+				JC.Notify("Please check your settings.")
+				JA.AppStatusManager.SetConfigStatus(false)
+				JA.AppStatusManager.SetNetworkStatus(true)
+			}
 
-			JA.AppStatusManager.DetectData()
-			if JA.AppStatusManager.ValidCryptos() {
-				JC.Notify("Crypto map regenerated successfully")
+			JA.AppStatusManager.SetCryptoStatus(false)
 
-				if JT.BP.RefreshData() {
-					fyne.Do(func() {
-						JP.Grid.ForceRefresh()
-					})
+			return
+		}
 
-					// Force Refresh
-					JT.ExchangeCache.SoftReset()
-					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+		cryptos, ok := result.Data.(JT.CryptosType)
+		if !ok {
+			JC.Notify("Invalid crypto data format")
+			JA.AppStatusManager.SetCryptoStatus(false)
+			return
+		}
 
-					// Force Refresh
-					JT.TickerCache.SoftReset()
-					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+		CM := cryptos.ConvertToMap()
+		if CM == nil {
+			JC.Notify("Failed to convert crypto data to map")
+			JA.AppStatusManager.SetCryptoStatus(false)
+			return
+		}
 
-					JA.AppStatusManager.SetCryptoStatus(true)
+		JT.BP.SetMaps(CM)
+		JT.BP.Maps.ClearMapCache()
+		JA.AppStatusManager.DetectData()
 
-				}
+		if JA.AppStatusManager.ValidCryptos() {
+			JC.Notify("Crypto map regenerated successfully")
+
+			if JT.BP.RefreshData() {
+				fyne.Do(func() {
+					JP.Grid.ForceRefresh()
+				})
+
+				JT.ExchangeCache.SoftReset()
+				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+
+				JT.TickerCache.SoftReset()
+				JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+
+				JA.AppStatusManager.SetCryptoStatus(true)
+				JA.AppStatusManager.SetConfigStatus(true)
+				JA.AppStatusManager.SetNetworkStatus(true)
 			}
 		}
-	case 1:
-		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetCryptoStatus(false)
-	case 2, 3:
-		JC.Notify("Please check your settings.")
-		JA.AppStatusManager.SetCryptoStatus(false)
-	}
-
-	JA.AppStatusManager.EndFetchingCryptos()
+	})
 }
 
 func RegisterActions() {
 	// Refresh ticker data
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data",
 		func(btn *JW.HoverCursorIconButton) {
-			go ResetCryptosMap()
+			ResetCryptosMap()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
@@ -735,6 +746,17 @@ func SetupWorkers() {
 func SetupFetchers() {
 
 	var delay int64 = 100
+
+	JA.AppFetcherManager.Register("cryptos_map", &JA.GenericFetcher{
+		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+			c := JT.CryptosType{}
+			code := c.GetCryptos()
+			return JA.AppFetchResult{
+				Code: code,
+				Data: c,
+			}, nil
+		},
+	}, 0, nil)
 
 	JA.AppFetcherManager.Register("cmc100", &JA.GenericFetcher{
 		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {

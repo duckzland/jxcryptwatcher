@@ -17,7 +17,7 @@ import (
 	JT "jxwatcher/types"
 )
 
-var activeAction *PanelDisplay = nil
+var ActiveAction *PanelDisplay = nil
 var activeDragging *PanelDisplay = nil
 
 type PanelLayout struct{}
@@ -67,9 +67,9 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	if JM.AppStatusManager.IsDraggable() {
 		action.Hide()
-		if activeAction != nil {
-			activeAction.visible = false
-			activeAction = nil
+		if ActiveAction != nil {
+			ActiveAction.visible = false
+			ActiveAction = nil
 		}
 	}
 }
@@ -208,11 +208,9 @@ func NewPanelDisplay(
 				panel.background.FillColor = JC.RedColor
 				panel.background.Refresh()
 			}
-
-			panel.UpdateContent()
-		} else if pkt.Status != panel.status {
-			panel.UpdateContent()
 		}
+
+		panel.UpdateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
@@ -329,18 +327,18 @@ func (h *PanelDisplay) ShowTarget() {
 	h.visible = true
 	h.Refresh()
 
-	if activeAction != nil {
-		activeAction.HideTarget()
+	if ActiveAction != nil {
+		ActiveAction.HideTarget()
 	}
 
-	activeAction = h
+	ActiveAction = h
 }
 
 func (h *PanelDisplay) HideTarget() {
 	h.child.Hide()
 	h.visible = false
 	h.Refresh()
-	activeAction = nil
+	ActiveAction = nil
 }
 
 func (h *PanelDisplay) Cursor() desktop.Cursor {

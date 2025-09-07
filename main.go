@@ -22,6 +22,10 @@ func main() {
 
 	a.Settings().SetTheme(JA.NewTheme())
 
+	JC.Notify = func(msg string) {
+		JA.AppWorkerManager.PushMessage("notification", msg)
+	}
+
 	JA.AppActionManager.Init()
 
 	JA.AppStatusManager.Init()
@@ -67,6 +71,8 @@ func main() {
 	JP.Grid = &JP.PanelGridContainer{}
 
 	RegisterActions()
+	SetupFetchers()
+	SetupWorkers()
 
 	topBar := JA.NewTopBar()
 
@@ -74,15 +80,8 @@ func main() {
 
 	JC.Window.Resize(fyne.NewSize(920, 600))
 
-	SetupFetchers()
-	SetupWorkers()
-
 	if JC.IsMobile {
 		JC.Window.SetFixedSize(true)
-	}
-
-	JC.Notify = func(msg string) {
-		JA.AppWorkerManager.PushMessage("notification", msg)
 	}
 
 	JC.Notify("Application is starting...")
