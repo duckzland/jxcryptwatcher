@@ -74,6 +74,7 @@ func main() {
 
 	JC.Window.Resize(fyne.NewSize(920, 600))
 
+	SetupFetchers()
 	StartWorkers()
 	StartUpdateRatesWorker()
 	StartUpdateTickersWorker()

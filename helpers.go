@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 
+	"jxwatcher/apps"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
@@ -46,14 +49,9 @@ func UpdateDisplay() bool {
 }
 
 func UpdateRates() bool {
-
-	// JC.UpdateRatesLock.Lock()
-	// defer JC.UpdateRatesLock.Unlock()
-
 	if !JA.AppStatusManager.ValidConfig() {
 		JC.Logln("Invalid configuration, cannot refresh rates")
 		JC.Notify("Unable to refresh rates: invalid configuration.")
-
 		return false
 	}
 
@@ -62,26 +60,21 @@ func UpdateRates() bool {
 		return false
 	}
 
-	// Clear cached rates
 	JT.ExchangeCache.SoftReset()
 
-	ex := JT.ExchangeResults{}
 	jb := make(map[string]string)
 	list := JT.BP.Get()
 
-	// Prune data first, remove duplicate calls, merge into single call wheneveer possible
 	for _, pot := range list {
 		pk := JT.BP.GetData(pot.ID)
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
 
-		_, exists := jb[sid]
-		if !exists {
+		if _, exists := jb[sid]; !exists {
 			jb[sid] = sid + "|" + tid
 		} else {
 			jb[sid] += "," + tid
-
 		}
 	}
 
@@ -93,218 +86,146 @@ func UpdateRates() bool {
 	}
 
 	JC.Notify("Fetching the latest exchange rates...")
-
 	JA.AppStatusManager.StartFetchingRates()
 
-	var hasError int = 0
-	// var mu sync.Mutex
-	succesCount := 0
-
+	var payloads []any
 	for _, rk := range jb {
-
-		JT.ExchangeCache.SoftReset()
-		rs := ex.GetRate(rk)
-
-		// mu.Lock()
-		ns := DetectHTTPResponse(rs)
-		// JC.Logln("Processing : ", rk, " with ns: ", ns)
-
-		if hasError == 0 || hasError < ns {
-			hasError = ns
-		}
-		if hasError == 0 {
-			succesCount++
-		}
-
-		RequestDisplayUpdate(true)
-
-		// mu.Unlock()
-
-		// time.Sleep(100 * time.Millisecond)
+		payloads = append(payloads, rk)
 	}
 
-	JP.Grid.UpdatePanelsContent()
-	JC.Logln("Fetching has error: ", hasError)
-	if hasError != 0 {
-		JC.Logln("Error when fetching rates:", hasError)
-	}
+	var hasError int = 0
+	successCount := 0
 
-	switch hasError {
-	case 0:
-		JC.Notify("Exchange rates updated successfully")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		// JA.AppStatusManager.SetConfigStatus(true)
+	JA.AppFetcherManager.GroupPayloadCall("rates", payloads, func(results []JA.AppFetchResult) {
+		for _, result := range results {
+			JT.ExchangeCache.SoftReset()
 
-	case 1:
-		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetNetworkStatus(false)
-		// JA.AppStatusManager.SetConfigStatus(true)
+			ns := DetectHTTPResponse(result.Code)
+			if hasError == 0 || hasError < ns {
+				hasError = ns
+			}
+			if ns == 0 {
+				successCount++
+			}
 
-		if !JT.ExchangeCache.HasData() {
-			JP.PanelForceUpdate = true
-			JT.BP.ChangeAllStatus(JC.STATE_ERROR)
-			JP.Grid.UpdatePanelsContent()
-			JP.PanelForceUpdate = false
+			RequestDisplayUpdate(true)
 		}
 
-	case 2:
-		JC.Notify("Please check your settings.")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(false)
+		JP.Grid.UpdatePanelsContent()
+		JC.Logln("Fetching has error:", hasError)
 
-		if !JT.ExchangeCache.HasData() {
-			JP.PanelForceUpdate = true
-			JT.BP.ChangeAllStatus(JC.STATE_ERROR)
-			JP.Grid.UpdatePanelsContent()
-			JP.PanelForceUpdate = false
+		switch hasError {
+		case 0:
+			JC.Notify("Exchange rates updated successfully")
+			JA.AppStatusManager.SetNetworkStatus(true)
+		case 1:
+			JC.Notify("Please check your network connection.")
+			JA.AppStatusManager.SetNetworkStatus(false)
+			if !JT.ExchangeCache.HasData() {
+				JP.PanelForceUpdate = true
+				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
+				JP.Grid.UpdatePanelsContent()
+				JP.PanelForceUpdate = false
+			}
+		case 2:
+			JC.Notify("Please check your settings.")
+			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(false)
+			if !JT.ExchangeCache.HasData() {
+				JP.PanelForceUpdate = true
+				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
+				JP.Grid.UpdatePanelsContent()
+				JP.PanelForceUpdate = false
+			}
+		case 3:
+			JA.AppStatusManager.SetNetworkStatus(true)
 		}
-	case 3:
-		JA.AppStatusManager.SetNetworkStatus(true)
-		// JA.AppStatusManager.SetConfigStatus(true)
-	}
 
-	JC.Logf("Exchange Rate updated: %v/%v", succesCount, len(jb))
-
-	JA.AppStatusManager.EndFetchingRates()
+		JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
+		JA.AppStatusManager.EndFetchingRates()
+	})
 
 	return true
 }
 
 func UpdateTickers() bool {
-
-	// JC.UpdateTickersLock.Lock()
-	// defer JC.UpdateTickersLock.Unlock()
-
 	if !JT.Config.IsValidTickers() {
 		JC.Logln("Invalid ticker configuration, cannot refresh tickers")
-
 		if JA.AppStatusManager.IsReady() {
 			JC.Notify("Unable to refresh tickers: invalid configuration.")
 		}
-
 		return false
 	}
-
-	var hasError int = 0
 
 	if !JT.TickerCache.ShouldRefresh() {
 		JC.Logln("Unable to refresh tickers: not cleared should refresh yet.")
 		return false
 	}
 
-	// var mu sync.Mutex
-
 	JC.Notify("Fetching the latest ticker data...")
 	JA.AppStatusManager.StartFetchingTickers()
-
-	// Clear cached rates
 	JT.TickerCache.SoftReset()
 
+	// Prepare keys and payloads
+	keys := []string{}
+	payloads := map[string]any{}
+
 	if JT.Config.CanDoCMC100() {
-		ft := JT.CMC100Fetcher{}
-		JT.TickerCache.SoftReset()
-		rs := ft.GetRate()
-
-		tktt := JT.BT.GetDataByType("cmc100")
-		ns := DetectHTTPResponse(rs)
-
-		for _, tkt := range tktt {
-			ProcessTickerStatus(ns, tkt)
-		}
-
-		// mu.Lock()
-		if hasError == 0 {
-			hasError = ns
-		}
-		// mu.Unlock()
-
-		// time.Sleep(100 * time.Millisecond)
+		keys = append(keys, "cmc100")
+		payloads["cmc100"] = nil
 	}
-
 	if JT.Config.CanDoFearGreed() {
-		ft := JT.FearGreedFetcher{}
-		JT.TickerCache.SoftReset()
-		rs := ft.GetRate()
-
-		tktt := JT.BT.GetDataByType("feargreed")
-		ns := DetectHTTPResponse(rs)
-
-		for _, tkt := range tktt {
-			ProcessTickerStatus(ns, tkt)
-		}
-
-		// mu.Lock()
-		if hasError == 0 {
-			hasError = ns
-		}
-		// mu.Unlock()
-
-		// time.Sleep(200 * time.Millisecond)
+		keys = append(keys, "feargreed")
+		payloads["feargreed"] = nil
 	}
-
 	if JT.Config.CanDoMarketCap() {
-
-		ft := JT.MarketCapFetcher{}
-		JT.TickerCache.SoftReset()
-		rs := ft.GetRate()
-
-		tktt := JT.BT.GetDataByType("market_cap")
-		ns := DetectHTTPResponse(rs)
-
-		for _, tkt := range tktt {
-			ProcessTickerStatus(ns, tkt)
-		}
-
-		// mu.Lock()
-		if hasError == 0 || hasError < ns {
-			hasError = ns
-		}
-		// mu.Unlock()
-
-		// time.Sleep(200 * time.Millisecond)
+		keys = append(keys, "market_cap")
+		payloads["market_cap"] = nil
 	}
-
 	if JT.Config.CanDoAltSeason() {
-
-		ft := JT.AltSeasonFetcher{}
-		JT.TickerCache.SoftReset()
-		rs := ft.GetRate()
-
-		tktt := JT.BT.GetDataByType("altcoin_index")
-		ns := DetectHTTPResponse(rs)
-
-		for _, tkt := range tktt {
-			ProcessTickerStatus(ns, tkt)
-		}
-
-		// mu.Lock()
-		if hasError == 0 {
-			hasError = ns
-		}
-		// mu.Unlock()
-
-		// time.Sleep(200 * time.Millisecond)
+		keys = append(keys, "altcoin_index")
+		payloads["altcoin_index"] = nil
 	}
 
-	JA.AppStatusManager.EndFetchingTickers()
-
-	switch hasError {
-	case 0:
-		JC.Notify("Ticker rates updated successfully")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		// JA.AppStatusManager.SetConfigStatus(true)
-	case 1:
-		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetNetworkStatus(false)
-		// JA.AppStatusManager.SetConfigStatus(true)
-	case 2:
-		JC.Notify("Please check your settings.")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(false)
-	case 3:
-		JA.AppStatusManager.SetNetworkStatus(true)
-		// JA.AppStatusManager.SetConfigStatus(true)
+	if len(keys) == 0 {
+		JC.Notify("No valid ticker sources available.")
+		JA.AppStatusManager.EndFetchingTickers()
+		return false
 	}
+
+	var hasError int = 0
+
+	JA.AppFetcherManager.GroupCall(keys, payloads, func(results map[string]JA.AppFetchResult) {
+		for key, result := range results {
+			ns := DetectHTTPResponse(result.Code)
+			tktt := JT.BT.GetDataByType(key)
+
+			for _, tkt := range tktt {
+				ProcessTickerStatus(ns, tkt)
+			}
+
+			if hasError == 0 || hasError < ns {
+				hasError = ns
+			}
+		}
+
+		JA.AppStatusManager.EndFetchingTickers()
+
+		switch hasError {
+		case 0:
+			JC.Notify("Ticker rates updated successfully")
+			JA.AppStatusManager.SetNetworkStatus(true)
+		case 1:
+			JC.Notify("Please check your network connection.")
+			JA.AppStatusManager.SetNetworkStatus(false)
+		case 2:
+			JC.Notify("Please check your settings.")
+			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(false)
+		case 3:
+			JA.AppStatusManager.SetNetworkStatus(true)
+		}
+	})
 
 	return true
 }
@@ -823,4 +744,53 @@ func RegisterActions() {
 
 			btn.Enable()
 		}))
+}
+
+func SetupFetchers() {
+
+	var delay int64 = 100
+
+	JA.AppFetcherManager.Register("cmc100", &JA.GenericFetcher{
+		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+			ft := JT.CMC100Fetcher{}
+			code := ft.GetRate()
+			return JA.AppFetchResult{Code: code}, nil
+		},
+	}, delay, nil)
+
+	JA.AppFetcherManager.Register("feargreed", &JA.GenericFetcher{
+		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+			ft := JT.FearGreedFetcher{}
+			code := ft.GetRate()
+			return JA.AppFetchResult{Code: code}, nil
+		},
+	}, delay, nil)
+
+	JA.AppFetcherManager.Register("market_cap", &JA.GenericFetcher{
+		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+			ft := JT.MarketCapFetcher{}
+			code := ft.GetRate()
+			return JA.AppFetchResult{Code: code}, nil
+		},
+	}, delay, nil)
+
+	JA.AppFetcherManager.Register("altcoin_index", &JA.GenericFetcher{
+		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+			ft := JT.AltSeasonFetcher{}
+			code := ft.GetRate()
+			return JA.AppFetchResult{Code: code}, nil
+		},
+	}, delay, nil)
+
+	JA.AppFetcherManager.Register("rates", &apps.DynamicPayloadFetcher{
+		Handler: func(ctx context.Context, payload any) (apps.AppFetchResult, error) {
+			rk, ok := payload.(string)
+			if !ok {
+				return apps.AppFetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
+			}
+			ex := &JT.ExchangeResults{}
+			code := ex.GetRate(rk)
+			return apps.AppFetchResult{Code: code, Data: ex}, nil
+		},
+	}, delay, nil)
 }
