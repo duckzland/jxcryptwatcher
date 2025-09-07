@@ -402,7 +402,7 @@ func ResetCryptosMap() {
 
 	JA.AppStatusManager.StartFetchingCryptos()
 
-	JC.FetcherManager.CallWithCallback("cryptos_map", nil, true, func(result JC.FetchResult) {
+	JC.FetcherManager.CallWithCallback("cryptos_map", nil, func(result JC.FetchResult) {
 		defer JA.AppStatusManager.EndFetchingCryptos()
 
 		code := DetectHTTPResponse(result.Code)
@@ -815,7 +815,13 @@ func RegisterFetchers() {
 				Data: c,
 			}, nil
 		},
-	}, 0, nil)
+	}, 0, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+
+		return true
+	})
 
 	JC.FetcherManager.Register("cmc100", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
@@ -823,7 +829,16 @@ func RegisterFetchers() {
 			code := ft.GetRate()
 			return JC.FetchResult{Code: code}, nil
 		},
-	}, delay, nil)
+	}, delay, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+		if !JT.Config.CanDoCMC100() {
+			return false
+		}
+
+		return true
+	})
 
 	JC.FetcherManager.Register("feargreed", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
@@ -831,7 +846,16 @@ func RegisterFetchers() {
 			code := ft.GetRate()
 			return JC.FetchResult{Code: code}, nil
 		},
-	}, delay, nil)
+	}, delay, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+		if !JT.Config.CanDoFearGreed() {
+			return false
+		}
+
+		return true
+	})
 
 	JC.FetcherManager.Register("market_cap", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
@@ -839,7 +863,16 @@ func RegisterFetchers() {
 			code := ft.GetRate()
 			return JC.FetchResult{Code: code}, nil
 		},
-	}, delay, nil)
+	}, delay, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+		if !JT.Config.CanDoMarketCap() {
+			return false
+		}
+
+		return true
+	})
 
 	JC.FetcherManager.Register("altcoin_index", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
@@ -847,7 +880,16 @@ func RegisterFetchers() {
 			code := ft.GetRate()
 			return JC.FetchResult{Code: code}, nil
 		},
-	}, delay, nil)
+	}, delay, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+		if !JT.Config.CanDoAltSeason() {
+			return false
+		}
+
+		return true
+	})
 
 	JC.FetcherManager.Register("rates", &JC.DynamicPayloadFetcher{
 		Handler: func(ctx context.Context, payload any) (JC.FetchResult, error) {
@@ -859,5 +901,14 @@ func RegisterFetchers() {
 			code := ex.GetRate(rk)
 			return JC.FetchResult{Code: code, Data: ex}, nil
 		},
-	}, delay, nil)
+	}, delay, func(fr JC.FetchResult) {
+		// Process results?
+
+	}, func() bool {
+		if !JA.AppStatusManager.ValidPanels() {
+			return false
+		}
+
+		return true
+	})
 }

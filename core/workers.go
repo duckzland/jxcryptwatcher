@@ -158,7 +158,6 @@ func (w *Worker) Call(key string, mode CallMode) {
 	if mode != CallBypassImmediate {
 		if cond, ok := w.conditions[key]; ok && cond != nil {
 			if !cond() {
-				// w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Worker:%s] Skipped: condition not met", key))
 				return
 			}
 		}
