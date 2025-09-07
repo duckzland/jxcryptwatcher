@@ -5,63 +5,80 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 
-	JX "jxwatcher/animations"
 	JC "jxwatcher/core"
 )
 
 type NotificationDisplayWidget struct {
-	text *canvas.Text
+	widget.BaseWidget
+	text    *canvas.Text
+	padding float32
 }
 
-type NotificationContainer struct {
-	*fyne.Container
-	Widget *NotificationDisplayWidget
-}
+func NewNotificationDisplayWidget() *NotificationDisplayWidget {
+	t := canvas.NewText("", color.White)
+	t.Alignment = fyne.TextAlignCenter
+	t.TextSize = theme.TextSize()
 
-func NewNotificationDisplayWidget() *NotificationContainer {
-	tw := canvas.NewText("", color.White)
-	tw.Alignment = fyne.TextAlignLeading
-
-	widget := &NotificationDisplayWidget{
-		text: tw,
+	w := &NotificationDisplayWidget{
+		text:    t,
+		padding: 10,
 	}
+	w.ExtendBaseWidget(w)
+	return w
+}
 
-	c := container.NewCenter(tw)
+func (w *NotificationDisplayWidget) UpdateText(msg string) {
+	maxWidth := w.text.Size().Width
+	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize)
+	w.text.Color = color.White
+	w.text.Refresh()
+	w.Refresh()
+}
 
-	return &NotificationContainer{
-		Container: c,
-		Widget:    widget,
+func (w *NotificationDisplayWidget) ClearText() {
+	w.text.Text = ""
+	w.text.Color = color.White
+	w.text.Refresh()
+	w.Refresh()
+}
+
+func (w *NotificationDisplayWidget) GetText() string {
+	return w.text.Text
+}
+
+func (w *NotificationDisplayWidget) CreateRenderer() fyne.WidgetRenderer {
+	return &notificationRenderer{
+		text:      w.text,
+		container: w,
 	}
 }
 
-func (nc *NotificationContainer) UpdateText(msg string) {
-	// time.Sleep(600 * time.Millisecond) // FYNE layout quirk
-
-	maxWidth := JC.MainLayoutContentWidth - 20
-
-	fyne.Do(func() {
-		nc.Widget.text.Text = JC.TruncateText(msg, maxWidth, nc.Widget.text.TextSize)
-		nc.Widget.text.Color = color.White
-		// nc.Widget.text.Refresh()
-		nc.Refresh()
-		JC.Logln("Current widget text:", nc.Widget.text.Text, maxWidth, msg)
-	})
-
-	// time.Sleep(600 * time.Millisecond)
+type notificationRenderer struct {
+	text      *canvas.Text
+	container *NotificationDisplayWidget
 }
 
-func (nc *NotificationContainer) ClearText() {
-	JX.StartFadingText(nc.Widget.text, func() {
-		fyne.Do(func() {
-			nc.Widget.text.Text = ""
-			nc.Widget.text.Color = color.White
-			nc.Widget.text.Refresh()
-		})
-	}, nil)
+func (r *notificationRenderer) Layout(size fyne.Size) {
+	p := r.container.padding
+	r.text.Move(fyne.NewPos(p, 0))
+	r.text.Resize(fyne.NewSize(size.Width-2*p, size.Height))
 }
 
-func (nc *NotificationContainer) GetText() string {
-	return nc.Widget.text.Text
+func (r *notificationRenderer) MinSize() fyne.Size {
+	min := r.text.MinSize()
+	p := r.container.padding
+	return fyne.NewSize(min.Width+2*p, min.Height)
 }
+
+func (r *notificationRenderer) Refresh() {
+	r.text.Refresh()
+}
+
+func (r *notificationRenderer) Objects() []fyne.CanvasObject {
+	return []fyne.CanvasObject{r.text}
+}
+
+func (r *notificationRenderer) Destroy() {}

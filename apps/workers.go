@@ -1,0 +1,262 @@
+package apps
+
+import (
+	"sync"
+	"time"
+
+	JC "jxwatcher/core"
+)
+
+// --- Call Modes ---
+type CallMode int
+
+const (
+	CallImmediate CallMode = iota
+	CallQueued
+	CallDebounced
+	CallBypassImmediate
+)
+
+// --- Worker Function Types ---
+type WorkerFunc func()
+type BufferedWorkerFunc func(messages []string) bool
+
+// --- AppWorker Manager ---
+type AppWorker struct {
+	// Non-buffered
+	workers    map[string]WorkerFunc
+	locks      map[string]*sync.Mutex
+	active     map[string]bool
+	queues     map[string]chan struct{}
+	conditions map[string]func() bool
+	lastRun    map[string]time.Time
+
+	// Buffered
+	bufferedWorkers map[string]BufferedWorkerFunc
+	messageQueues   map[string]chan string
+
+	mu sync.Mutex
+}
+
+// --- Global Instance ---
+var AppWorkerManager = &AppWorker{
+	workers:         make(map[string]WorkerFunc),
+	locks:           make(map[string]*sync.Mutex),
+	active:          make(map[string]bool),
+	queues:          make(map[string]chan struct{}),
+	conditions:      make(map[string]func() bool),
+	lastRun:         make(map[string]time.Time),
+	bufferedWorkers: make(map[string]BufferedWorkerFunc),
+	messageQueues:   make(map[string]chan string),
+}
+
+// --- Register Non-Buffered Worker ---
+func (w *AppWorker) Register(key string, fn WorkerFunc, intervalMs int64, debounceMs int64, shouldRun func() bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.workers[key] = fn
+	w.locks[key] = &sync.Mutex{}
+	w.active[key] = true
+	w.queues[key] = make(chan struct{}, 100)
+	w.conditions[key] = shouldRun
+
+	go w.startQueueWorker(key, false)
+
+	if intervalMs > 0 {
+		go func() {
+			ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+			defer ticker.Stop()
+			for range ticker.C {
+				if w.active[key] {
+					w.Call(key, CallQueued)
+				}
+			}
+		}()
+	}
+}
+
+// --- Register Buffered Worker ---
+func (w *AppWorker) RegisterBuffered(key string, fn BufferedWorkerFunc, intervalMs int64, debounceMs int64, bufferSize int64, shouldRun func() bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.bufferedWorkers[key] = fn
+	w.locks[key] = &sync.Mutex{}
+	w.active[key] = true
+	w.queues[key] = make(chan struct{}, 100)
+	w.conditions[key] = shouldRun
+	w.messageQueues[key] = make(chan string, bufferSize)
+
+	go w.startQueueWorker(key, true)
+
+	if intervalMs > 0 {
+		go func() {
+			ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+			defer ticker.Stop()
+			for range ticker.C {
+				if w.active[key] {
+					w.Call(key, CallQueued)
+				}
+			}
+		}()
+	}
+}
+
+// --- Register Sleeper Worker ---
+func (w *AppWorker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shouldRun func() bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.workers[key] = fn
+	w.locks[key] = &sync.Mutex{}
+	w.active[key] = true
+	w.queues[key] = make(chan struct{}) // unbuffered: sleeps until triggered
+	w.conditions[key] = shouldRun
+
+	go func() {
+		for {
+			_, ok := <-w.queues[key]
+			if !ok || !w.active[key] {
+				return
+			}
+			if cond := w.conditions[key]; cond != nil && !cond() {
+				JC.Logf("[Sleeper:%s] Skipped: condition not met", key)
+				continue
+			}
+			if delayMs > 0 {
+				time.Sleep(time.Duration(delayMs) * time.Millisecond)
+			}
+			w.runWorker(key)
+		}
+	}()
+}
+
+// --- Call Worker with Mode ---
+func (w *AppWorker) Call(key string, mode CallMode) {
+	if mode != CallBypassImmediate {
+		if cond, ok := w.conditions[key]; ok && cond != nil {
+			if !cond() {
+				JC.Logf("[Worker:%s] Skipped: condition not met", key)
+				return
+			}
+		}
+	}
+
+	switch mode {
+	case CallImmediate, CallBypassImmediate:
+		go w.runWorker(key)
+	case CallQueued:
+		w.queues[key] <- struct{}{}
+	case CallDebounced:
+		JC.MainDebouncer.Call("worker_"+key, time.Duration(1000)*time.Millisecond, func() {
+			w.queues[key] <- struct{}{}
+		})
+	}
+}
+
+// --- Push Message to Buffered Worker ---
+func (w *AppWorker) PushMessage(key string, msg string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if ch, ok := w.messageQueues[key]; ok {
+		ch <- msg
+		w.queues[key] <- struct{}{}
+	}
+}
+
+// --- Get Message Channel ---
+func (w *AppWorker) GetMessageChannel(key string) <-chan string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if ch, ok := w.messageQueues[key]; ok {
+		return ch
+	}
+	return nil
+}
+
+// --- Run Non-Buffered Worker ---
+func (w *AppWorker) runWorker(key string) {
+	w.mu.Lock()
+	lock, exists := w.locks[key]
+	fn, ok := w.workers[key]
+	w.mu.Unlock()
+
+	if !exists || !ok {
+		JC.Logf("[Worker:%s] Not registered", key)
+		return
+	}
+
+	lock.Lock()
+	defer lock.Unlock()
+
+	JC.Logf("[Worker:%s] Executing...", key)
+	fn()
+
+	w.mu.Lock()
+	w.lastRun[key] = time.Now()
+	w.mu.Unlock()
+}
+
+// --- Run Buffered Worker ---
+func (w *AppWorker) runBufferedWorker(key string) {
+	w.mu.Lock()
+	lock := w.locks[key]
+	fn := w.bufferedWorkers[key]
+	msgCh := w.messageQueues[key]
+	w.mu.Unlock()
+
+	lock.Lock()
+	defer lock.Unlock()
+
+	var messages []string
+	for {
+		select {
+		case msg := <-msgCh:
+			messages = append(messages, msg)
+		default:
+			break
+		}
+	}
+
+	if len(messages) > 0 {
+		JC.Logf("[Worker:%s] Executing with %d messages...", key, len(messages))
+		if fn(messages) {
+			w.mu.Lock()
+			w.lastRun[key] = time.Now()
+			w.mu.Unlock()
+		}
+	}
+}
+
+// --- Queue Worker Loop ---
+func (w *AppWorker) startQueueWorker(key string, buffered bool) {
+	for range w.queues[key] {
+		if buffered {
+			w.runBufferedWorker(key)
+		} else {
+			w.runWorker(key)
+		}
+	}
+}
+
+// --- Stop Worker ---
+func (w *AppWorker) Stop(key string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.active[key] = false
+	JC.Logf("[Worker:%s] Marked as inactive", key)
+}
+
+// --- Get Last Update Timestamp ---
+func (w *AppWorker) GetLastUpdate(key string) time.Time {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if ts, ok := w.lastRun[key]; ok {
+		return ts
+	}
+	return time.Time{}
+}

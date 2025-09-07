@@ -114,6 +114,8 @@ func UpdateRates() bool {
 		JP.Grid.UpdatePanelsContent()
 		JC.Logln("Fetching has error:", hasError)
 
+		JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
+
 		switch hasError {
 		case 0:
 			JC.Notify("Exchange rates updated successfully")
@@ -671,57 +673,61 @@ func RegisterActions() {
 }
 
 func SetupWorkers() {
-	JA.AppWorkerManager.Register("update_display", func() {
+	JA.AppWorkerManager.RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
 			JC.UpdateDisplayTimestamp = time.Now()
 		}
-	}, 2000, 1000, func() bool {
+	}, 200, func() bool {
 		return JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData()
 	})
 
 	JA.AppWorkerManager.Register("update_rates", func() {
 		UpdateRates()
-	}, JT.Config.Delay, 1000, func() bool {
+	}, JT.Config.Delay*1000, 1000, func() bool {
 		return JA.AppStatusManager.ValidPanels()
 	})
 
 	JA.AppWorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
-	}, JT.Config.Delay, 1000, func() bool {
+	}, JT.Config.Delay*1000, 1000, func() bool {
 		return JT.Config.IsValidTickers()
 	})
 
-	JA.AppWorkerManager.Register("notification", func() {
+	JA.AppWorkerManager.RegisterBuffered("notification", func(messages []string) bool {
 
-		ch := JA.AppWorkerManager.GetMessageChannel("notification")
-
-		select {
-		case msg := <-ch:
-			nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
-			if !ok {
-				JC.Logln("failed to show")
-				return
-			}
-			JC.Logln("Message received:", msg)
-			nc.UpdateText(msg)
-		default:
-			// no message
+		if len(messages) == 0 {
+			return false
 		}
-	}, 600, 600, nil)
+		latest := messages[len(messages)-1]
+
+		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
+		if !ok {
+			return false
+		}
+
+		fyne.Do(func() {
+			nc.UpdateText(latest)
+		})
+
+		return true
+
+	}, 1000, 1000, 1000, nil)
 
 	JA.AppWorkerManager.Register("notification_idle_clear", func() {
 
-		nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
+		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
 		if !ok {
 			return
 		}
 
 		JC.Logln("Clearing notification display due to inactivity")
-		nc.ClearText()
+		fyne.Do(func() {
+			nc.ClearText()
+		})
 
-	}, 100, 1000, func() bool {
+	}, 5000, 1000, func() bool {
 
-		nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
+		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
 		if !ok {
 			return false
 		}
