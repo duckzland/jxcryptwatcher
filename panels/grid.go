@@ -11,7 +11,7 @@ import (
 )
 
 var DragDropZones []*PanelDropZone
-var Grid *PanelGridContainer
+var Grid *PanelGridContainer = &PanelGridContainer{}
 
 type PanelDropZone struct {
 	top    float32

@@ -5,25 +5,21 @@
   // Endpoint for performing price conversion and exchange calculations
   "exchange_endpoint": "https://api.coinmarketcap.com/data-api/v3/tools/price-conversion",
 
+  // Endpoint for retrieving ticker data about alt season index
+	"altseason_endpoint": "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart",
+
+  // Endpoint for retrieving ticker data about fear & greed index
+	"feargreed_endpoint": "https://api.coinmarketcap.com/data-api/v3/fear-greed/chart",
+
+  // Endpoint for retrieving ticker data about CMC 100 index
+	"cmc100_endpoint":    "https://api.coinmarketcap.com/data-api/v3/top100/supplement",
+
+  // Endpoint for retrieving ticker data about market cap index
+	"marketcap_endpoint": "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical",
+
   // Delay between ticker updates (in seconds).
   // Please be considerate—CoinMarketCap enforces a 60-second rate limit on API requests.
   "delay": 60,
-
-  // The ticker_* endpoint is using CMC Pro endpoint, you will need to register and get their API key
-  // The free account has 10,000 request monthly limit. Each endpoint call will be counted as 1 credit
-  // Please set the delay according to your account limit.
-  "ticker_cmc100_endpoint": "https://pro-api.coinmarketcap.com/v3/index/cmc100-latest",
-
-  "ticker_feargreed_endpoint": "https://pro-api.coinmarketcap.com/v3/fear-and-greed/latest",
-
-  "ticker_metrics_endpoint": "https://pro-api.coinmarketcap.com/v1/global-metrics/quotes/latest",
-
-  "ticker_listings_endpoint": "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
-
-  "pro_api_key": "secret_api_key",
-
-  // By default CMC will only refresh every 5 minutes, this should be configured based on your pro API limit
-  "ticker_delay": 1500,
 
   // For internal usage, since version v1.2.0
   "version": "app_version"

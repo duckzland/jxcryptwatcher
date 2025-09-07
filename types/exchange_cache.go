@@ -15,6 +15,14 @@ type ExchangeDataCacheType struct {
 	LastUpdated *time.Time
 }
 
+func (ec *ExchangeDataCacheType) Init() *ExchangeDataCacheType {
+	ec.data = sync.Map{}
+	ec.Timestamp = time.Now()
+	ec.LastUpdated = nil
+
+	return ec
+}
+
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
 	if val, ok := ec.data.Load(ck); ok {
 		ex := val.(ExchangeDataType)

@@ -241,3 +241,7 @@ func TraceGoroutines() {
 	count := runtime.NumGoroutine()
 	Logf("[GOROUTINE TRACE] Active goroutines: %d", count)
 }
+
+func Notify(msg string) {
+	WorkerManager.PushMessage("notification", msg)
+}

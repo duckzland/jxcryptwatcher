@@ -1,4 +1,4 @@
-package apps
+package core
 
 import (
 	"context"
@@ -6,12 +6,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	JC "jxwatcher/core"
 )
 
 // --- Result Struct ---
-type AppFetchResult struct {
+type FetchResult struct {
 	Code   int64
 	Data   any
 	Err    error
@@ -19,8 +17,8 @@ type AppFetchResult struct {
 }
 
 // --- Fetcher Interface ---
-type AppFetcherInterface interface {
-	Fetch(ctx context.Context, payload any, callback func(AppFetchResult))
+type FetcherInterface interface {
+	Fetch(ctx context.Context, payload any, callback func(FetchResult))
 }
 
 // --- Request Struct ---
@@ -30,12 +28,12 @@ type FetchRequest struct {
 }
 
 // --- Manager ---
-type AppFetcher struct {
-	fetchers         map[string]AppFetcherInterface
+type Fetcher struct {
+	fetchers         map[string]FetcherInterface
 	queues           map[string]chan FetchRequest
 	delay            map[string]time.Duration
 	lastActivity     map[string]*time.Time
-	callbacks        map[string]func(AppFetchResult)
+	callbacks        map[string]func(FetchResult)
 	recentGroupedLog string
 	lastGroupedLog   time.Time
 	activeWorkers    map[string]context.CancelFunc
@@ -43,31 +41,31 @@ type AppFetcher struct {
 }
 
 // --- Global Instance ---
-var AppFetcherManager = &AppFetcher{
-	fetchers:         make(map[string]AppFetcherInterface),
+var FetcherManager = &Fetcher{
+	fetchers:         make(map[string]FetcherInterface),
 	queues:           make(map[string]chan FetchRequest),
 	delay:            make(map[string]time.Duration),
 	lastActivity:     make(map[string]*time.Time),
-	callbacks:        make(map[string]func(AppFetchResult)),
+	callbacks:        make(map[string]func(FetchResult)),
 	recentGroupedLog: "",
 	lastGroupedLog:   time.Time{},
 	activeWorkers:    make(map[string]context.CancelFunc),
 }
 
 // --- Centralized Grouped Logger ---
-func (m *AppFetcher) logGrouped(tag string, lines []string, interval time.Duration) {
+func (m *Fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
 	msg := fmt.Sprintf("[%s] %s", tag, strings.Join(lines, " | "))
 	now := time.Now()
 
 	if msg != m.recentGroupedLog || now.Sub(m.lastGroupedLog) >= interval {
-		JC.Logln(msg)
+		Logln(msg)
 		m.recentGroupedLog = msg
 		m.lastGroupedLog = now
 	}
 }
 
 // --- Registration ---
-func (m *AppFetcher) Register(key string, fetcher AppFetcherInterface, delaySeconds int64, callback func(AppFetchResult)) {
+func (m *Fetcher) Register(key string, fetcher FetcherInterface, delaySeconds int64, callback func(FetchResult)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -83,7 +81,7 @@ func (m *AppFetcher) Register(key string, fetcher AppFetcherInterface, delaySeco
 }
 
 // --- Worker Loop ---
-func (m *AppFetcher) startWorker(key string) {
+func (m *Fetcher) startWorker(key string) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	m.mu.Lock()
@@ -104,7 +102,7 @@ func (m *AppFetcher) startWorker(key string) {
 					// proceed with fetch
 				}
 
-				m.fetchers[key].Fetch(ctx, req.Payload, func(result AppFetchResult) {
+				m.fetchers[key].Fetch(ctx, req.Payload, func(result FetchResult) {
 					if cb := m.callbacks[key]; cb != nil {
 						cb(result)
 					}
@@ -129,7 +127,7 @@ func (m *AppFetcher) startWorker(key string) {
 }
 
 // --- Watchdog ---
-func (m *AppFetcher) watchdog(maxIdle time.Duration) {
+func (m *Fetcher) watchdog(maxIdle time.Duration) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
@@ -152,7 +150,7 @@ func (m *AppFetcher) watchdog(maxIdle time.Duration) {
 }
 
 // --- Manual Call ---
-func (m *AppFetcher) Call(key string, payload any, immediate bool) {
+func (m *Fetcher) Call(key string, payload any, immediate bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -161,7 +159,7 @@ func (m *AppFetcher) Call(key string, payload any, immediate bool) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			m.fetchers[key].Fetch(ctx, payload, func(result AppFetchResult) {
+			m.fetchers[key].Fetch(ctx, payload, func(result FetchResult) {
 				result.Source = key
 				lines := []string{
 					fmt.Sprintf("Immediate call → %s → Code: %d", result.Source, result.Code),
@@ -183,7 +181,7 @@ func (m *AppFetcher) Call(key string, payload any, immediate bool) {
 	}
 }
 
-func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, callback func(AppFetchResult)) {
+func (m *Fetcher) CallWithCallback(key string, payload any, immediate bool, callback func(FetchResult)) {
 	m.mu.Lock()
 	fetcher, exists := m.fetchers[key]
 	m.mu.Unlock()
@@ -198,7 +196,7 @@ func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, c
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	go fetcher.Fetch(ctx, payload, func(result AppFetchResult) {
+	go fetcher.Fetch(ctx, payload, func(result FetchResult) {
 		result.Source = key
 		m.logGrouped("CALLBACK", []string{
 			fmt.Sprintf("Callback → %s → Code: %d", result.Source, result.Code),
@@ -208,7 +206,7 @@ func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, c
 }
 
 // --- Scheduled Payload Logic ---
-func (m *AppFetcher) SchedulePayload(key string, interval time.Duration, logic func() any) {
+func (m *Fetcher) SchedulePayload(key string, interval time.Duration, logic func() any) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -221,9 +219,9 @@ func (m *AppFetcher) SchedulePayload(key string, interval time.Duration, logic f
 }
 
 // --- Grouped Fetch ---
-func (m *AppFetcher) GroupCall(keys []string, payloads map[string]any, callback func(map[string]AppFetchResult)) {
+func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, callback func(map[string]FetchResult)) {
 	var wg sync.WaitGroup
-	results := make(map[string]AppFetchResult)
+	results := make(map[string]FetchResult)
 	mu := sync.Mutex{}
 
 	for _, key := range keys {
@@ -235,7 +233,7 @@ func (m *AppFetcher) GroupCall(keys []string, payloads map[string]any, callback 
 			defer cancel()
 
 			payload := payloads[k]
-			m.fetchers[k].Fetch(ctx, payload, func(result AppFetchResult) {
+			m.fetchers[k].Fetch(ctx, payload, func(result FetchResult) {
 				result.Source = k
 				mu.Lock()
 				results[k] = result
@@ -255,9 +253,9 @@ func (m *AppFetcher) GroupCall(keys []string, payloads map[string]any, callback 
 	}()
 }
 
-func (m *AppFetcher) GroupPayloadCall(key string, payloads []any, callback func([]AppFetchResult)) {
+func (m *Fetcher) GroupPayloadCall(key string, payloads []any, callback func([]FetchResult)) {
 	var wg sync.WaitGroup
-	results := make([]AppFetchResult, len(payloads))
+	results := make([]FetchResult, len(payloads))
 	mu := sync.Mutex{}
 
 	for i, payload := range payloads {
@@ -276,7 +274,7 @@ func (m *AppFetcher) GroupPayloadCall(key string, payloads []any, callback func(
 				return
 			}
 
-			fetcher.Fetch(ctx, p, func(result AppFetchResult) {
+			fetcher.Fetch(ctx, p, func(result FetchResult) {
 				result.Source = key
 				mu.Lock()
 				results[idx] = result
@@ -298,10 +296,10 @@ func (m *AppFetcher) GroupPayloadCall(key string, payloads []any, callback func(
 
 // --- Fetcher Types ---
 type DynamicPayloadFetcher struct {
-	Handler func(ctx context.Context, payload any) (AppFetchResult, error)
+	Handler func(ctx context.Context, payload any) (FetchResult, error)
 }
 
-func (df *DynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callback func(AppFetchResult)) {
+func (df *DynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callback func(FetchResult)) {
 	result, err := df.Handler(ctx, payload)
 	if err != nil {
 		result.Err = err
@@ -310,10 +308,10 @@ func (df *DynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callbac
 }
 
 type GenericFetcher struct {
-	Handler func(ctx context.Context) (AppFetchResult, error)
+	Handler func(ctx context.Context) (FetchResult, error)
 }
 
-func (gf *GenericFetcher) Fetch(ctx context.Context, _ any, callback func(AppFetchResult)) {
+func (gf *GenericFetcher) Fetch(ctx context.Context, _ any, callback func(FetchResult)) {
 	result, err := gf.Handler(ctx)
 	if err != nil {
 		result.Err = err

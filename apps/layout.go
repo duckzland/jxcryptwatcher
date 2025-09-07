@@ -102,7 +102,7 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 }
 
 type AppLayout struct {
-	TopBar           *fyne.CanvasObject
+	TopBar           fyne.CanvasObject
 	Content          *fyne.CanvasObject
 	Tickers          *fyne.Container
 	Scroll           *container.Scroll
@@ -280,7 +280,7 @@ func (m *AppLayout) RefreshContainer() {
 	})
 }
 
-func NewAppLayoutManager(topbar *fyne.CanvasObject) fyne.CanvasObject {
+func NewAppLayoutManager() fyne.CanvasObject {
 
 	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
 	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
@@ -288,7 +288,7 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject) fyne.CanvasObject {
 	}
 
 	manager := &AppLayout{
-		TopBar: topbar,
+		TopBar: NewTopBar(),
 	}
 
 	AppLayoutManager = manager
@@ -323,7 +323,7 @@ func NewAppLayoutManager(topbar *fyne.CanvasObject) fyne.CanvasObject {
 		&AppMainLayout{
 			Padding: 10,
 		},
-		*manager.TopBar,
+		manager.TopBar,
 		manager.Tickers,
 		manager.Scroll,
 		DragPlaceholder,

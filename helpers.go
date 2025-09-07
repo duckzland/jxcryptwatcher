@@ -71,7 +71,7 @@ func UpdateRates() bool {
 	JC.Notify("Fetching the latest exchange rates...")
 	JA.AppStatusManager.StartFetchingRates()
 
-	JA.AppFetcherManager.GroupPayloadCall("rates", payloads, func(results []JA.AppFetchResult) {
+	JC.FetcherManager.GroupPayloadCall("rates", payloads, func(results []JC.FetchResult) {
 		defer JA.AppStatusManager.EndFetchingRates()
 
 		for _, result := range results {
@@ -85,7 +85,7 @@ func UpdateRates() bool {
 				successCount++
 			}
 
-			JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
+			JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
 		}
 
 		JC.Logln("Fetching has error:", hasError)
@@ -160,7 +160,7 @@ func UpdateTickers() bool {
 	JA.AppStatusManager.StartFetchingTickers()
 	JT.TickerCache.SoftReset()
 
-	JA.AppFetcherManager.GroupCall(keys, payloads, func(results map[string]JA.AppFetchResult) {
+	JC.FetcherManager.GroupCall(keys, payloads, func(results map[string]JC.FetchResult) {
 		defer JA.AppStatusManager.EndFetchingTickers()
 
 		for key, result := range results {
@@ -286,7 +286,7 @@ func SavePanelForm() {
 	JC.Notify("Saving panel settings...")
 
 	JP.Grid.ForceRefresh()
-	JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
+	JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
 
 	go func() {
 		if JT.SavePanels() {
@@ -295,7 +295,7 @@ func SavePanelForm() {
 			if !ValidateCache() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				JA.AppWorkerManager.Call("update_rates", JA.CallBypassImmediate)
+				JC.WorkerManager.Call("update_rates", JC.CallBypassImmediate)
 			}
 
 			JC.Notify("Panel settings saved.")
@@ -355,10 +355,10 @@ func OpenSettingForm() {
 					JA.AppStatusManager.SetConfigStatus(true)
 
 					JT.TickerCache.SoftReset()
-					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+					JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
 
 					JT.ExchangeCache.SoftReset()
-					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+					JC.WorkerManager.Call("update_rates", JC.CallImmediate)
 				}
 			} else {
 				JC.Notify("Failed to save configuration.")
@@ -402,7 +402,7 @@ func ResetCryptosMap() {
 
 	JA.AppStatusManager.StartFetchingCryptos()
 
-	JA.AppFetcherManager.CallWithCallback("cryptos_map", nil, true, func(result JA.AppFetchResult) {
+	JC.FetcherManager.CallWithCallback("cryptos_map", nil, true, func(result JC.FetchResult) {
 		defer JA.AppStatusManager.EndFetchingCryptos()
 
 		code := DetectHTTPResponse(result.Code)
@@ -451,10 +451,10 @@ func ResetCryptosMap() {
 				})
 
 				JT.ExchangeCache.SoftReset()
-				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
 
 				JT.TickerCache.SoftReset()
-				JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
 
 				JA.AppStatusManager.SetCryptoStatus(true)
 				JA.AppStatusManager.SetConfigStatus(true)
@@ -513,11 +513,11 @@ func RegisterActions() {
 
 			// Force update
 			JT.ExchangeCache.SoftReset()
-			JA.AppWorkerManager.Call("update_rates", JA.CallDebounced)
+			JC.WorkerManager.Call("update_rates", JC.CallDebounced)
 
 			// Force update
 			JT.TickerCache.SoftReset()
-			JA.AppWorkerManager.Call("update_tickers", JA.CallDebounced)
+			JC.WorkerManager.Call("update_tickers", JC.CallDebounced)
 
 		},
 		func(btn *JW.HoverCursorIconButton) {
@@ -654,8 +654,8 @@ func RegisterActions() {
 		}))
 }
 
-func SetupWorkers() {
-	JA.AppWorkerManager.RegisterSleeper("update_display", func() {
+func RegisterWorkers() {
+	JC.WorkerManager.RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
 			JC.UpdateDisplayTimestamp = time.Now()
 		}
@@ -689,7 +689,7 @@ func SetupWorkers() {
 		return true
 	})
 
-	JA.AppWorkerManager.Register("update_rates", func() {
+	JC.WorkerManager.Register("update_rates", func() {
 		UpdateRates()
 	}, JT.Config.Delay*1000, 1000, func() bool {
 
@@ -721,7 +721,7 @@ func SetupWorkers() {
 		return true
 	})
 
-	JA.AppWorkerManager.Register("update_tickers", func() {
+	JC.WorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
 	}, JT.Config.Delay*1000, 1000, func() bool {
 
@@ -748,7 +748,7 @@ func SetupWorkers() {
 		return true
 	})
 
-	JA.AppWorkerManager.RegisterBuffered("notification", func(messages []string) bool {
+	JC.WorkerManager.RegisterBuffered("notification", func(messages []string) bool {
 		if len(messages) == 0 {
 			return false
 		}
@@ -774,7 +774,7 @@ func SetupWorkers() {
 		return true
 	})
 
-	JA.AppWorkerManager.Register("notification_idle_clear", func() {
+	JC.WorkerManager.Register("notification_idle_clear", func() {
 
 		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
 		if !ok {
@@ -797,67 +797,67 @@ func SetupWorkers() {
 		if !ok {
 			return false
 		}
-		last := JA.AppWorkerManager.GetLastUpdate("notification")
+		last := JC.WorkerManager.GetLastUpdate("notification")
 		return time.Since(last) > 6*time.Second && nc.GetText() != ""
 	})
 }
 
-func SetupFetchers() {
+func RegisterFetchers() {
 
 	var delay int64 = 100
 
-	JA.AppFetcherManager.Register("cryptos_map", &JA.GenericFetcher{
-		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("cryptos_map", &JC.GenericFetcher{
+		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			c := JT.CryptosType{}
 			code := c.GetCryptos()
-			return JA.AppFetchResult{
+			return JC.FetchResult{
 				Code: code,
 				Data: c,
 			}, nil
 		},
 	}, 0, nil)
 
-	JA.AppFetcherManager.Register("cmc100", &JA.GenericFetcher{
-		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("cmc100", &JC.GenericFetcher{
+		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.CMC100Fetcher{}
 			code := ft.GetRate()
-			return JA.AppFetchResult{Code: code}, nil
+			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, nil)
 
-	JA.AppFetcherManager.Register("feargreed", &JA.GenericFetcher{
-		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("feargreed", &JC.GenericFetcher{
+		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.FearGreedFetcher{}
 			code := ft.GetRate()
-			return JA.AppFetchResult{Code: code}, nil
+			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, nil)
 
-	JA.AppFetcherManager.Register("market_cap", &JA.GenericFetcher{
-		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("market_cap", &JC.GenericFetcher{
+		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.MarketCapFetcher{}
 			code := ft.GetRate()
-			return JA.AppFetchResult{Code: code}, nil
+			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, nil)
 
-	JA.AppFetcherManager.Register("altcoin_index", &JA.GenericFetcher{
-		Handler: func(ctx context.Context) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("altcoin_index", &JC.GenericFetcher{
+		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.AltSeasonFetcher{}
 			code := ft.GetRate()
-			return JA.AppFetchResult{Code: code}, nil
+			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, nil)
 
-	JA.AppFetcherManager.Register("rates", &JA.DynamicPayloadFetcher{
-		Handler: func(ctx context.Context, payload any) (JA.AppFetchResult, error) {
+	JC.FetcherManager.Register("rates", &JC.DynamicPayloadFetcher{
+		Handler: func(ctx context.Context, payload any) (JC.FetchResult, error) {
 			rk, ok := payload.(string)
 			if !ok {
-				return JA.AppFetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
+				return JC.FetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
 			}
 			ex := &JT.ExchangeResults{}
 			code := ex.GetRate(rk)
-			return JA.AppFetchResult{Code: code, Data: ex}, nil
+			return JC.FetchResult{Code: code, Data: ex}, nil
 		},
 	}, delay, nil)
 }

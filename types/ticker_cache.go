@@ -14,6 +14,14 @@ type TickerDataCacheType struct {
 	LastUpdated *time.Time
 }
 
+func (ec *TickerDataCacheType) Init() *TickerDataCacheType {
+	ec.data = sync.Map{}
+	ec.Timestamp = time.Now()
+	ec.LastUpdated = nil
+
+	return ec
+}
+
 func (ec *TickerDataCacheType) Get(key string) string {
 	if val, ok := ec.data.Load(key); ok {
 		if strVal, ok := val.(string); ok {

@@ -16,19 +16,31 @@ import (
 func main() {
 	JC.InitLogger()
 
-	JT.ExchangeCache.Reset()
-
 	a := app.NewWithID(JC.AppID)
 
 	a.Settings().SetTheme(JA.NewTheme())
 
-	JC.Notify = func(msg string) {
-		JA.AppWorkerManager.PushMessage("notification", msg)
-	}
+	JC.Window = a.NewWindow("JXCrypto Watcher")
+
+	JT.ExchangeCache.Init()
+
+	JT.TickerCache.Init()
 
 	JA.AppActionManager.Init()
 
 	JA.AppStatusManager.Init()
+
+	RegisterActions()
+	RegisterFetchers()
+	RegisterWorkers()
+
+	JC.Window.SetContent(JA.NewAppLayoutManager())
+
+	JC.Window.Resize(fyne.NewSize(920, 600))
+
+	if JC.IsMobile {
+		JC.Window.SetFixedSize(true)
+	}
 
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 33*time.Millisecond, func() {
@@ -57,32 +69,14 @@ func main() {
 
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh
 				JT.TickerCache.SoftReset()
-				JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
 			}
 		})
 	})
-
-	JC.Window = a.NewWindow("JXCrypto Watcher")
-
-	JP.Grid = &JP.PanelGridContainer{}
-
-	RegisterActions()
-	SetupFetchers()
-	SetupWorkers()
-
-	topBar := JA.NewTopBar()
-
-	JC.Window.SetContent(JA.NewAppLayoutManager(&topBar))
-
-	JC.Window.Resize(fyne.NewSize(920, 600))
-
-	if JC.IsMobile {
-		JC.Window.SetFixedSize(true)
-	}
 
 	JC.Notify("Application is starting...")
 
