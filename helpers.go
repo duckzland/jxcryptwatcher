@@ -8,24 +8,15 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 
-	"jxwatcher/apps"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
 	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
-	"jxwatcher/widgets"
 	JW "jxwatcher/widgets"
 )
 
 func UpdateDisplay() bool {
-
-	if !JA.AppStatusManager.ValidConfig() {
-		JC.Logln("Invalid configuration, cannot refresh display")
-		JC.Notify("Unable to refresh display: invalid configuration.")
-
-		return false
-	}
 
 	list := JT.BP.Get()
 	for _, pot := range list {
@@ -42,6 +33,10 @@ func UpdateDisplay() bool {
 }
 
 func UpdateRates() bool {
+
+	if JA.AppStatusManager.IsFetchingRates() {
+		return false
+	}
 
 	JT.ExchangeCache.SoftReset()
 
@@ -62,12 +57,8 @@ func UpdateRates() bool {
 	}
 
 	if len(jb) == 0 {
-		JC.Notify("No valid panels found. Exchange rates were not updated.")
 		return false
 	}
-
-	JC.Notify("Fetching the latest exchange rates...")
-	JA.AppStatusManager.StartFetchingRates()
 
 	var payloads []any
 	for _, rk := range jb {
@@ -77,7 +68,12 @@ func UpdateRates() bool {
 	var hasError int = 0
 	successCount := 0
 
+	JC.Notify("Fetching the latest exchange rates...")
+	JA.AppStatusManager.StartFetchingRates()
+
 	JA.AppFetcherManager.GroupPayloadCall("rates", payloads, func(results []JA.AppFetchResult) {
+		defer JA.AppStatusManager.EndFetchingRates()
+
 		for _, result := range results {
 			JT.ExchangeCache.SoftReset()
 
@@ -122,7 +118,6 @@ func UpdateRates() bool {
 		}
 
 		JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
-		JA.AppStatusManager.EndFetchingRates()
 	})
 
 	return true
@@ -130,9 +125,9 @@ func UpdateRates() bool {
 
 func UpdateTickers() bool {
 
-	JC.Notify("Fetching the latest ticker data...")
-	JA.AppStatusManager.StartFetchingTickers()
-	JT.TickerCache.SoftReset()
+	if JA.AppStatusManager.IsFetchingTickers() {
+		return false
+	}
 
 	// Prepare keys and payloads
 	keys := []string{}
@@ -156,14 +151,18 @@ func UpdateTickers() bool {
 	}
 
 	if len(keys) == 0 {
-		JC.Notify("No valid ticker sources available.")
-		JA.AppStatusManager.EndFetchingTickers()
 		return false
 	}
 
 	var hasError int = 0
 
+	JC.Notify("Fetching the latest ticker data...")
+	JA.AppStatusManager.StartFetchingTickers()
+	JT.TickerCache.SoftReset()
+
 	JA.AppFetcherManager.GroupCall(keys, payloads, func(results map[string]JA.AppFetchResult) {
+		defer JA.AppStatusManager.EndFetchingTickers()
+
 		for key, result := range results {
 			ns := DetectHTTPResponse(result.Code)
 			tktt := JT.BT.GetDataByType(key)
@@ -176,8 +175,6 @@ func UpdateTickers() bool {
 				hasError = ns
 			}
 		}
-
-		JA.AppStatusManager.EndFetchingTickers()
 
 		switch hasError {
 		case 0:
@@ -398,6 +395,7 @@ func ResetCryptosMap() {
 		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 		return
 	}
+
 	if JA.AppStatusManager.IsFetchingCryptos() {
 		return
 	}
@@ -663,8 +661,13 @@ func SetupWorkers() {
 		}
 	}, 200, func() bool {
 
+		if !JA.AppStatusManager.ValidConfig() {
+			JC.Logln("Unable to refresh display: invalid configuration")
+			return false
+		}
+
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to refresh display: app is not ready yet.")
+			JC.Logln("Unable to refresh display: app is not ready yet")
 			return false
 		}
 
@@ -688,21 +691,20 @@ func SetupWorkers() {
 
 	JA.AppWorkerManager.Register("update_rates", func() {
 		UpdateRates()
-		JC.TraceGoroutines()
 	}, JT.Config.Delay*1000, 1000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to refresh rates: app is not ready yet.")
+			JC.Logln("Unable to refresh rates: app is not ready yet")
 			return false
 		}
 
 		if !JA.AppStatusManager.ValidConfig() {
-			JC.Notify("Unable to refresh rates: invalid configuration.")
+			JC.Notify("Unable to refresh rates: invalid configuration")
 			return false
 		}
 
 		if !JT.ExchangeCache.ShouldRefresh() {
-			JC.Logln("Unable to refresh rates: not cleared should refresh yet.")
+			JC.Logln("Unable to refresh rates: not cleared should refresh yet")
 			return false
 		}
 
@@ -724,7 +726,7 @@ func SetupWorkers() {
 	}, JT.Config.Delay*1000, 1000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to refresh tickers: app is not ready yet.")
+			JC.Logln("Unable to refresh tickers: app is not ready yet")
 			return false
 		}
 
@@ -752,7 +754,7 @@ func SetupWorkers() {
 		}
 		latest := messages[len(messages)-1]
 
-		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
+		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
 		if !ok {
 			return false
 		}
@@ -765,7 +767,7 @@ func SetupWorkers() {
 
 	}, 1000, 100, 1000, func() bool {
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to do notification: app is not ready yet.")
+			JC.Logln("Unable to do notification: app is not ready yet")
 			return false
 		}
 
@@ -774,7 +776,7 @@ func SetupWorkers() {
 
 	JA.AppWorkerManager.Register("notification_idle_clear", func() {
 
-		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
+		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
 		if !ok {
 			return
 		}
@@ -787,11 +789,11 @@ func SetupWorkers() {
 	}, 5000, 1000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to do notification: app is not ready yet.")
+			JC.Logln("Unable to do notification: app is not ready yet")
 			return false
 		}
 
-		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
+		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
 		if !ok {
 			return false
 		}
@@ -847,15 +849,15 @@ func SetupFetchers() {
 		},
 	}, delay, nil)
 
-	JA.AppFetcherManager.Register("rates", &apps.DynamicPayloadFetcher{
-		Handler: func(ctx context.Context, payload any) (apps.AppFetchResult, error) {
+	JA.AppFetcherManager.Register("rates", &JA.DynamicPayloadFetcher{
+		Handler: func(ctx context.Context, payload any) (JA.AppFetchResult, error) {
 			rk, ok := payload.(string)
 			if !ok {
-				return apps.AppFetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
+				return JA.AppFetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
 			}
 			ex := &JT.ExchangeResults{}
 			code := ex.GetRate(rk)
-			return apps.AppFetchResult{Code: code, Data: ex}, nil
+			return JA.AppFetchResult{Code: code, Data: ex}, nil
 		},
 	}, delay, nil)
 }

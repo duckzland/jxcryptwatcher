@@ -94,6 +94,16 @@ func (m *AppFetcher) startWorker(key string) {
 		for {
 			select {
 			case req := <-m.queues[key]:
+				select {
+				case <-ctx.Done():
+					m.logGrouped("WORKER", []string{
+						fmt.Sprintf("Terminated before processing: %s", key),
+					}, 60*time.Second)
+					return
+				default:
+					// proceed with fetch
+				}
+
 				m.fetchers[key].Fetch(ctx, req.Payload, func(result AppFetchResult) {
 					if cb := m.callbacks[key]; cb != nil {
 						cb(result)
@@ -124,8 +134,6 @@ func (m *AppFetcher) watchdog(maxIdle time.Duration) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		var messages []string
-		var killed []string
 
 		m.mu.Lock()
 		for key, last := range m.lastActivity {
@@ -133,20 +141,13 @@ func (m *AppFetcher) watchdog(maxIdle time.Duration) {
 				if cancel, ok := m.activeWorkers[key]; ok {
 					cancel()
 					delete(m.activeWorkers, key)
-					messages = append(messages, fmt.Sprintf("Killed ghost worker: %s", key))
+					m.logGrouped("WATCHDOG", []string{
+						fmt.Sprintf("Killed ghost worker: %s", key),
+					}, 60*time.Second)
 				}
-				go m.startWorker(key)
-				now := time.Now()
-				m.lastActivity[key] = &now
-				killed = append(killed, key)
 			}
 		}
 		m.mu.Unlock()
-
-		if len(killed) > 0 {
-			messages = append(messages, fmt.Sprintf("Restarted stale workers: %v", killed))
-			m.logGrouped("WATCHDOG", messages, 60*time.Second)
-		}
 	}
 }
 
