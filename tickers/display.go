@@ -135,10 +135,6 @@ func NewTickerDisplay(
 			return
 		}
 
-		if !pkt.DidChange() {
-			return
-		}
-
 		ticker.updateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)

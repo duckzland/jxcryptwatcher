@@ -208,6 +208,10 @@ func NewPanelDisplay(
 				panel.background.FillColor = JC.RedColor
 				panel.background.Refresh()
 			}
+		} else {
+			if pdt.Status != JC.STATE_ERROR {
+				panel.background.FillColor = JC.PanelBG
+			}
 		}
 
 		// Update content must fire when text (pk) change!

@@ -45,10 +45,10 @@ if ! command -v go-winres &> /dev/null; then
 fi
 
 # Check if wixl is installed
-# if ! command -v wixl &> /dev/null; then
-#     echo "Command wixl not found, install with 'sudo apt install wixl'"
-#     exit 1
-# fi
+if ! command -v wixl &> /dev/null; then
+    echo "Command wixl not found, install with 'sudo apt install wixl'"
+    exit 1
+fi
 
 # Check if version.txt exists and read the version
 if [ ! -f version.txt ]; then
