@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var verboseFetcherDebugMessage bool = false
+
 type FetchResult struct {
 	Code   int64
 	Data   any
@@ -47,6 +49,10 @@ var FetcherManager = &Fetcher{
 }
 
 func (m *Fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
+	if !verboseFetcherDebugMessage {
+		return
+	}
+
 	msg := fmt.Sprintf("[%s] %s", tag, strings.Join(lines, " | "))
 	now := time.Now()
 
@@ -102,36 +108,6 @@ func (m *Fetcher) Call(key string, payload any) {
 		})
 	}()
 
-}
-
-func (m *Fetcher) CallWithCallback(key string, payload any, callback func(FetchResult)) {
-	m.mu.Lock()
-	fetcher, exists := m.fetchers[key]
-	m.mu.Unlock()
-
-	if cond, ok := m.conditions[key]; ok && cond != nil {
-		if !cond() {
-			return
-		}
-	}
-
-	if !exists || fetcher == nil {
-		m.logGrouped("CALLBACK", []string{
-			fmt.Sprintf("Fetcher not found for key: %s", key),
-		}, 30*time.Second)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	go fetcher.Fetch(ctx, payload, func(result FetchResult) {
-		result.Source = key
-		m.logGrouped("CALLBACK", []string{
-			fmt.Sprintf("Callback → %s → Code: %d", result.Source, result.Code),
-		}, 30*time.Second)
-		callback(result)
-	})
 }
 
 func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, callback func(map[string]FetchResult)) {

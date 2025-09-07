@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var verboseWorkersDebugMessage bool = false
+
 type CallMode int
 
 const (
@@ -18,9 +20,7 @@ const (
 type WorkerFunc func()
 type BufferedWorkerFunc func(messages []string) bool
 
-// --- Worker Manager ---
 type Worker struct {
-	// Non-buffered
 	workers         map[string]WorkerFunc
 	locks           map[string]*sync.Mutex
 	active          map[string]bool
@@ -48,7 +48,11 @@ var WorkerManager = &Worker{
 	logTimestamps:   make(map[string]time.Time),
 }
 
-func (w *Worker) logGrouped(key string, intervalMs int64, msg string) {
+func (w *Worker) logGrouped(key string, interval int64, msg string) {
+	if !verboseWorkersDebugMessage {
+		return
+	}
+
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -56,14 +60,14 @@ func (w *Worker) logGrouped(key string, intervalMs int64, msg string) {
 	lastTime := w.logTimestamps[key]
 	now := time.Now()
 
-	if msg != lastMsg || now.Sub(lastTime).Milliseconds() >= intervalMs {
+	if msg != lastMsg || now.Sub(lastTime).Milliseconds() >= interval {
 		Logln(msg)
 		w.recentLogs[key] = msg
 		w.logTimestamps[key] = now
 	}
 }
 
-func (w *Worker) Register(key string, fn WorkerFunc, intervalMs int64, debounceMs int64, shouldRun func() bool) {
+func (w *Worker) Register(key string, fn WorkerFunc, interval int64, debounce int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -75,9 +79,9 @@ func (w *Worker) Register(key string, fn WorkerFunc, intervalMs int64, debounceM
 
 	go w.startQueueWorker(key, false)
 
-	if intervalMs > 0 {
+	if interval > 0 {
 		go func() {
-			ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 			defer ticker.Stop()
 			for range ticker.C {
 				if w.active[key] {
@@ -88,7 +92,7 @@ func (w *Worker) Register(key string, fn WorkerFunc, intervalMs int64, debounceM
 	}
 }
 
-func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, intervalMs int64, debounceMs int64, bufferSize int64, shouldRun func() bool) {
+func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -101,9 +105,9 @@ func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, intervalMs 
 
 	go w.startQueueWorker(key, true)
 
-	if intervalMs > 0 {
+	if interval > 0 {
 		go func() {
-			ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 			defer ticker.Stop()
 			for range ticker.C {
 				if w.active[key] {

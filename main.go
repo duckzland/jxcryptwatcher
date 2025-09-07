@@ -26,6 +26,8 @@ func main() {
 
 	JT.TickerCache.Init()
 
+	JT.ConfigInit()
+
 	JA.AppActionManager.Init()
 
 	JA.AppStatusManager.Init()
@@ -44,8 +46,6 @@ func main() {
 
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 33*time.Millisecond, func() {
-
-		JT.ConfigInit()
 
 		JT.PanelsInit()
 

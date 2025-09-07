@@ -390,85 +390,11 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
 
-func ResetCryptosMap() {
-	if !JA.AppStatusManager.ValidConfig() {
-		JC.Notify("Invalid configuration. Unable to reset cryptos map.")
-		return
-	}
-
-	if JA.AppStatusManager.IsFetchingCryptos() {
-		return
-	}
-
-	JA.AppStatusManager.StartFetchingCryptos()
-
-	JC.FetcherManager.CallWithCallback("cryptos_map", nil, func(result JC.FetchResult) {
-		defer JA.AppStatusManager.EndFetchingCryptos()
-
-		code := DetectHTTPResponse(result.Code)
-
-		if code != 0 {
-			switch code {
-			case 1:
-				JC.Notify("Please check your network connection.")
-				JA.AppStatusManager.SetNetworkStatus(false)
-				JA.AppStatusManager.SetConfigStatus(true)
-			case 2, 3:
-				JC.Notify("Please check your settings.")
-				JA.AppStatusManager.SetConfigStatus(false)
-				JA.AppStatusManager.SetNetworkStatus(true)
-			}
-
-			JA.AppStatusManager.SetCryptoStatus(false)
-
-			return
-		}
-
-		cryptos, ok := result.Data.(JT.CryptosType)
-		if !ok {
-			JC.Notify("Invalid crypto data format")
-			JA.AppStatusManager.SetCryptoStatus(false)
-			return
-		}
-
-		CM := cryptos.ConvertToMap()
-		if CM == nil {
-			JC.Notify("Failed to convert crypto data to map")
-			JA.AppStatusManager.SetCryptoStatus(false)
-			return
-		}
-
-		JT.BP.SetMaps(CM)
-		JT.BP.Maps.ClearMapCache()
-		JA.AppStatusManager.DetectData()
-
-		if JA.AppStatusManager.ValidCryptos() {
-			JC.Notify("Crypto map regenerated successfully")
-
-			if JT.BP.RefreshData() {
-				fyne.Do(func() {
-					JP.Grid.ForceRefresh()
-				})
-
-				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
-
-				JT.TickerCache.SoftReset()
-				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
-
-				JA.AppStatusManager.SetCryptoStatus(true)
-				JA.AppStatusManager.SetConfigStatus(true)
-				JA.AppStatusManager.SetNetworkStatus(true)
-			}
-		}
-	})
-}
-
 func RegisterActions() {
 	// Refresh ticker data
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data",
 		func(btn *JW.HoverCursorIconButton) {
-			ResetCryptosMap()
+			JC.FetcherManager.Call("cryptos_map", nil)
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
@@ -655,6 +581,10 @@ func RegisterActions() {
 }
 
 func RegisterWorkers() {
+
+	tickerDelay := max(JT.Config.Delay*1000, 300000)
+	ratesDelay := max(JT.Config.Delay*1000, 30000)
+
 	JC.WorkerManager.RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
 			JC.UpdateDisplayTimestamp = time.Now()
@@ -691,7 +621,7 @@ func RegisterWorkers() {
 
 	JC.WorkerManager.Register("update_rates", func() {
 		UpdateRates()
-	}, JT.Config.Delay*1000, 1000, func() bool {
+	}, ratesDelay, 1000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh rates: app is not ready yet")
@@ -723,7 +653,7 @@ func RegisterWorkers() {
 
 	JC.WorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
-	}, JT.Config.Delay*1000, 1000, func() bool {
+	}, tickerDelay, 5000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh tickers: app is not ready yet")
@@ -815,10 +745,86 @@ func RegisterFetchers() {
 				Data: c,
 			}, nil
 		},
-	}, 0, func(fr JC.FetchResult) {
-		// Process results?
+	}, 0, func(result JC.FetchResult) {
+
+		defer JA.AppStatusManager.EndFetchingCryptos()
+
+		code := DetectHTTPResponse(result.Code)
+
+		if code != 0 {
+			switch code {
+			case 1:
+				JC.Notify("Please check your network connection.")
+				JA.AppStatusManager.SetNetworkStatus(false)
+				JA.AppStatusManager.SetConfigStatus(true)
+			case 2, 3:
+				JC.Notify("Please check your settings.")
+				JA.AppStatusManager.SetConfigStatus(false)
+				JA.AppStatusManager.SetNetworkStatus(true)
+			}
+
+			JA.AppStatusManager.SetCryptoStatus(false)
+
+			return
+		}
+
+		cryptos, ok := result.Data.(JT.CryptosType)
+		if !ok {
+			JC.Notify("Invalid crypto data format")
+			JA.AppStatusManager.SetCryptoStatus(false)
+			return
+		}
+
+		CM := cryptos.ConvertToMap()
+		if CM == nil {
+			JC.Notify("Failed to convert crypto data to map")
+			JA.AppStatusManager.SetCryptoStatus(false)
+			return
+		}
+
+		JT.BP.SetMaps(CM)
+		JT.BP.Maps.ClearMapCache()
+		JA.AppStatusManager.DetectData()
+
+		if JA.AppStatusManager.ValidCryptos() {
+			JC.Notify("Crypto map regenerated successfully")
+
+			if JT.BP.RefreshData() {
+				fyne.Do(func() {
+					JP.Grid.ForceRefresh()
+				})
+
+				JT.ExchangeCache.SoftReset()
+				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+
+				JT.TickerCache.SoftReset()
+				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+
+				JA.AppStatusManager.SetCryptoStatus(true)
+				JA.AppStatusManager.SetConfigStatus(true)
+				JA.AppStatusManager.SetNetworkStatus(true)
+			}
+		}
 
 	}, func() bool {
+
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch cryptos: app is not ready yet")
+			return false
+		}
+
+		if !JA.AppStatusManager.ValidConfig() {
+			JC.Notify("Invalid configuration. Unable to reset cryptos map.")
+			JC.Logln("Unable to do fetch cryptos: Invalid config")
+			return false
+		}
+
+		if JA.AppStatusManager.IsFetchingCryptos() {
+			JC.Logln("Unable to do fetch cryptos: Another fetcher is running")
+			return false
+		}
+
+		JA.AppStatusManager.StartFetchingCryptos()
 
 		return true
 	})
@@ -833,7 +839,13 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch CMC100: app is not ready yet")
+			return false
+		}
+
 		if !JT.Config.CanDoCMC100() {
+			JC.Logln("Unable to fetch CMC100: Invalid config")
 			return false
 		}
 
@@ -850,7 +862,13 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch fear greed: app is not ready yet")
+			return false
+		}
+
 		if !JT.Config.CanDoFearGreed() {
+			JC.Logln("Unable to fetch fear greed: Invalid config")
 			return false
 		}
 
@@ -867,7 +885,13 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch marketcap: app is not ready yet")
+			return false
+		}
+
 		if !JT.Config.CanDoMarketCap() {
+			JC.Logln("Unable to fetch marketcap: Invalid config")
 			return false
 		}
 
@@ -884,7 +908,13 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch marketcap: app is not ready yet")
+			return false
+		}
+
 		if !JT.Config.CanDoAltSeason() {
+			JC.Logln("Unable to fetch altcoin index: Invalid config")
 			return false
 		}
 
@@ -905,7 +935,13 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to fetch rates: app is not ready yet")
+			return false
+		}
+
 		if !JA.AppStatusManager.ValidPanels() {
+			JC.Logln("Unable to rates: no configured panels")
 			return false
 		}
 

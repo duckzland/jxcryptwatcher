@@ -203,6 +203,8 @@ func (c *CryptosType) GetCryptos() int64 {
 	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
 	req.Header.Set("Accept", "application/json")
 
+	JC.Logf("Fetching data from %v", req.URL)
+
 	resp, err := client.Do(req)
 
 	if err != nil {
