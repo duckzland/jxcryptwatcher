@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// --- Call Modes ---
 type CallMode int
 
 const (
@@ -16,32 +15,26 @@ const (
 	CallBypassImmediate
 )
 
-// --- Worker Function Types ---
 type WorkerFunc func()
 type BufferedWorkerFunc func(messages []string) bool
 
 // --- Worker Manager ---
 type Worker struct {
 	// Non-buffered
-	workers    map[string]WorkerFunc
-	locks      map[string]*sync.Mutex
-	active     map[string]bool
-	queues     map[string]chan struct{}
-	conditions map[string]func() bool
-	lastRun    map[string]time.Time
-
-	// Buffered
+	workers         map[string]WorkerFunc
+	locks           map[string]*sync.Mutex
+	active          map[string]bool
+	queues          map[string]chan struct{}
+	conditions      map[string]func() bool
+	lastRun         map[string]time.Time
 	bufferedWorkers map[string]BufferedWorkerFunc
 	messageQueues   map[string]chan string
-
-	// Log grouping
-	recentLogs    map[string]string
-	logTimestamps map[string]time.Time
+	recentLogs      map[string]string
+	logTimestamps   map[string]time.Time
 
 	mu sync.Mutex
 }
 
-// --- Global Instance ---
 var WorkerManager = &Worker{
 	workers:         make(map[string]WorkerFunc),
 	locks:           make(map[string]*sync.Mutex),
@@ -55,7 +48,6 @@ var WorkerManager = &Worker{
 	logTimestamps:   make(map[string]time.Time),
 }
 
-// --- Log Grouped ---
 func (w *Worker) logGrouped(key string, intervalMs int64, msg string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -71,7 +63,6 @@ func (w *Worker) logGrouped(key string, intervalMs int64, msg string) {
 	}
 }
 
-// --- Register Non-Buffered Worker ---
 func (w *Worker) Register(key string, fn WorkerFunc, intervalMs int64, debounceMs int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -97,7 +88,6 @@ func (w *Worker) Register(key string, fn WorkerFunc, intervalMs int64, debounceM
 	}
 }
 
-// --- Register Buffered Worker ---
 func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, intervalMs int64, debounceMs int64, bufferSize int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -124,7 +114,6 @@ func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, intervalMs 
 	}
 }
 
-// --- Register Sleeper Worker ---
 func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -142,7 +131,6 @@ func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shoul
 				return
 			}
 			if cond := w.conditions[key]; cond != nil && !cond() {
-				// w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Sleeper:%s] Skipped: condition not met", key))
 				continue
 			}
 			if delayMs > 0 {
@@ -153,7 +141,6 @@ func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shoul
 	}()
 }
 
-// --- Call Worker with Mode ---
 func (w *Worker) Call(key string, mode CallMode) {
 	if mode != CallBypassImmediate {
 		if cond, ok := w.conditions[key]; ok && cond != nil {
@@ -175,7 +162,6 @@ func (w *Worker) Call(key string, mode CallMode) {
 	}
 }
 
-// --- Push Message to Buffered Worker ---
 func (w *Worker) PushMessage(key string, msg string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -188,7 +174,6 @@ func (w *Worker) PushMessage(key string, msg string) {
 	}
 }
 
-// --- Get Message Channel ---
 func (w *Worker) GetMessageChannel(key string) <-chan string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -199,7 +184,6 @@ func (w *Worker) GetMessageChannel(key string) <-chan string {
 	return nil
 }
 
-// --- Run Non-Buffered Worker ---
 func (w *Worker) runWorker(key string) {
 	w.mu.Lock()
 	lock, exists := w.locks[key]
@@ -222,7 +206,6 @@ func (w *Worker) runWorker(key string) {
 	w.mu.Unlock()
 }
 
-// --- Run Buffered Worker ---
 func (w *Worker) runBufferedWorker(key string) {
 	w.mu.Lock()
 	lock := w.locks[key]
@@ -254,7 +237,6 @@ drain:
 	}
 }
 
-// --- Queue Worker Loop ---
 func (w *Worker) startQueueWorker(key string, buffered bool) {
 	for range w.queues[key] {
 		if buffered {
@@ -265,7 +247,6 @@ func (w *Worker) startQueueWorker(key string, buffered bool) {
 	}
 }
 
-// --- Stop Worker ---
 func (w *Worker) Stop(key string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -273,7 +254,6 @@ func (w *Worker) Stop(key string) {
 	Logf("[Worker:%s] Marked as inactive", key)
 }
 
-// --- Get Last Update Timestamp ---
 func (w *Worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()
