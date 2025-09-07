@@ -20,8 +20,6 @@ import (
 var activeAction *PanelDisplay = nil
 var activeDragging *PanelDisplay = nil
 
-var PanelForceUpdate = false
-
 type PanelLayout struct{}
 
 func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -112,6 +110,7 @@ type PanelDisplay struct {
 	refSubtitle   *canvas.Text
 	refBottomText *canvas.Text
 	fps           time.Duration
+	status        int
 }
 
 func NewPanelDisplay(
@@ -191,6 +190,8 @@ func NewPanelDisplay(
 	panel.ExtendBaseWidget(panel)
 	action.Hide()
 
+	panel.status = pdt.Status
+
 	str.AddListener(binding.NewDataListener(func() {
 
 		pkt := JT.BP.GetData(panel.GetTag())
@@ -198,20 +199,20 @@ func NewPanelDisplay(
 			return
 		}
 
-		if !pkt.DidChange() && pkt.Status == JC.STATE_LOADED {
-			return
-		}
+		if pkt.DidChange() {
+			switch pkt.IsValueIncrease() {
+			case JC.VALUE_INCREASE:
+				panel.background.FillColor = JC.GreenColor
+				panel.background.Refresh()
+			case JC.VALUE_DECREASE:
+				panel.background.FillColor = JC.RedColor
+				panel.background.Refresh()
+			}
 
-		switch pkt.IsValueIncrease() {
-		case JC.VALUE_INCREASE:
-			panel.background.FillColor = JC.GreenColor
-			panel.background.Refresh()
-		case JC.VALUE_DECREASE:
-			panel.background.FillColor = JC.RedColor
-			panel.background.Refresh()
+			panel.UpdateContent()
+		} else if pkt.Status != panel.status {
+			panel.UpdateContent()
 		}
-
-		panel.UpdateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
@@ -237,6 +238,8 @@ func (h *PanelDisplay) UpdateContent() {
 	if pkt == nil {
 		return
 	}
+
+	h.status = pkt.Status
 
 	JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
 

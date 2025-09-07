@@ -129,13 +129,11 @@ func (c *PanelGridContainer) DragEnd() {
 }
 
 func (c *PanelGridContainer) UpdatePanelsContent() {
-	fyne.Do(func() {
-		for _, obj := range c.Objects {
-			if panel, ok := obj.(*PanelDisplay); ok {
-				panel.UpdateContent()
-			}
+	for _, obj := range c.Objects {
+		if panel, ok := obj.(*PanelDisplay); ok {
+			panel.UpdateContent()
 		}
-	})
+	}
 }
 func NewPanelGridContainer(
 	layout *PanelGridLayout,

@@ -73,12 +73,12 @@ func (ec *ExchangeDataCacheType) HasData() bool {
 }
 
 func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
-	return true
-	// if ec.LastUpdated == nil {
-	// 	return true
-	// }
+	// return true
+	if ec.LastUpdated == nil {
+		return true
+	}
 
-	// return time.Now().After(ec.LastUpdated.Add(CMCUpdateThreshold))
+	return time.Now().After(ec.LastUpdated.Add(CMCUpdateThreshold))
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {

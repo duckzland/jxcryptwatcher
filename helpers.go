@@ -110,7 +110,6 @@ func UpdateRates() bool {
 			JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
 		}
 
-		JP.Grid.UpdatePanelsContent()
 		JC.Logln("Fetching has error:", hasError)
 
 		JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
@@ -123,20 +122,20 @@ func UpdateRates() bool {
 			JC.Notify("Please check your network connection.")
 			JA.AppStatusManager.SetNetworkStatus(false)
 			if !JT.ExchangeCache.HasData() {
-				JP.PanelForceUpdate = true
 				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
-				JP.Grid.UpdatePanelsContent()
-				JP.PanelForceUpdate = false
+				fyne.Do(func() {
+					JP.Grid.UpdatePanelsContent()
+				})
 			}
 		case 2:
 			JC.Notify("Please check your settings.")
 			JA.AppStatusManager.SetNetworkStatus(true)
 			JA.AppStatusManager.SetConfigStatus(false)
 			if !JT.ExchangeCache.HasData() {
-				JP.PanelForceUpdate = true
 				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
-				JP.Grid.UpdatePanelsContent()
-				JP.PanelForceUpdate = false
+				fyne.Do(func() {
+					JP.Grid.UpdatePanelsContent()
+				})
 			}
 		case 3:
 			JA.AppStatusManager.SetNetworkStatus(true)
@@ -295,9 +294,15 @@ func RemovePanel(uuid string) {
 
 				JP.Grid.Remove(obj)
 
-				fyne.Do(JP.Grid.ForceRefresh)
-
 				if JT.BP.Remove(uuid) {
+					fyne.Do(func() {
+						JP.Grid.ForceRefresh()
+
+						JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
+							JA.AppLayoutManager.RefreshLayout()
+						})
+					})
+
 					if JT.SavePanels() {
 						JC.Notify("Panel removed successfully.")
 					}
@@ -517,15 +522,18 @@ func RegisterActions() {
 	// Refresh exchange rates
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange",
 		func(btn *JW.HoverCursorIconButton) {
-			go func() {
-				// Force update
-				JT.ExchangeCache.SoftReset()
-				JA.AppWorkerManager.Call("update_rates", JA.CallDebounced)
 
-				// Force update
-				JT.TickerCache.SoftReset()
-				JA.AppWorkerManager.Call("update_tickers", JA.CallDebounced)
-			}()
+			// Open the network status temporarily
+			JA.AppStatusManager.SetNetworkStatus(true)
+
+			// Force update
+			JT.ExchangeCache.SoftReset()
+			JA.AppWorkerManager.Call("update_rates", JA.CallDebounced)
+
+			// Force update
+			JT.TickerCache.SoftReset()
+			JA.AppWorkerManager.Call("update_tickers", JA.CallDebounced)
+
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {

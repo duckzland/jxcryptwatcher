@@ -187,22 +187,6 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 	sid := rko[0]
 	rkt := strings.Split(rko[1], ",")
-	rkv := []string{}
-
-	for _, rkt := range rkt {
-
-		// Try to use cached data
-		ck := ExchangeCache.CreateKeyFromString(sid, rkt)
-		if !ExchangeCache.Has(ck) {
-			rkv = append(rkv, rkt)
-		}
-	}
-
-	// Seems all the query is cached don't invoke http request
-	if len(rkv) == 0 && ExchangeCache.LastUpdated != nil {
-		return JC.NETWORKING_DATA_IN_CACHE
-	}
-
 	tid := strings.Join(rkt, ",")
 
 	parsedURL, err := url.Parse(Config.ExchangeEndpoint)
