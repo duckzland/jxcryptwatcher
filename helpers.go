@@ -108,7 +108,6 @@ func UpdateRates() bool {
 				successCount++
 			}
 			JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
-			// RequestDisplayUpdate(true)
 		}
 
 		JP.Grid.UpdatePanelsContent()
@@ -319,7 +318,6 @@ func SavePanelForm() {
 	JP.ForceLayoutRefresh = true
 	JP.Grid.Refresh()
 	JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
-	// RequestDisplayUpdate(true)
 
 	go func() {
 		if JT.SavePanels() {
@@ -329,7 +327,6 @@ func SavePanelForm() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
 				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
-				// RequestRateUpdate(false)
 			}
 
 			JC.Notify("Panel settings saved.")
@@ -390,11 +387,9 @@ func OpenSettingForm() {
 
 					JT.TickerCache.SoftReset()
 					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
-					// RequestTickersUpdate()
 
 					JT.ExchangeCache.SoftReset()
 					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
-					// RequestRateUpdate(true)
 				}
 			} else {
 				JC.Notify("Failed to save configuration.")
@@ -460,12 +455,10 @@ func ResetCryptosMap() {
 					// Force Refresh
 					JT.ExchangeCache.SoftReset()
 					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
-					// RequestRateUpdate(false)
 
 					// Force Refresh
 					JT.TickerCache.SoftReset()
 					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
-					// RequestTickersUpdate()
 
 					JA.AppStatusManager.SetCryptoStatus(true)
 
@@ -530,12 +523,10 @@ func RegisterActions() {
 				// Force update
 				JT.ExchangeCache.SoftReset()
 				JA.AppWorkerManager.Call("update_rates", JA.CallDebounced)
-				// RequestRateUpdate(true)
 
 				// Force update
 				JT.TickerCache.SoftReset()
 				JA.AppWorkerManager.Call("update_tickers", JA.CallDebounced)
-				// RequestTickersUpdate()
 			}()
 		},
 		func(btn *JW.HoverCursorIconButton) {

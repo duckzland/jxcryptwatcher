@@ -54,12 +54,10 @@ func main() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
 				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
-				// RequestRateUpdate(true)
 
 				// Force Refresh
 				JT.TickerCache.SoftReset()
 				JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
-				// RequestTickersUpdate()
 			}
 		})
 	})

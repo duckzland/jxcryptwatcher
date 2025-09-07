@@ -111,7 +111,7 @@ func (w *AppWorker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, sh
 	w.workers[key] = fn
 	w.locks[key] = &sync.Mutex{}
 	w.active[key] = true
-	w.queues[key] = make(chan struct{}) // unbuffered: sleeps until triggered
+	w.queues[key] = make(chan struct{})
 	w.conditions[key] = shouldRun
 
 	go func() {
