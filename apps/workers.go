@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -35,6 +36,10 @@ type AppWorker struct {
 	bufferedWorkers map[string]BufferedWorkerFunc
 	messageQueues   map[string]chan string
 
+	// Log grouping
+	recentLogs    map[string]string
+	logTimestamps map[string]time.Time
+
 	mu sync.Mutex
 }
 
@@ -48,6 +53,24 @@ var AppWorkerManager = &AppWorker{
 	lastRun:         make(map[string]time.Time),
 	bufferedWorkers: make(map[string]BufferedWorkerFunc),
 	messageQueues:   make(map[string]chan string),
+	recentLogs:      make(map[string]string),
+	logTimestamps:   make(map[string]time.Time),
+}
+
+// --- Log Grouped ---
+func (w *AppWorker) logGrouped(key string, intervalMs int64, msg string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	lastMsg := w.recentLogs[key]
+	lastTime := w.logTimestamps[key]
+	now := time.Now()
+
+	if msg != lastMsg || now.Sub(lastTime).Milliseconds() >= intervalMs {
+		JC.Logln(msg)
+		w.recentLogs[key] = msg
+		w.logTimestamps[key] = now
+	}
 }
 
 // --- Register Non-Buffered Worker ---
@@ -121,7 +144,7 @@ func (w *AppWorker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, sh
 				return
 			}
 			if cond := w.conditions[key]; cond != nil && !cond() {
-				JC.Logf("[Sleeper:%s] Skipped: condition not met", key)
+				w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Sleeper:%s] Skipped: condition not met", key))
 				continue
 			}
 			if delayMs > 0 {
@@ -137,7 +160,7 @@ func (w *AppWorker) Call(key string, mode CallMode) {
 	if mode != CallBypassImmediate {
 		if cond, ok := w.conditions[key]; ok && cond != nil {
 			if !cond() {
-				JC.Logf("[Worker:%s] Skipped: condition not met", key)
+				w.logGrouped(key+"_skip", 5000, fmt.Sprintf("[Worker:%s] Skipped: condition not met", key))
 				return
 			}
 		}
@@ -163,6 +186,8 @@ func (w *AppWorker) PushMessage(key string, msg string) {
 	if ch, ok := w.messageQueues[key]; ok {
 		ch <- msg
 		w.queues[key] <- struct{}{}
+	} else {
+		w.logGrouped(key+"_pushfail", 5000, fmt.Sprintf("[PushMessage] messageQueue not found for key: %s", key))
 	}
 }
 
@@ -185,14 +210,14 @@ func (w *AppWorker) runWorker(key string) {
 	w.mu.Unlock()
 
 	if !exists || !ok {
-		JC.Logf("[Worker:%s] Not registered", key)
+		w.logGrouped(key+"_missing", 5000, fmt.Sprintf("[Worker:%s] Not registered", key))
 		return
 	}
 
 	lock.Lock()
 	defer lock.Unlock()
 
-	JC.Logf("[Worker:%s] Executing...", key)
+	w.logGrouped(key+"_exec", 1000, fmt.Sprintf("[Worker:%s] Executing...", key))
 	fn()
 
 	w.mu.Lock()
@@ -212,17 +237,18 @@ func (w *AppWorker) runBufferedWorker(key string) {
 	defer lock.Unlock()
 
 	var messages []string
+drain:
 	for {
 		select {
 		case msg := <-msgCh:
 			messages = append(messages, msg)
 		default:
-			break
+			break drain
 		}
 	}
 
 	if len(messages) > 0 {
-		JC.Logf("[Worker:%s] Executing with %d messages...", key, len(messages))
+		w.logGrouped(key+"_exec", 1000, fmt.Sprintf("[Worker:%s] Executing with %d messages...", key, len(messages)))
 		if fn(messages) {
 			w.mu.Lock()
 			w.lastRun[key] = time.Now()

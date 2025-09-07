@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -34,16 +35,23 @@ type AppFetcher struct {
 	delay        map[string]time.Duration
 	lastActivity map[string]*time.Time
 	callbacks    map[string]func(AppFetchResult)
-	mu           sync.Mutex
+
+	// Log grouping
+	recentWatchdogLog string
+	lastWatchdogLog   time.Time
+
+	mu sync.Mutex
 }
 
 // --- Global Instance ---
-var AppFetcherManager *AppFetcher = &AppFetcher{
-	fetchers:     make(map[string]AppFetcherInterface),
-	queues:       make(map[string]chan FetchRequest),
-	delay:        make(map[string]time.Duration),
-	lastActivity: make(map[string]*time.Time),
-	callbacks:    make(map[string]func(AppFetchResult)),
+var AppFetcherManager = &AppFetcher{
+	fetchers:          make(map[string]AppFetcherInterface),
+	queues:            make(map[string]chan FetchRequest),
+	delay:             make(map[string]time.Duration),
+	lastActivity:      make(map[string]*time.Time),
+	callbacks:         make(map[string]func(AppFetchResult)),
+	recentWatchdogLog: "",
+	lastWatchdogLog:   time.Time{},
 }
 
 // --- Registration ---
@@ -59,7 +67,7 @@ func (m *AppFetcher) Register(key string, fetcher AppFetcherInterface, delaySeco
 	m.callbacks[key] = callback
 
 	go m.startWorker(key)
-	go m.watchdog(key, 30*time.Second)
+	go m.watchdog(30 * time.Second)
 }
 
 // --- Worker Loop ---
@@ -94,18 +102,39 @@ func (m *AppFetcher) startWorker(key string) {
 }
 
 // --- Watchdog ---
-func (m *AppFetcher) watchdog(key string, maxIdle time.Duration) {
-	for {
-		time.Sleep(10 * time.Second)
+func (m *AppFetcher) watchdog(maxIdle time.Duration) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		var stale []string
+
 		m.mu.Lock()
-		last := m.lastActivity[key]
-		if time.Since(*last) > maxIdle {
-			JC.Logf("[WATCHDOG] Worker '%s' stale. Restarting...", key)
-			go m.startWorker(key)
-			now := time.Now()
-			m.lastActivity[key] = &now
+		for key, last := range m.lastActivity {
+			if time.Since(*last) > maxIdle {
+				stale = append(stale, key)
+				go m.startWorker(key)
+				now := time.Now()
+				m.lastActivity[key] = &now
+			}
 		}
 		m.mu.Unlock()
+
+		if len(stale) > 0 {
+			m.logWatchdogGrouped(stale, 5*time.Second)
+		}
+	}
+}
+
+// --- Grouped Watchdog Log ---
+func (m *AppFetcher) logWatchdogGrouped(keys []string, interval time.Duration) {
+	msg := fmt.Sprintf("[WATCHDOG] Restarting stale workers: %v", keys)
+	now := time.Now()
+
+	if msg != m.recentWatchdogLog || now.Sub(m.lastWatchdogLog) >= interval {
+		JC.Logln(msg)
+		m.recentWatchdogLog = msg
+		m.lastWatchdogLog = now
 	}
 }
 

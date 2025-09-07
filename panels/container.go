@@ -61,6 +61,11 @@ func (c *PanelGridContainer) Remove(obj fyne.CanvasObject) {
 	}
 }
 
+func (c *PanelGridContainer) ForceRefresh() {
+	c.layout.Reset()
+	c.Refresh()
+}
+
 func (c *PanelGridContainer) CreateRenderer() fyne.WidgetRenderer {
 	return &panelGridRenderer{
 		container: c,

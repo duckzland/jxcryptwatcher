@@ -295,8 +295,7 @@ func RemovePanel(uuid string) {
 
 				JP.Grid.Remove(obj)
 
-				JP.ForceLayoutRefresh = true
-				fyne.Do(JP.Grid.Refresh)
+				fyne.Do(JP.Grid.ForceRefresh)
 
 				if JT.BP.Remove(uuid) {
 					if JT.SavePanels() {
@@ -315,8 +314,7 @@ func SavePanelForm() {
 
 	JC.Notify("Saving panel settings...")
 
-	JP.ForceLayoutRefresh = true
-	JP.Grid.Refresh()
+	JP.Grid.ForceRefresh()
 	JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
 
 	go func() {
@@ -346,7 +344,7 @@ func OpenNewPanelForm() {
 			func(npdt *JT.PanelDataType) {
 
 				JP.Grid.Add(CreatePanel(npdt))
-				JP.Grid.Refresh()
+				JP.Grid.ForceRefresh()
 				JA.AppStatusManager.DetectData()
 
 				JC.Notify("New panel created.")
@@ -449,7 +447,7 @@ func ResetCryptosMap() {
 
 				if JT.BP.RefreshData() {
 					fyne.Do(func() {
-						JP.Grid.Refresh()
+						JP.Grid.ForceRefresh()
 					})
 
 					// Force Refresh
@@ -685,7 +683,6 @@ func SetupWorkers() {
 	})
 
 	JA.AppWorkerManager.RegisterBuffered("notification", func(messages []string) bool {
-
 		if len(messages) == 0 {
 			return false
 		}
@@ -702,7 +699,7 @@ func SetupWorkers() {
 
 		return true
 
-	}, 1000, 1000, 1000, nil)
+	}, 1000, 100, 1000, nil)
 
 	JA.AppWorkerManager.Register("notification_idle_clear", func() {
 

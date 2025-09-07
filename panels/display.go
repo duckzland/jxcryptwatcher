@@ -479,11 +479,8 @@ func (h *PanelDisplay) snapToNearest() {
 		return
 	}
 
-	// Break the cached layout
-	ForceLayoutRefresh = true
-
 	Grid.Objects = h.reorder(targetIndex)
-	Grid.Refresh()
+	Grid.ForceRefresh()
 
 	go func() {
 		JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
@@ -550,9 +547,6 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 
 func (h *PanelDisplay) syncPanelData() bool {
 	nd := []*JT.PanelDataType{}
-
-	// Break the cached layout
-	ForceLayoutRefresh = true
 
 	for _, obj := range Grid.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
