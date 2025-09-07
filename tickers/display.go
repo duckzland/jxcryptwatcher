@@ -135,7 +135,7 @@ func NewTickerDisplay(
 			return
 		}
 
-		if !pkt.DidChange() && pkt.Status == JC.STATE_LOADED {
+		if !pkt.DidChange() {
 			return
 		}
 

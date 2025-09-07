@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -234,4 +235,9 @@ func GetMonthBounds(t time.Time) (startUnix, endUnix int64) {
 	end := start.AddDate(0, 1, 0).Add(-time.Second) // last second of the month
 
 	return start.Unix(), end.Unix()
+}
+
+func TraceGoroutines() {
+	count := runtime.NumGoroutine()
+	Logf("[GOROUTINE TRACE] Active goroutines: %d", count)
 }

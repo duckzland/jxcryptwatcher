@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,28 +31,39 @@ type FetchRequest struct {
 
 // --- Manager ---
 type AppFetcher struct {
-	fetchers     map[string]AppFetcherInterface
-	queues       map[string]chan FetchRequest
-	delay        map[string]time.Duration
-	lastActivity map[string]*time.Time
-	callbacks    map[string]func(AppFetchResult)
-
-	// Log grouping
-	recentWatchdogLog string
-	lastWatchdogLog   time.Time
-
-	mu sync.Mutex
+	fetchers         map[string]AppFetcherInterface
+	queues           map[string]chan FetchRequest
+	delay            map[string]time.Duration
+	lastActivity     map[string]*time.Time
+	callbacks        map[string]func(AppFetchResult)
+	recentGroupedLog string
+	lastGroupedLog   time.Time
+	activeWorkers    map[string]context.CancelFunc
+	mu               sync.Mutex
 }
 
 // --- Global Instance ---
 var AppFetcherManager = &AppFetcher{
-	fetchers:          make(map[string]AppFetcherInterface),
-	queues:            make(map[string]chan FetchRequest),
-	delay:             make(map[string]time.Duration),
-	lastActivity:      make(map[string]*time.Time),
-	callbacks:         make(map[string]func(AppFetchResult)),
-	recentWatchdogLog: "",
-	lastWatchdogLog:   time.Time{},
+	fetchers:         make(map[string]AppFetcherInterface),
+	queues:           make(map[string]chan FetchRequest),
+	delay:            make(map[string]time.Duration),
+	lastActivity:     make(map[string]*time.Time),
+	callbacks:        make(map[string]func(AppFetchResult)),
+	recentGroupedLog: "",
+	lastGroupedLog:   time.Time{},
+	activeWorkers:    make(map[string]context.CancelFunc),
+}
+
+// --- Centralized Grouped Logger ---
+func (m *AppFetcher) logGrouped(tag string, lines []string, interval time.Duration) {
+	msg := fmt.Sprintf("[%s] %s", tag, strings.Join(lines, " | "))
+	now := time.Now()
+
+	if msg != m.recentGroupedLog || now.Sub(m.lastGroupedLog) >= interval {
+		JC.Logln(msg)
+		m.recentGroupedLog = msg
+		m.lastGroupedLog = now
+	}
 }
 
 // --- Registration ---
@@ -72,69 +84,69 @@ func (m *AppFetcher) Register(key string, fetcher AppFetcherInterface, delaySeco
 
 // --- Worker Loop ---
 func (m *AppFetcher) startWorker(key string) {
-	for {
-		req := <-m.queues[key]
+	ctx, cancel := context.WithCancel(context.Background())
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		m.fetchers[key].Fetch(ctx, req.Payload, func(result AppFetchResult) {
-			result.Source = key
-			JC.Logf("[Worker:%s] Code: %d", result.Source, result.Code)
-			if result.Err != nil {
-				JC.Logln("Error:", result.Err)
-			} else {
-				JC.Logf("Data: %+v", result.Data)
+	m.mu.Lock()
+	m.activeWorkers[key] = cancel
+	m.mu.Unlock()
+
+	go func() {
+		for {
+			select {
+			case req := <-m.queues[key]:
+				m.fetchers[key].Fetch(ctx, req.Payload, func(result AppFetchResult) {
+					if cb := m.callbacks[key]; cb != nil {
+						cb(result)
+					}
+				})
+
+				m.mu.Lock()
+				now := time.Now()
+				m.lastActivity[key] = &now
+				m.mu.Unlock()
+
+				if !req.Immediate {
+					time.Sleep(m.delay[key])
+				}
+			case <-ctx.Done():
+				// m.logGrouped("WORKER", []string{
+				// 	fmt.Sprintf("Terminated by watchdog: %s", key),
+				// }, 60*time.Second)
+				return
 			}
-			if cb, ok := m.callbacks[key]; ok {
-				cb(result)
-			}
-		})
-		cancel()
-
-		m.mu.Lock()
-		now := time.Now()
-		m.lastActivity[key] = &now
-		m.mu.Unlock()
-
-		if !req.Immediate {
-			time.Sleep(m.delay[key])
 		}
-	}
+	}()
 }
 
 // --- Watchdog ---
 func (m *AppFetcher) watchdog(maxIdle time.Duration) {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		var stale []string
+		var messages []string
+		var killed []string
 
 		m.mu.Lock()
 		for key, last := range m.lastActivity {
 			if time.Since(*last) > maxIdle {
-				stale = append(stale, key)
+				if cancel, ok := m.activeWorkers[key]; ok {
+					cancel()
+					delete(m.activeWorkers, key)
+					messages = append(messages, fmt.Sprintf("Killed ghost worker: %s", key))
+				}
 				go m.startWorker(key)
 				now := time.Now()
 				m.lastActivity[key] = &now
+				killed = append(killed, key)
 			}
 		}
 		m.mu.Unlock()
 
-		if len(stale) > 0 {
-			m.logWatchdogGrouped(stale, 5*time.Second)
+		if len(killed) > 0 {
+			messages = append(messages, fmt.Sprintf("Restarted stale workers: %v", killed))
+			m.logGrouped("WATCHDOG", messages, 60*time.Second)
 		}
-	}
-}
-
-// --- Grouped Watchdog Log ---
-func (m *AppFetcher) logWatchdogGrouped(keys []string, interval time.Duration) {
-	msg := fmt.Sprintf("[WATCHDOG] Restarting stale workers: %v", keys)
-	now := time.Now()
-
-	if msg != m.recentWatchdogLog || now.Sub(m.lastWatchdogLog) >= interval {
-		JC.Logln(msg)
-		m.recentWatchdogLog = msg
-		m.lastWatchdogLog = now
 	}
 }
 
@@ -146,19 +158,24 @@ func (m *AppFetcher) Call(key string, payload any, immediate bool) {
 	if immediate {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
 			m.fetchers[key].Fetch(ctx, payload, func(result AppFetchResult) {
 				result.Source = key
-				JC.Logf("[Immediate] %s → Code: %d", result.Source, result.Code)
-				if result.Err != nil {
-					JC.Logln("Error:", result.Err)
-				} else {
-					JC.Logf("Data: %+v", result.Data)
+				lines := []string{
+					fmt.Sprintf("Immediate call → %s → Code: %d", result.Source, result.Code),
 				}
+				if result.Err != nil {
+					lines = append(lines, fmt.Sprintf("Error: %v", result.Err))
+				} else {
+					lines = append(lines, fmt.Sprintf("Data: %+v", result.Data))
+				}
+				m.logGrouped("CALL", lines, 30*time.Second)
+
 				if cb, ok := m.callbacks[key]; ok {
 					cb(result)
 				}
 			})
-			cancel()
 		}()
 	} else {
 		m.queues[key] <- FetchRequest{Payload: payload, Immediate: immediate}
@@ -171,7 +188,9 @@ func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, c
 	m.mu.Unlock()
 
 	if !exists || fetcher == nil {
-		JC.Logf("[CallWithCallback] Fetcher not found for key: %s", key)
+		m.logGrouped("CALLBACK", []string{
+			fmt.Sprintf("Fetcher not found for key: %s", key),
+		}, 30*time.Second)
 		return
 	}
 
@@ -180,6 +199,9 @@ func (m *AppFetcher) CallWithCallback(key string, payload any, immediate bool, c
 
 	go fetcher.Fetch(ctx, payload, func(result AppFetchResult) {
 		result.Source = key
+		m.logGrouped("CALLBACK", []string{
+			fmt.Sprintf("Callback → %s → Code: %d", result.Source, result.Code),
+		}, 30*time.Second)
 		callback(result)
 	})
 }
@@ -223,6 +245,11 @@ func (m *AppFetcher) GroupCall(keys []string, payloads map[string]any, callback 
 
 	go func() {
 		wg.Wait()
+		lines := []string{}
+		for k, r := range results {
+			lines = append(lines, fmt.Sprintf("%s → Code: %d", k, r.Code))
+		}
+		m.logGrouped("GROUPCALL", lines, 60*time.Second)
 		callback(results)
 	}()
 }
@@ -242,7 +269,9 @@ func (m *AppFetcher) GroupPayloadCall(key string, payloads []any, callback func(
 
 			fetcher, ok := m.fetchers[key]
 			if !ok || fetcher == nil {
-				JC.Logf("[GroupPayloadCall] Fetcher not found for key: %s", key)
+				m.logGrouped("GROUPCALL", []string{
+					fmt.Sprintf("Fetcher not found for key: %s", key),
+				}, 60*time.Second)
 				return
 			}
 
@@ -257,6 +286,11 @@ func (m *AppFetcher) GroupPayloadCall(key string, payloads []any, callback func(
 
 	go func() {
 		wg.Wait()
+		lines := []string{}
+		for _, r := range results {
+			lines = append(lines, fmt.Sprintf("%s → Code: %d", r.Source, r.Code))
+		}
+		m.logGrouped("GROUPCALL", lines, 60*time.Second)
 		callback(results)
 	}()
 }

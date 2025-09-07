@@ -210,6 +210,7 @@ func NewPanelDisplay(
 			}
 		}
 
+		// Update content must fire when text (pk) change!
 		panel.UpdateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
@@ -239,7 +240,7 @@ func (h *PanelDisplay) UpdateContent() {
 
 	h.status = pkt.Status
 
-	JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
+	// JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
 
 	switch pkt.Status {
 	case JC.STATE_ERROR:

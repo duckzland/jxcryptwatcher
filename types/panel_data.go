@@ -170,7 +170,8 @@ func (p *PanelDataType) FormatContent() string {
 }
 
 func (p *PanelDataType) DidChange() bool {
-	return p.OldKey != p.Get()
+	opt := &PanelKeyType{p.OldKey}
+	return p.OldKey != p.Get() && opt.GetValueFloat() != -1 && p.Status == JC.STATE_LOADED
 }
 
 func (p *PanelDataType) IsValueIncrease() int {
@@ -191,12 +192,12 @@ func (p *PanelDataType) IsValueIncrease() int {
 	}
 
 	if numA > numB {
-		JC.Logf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
+		// JC.Logf("%s (%.2f) is greater than %s (%.2f)\n", a, numA, b, numB)
 		return JC.VALUE_DECREASE
 	}
 
 	if numA < numB {
-		JC.Logf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
+		// JC.Logf("%s (%.2f) is less than %s (%.2f)\n", a, numA, b, numB)
 		return JC.VALUE_INCREASE
 	}
 

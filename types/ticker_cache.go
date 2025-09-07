@@ -71,7 +71,6 @@ func (ec *TickerDataCacheType) HasData() bool {
 }
 
 func (ec *TickerDataCacheType) ShouldRefresh() bool {
-	// return true
 	if ec.LastUpdated == nil {
 		return true
 	}

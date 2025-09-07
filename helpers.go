@@ -42,16 +42,6 @@ func UpdateDisplay() bool {
 }
 
 func UpdateRates() bool {
-	if !JA.AppStatusManager.ValidConfig() {
-		JC.Logln("Invalid configuration, cannot refresh rates")
-		JC.Notify("Unable to refresh rates: invalid configuration.")
-		return false
-	}
-
-	if !JT.ExchangeCache.ShouldRefresh() {
-		JC.Logln("Unable to refresh rates: not cleared should refresh yet.")
-		return false
-	}
 
 	JT.ExchangeCache.SoftReset()
 
@@ -72,9 +62,7 @@ func UpdateRates() bool {
 	}
 
 	if len(jb) == 0 {
-		if JA.AppStatusManager.IsReady() {
-			JC.Notify("No valid panels found. Exchange rates were not updated.")
-		}
+		JC.Notify("No valid panels found. Exchange rates were not updated.")
 		return false
 	}
 
@@ -141,18 +129,6 @@ func UpdateRates() bool {
 }
 
 func UpdateTickers() bool {
-	if !JT.Config.IsValidTickers() {
-		JC.Logln("Invalid ticker configuration, cannot refresh tickers")
-		if JA.AppStatusManager.IsReady() {
-			JC.Notify("Unable to refresh tickers: invalid configuration.")
-		}
-		return false
-	}
-
-	if !JT.TickerCache.ShouldRefresh() {
-		JC.Logln("Unable to refresh tickers: not cleared should refresh yet.")
-		return false
-	}
 
 	JC.Notify("Fetching the latest ticker data...")
 	JA.AppStatusManager.StartFetchingTickers()
@@ -686,19 +662,88 @@ func SetupWorkers() {
 			JC.UpdateDisplayTimestamp = time.Now()
 		}
 	}, 200, func() bool {
-		return JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData()
+
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to refresh display: app is not ready yet.")
+			return false
+		}
+
+		if !JT.ExchangeCache.HasData() {
+			JC.Notify("Unable to refresh display: no cached data")
+			return false
+		}
+
+		if !JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) {
+			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
+			return false
+		}
+
+		if !JA.AppStatusManager.ValidPanels() {
+			JC.Logln("Unable to refresh display: No valid panels configured")
+			return false
+		}
+
+		return true
 	})
 
 	JA.AppWorkerManager.Register("update_rates", func() {
 		UpdateRates()
+		JC.TraceGoroutines()
 	}, JT.Config.Delay*1000, 1000, func() bool {
-		return JA.AppStatusManager.ValidPanels() && JA.AppStatusManager.IsGoodNetworkStatus()
+
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to refresh rates: app is not ready yet.")
+			return false
+		}
+
+		if !JA.AppStatusManager.ValidConfig() {
+			JC.Notify("Unable to refresh rates: invalid configuration.")
+			return false
+		}
+
+		if !JT.ExchangeCache.ShouldRefresh() {
+			JC.Logln("Unable to refresh rates: not cleared should refresh yet.")
+			return false
+		}
+
+		if !JA.AppStatusManager.ValidPanels() {
+			JC.Logln("Unable to refresh rates: No valid panels configured")
+			return false
+		}
+
+		if !JA.AppStatusManager.IsGoodNetworkStatus() {
+			JC.Logln("Unable to refresh rates: Network status is bad")
+			return false
+		}
+
+		return true
 	})
 
 	JA.AppWorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
 	}, JT.Config.Delay*1000, 1000, func() bool {
-		return JT.Config.IsValidTickers() && JA.AppStatusManager.IsGoodNetworkStatus()
+
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to refresh tickers: app is not ready yet.")
+			return false
+		}
+
+		if !JT.Config.IsValidTickers() {
+			JC.Logln("Unable to refresh tickers: Invalid ticker configuration")
+			return false
+		}
+
+		if !JT.TickerCache.ShouldRefresh() {
+			JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
+			return false
+		}
+
+		if !JA.AppStatusManager.IsGoodNetworkStatus() {
+			JC.Logln("Unable to refresh tickers: Network status is bad")
+			return false
+		}
+
+		return true
 	})
 
 	JA.AppWorkerManager.RegisterBuffered("notification", func(messages []string) bool {
@@ -718,7 +763,14 @@ func SetupWorkers() {
 
 		return true
 
-	}, 1000, 100, 1000, nil)
+	}, 1000, 100, 1000, func() bool {
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to do notification: app is not ready yet.")
+			return false
+		}
+
+		return true
+	})
 
 	JA.AppWorkerManager.Register("notification_idle_clear", func() {
 
@@ -733,6 +785,11 @@ func SetupWorkers() {
 		})
 
 	}, 5000, 1000, func() bool {
+
+		if !JA.AppStatusManager.IsReady() {
+			JC.Logln("Unable to do notification: app is not ready yet.")
+			return false
+		}
 
 		nc, ok := JC.NotificationContainer.(*widgets.NotificationDisplayWidget)
 		if !ok {

@@ -101,5 +101,5 @@ func (p *TickerDataType) FormatContent() string {
 }
 
 func (p *TickerDataType) DidChange() bool {
-	return p.OldKey != p.Get()
+	return p.OldKey != p.Get() && p.Status == JC.STATE_LOADED
 }
