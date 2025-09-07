@@ -2,79 +2,66 @@ package widgets
 
 import (
 	"image/color"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
-	JA "jxwatcher/animations"
+	JX "jxwatcher/animations"
 	JC "jxwatcher/core"
 )
 
 type NotificationDisplayWidget struct {
-	text         *canvas.Text
-	msgChan      chan string
-	lastActivity time.Time
-	maxWidth     float32
+	text *canvas.Text
 }
 
-func NewNotificationDisplayWidget(msgChan chan string) *fyne.Container {
+type NotificationContainer struct {
+	*fyne.Container
+	Widget *NotificationDisplayWidget
+}
+
+func NewNotificationDisplayWidget() *NotificationContainer {
 	tw := canvas.NewText("", color.White)
 	tw.Alignment = fyne.TextAlignLeading
 
-	nd := &NotificationDisplayWidget{
-		text:         tw,
-		msgChan:      msgChan,
-		lastActivity: time.Now(),
+	widget := &NotificationDisplayWidget{
+		text: tw,
 	}
 
-	go nd.animateMessages()
-	go nd.watchIdleAndClear()
+	c := container.NewCenter(tw)
 
-	return container.NewCenter(tw)
+	return &NotificationContainer{
+		Container: c,
+		Widget:    widget,
+	}
 }
 
-func (nd *NotificationDisplayWidget) animateMessages() {
-	for msg := range nd.msgChan {
+func (nc *NotificationContainer) UpdateText(msg string) {
+	// time.Sleep(600 * time.Millisecond) // FYNE layout quirk
 
-		// Somehow during first boot, fyne always report bad width??
-		time.Sleep(600 * time.Millisecond)
+	maxWidth := JC.MainLayoutContentWidth - 20
 
-		nd.lastActivity = time.Now()
+	fyne.Do(func() {
+		nc.Widget.text.Text = JC.TruncateText(msg, maxWidth, nc.Widget.text.TextSize)
+		nc.Widget.text.Color = color.White
+		// nc.Widget.text.Refresh()
+		nc.Refresh()
+		JC.Logln("Current widget text:", nc.Widget.text.Text, maxWidth, msg)
+	})
 
-		maxWidth := JC.NotificationContainer.Size().Width - 20
-		if JC.MainLayoutContentWidth < maxWidth {
-			maxWidth = JC.MainLayoutContentWidth - 20
-		}
+	// time.Sleep(600 * time.Millisecond)
+}
 
-		// Show message instantly
+func (nc *NotificationContainer) ClearText() {
+	JX.StartFadingText(nc.Widget.text, func() {
 		fyne.Do(func() {
-			nd.text.Text = JC.TruncateText(msg, maxWidth, nd.text.TextSize)
-			nd.text.Color = color.White
-			nd.text.Refresh()
+			nc.Widget.text.Text = ""
+			nc.Widget.text.Color = color.White
+			nc.Widget.text.Refresh()
 		})
-
-		time.Sleep(600 * time.Millisecond)
-	}
+	}, nil)
 }
 
-func (nd *NotificationDisplayWidget) watchIdleAndClear() {
-	for {
-		if time.Since(nd.lastActivity) > 6*time.Second && nd.text.Text != "" {
-
-			JC.Logln("Clearing notification display due to inactivity")
-
-			// Clear text
-			JA.StartFadingText(nd.text, func() {
-				fyne.Do(func() {
-					nd.text.Text = ""
-					nd.text.Color = color.White // Reset for next message
-					nd.text.Refresh()
-				})
-			}, nil)
-		}
-
-		time.Sleep(1000 * time.Millisecond)
-	}
+func (nc *NotificationContainer) GetText() string {
+	return nc.Widget.text.Text
 }

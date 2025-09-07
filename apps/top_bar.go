@@ -120,7 +120,7 @@ func NewTopBar() fyne.CanvasObject {
 	topBg := canvas.NewRectangle(JC.PanelBG)
 	topBg.CornerRadius = 4
 
-	JC.NotificationContainer = topBg
+	JC.NotificationContainer = JW.NewNotificationDisplayWidget()
 
 	return container.New(
 		&TopBarLayout{
@@ -129,7 +129,7 @@ func NewTopBar() fyne.CanvasObject {
 		},
 		container.NewStack(
 			topBg,
-			JW.NewNotificationDisplayWidget(JC.UpdateStatusChan),
+			JC.NotificationContainer,
 		),
 		AppActionManager.GetButton("refresh_cryptos"),
 		AppActionManager.GetButton("refresh_rates"),

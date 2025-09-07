@@ -53,11 +53,13 @@ func main() {
 
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				RequestRateUpdate(true)
+				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+				// RequestRateUpdate(true)
 
 				// Force Refresh
 				JT.TickerCache.SoftReset()
-				RequestTickersUpdate()
+				JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+				// RequestTickersUpdate()
 			}
 		})
 	})
@@ -75,15 +77,17 @@ func main() {
 	JC.Window.Resize(fyne.NewSize(920, 600))
 
 	SetupFetchers()
-	StartWorkers()
-	StartUpdateRatesWorker()
-	StartUpdateTickersWorker()
-
-	JC.Notify("Application is starting...")
+	SetupWorkers()
 
 	if JC.IsMobile {
 		JC.Window.SetFixedSize(true)
 	}
+
+	JC.Notify = func(msg string) {
+		JA.AppWorkerManager.PushMessage("notification", msg)
+	}
+
+	JC.Notify("Application is starting...")
 
 	JC.Window.ShowAndRun()
 }

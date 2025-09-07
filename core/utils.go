@@ -174,10 +174,6 @@ func SetAlpha(c color.Color, alpha float32) color.Color {
 	}
 }
 
-func Notify(str string) {
-	UpdateStatusChan <- str
-}
-
 func CreateUUID() string {
 	id := uuid.New()
 	return id.String()

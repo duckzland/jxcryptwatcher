@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 )
 
 var Window fyne.Window
@@ -52,21 +51,14 @@ var TickerTitleSize float32 = 11
 var TickerContentSize float32 = 20
 
 var UpdateStatusChan = make(chan string, 1000)
-var UpdateDisplayChan = make(chan struct{})
-var UpdateRatesChan = make(chan struct{})
-var UpdateTickersChan = make(chan struct{})
 var UpdateDisplayTimestamp = time.Now()
-
-// var UpdateTickersLock sync.Mutex
-// var UpdateRatesLock sync.Mutex
-
-// var UpdateDisplayLock sync.Mutex
 
 var MainDebouncer = NewDebouncer()
 
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
 
-var NotificationContainer *canvas.Rectangle = nil
+var NotificationContainer fyne.CanvasObject
+var Notify func(msg string)
 
 var Tickers *fyne.Container

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -15,6 +14,7 @@ import (
 	JP "jxwatcher/panels"
 	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
+	"jxwatcher/widgets"
 	JW "jxwatcher/widgets"
 )
 
@@ -107,8 +107,8 @@ func UpdateRates() bool {
 			if ns == 0 {
 				successCount++
 			}
-
-			RequestDisplayUpdate(true)
+			JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
+			// RequestDisplayUpdate(true)
 		}
 
 		JP.Grid.UpdatePanelsContent()
@@ -316,7 +316,8 @@ func SavePanelForm() {
 
 	JP.ForceLayoutRefresh = true
 	JP.Grid.Refresh()
-	RequestDisplayUpdate(true)
+	JA.AppWorkerManager.Call("update_display", JA.CallBypassImmediate)
+	// RequestDisplayUpdate(true)
 
 	go func() {
 		if JT.SavePanels() {
@@ -325,7 +326,8 @@ func SavePanelForm() {
 			if !ValidateCache() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				RequestRateUpdate(false)
+				JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+				// RequestRateUpdate(false)
 			}
 
 			JC.Notify("Panel settings saved.")
@@ -385,10 +387,12 @@ func OpenSettingForm() {
 					JA.AppStatusManager.SetConfigStatus(true)
 
 					JT.TickerCache.SoftReset()
-					RequestTickersUpdate()
+					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+					// RequestTickersUpdate()
 
 					JT.ExchangeCache.SoftReset()
-					RequestRateUpdate(true)
+					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+					// RequestRateUpdate(true)
 				}
 			} else {
 				JC.Notify("Failed to save configuration.")
@@ -453,11 +457,13 @@ func ResetCryptosMap() {
 
 					// Force Refresh
 					JT.ExchangeCache.SoftReset()
-					RequestRateUpdate(false)
+					JA.AppWorkerManager.Call("update_rates", JA.CallImmediate)
+					// RequestRateUpdate(false)
 
 					// Force Refresh
 					JT.TickerCache.SoftReset()
-					RequestTickersUpdate()
+					JA.AppWorkerManager.Call("update_tickers", JA.CallImmediate)
+					// RequestTickersUpdate()
 
 					JA.AppStatusManager.SetCryptoStatus(true)
 
@@ -473,90 +479,6 @@ func ResetCryptosMap() {
 	}
 
 	JA.AppStatusManager.EndFetchingCryptos()
-}
-
-func StartWorkers() {
-	go func() {
-		var displayLock sync.Mutex
-
-		for range JC.UpdateDisplayChan {
-			displayLock.Lock()
-
-			if UpdateDisplay() {
-				JC.UpdateDisplayTimestamp = time.Now()
-			}
-
-			displayLock.Unlock()
-		}
-	}()
-
-	go func() {
-		var displayLock sync.Mutex
-
-		for range JC.UpdateRatesChan {
-			displayLock.Lock()
-
-			UpdateRates()
-
-			displayLock.Unlock()
-		}
-	}()
-
-	go func() {
-		var displayLock sync.Mutex
-
-		for range JC.UpdateTickersChan {
-			displayLock.Lock()
-
-			UpdateTickers()
-
-			displayLock.Unlock()
-		}
-	}()
-}
-
-func StartUpdateRatesWorker() {
-	go func() {
-		for {
-			RequestRateUpdate(false)
-			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
-		}
-	}()
-}
-
-func StartUpdateTickersWorker() {
-	go func() {
-		for {
-			RequestTickersUpdate()
-			time.Sleep(time.Duration(JT.Config.Delay) * time.Second)
-		}
-	}()
-}
-
-func RequestDisplayUpdate(force bool) {
-	if JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData() || force {
-		JC.UpdateDisplayChan <- struct{}{}
-	}
-}
-
-func RequestRateUpdate(debounce bool) {
-	if !JA.AppStatusManager.ValidPanels() {
-		return
-	}
-
-	if debounce {
-		JC.MainDebouncer.Call("update_rates", 1000*time.Millisecond, func() {
-			JC.UpdateRatesChan <- struct{}{}
-		})
-	} else {
-		JC.UpdateRatesChan <- struct{}{}
-	}
-}
-
-func RequestTickersUpdate() {
-	JC.MainDebouncer.Call("update_tickers", 1000*time.Millisecond, func() {
-		JC.UpdateTickersChan <- struct{}{}
-	})
 }
 
 func RegisterActions() {
@@ -605,11 +527,13 @@ func RegisterActions() {
 			go func() {
 				// Force update
 				JT.ExchangeCache.SoftReset()
-				RequestRateUpdate(true)
+				JA.AppWorkerManager.Call("update_rates", JA.CallDebounced)
+				// RequestRateUpdate(true)
 
 				// Force update
 				JT.TickerCache.SoftReset()
-				RequestTickersUpdate()
+				JA.AppWorkerManager.Call("update_tickers", JA.CallDebounced)
+				// RequestTickersUpdate()
 			}()
 		},
 		func(btn *JW.HoverCursorIconButton) {
@@ -744,6 +668,66 @@ func RegisterActions() {
 
 			btn.Enable()
 		}))
+}
+
+func SetupWorkers() {
+	JA.AppWorkerManager.Register("update_display", func() {
+		if UpdateDisplay() {
+			JC.UpdateDisplayTimestamp = time.Now()
+		}
+	}, 2000, 1000, func() bool {
+		return JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) && JT.ExchangeCache.HasData()
+	})
+
+	JA.AppWorkerManager.Register("update_rates", func() {
+		UpdateRates()
+	}, JT.Config.Delay, 1000, func() bool {
+		return JA.AppStatusManager.ValidPanels()
+	})
+
+	JA.AppWorkerManager.Register("update_tickers", func() {
+		UpdateTickers()
+	}, JT.Config.Delay, 1000, func() bool {
+		return JT.Config.IsValidTickers()
+	})
+
+	JA.AppWorkerManager.Register("notification", func() {
+
+		ch := JA.AppWorkerManager.GetMessageChannel("notification")
+
+		select {
+		case msg := <-ch:
+			nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
+			if !ok {
+				JC.Logln("failed to show")
+				return
+			}
+			JC.Logln("Message received:", msg)
+			nc.UpdateText(msg)
+		default:
+			// no message
+		}
+	}, 600, 600, nil)
+
+	JA.AppWorkerManager.Register("notification_idle_clear", func() {
+
+		nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
+		if !ok {
+			return
+		}
+
+		JC.Logln("Clearing notification display due to inactivity")
+		nc.ClearText()
+
+	}, 100, 1000, func() bool {
+
+		nc, ok := JC.NotificationContainer.(*widgets.NotificationContainer)
+		if !ok {
+			return false
+		}
+		last := JA.AppWorkerManager.GetLastUpdate("notification")
+		return time.Since(last) > 6*time.Second && nc.GetText() != ""
+	})
 }
 
 func SetupFetchers() {
