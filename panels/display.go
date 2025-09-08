@@ -199,7 +199,7 @@ func NewPanelDisplay(
 			return
 		}
 
-		JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
+		// JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
 
 		if pkt.Status == JC.STATE_LOADED {
 			if pkt.DidChange() {
