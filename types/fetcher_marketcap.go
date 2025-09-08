@@ -136,9 +136,9 @@ func (er *MarketCapFetcher) GetRate() int64 {
 	z := er.Data.ThirtyDaysPercentage
 
 	dx := ((x - y) / y) * 100
-	now := strconv.FormatFloat(x, 'f', 2, 64)
-	dif := strconv.FormatFloat(dx, 'f', 4, 64)
-	dix := strconv.FormatFloat(z, 'f', 4, 64)
+	now := strconv.FormatFloat(x, 'f', -1, 64)
+	dif := strconv.FormatFloat(dx, 'f', -1, 64)
+	dix := strconv.FormatFloat(z, 'f', -1, 64)
 
 	TickerCache.Insert("market_cap", now, er.Status.LastUpdate)
 	TickerCache.Insert("market_cap_30_percentage", dix, er.Status.LastUpdate)

@@ -127,8 +127,8 @@ func (er *CMC100Fetcher) GetRate() int64 {
 		return JC.NETWORKING_BAD_DATA_RECEIVED
 	}
 
-	now := strconv.FormatFloat(er.Data.SummaryData.CurrentValue.Value, 'f', 2, 64)
-	dif := strconv.FormatFloat(er.Data.SummaryData.CurrentValue.PercentChange, 'f', 3, 64)
+	now := strconv.FormatFloat(er.Data.SummaryData.CurrentValue.Value, 'f', -1, 64)
+	dif := strconv.FormatFloat(er.Data.SummaryData.CurrentValue.PercentChange, 'f', -1, 64)
 	tim := er.Data.SummaryData.NextUpdate
 
 	ts, err := strconv.ParseInt(tim, 10, 64)
