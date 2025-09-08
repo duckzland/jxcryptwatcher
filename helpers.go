@@ -94,6 +94,7 @@ func UpdateRates() bool {
 		case 0:
 			JC.Notify("Exchange rates updated successfully")
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(true)
 			JA.AppSnapshotManager.SavePanels()
 			JA.AppSnapshotManager.SaveExchangeData()
 		case 1:
@@ -117,6 +118,7 @@ func UpdateRates() bool {
 			}
 		case 3:
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(true)
 		}
 
 		JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
@@ -182,17 +184,20 @@ func UpdateTickers() bool {
 		case 0:
 			JC.Notify("Ticker rates updated successfully")
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(true)
 			JA.AppSnapshotManager.SaveTickers()
 			JA.AppSnapshotManager.SaveTickerData()
 		case 1:
 			JC.Notify("Please check your network connection.")
 			JA.AppStatusManager.SetNetworkStatus(false)
+			JA.AppStatusManager.SetConfigStatus(true)
 		case 2:
 			JC.Notify("Please check your settings.")
 			JA.AppStatusManager.SetNetworkStatus(true)
 			JA.AppStatusManager.SetConfigStatus(false)
 		case 3:
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatusManager.SetConfigStatus(true)
 		}
 	})
 
@@ -771,6 +776,7 @@ func RegisterFetchers() {
 				JA.AppStatusManager.SetNetworkStatus(true)
 			case 3:
 				JA.AppStatusManager.SetNetworkStatus(true)
+				JA.AppStatusManager.SetConfigStatus(true)
 			}
 
 			JA.AppStatusManager.SetCryptoStatus(false)
