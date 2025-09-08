@@ -110,8 +110,15 @@ func main() {
 
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
-			if !JA.AppStatusManager.HasError() {
 
+			snapshotSaved = false
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to fetch data as app is not ready yet")
+				return
+			}
+
+			if !JA.AppStatusManager.HasError() {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
 				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
@@ -123,6 +130,12 @@ func main() {
 		})
 		lc.SetOnExitedForeground(func() {
 			JC.Logln("App exited foreground — snapshot time!")
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to take snapshot as app is not ready yet")
+				return
+			}
+
 			if !snapshotSaved {
 				JA.AppSnapshotManager.ForceSaveAll()
 				snapshotSaved = true
@@ -130,6 +143,12 @@ func main() {
 		})
 		lc.SetOnStopped(func() {
 			JC.Logln("App stopped")
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to take snapshot as app is not ready yet")
+				return
+			}
+
 			if !snapshotSaved {
 				JA.AppSnapshotManager.ForceSaveAll()
 				snapshotSaved = true

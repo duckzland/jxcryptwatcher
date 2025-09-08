@@ -312,7 +312,7 @@ func (sm *SnapshotManager) ForceSaveAll() {
 		JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
 	}
 
-	if !JT.BP.Maps.IsEmpty() {
+	if JT.BP.Maps != nil && !JT.BP.Maps.IsEmpty() {
 		JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
 	}
 
