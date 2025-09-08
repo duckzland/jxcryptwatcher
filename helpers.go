@@ -647,10 +647,12 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JA.AppStatusManager.IsGoodNetworkStatus() {
-			JC.Logln("Unable to refresh rates: Network status is bad")
-			return false
-		}
+		// Dont block this, when apps running and connection got dropped,
+		// It wont recover due to it is locked!
+		// if !JA.AppStatusManager.IsGoodNetworkStatus() {
+		// 	JC.Logln("Unable to refresh rates: Network status is bad")
+		// 	return false
+		// }
 
 		return true
 	})
@@ -674,10 +676,12 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JA.AppStatusManager.IsGoodNetworkStatus() {
-			JC.Logln("Unable to refresh tickers: Network status is bad")
-			return false
-		}
+		// Dont block this, when apps running and connection got dropped,
+		// It wont recover due to it is locked!
+		// if !JA.AppStatusManager.IsGoodNetworkStatus() {
+		// 	JC.Logln("Unable to refresh tickers: Network status is bad")
+		// 	return false
+		// }
 
 		return true
 	})
