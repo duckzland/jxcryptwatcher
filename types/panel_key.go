@@ -18,7 +18,7 @@ type PanelKeyType struct {
 
 func (p *PanelKeyType) UpdateValue(rate float32) string {
 	pkk := strings.Split(p.value, "|")
-	p.value = fmt.Sprintf("%s|%f", pkk[0], rate)
+	p.value = fmt.Sprintf("%s|%.20f", pkk[0], rate)
 	return p.value
 }
 
@@ -27,12 +27,12 @@ func (p *PanelKeyType) RefreshKey() string {
 }
 
 func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float32) string {
-	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
+	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%.20f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 	return p.value
 }
 
 func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float32) string {
-	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
+	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%.20f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
 	return p.value
 }
 
@@ -110,11 +110,16 @@ func (p *PanelKeyType) GetValueFormattedString() string {
 
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	dec := int(p.GetDecimalsInt())
 	if frac < 3 {
 		frac = 2
 	}
 
-	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt()))))
+	if frac < dec {
+		frac = dec
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(frac)))
 
 }
 
@@ -122,11 +127,16 @@ func (p *PanelKeyType) GetReverseValueFormattedString() string {
 
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	dec := int(p.GetDecimalsInt())
 	if frac < 3 {
 		frac = 2
 	}
 
-	return pr.Sprintf("%v", number.Decimal(p.GetReverseValueFloat(), number.MaxFractionDigits(int(p.GetDecimalsInt()))))
+	if frac < dec {
+		frac = dec
+	}
+
+	return pr.Sprintf("%v", number.Decimal(p.GetReverseValueFloat(), number.MaxFractionDigits(frac)))
 
 }
 
