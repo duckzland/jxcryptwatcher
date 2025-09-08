@@ -89,6 +89,10 @@ func (ec *TickerDataCacheType) HasData() bool {
 	return !isEmpty
 }
 
+func (ec *TickerDataCacheType) IsEmpty() bool {
+	return ec.HasData() == false
+}
+
 func (ec *TickerDataCacheType) ShouldRefresh() bool {
 	if ec.LastUpdated == nil {
 		return true

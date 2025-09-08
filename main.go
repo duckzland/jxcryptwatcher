@@ -105,9 +105,9 @@ func main() {
 
 	// Hook into lifecycle events
 	if lc := a.Lifecycle(); lc != nil {
-		lc.SetOnStarted(func() {
-			JC.Logln("App started")
-		})
+
+		var snapshotSaved bool = false
+
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
 			if !JA.AppStatusManager.HasError() {
@@ -123,11 +123,17 @@ func main() {
 		})
 		lc.SetOnExitedForeground(func() {
 			JC.Logln("App exited foreground — snapshot time!")
-			JA.AppSnapshotManager.ForceSaveAll()
+			if !snapshotSaved {
+				JA.AppSnapshotManager.ForceSaveAll()
+				snapshotSaved = true
+			}
 		})
 		lc.SetOnStopped(func() {
 			JC.Logln("App stopped")
-			JA.AppSnapshotManager.ForceSaveAll()
+			if !snapshotSaved {
+				JA.AppSnapshotManager.ForceSaveAll()
+				snapshotSaved = true
+			}
 		})
 	}
 

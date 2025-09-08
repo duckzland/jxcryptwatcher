@@ -86,6 +86,10 @@ func (ec *ExchangeDataCacheType) HasData() bool {
 	return !isEmpty
 }
 
+func (ec *ExchangeDataCacheType) IsEmpty() bool {
+	return ec.HasData() == false
+}
+
 func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
 	// return true
 	if ec.LastUpdated == nil {
