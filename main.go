@@ -103,5 +103,33 @@ func main() {
 
 	JC.Notify("Application is starting...")
 
+	// Hook into lifecycle events
+	if lc := a.Lifecycle(); lc != nil {
+		lc.SetOnStarted(func() {
+			JC.Logln("App started")
+		})
+		lc.SetOnEnteredForeground(func() {
+			JC.Logln("App entered foreground")
+			if !JA.AppStatusManager.HasError() {
+
+				// Force Refresh
+				JT.ExchangeCache.SoftReset()
+				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+
+				// Force Refresh
+				JT.TickerCache.SoftReset()
+				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+			}
+		})
+		lc.SetOnExitedForeground(func() {
+			JC.Logln("App exited foreground — snapshot time!")
+			JA.AppSnapshotManager.ForceSaveAll()
+		})
+		lc.SetOnStopped(func() {
+			JC.Logln("App stopped")
+			JA.AppSnapshotManager.ForceSaveAll()
+		})
+	}
+
 	JC.Window.ShowAndRun()
 }

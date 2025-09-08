@@ -306,3 +306,11 @@ func (sm *SnapshotManager) SaveTickerData() {
 		JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
 	})
 }
+
+func (sm *SnapshotManager) ForceSaveAll() {
+	JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
+	JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
+	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
+	JC.SaveFile("snapshots-exchange.json", JT.ExchangeCache.Serialize())
+	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
+}
