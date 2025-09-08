@@ -224,10 +224,15 @@ func (p *PanelKeyType) GetSourceValueString() string {
 
 func (p *PanelKeyType) GetSourceValueFormattedString() string {
 	pr := message.NewPrinter(language.English)
-
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	dec := int(p.GetDecimalsInt())
+
 	if frac < 3 {
 		frac = 2
+	}
+
+	if frac < dec {
+		frac = dec
 	}
 
 	return pr.Sprintf("%v", number.Decimal(p.GetSourceValueFloat(), number.MaxFractionDigits(frac)))
