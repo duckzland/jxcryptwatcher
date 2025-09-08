@@ -95,14 +95,14 @@ func (p *PanelDataType) Update(pk string) bool {
 		Data := ExchangeCache.Get(ck)
 		if Data != nil {
 			pko := PanelKeyType{value: npk}
-			npk = pko.UpdateValue(float32(Data.TargetAmount))
+			npk = pko.UpdateValue(Data.TargetAmount)
 		}
 	}
 
 	// oso := PanelKeyType{value: opk}
 	nso := PanelKeyType{value: npk}
 
-	//  JC.Logln("Trying to update with value:", "old value:", oso.GetValueFloat(), "old status:", p.Status, "new value:", nso.GetValueFloat())
+	// JC.Logln("Trying to update with value:", "old value:", p.GetOldValueString(), "old status:", p.Status, "new value:", nso.GetValueString())
 
 	switch p.Status {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
