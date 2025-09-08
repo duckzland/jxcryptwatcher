@@ -199,17 +199,17 @@ func NewPanelDisplay(
 			return
 		}
 
-		if pkt.DidChange() {
-			switch pkt.IsValueIncrease() {
-			case JC.VALUE_INCREASE:
-				panel.background.FillColor = JC.GreenColor
-				panel.background.Refresh()
-			case JC.VALUE_DECREASE:
-				panel.background.FillColor = JC.RedColor
-				panel.background.Refresh()
-			}
-		} else {
-			if pdt.Status != JC.STATE_ERROR {
+		if pkt.Status == JC.STATE_LOADED {
+			if pkt.DidChange() {
+				switch pkt.IsValueIncrease() {
+				case JC.VALUE_INCREASE:
+					panel.background.FillColor = JC.GreenColor
+					panel.background.Refresh()
+				case JC.VALUE_DECREASE:
+					panel.background.FillColor = JC.RedColor
+					panel.background.Refresh()
+				}
+			} else if pdt.IsOnInitialValue() {
 				panel.background.FillColor = JC.PanelBG
 			}
 		}

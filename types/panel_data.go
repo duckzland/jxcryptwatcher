@@ -174,6 +174,11 @@ func (p *PanelDataType) DidChange() bool {
 	return p.OldKey != p.Get() && opt.GetValueFloat() != -1 && p.Status == JC.STATE_LOADED
 }
 
+func (p *PanelDataType) IsOnInitialValue() bool {
+	opt := &PanelKeyType{p.OldKey}
+	return opt.GetValueFloat() == -1 && p.Status == JC.STATE_LOADED
+}
+
 func (p *PanelDataType) IsValueIncrease() int {
 
 	b := p.GetValueString()

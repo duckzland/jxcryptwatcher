@@ -757,9 +757,11 @@ func RegisterFetchers() {
 				JC.Notify("Please check your network connection.")
 				JA.AppStatusManager.SetNetworkStatus(false)
 				JA.AppStatusManager.SetConfigStatus(true)
-			case 2, 3:
+			case 2:
 				JC.Notify("Please check your settings.")
 				JA.AppStatusManager.SetConfigStatus(false)
+				JA.AppStatusManager.SetNetworkStatus(true)
+			case 3:
 				JA.AppStatusManager.SetNetworkStatus(true)
 			}
 
