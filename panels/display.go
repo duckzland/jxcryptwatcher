@@ -199,6 +199,8 @@ func NewPanelDisplay(
 			return
 		}
 
+		JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
+
 		if pkt.Status == JC.STATE_LOADED {
 			if pkt.DidChange() {
 				switch pkt.IsValueIncrease() {
@@ -209,7 +211,7 @@ func NewPanelDisplay(
 					panel.background.FillColor = JC.RedColor
 					panel.background.Refresh()
 				}
-			} else if pdt.IsOnInitialValue() {
+			} else if pkt.IsOnInitialValue() {
 				// Previous has no value
 				panel.background.FillColor = JC.PanelBG
 			} else if panel.status == JC.STATE_ERROR {

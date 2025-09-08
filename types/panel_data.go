@@ -194,8 +194,8 @@ func (p *PanelDataType) IsValueIncrease() int {
 		return JC.VALUE_NO_CHANGE
 	}
 
-	numA, errA := strconv.ParseFloat(a, 32)
-	numB, errB := strconv.ParseFloat(b, 32)
+	numA, errA := strconv.ParseFloat(a, 64)
+	numB, errB := strconv.ParseFloat(b, 64)
 
 	if errA != nil || errB != nil {
 		// JC.Logf("Error Formatting")
