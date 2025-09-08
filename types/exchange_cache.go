@@ -9,6 +9,12 @@ import (
 var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
 var CMCUpdateThreshold = 1 * time.Minute
 
+type ExchangeDataCacheSnapshot struct {
+	Data        []ExchangeDataType `json:"data"`
+	Timestamp   time.Time          `json:"timestamp"`
+	LastUpdated time.Time          `json:"last_updated"`
+}
+
 type ExchangeDataCacheType struct {
 	data        sync.Map
 	Timestamp   time.Time
@@ -87,6 +93,37 @@ func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
 	}
 
 	return time.Now().After(ec.LastUpdated.Add(CMCUpdateThreshold))
+}
+
+func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
+	var result []ExchangeDataType
+	ec.data.Range(func(key, value any) bool {
+		if ex, ok := value.(ExchangeDataType); ok {
+			result = append(result, ex)
+		}
+		return true
+	})
+
+	var lastUpdated time.Time
+	if ec.LastUpdated != nil {
+		lastUpdated = *ec.LastUpdated
+	}
+
+	return ExchangeDataCacheSnapshot{
+		Data:        result,
+		Timestamp:   ec.Timestamp,
+		LastUpdated: lastUpdated,
+	}
+}
+
+func (ec *ExchangeDataCacheType) Hydrate(snapshot ExchangeDataCacheSnapshot) {
+	ec.data = sync.Map{}
+	for _, ex := range snapshot.Data {
+		ck := ec.CreateKeyFromExchangeData(&ex)
+		ec.data.Store(ck, ex)
+	}
+	ec.Timestamp = snapshot.Timestamp
+	ec.LastUpdated = &snapshot.LastUpdated
 }
 
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {

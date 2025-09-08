@@ -120,13 +120,9 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 }
 
 func PanelsInit() {
-	BP = PanelsMapType{}
+	maps := BP.Maps
 	BP.Init()
-
-	Cryptos := &CryptosType{}
-	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
-
-	BP.SetMaps(CM)
+	BP.SetMaps(maps)
 
 	Panels := PanelsType{}
 	Panels.CheckFile().LoadFile().ConvertToMap(&BP)

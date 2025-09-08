@@ -19,6 +19,12 @@ type PanelDataType struct {
 	mu     sync.Mutex
 }
 
+type PanelDataCache struct {
+	Status int
+	Key    string
+	OldKey string
+}
+
 func (p *PanelDataType) Init() {
 	p.Data = binding.NewString()
 }
@@ -211,4 +217,12 @@ func (p *PanelDataType) IsValueIncrease() int {
 
 func (p *PanelDataType) IsEqualContentString(pk string) bool {
 	return p.Get() == pk
+}
+
+func (p *PanelDataType) Serialize() PanelDataCache {
+	return PanelDataCache{
+		Status: p.Status,
+		Key:    p.Get(),
+		OldKey: p.OldKey,
+	}
 }

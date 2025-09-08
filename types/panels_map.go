@@ -6,7 +6,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var BP PanelsMapType
+var BP PanelsMapType = PanelsMapType{}
 
 type PanelsMapType struct {
 	mu   sync.RWMutex
@@ -210,13 +210,37 @@ func (pc *PanelsMapType) TotalData() int {
 	return len(pc.Data)
 }
 
-func (pc *PanelsMapType) ChangeAllStatus(newStatus int) {
+func (pc *PanelsMapType) ChangeStatus(newStatus int) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
 	for _, pdt := range pc.Data {
 		pdt.Status = newStatus
 	}
+}
+
+func (pc *PanelsMapType) Hydrate(data []*PanelDataType) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for _, pk := range data {
+		if pk.Parent == nil {
+			pk.Parent = pc
+		}
+	}
+
+	pc.Data = data
+}
+
+func (pm *PanelsMapType) Serialize() []PanelDataCache {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	var out []PanelDataCache
+	for _, p := range pm.Data {
+		out = append(out, p.Serialize())
+	}
+	return out
 }
 
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {

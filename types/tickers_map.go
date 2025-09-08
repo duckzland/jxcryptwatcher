@@ -16,6 +16,18 @@ func (pc *TickersMapType) Init() {
 	pc.Data = []*TickerDataType{}
 }
 
+func (pc *TickersMapType) Set(data []*TickerDataType) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for _, tdt := range data {
+		tdt.Init()
+		tdt.Status = JC.STATE_LOADING
+	}
+
+	pc.Data = data
+}
+
 func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
@@ -97,6 +109,24 @@ func (pc *TickersMapType) Reset() {
 
 		pc.Data[i] = tdt
 	}
+}
+
+func (pc *TickersMapType) Hydrate(data []*TickerDataType) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	pc.Data = data
+}
+
+func (pc *TickersMapType) Serialize() []TickerDataCache {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	var out []TickerDataCache
+	for _, t := range pc.Data {
+		out = append(out, t.Serialize())
+	}
+	return out
 }
 
 func TickersInit() {

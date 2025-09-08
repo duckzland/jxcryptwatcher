@@ -1,11 +1,7 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
-
-	"fyne.io/fyne/v2/storage"
 
 	JC "jxwatcher/core"
 )
@@ -25,30 +21,14 @@ type ConfigType struct {
 
 func (c *ConfigType) LoadFile() *ConfigType {
 
-	// Construct the file URI
-	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
-	if err != nil {
-		JC.Logln("Error getting parsing uri for file:", fileURI, err)
-		return c
-	}
-
-	// Attempt to open the file with Fyne's Reader
-	reader, err := storage.Reader(fileURI)
-	if err != nil {
-		JC.Logln("Failed to open config.json:", err)
-		return c
-	}
-	defer reader.Close()
-
-	// Read the file into a buffer
-	buffer := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buffer, reader); err != nil {
-		JC.Logln("Failed to read config contents:", err)
+	content, ok := JC.LoadFile("config.json")
+	if !ok {
+		JC.Logf("Failed to load config.json")
 		return c
 	}
 
 	// Parse JSON into the config object
-	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
+	if err := json.Unmarshal([]byte(content), c); err != nil {
 		JC.Logf("Failed to unmarshal config.json: %v", err)
 		return c
 	}
@@ -90,15 +70,7 @@ func (c *ConfigType) updateDefault() *ConfigType {
 }
 
 func (c *ConfigType) SaveFile() *ConfigType {
-
-	jsonData, err := json.MarshalIndent(Config, "", "  ")
-	if err != nil {
-		JC.Logln("Error marshaling config:", err)
-		return nil
-	}
-
-	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}), string(jsonData))
-
+	JC.SaveFile("config.json", Config)
 	return c
 }
 
@@ -115,13 +87,7 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			Delay:             60,
 		}
 
-		jsonData, err := json.MarshalIndent(data, "", "  ")
-		if err != nil {
-			JC.Logln(err)
-			return c
-		}
-
-		if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}), string(jsonData)) {
+		if !JC.SaveFile("config.json", data) {
 			JC.Logln("Failed to create config.json with default values")
 			c = &data
 

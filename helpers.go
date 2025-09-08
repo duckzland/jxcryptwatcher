@@ -94,11 +94,13 @@ func UpdateRates() bool {
 		case 0:
 			JC.Notify("Exchange rates updated successfully")
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppSnapshotManager.SavePanels()
+			JA.AppSnapshotManager.SaveExchangeData()
 		case 1:
 			JC.Notify("Please check your network connection.")
 			JA.AppStatusManager.SetNetworkStatus(false)
 			if !JT.ExchangeCache.HasData() {
-				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
+				JT.BP.ChangeStatus(JC.STATE_ERROR)
 				fyne.Do(func() {
 					JP.Grid.UpdatePanelsContent()
 				})
@@ -108,7 +110,7 @@ func UpdateRates() bool {
 			JA.AppStatusManager.SetNetworkStatus(true)
 			JA.AppStatusManager.SetConfigStatus(false)
 			if !JT.ExchangeCache.HasData() {
-				JT.BP.ChangeAllStatus(JC.STATE_ERROR)
+				JT.BP.ChangeStatus(JC.STATE_ERROR)
 				fyne.Do(func() {
 					JP.Grid.UpdatePanelsContent()
 				})
@@ -180,6 +182,8 @@ func UpdateTickers() bool {
 		case 0:
 			JC.Notify("Ticker rates updated successfully")
 			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppSnapshotManager.SaveTickers()
+			JA.AppSnapshotManager.SaveTickerData()
 		case 1:
 			JC.Notify("Please check your network connection.")
 			JA.AppStatusManager.SetNetworkStatus(false)
@@ -790,6 +794,8 @@ func RegisterFetchers() {
 
 		if JA.AppStatusManager.ValidCryptos() {
 			JC.Notify("Crypto map regenerated successfully")
+
+			JA.AppSnapshotManager.SaveCryptos()
 
 			if JT.BP.RefreshData() {
 				fyne.Do(func() {

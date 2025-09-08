@@ -19,3 +19,6 @@ const STATE_FETCHING_NEW = -3
 const VALUE_INCREASE = 1
 const VALUE_NO_CHANGE = 0
 const VALUE_DECREASE = -1
+
+const NO_SNAPSHOT = -1
+const HAVE_SNAPSHOT = 0

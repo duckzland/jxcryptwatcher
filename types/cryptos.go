@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,8 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
-	"fyne.io/fyne/v2/storage"
 
 	JC "jxwatcher/core"
 )
@@ -23,45 +20,21 @@ func (c *CryptosType) LoadFile() *CryptosType {
 
 	JC.PrintMemUsage("Start loading cryptos.json")
 
-	// Build full storage URI
-	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
-	if err != nil {
-		JC.Logln("Error getting parsing uri for file:", err)
+	content, ok := JC.LoadFile("cryptos.json")
+	if !ok {
+		JC.Logln("Failed to open cryptos.json")
 		JC.Notify("Failed to load cryptos data")
-
-		return c
 	}
 
-	// Open the file using Fyne's storage API
-	reader, err := storage.Reader(fileURI)
-	if err != nil {
-		JC.Logln("Failed to open cryptos.json:", err)
-		JC.Notify("Failed to load cryptos data")
-
-		return c
-	}
-	defer reader.Close()
-
-	// Decode JSON from reader
-	buffer := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buffer, reader); err != nil {
-		JC.Logln("Failed to read cryptos.json:", err)
-		JC.Notify("Failed to load cryptos data")
-
-		return c
-	}
-
-	if err := json.Unmarshal(buffer.Bytes(), c); err != nil {
-
+	if err := json.Unmarshal([]byte(content), c); err != nil {
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
 		JC.Notify("Failed to load cryptos data")
 		JC.Logln(wrappedErr)
 
-	} else {
-
-		JC.Logln("Cryptos Loaded")
-
+		return c
 	}
+
+	JC.Logln("Cryptos Loaded")
 
 	JC.PrintMemUsage("End loading cryptos.json")
 
@@ -69,7 +42,12 @@ func (c *CryptosType) LoadFile() *CryptosType {
 }
 
 func (c *CryptosType) CreateFile() *CryptosType {
-	if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), c.FetchData()) {
+	status := c.GetCryptos()
+	switch status {
+	case JC.NETWORKING_FAILED_CREATE_FILE:
+		JC.Logln("Failed to create cryptos.json with new values")
+		return nil
+	case JC.NETWORKING_BAD_DATA_RECEIVED, JC.NETWORKING_ERROR_CONNECTION, JC.NETWORKING_URL_ERROR:
 		return nil
 	}
 
@@ -119,65 +97,6 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 	JC.PrintMemUsage("End populating cryptos")
 
 	return CM
-}
-
-func (c *CryptosType) FetchData() string {
-
-	JC.PrintMemUsage("Start fetching cryptos data")
-	JC.Notify("Requesting latest cryptos data from exchange...")
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-		},
-		Timeout: 10 * time.Second,
-	}
-	req, err := http.NewRequest("GET", Config.DataEndpoint, nil)
-	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Expires", "0")
-
-	if err != nil {
-		JC.Logln("Error creating request:", err)
-		JC.Notify("Failed to fetch cryptos data")
-		return ""
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		JC.Logln("Error performing request:", err)
-		JC.Notify("Failed to fetch cryptos data from exchange.")
-		return ""
-	}
-
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		JC.Logln("Failed to read response body:", err)
-		JC.Notify("Failed to fetch cryptos data")
-		return ""
-	}
-
-	JC.Logln("Fetched cryptodata from CMC")
-	JC.Notify("Successfully retrieved cryptos data from exchange.")
-
-	JC.PrintMemUsage("End fetching cryptos data")
-
-	payload := string(respBody)
-
-	// Debug simulating invalid json
-	// payload = "{///}"
-	// payload = "{}"
-	// payload = `{"values":{}}`
-	// payload = `{"values":[{}]}`
-	// payload = `{"values":[[]]}`
-
-	return payload
 }
 
 func (c *CryptosType) GetCryptos() int64 {
@@ -262,4 +181,11 @@ func (c *CryptosType) GetCryptos() int64 {
 
 	return JC.NETWORKING_SUCCESS
 
+}
+
+func CryptosInit() {
+	Cryptos := &CryptosType{}
+	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
+
+	BP.SetMaps(CM)
 }

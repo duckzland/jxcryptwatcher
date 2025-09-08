@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"image/color"
 	"os"
@@ -244,4 +246,36 @@ func TraceGoroutines() {
 
 func Notify(msg string) {
 	WorkerManager.PushMessage("notification", msg)
+}
+
+func SaveFile(filename string, data any) bool {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		Logln("Error marshaling", filename, err)
+		return false
+	}
+	return CreateFile(BuildPathRelatedToUserDirectory([]string{filename}), string(jsonData))
+}
+
+func LoadFile(filename string) (string, bool) {
+	fileURI, err := storage.ParseURI(BuildPathRelatedToUserDirectory([]string{filename}))
+	if err != nil {
+		Logln("Error parsing URI for", filename, err)
+		return "", false
+	}
+
+	reader, err := storage.Reader(fileURI)
+	if err != nil {
+		Logln("Failed to open", filename, err)
+		return "", false
+	}
+	defer reader.Close()
+
+	buffer := bytes.NewBuffer(nil)
+	if _, err := buffer.ReadFrom(reader); err != nil {
+		Logln("Failed to read", filename, err)
+		return "", false
+	}
+
+	return buffer.String(), true
 }

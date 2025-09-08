@@ -12,6 +12,15 @@ import (
 	JC "jxwatcher/core"
 )
 
+type TickerDataCache struct {
+	Type   string
+	Title  string
+	Format string
+	Status int
+	Key    string
+	OldKey string
+}
+
 type TickerDataType struct {
 	Data   binding.String
 	OldKey string
@@ -102,4 +111,15 @@ func (p *TickerDataType) FormatContent() string {
 
 func (p *TickerDataType) DidChange() bool {
 	return p.OldKey != p.Get() && p.Status == JC.STATE_LOADED
+}
+
+func (t *TickerDataType) Serialize() TickerDataCache {
+	return TickerDataCache{
+		Type:   t.Type,
+		Title:  t.Title,
+		Format: t.Format,
+		Status: t.Status,
+		Key:    t.Get(),
+		OldKey: t.OldKey,
+	}
 }

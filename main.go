@@ -32,6 +32,8 @@ func main() {
 
 	JA.AppStatusManager.Init()
 
+	JA.AppSnapshotManager.Init()
+
 	RegisterActions()
 	RegisterFetchers()
 	RegisterWorkers()
@@ -47,9 +49,30 @@ func main() {
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 33*time.Millisecond, func() {
 
-		JT.PanelsInit()
+		if JA.AppSnapshotManager.LoadCryptos() == JC.NO_SNAPSHOT {
+			JT.CryptosInit()
+		}
 
-		JT.TickersInit()
+		if JA.AppSnapshotManager.LoadPanels() == JC.NO_SNAPSHOT {
+			JT.PanelsInit()
+		}
+
+		if JA.AppSnapshotManager.LoadTickers() == JC.NO_SNAPSHOT {
+			JT.TickersInit()
+		}
+
+		if JA.AppSnapshotManager.LoadExchangeData() == JC.NO_SNAPSHOT {
+			JT.ExchangeCache.Reset()
+		}
+
+		if JA.AppSnapshotManager.LoadTickerData() == JC.NO_SNAPSHOT {
+			JT.TickerCache.Reset()
+		}
+
+		// Do saving as this isnt fired frequently
+		if JT.BP.Maps != nil && !JT.BP.Maps.IsEmpty() {
+			JA.AppSnapshotManager.SaveCryptos()
+		}
 
 		fyne.Do(func() {
 
