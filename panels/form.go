@@ -133,6 +133,10 @@ func NewPanelForm(
 			return fmt.Errorf("Only number larger than zero allowed")
 		}
 
+		if x > 20 {
+			return fmt.Errorf("Maximum supported precision is 20 decimal digits")
+		}
+
 		return nil
 	}
 
