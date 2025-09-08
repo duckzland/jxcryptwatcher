@@ -210,6 +210,10 @@ func NewPanelDisplay(
 					panel.background.Refresh()
 				}
 			} else if pdt.IsOnInitialValue() {
+				// Previous has no value
+				panel.background.FillColor = JC.PanelBG
+			} else if panel.status == JC.STATE_ERROR {
+				// Previous is on error state
 				panel.background.FillColor = JC.PanelBG
 			}
 		}
