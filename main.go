@@ -118,7 +118,7 @@ func main() {
 				return
 			}
 
-			if !JA.AppStatusManager.HasError() {
+			if !JA.AppStatusManager.HasError() && JC.IsMobile {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
 				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
@@ -136,7 +136,7 @@ func main() {
 				return
 			}
 
-			if !snapshotSaved {
+			if !snapshotSaved && JC.IsMobile {
 				JA.AppSnapshotManager.ForceSaveAll()
 				snapshotSaved = true
 			}
