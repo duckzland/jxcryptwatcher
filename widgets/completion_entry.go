@@ -85,11 +85,11 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	results = JC.ReorderByMatch(results, s)
 
-	delay := 100 * time.Millisecond
+	delay := 50 * time.Millisecond
 
 	// Mobile uses virtual keyboard, give more time for user to type
 	if JC.IsMobile {
-		delay = 200 * time.Millisecond
+		delay = 100 * time.Millisecond
 	}
 
 	// then show them

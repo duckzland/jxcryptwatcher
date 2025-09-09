@@ -210,11 +210,15 @@ func (pc *PanelsMapType) TotalData() int {
 	return len(pc.Data)
 }
 
-func (pc *PanelsMapType) ChangeStatus(newStatus int) {
+func (pc *PanelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *PanelDataType) bool) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
 	for _, pdt := range pc.Data {
+		if shouldChange != nil && !shouldChange(pdt) {
+			continue
+		}
+
 		pdt.Status = newStatus
 	}
 }
@@ -238,6 +242,9 @@ func (pm *PanelsMapType) Serialize() []PanelDataCache {
 
 	var out []PanelDataCache
 	for _, p := range pm.Data {
+		if p.Status != JC.STATE_LOADED {
+			continue
+		}
 		out = append(out, p.Serialize())
 	}
 	return out

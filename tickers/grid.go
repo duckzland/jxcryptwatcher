@@ -11,6 +11,8 @@ import (
 	JT "jxwatcher/types"
 )
 
+var Grid *TickerGridContainer = &TickerGridContainer{}
+
 type TickerGridLayout struct {
 	MinCellSize  fyne.Size
 	DynCellSize  fyne.Size
@@ -177,7 +179,7 @@ func (g *TickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return g.minSize
 }
 
-func NewTickerGrid() *fyne.Container {
+func NewTickerGrid() *TickerGridContainer {
 	JC.PrintMemUsage("Start building tickers")
 
 	// Get the list of panel data
@@ -198,7 +200,7 @@ func NewTickerGrid() *fyne.Container {
 	}
 
 	// Using direct spread injection for objects to save multiple refresh calls
-	grid := container.New(
+	grid := NewTickerGridContainer(
 		&TickerGridLayout{
 			MinCellSize:  fyne.NewSize(JC.TickerWidth, JC.TickerHeight),
 			DynCellSize:  fyne.NewSize(JC.TickerWidth, JC.TickerHeight),
@@ -206,9 +208,10 @@ func NewTickerGrid() *fyne.Container {
 			RowCount:     1,
 			InnerPadding: JC.PanelPadding,
 		},
-		o...,
+		o,
 	)
 
+	JC.Tickers = container.NewStack(grid)
 	JC.PrintMemUsage("End building tickers")
 
 	return grid

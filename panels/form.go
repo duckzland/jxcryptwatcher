@@ -17,7 +17,7 @@ import (
 func NewPanelForm(
 	panelKey string,
 	uuid string,
-	onSave func(),
+	onSave func(pdt *JT.PanelDataType),
 	onNew func(pdt *JT.PanelDataType),
 ) *JW.ExtendedFormDialog {
 
@@ -152,6 +152,7 @@ func NewPanelForm(
 	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) {
 		if b {
 			var npk JT.PanelKeyType
+			var ns *JT.PanelDataType
 			newKey := npk.GenerateKey(
 				JT.BP.GetIdByDisplay(sourceEntry.Text),
 				JT.BP.GetIdByDisplay(targetEntry.Text),
@@ -163,27 +164,40 @@ func NewPanelForm(
 			)
 
 			if panelKey == "new" {
-				ns := JT.BP.Append(newKey)
+				ns = JT.BP.Append(newKey)
+				ns.Status = JC.STATE_FETCHING_NEW
+
 				if ns == nil {
 					JC.Notify("Unable to add new panel. Please try again.")
 					return
 				}
+
 				if onNew != nil {
 					onNew(ns)
 				}
-				ns.Status = JC.STATE_FETCHING_NEW
+
 			} else {
-				ns := JT.BP.GetData(uuid)
+				ns = JT.BP.GetData(uuid)
 				if ns == nil {
 					JC.Notify("Unable to update panel. Please try again.")
 					return
 				}
-				ns.Set(newKey)
+
+				pkt := ns.UsePanelKey()
+				nkt := JT.PanelKeyType{}
+				nkt.Set(newKey)
+
+				// Coin change, need to refresh data and invalidate the rates
+				if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
+					ns.Status = JC.STATE_LOADING
+					ns.Set(newKey)
+				}
+
 				ns.Update(newKey)
 			}
 
 			if onSave != nil {
-				onSave()
+				onSave(ns)
 			}
 		}
 	}, JC.Window)

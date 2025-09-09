@@ -199,7 +199,7 @@ func NewPanelDisplay(
 			return
 		}
 
-		// JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
+		JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
 
 		if pkt.Status == JC.STATE_LOADED {
 			if pkt.DidChange() {
@@ -228,7 +228,7 @@ func NewPanelDisplay(
 
 	panel.UpdateContent()
 
-	JA.FadeInBackground(background, 300*time.Millisecond, nil)
+	JA.FadeInBackground(background, 100*time.Millisecond, nil)
 
 	return panel
 }
@@ -250,7 +250,7 @@ func (h *PanelDisplay) UpdateContent() {
 
 	h.status = pkt.Status
 
-	// JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
+	JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
 
 	switch pkt.Status {
 	case JC.STATE_ERROR:

@@ -111,6 +111,19 @@ func (pc *TickersMapType) Reset() {
 	}
 }
 
+func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *TickerDataType) bool) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	for _, pdt := range pc.Data {
+		if shouldChange != nil && !shouldChange(pdt) {
+			continue
+		}
+
+		pdt.Status = newStatus
+	}
+}
+
 func (pc *TickersMapType) Hydrate(data []*TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
@@ -124,6 +137,11 @@ func (pc *TickersMapType) Serialize() []TickerDataCache {
 
 	var out []TickerDataCache
 	for _, t := range pc.Data {
+
+		if t.Status != JC.STATE_LOADED {
+			continue
+		}
+
 		out = append(out, t.Serialize())
 	}
 	return out

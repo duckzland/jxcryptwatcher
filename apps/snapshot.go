@@ -47,7 +47,7 @@ func (sm *SnapshotManager) Init() {
 
 func (sm *SnapshotManager) LoadPanels() int {
 	raw, ok := JC.LoadFile("snapshots-panels.json")
-	if !ok || raw == "" {
+	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}
 
@@ -78,7 +78,7 @@ func (sm *SnapshotManager) LoadPanels() int {
 
 func (sm *SnapshotManager) LoadCryptos() int {
 	raw, ok := JC.LoadFile("snapshots-cryptos.json")
-	if !ok || raw == "" {
+	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}
 
@@ -99,7 +99,8 @@ func (sm *SnapshotManager) LoadCryptos() int {
 
 func (sm *SnapshotManager) LoadTickers() int {
 	raw, ok := JC.LoadFile("snapshots-tickers.json")
-	if !ok || raw == "" {
+	JC.Logln("Ticker snapshot loaded", raw)
+	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}
 
@@ -133,7 +134,7 @@ func (sm *SnapshotManager) LoadTickers() int {
 
 func (sm *SnapshotManager) LoadExchangeData() int {
 	raw, ok := JC.LoadFile("snapshots-exchange.json")
-	if !ok || raw == "" {
+	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}
 
@@ -148,7 +149,7 @@ func (sm *SnapshotManager) LoadExchangeData() int {
 
 func (sm *SnapshotManager) LoadTickerData() int {
 	raw, ok := JC.LoadFile("snapshots-ticker-cache.json")
-	if !ok || raw == "" {
+	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}
 
@@ -160,6 +161,7 @@ func (sm *SnapshotManager) LoadTickerData() int {
 	JT.TickerCache.Hydrate(snapshot)
 	return HAVE_SNAPSHOT
 }
+
 func (sm *SnapshotManager) ShouldSave(domain string) bool {
 
 	// Save energy on mobile and only save when exit or on background
@@ -263,6 +265,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 
 	return false
 }
+
 func (sm *SnapshotManager) SavePanels() {
 	if !sm.ShouldSave("panels") {
 		return

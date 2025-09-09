@@ -8,6 +8,7 @@ import (
 
 	JM "jxwatcher/apps"
 	JC "jxwatcher/core"
+	JT "jxwatcher/types"
 )
 
 type panelGridRenderer struct {
@@ -128,9 +129,16 @@ func (c *PanelGridContainer) DragEnd() {
 	c.dragging = false
 }
 
-func (c *PanelGridContainer) UpdatePanelsContent() {
+func (c *PanelGridContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelDataType) bool) {
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
+
+			pdt := JT.BP.GetData(panel.GetTag())
+
+			if shouldUpdate != nil && !shouldUpdate(pdt) {
+				continue
+			}
+
 			panel.UpdateContent()
 		}
 	}

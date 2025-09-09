@@ -90,36 +90,7 @@ func UpdateRates() bool {
 
 		JC.Logln("Fetching has error:", hasError)
 
-		switch hasError {
-		case 0:
-			JC.Notify("Exchange rates updated successfully")
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(true)
-			JA.AppSnapshotManager.SavePanels()
-			JA.AppSnapshotManager.SaveExchangeData()
-		case 1:
-			JC.Notify("Please check your network connection.")
-			JA.AppStatusManager.SetNetworkStatus(false)
-			if !JT.ExchangeCache.HasData() {
-				JT.BP.ChangeStatus(JC.STATE_ERROR)
-				fyne.Do(func() {
-					JP.Grid.UpdatePanelsContent()
-				})
-			}
-		case 2:
-			JC.Notify("Please check your settings.")
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(false)
-			if !JT.ExchangeCache.HasData() {
-				JT.BP.ChangeStatus(JC.STATE_ERROR)
-				fyne.Do(func() {
-					JP.Grid.UpdatePanelsContent()
-				})
-			}
-		case 3:
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(true)
-		}
+		ProcessUpdatePanelComplete(hasError)
 
 		JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
 	})
@@ -180,25 +151,7 @@ func UpdateTickers() bool {
 			}
 		}
 
-		switch hasError {
-		case 0:
-			JC.Notify("Ticker rates updated successfully")
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(true)
-			JA.AppSnapshotManager.SaveTickers()
-			JA.AppSnapshotManager.SaveTickerData()
-		case 1:
-			JC.Notify("Please check your network connection.")
-			JA.AppStatusManager.SetNetworkStatus(false)
-			JA.AppStatusManager.SetConfigStatus(true)
-		case 2:
-			JC.Notify("Please check your settings.")
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(false)
-		case 3:
-			JA.AppStatusManager.SetNetworkStatus(true)
-			JA.AppStatusManager.SetConfigStatus(true)
-		}
+		ProcessUpdateTickerComplete(hasError)
 	})
 
 	return true
@@ -238,6 +191,97 @@ func DetectHTTPResponse(rs int64) int {
 	}
 
 	return 0
+}
+
+func ProcessUpdatePanelComplete(status int) {
+	switch status {
+	case 0:
+		JC.Notify("Exchange rates updated successfully")
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppSnapshotManager.SavePanels()
+		JA.AppSnapshotManager.SaveExchangeData()
+	case 1:
+		JC.Notify("Please check your network connection.")
+		JA.AppStatusManager.SetNetworkStatus(false)
+
+		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
+			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
+				return pdt.UsePanelKey().GetValueFloat() < 0
+			})
+
+			fyne.Do(func() {
+				JP.Grid.UpdatePanelsContent(func(pdt *JT.PanelDataType) bool {
+					return true
+				})
+			})
+		})
+	case 2:
+		JC.Notify("Please check your settings.")
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(false)
+
+		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
+			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
+				return pdt.UsePanelKey().GetValueFloat() < 0
+			})
+
+			fyne.Do(func() {
+				JP.Grid.UpdatePanelsContent(func(pdt *JT.PanelDataType) bool {
+					return true
+				})
+			})
+		})
+	case 3:
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(true)
+	}
+}
+
+func ProcessUpdateTickerComplete(status int) {
+	switch status {
+	case 0:
+		JC.Notify("Ticker rates updated successfully")
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppSnapshotManager.SaveTickers()
+		JA.AppSnapshotManager.SaveTickerData()
+	case 1:
+		JC.Notify("Please check your network connection.")
+		JA.AppStatusManager.SetNetworkStatus(false)
+		JA.AppStatusManager.SetConfigStatus(true)
+
+		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
+			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
+				return !pdt.HasData()
+			})
+
+			fyne.Do(func() {
+				JX.Grid.UpdateTickersContent(func(pdt *JT.TickerDataType) bool {
+					return true
+				})
+			})
+		})
+	case 2:
+		JC.Notify("Please check your settings.")
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(false)
+
+		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
+			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
+				return !pdt.HasData()
+			})
+
+			fyne.Do(func() {
+				JX.Grid.UpdateTickersContent(func(pdt *JT.TickerDataType) bool {
+					return true
+				})
+			})
+		})
+	case 3:
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(true)
+	}
 }
 
 func ValidateCache() bool {
@@ -290,7 +334,7 @@ func RemovePanel(uuid string) {
 	JA.AppStatusManager.DetectData()
 }
 
-func SavePanelForm() {
+func SavePanelForm(pdt *JT.PanelDataType) {
 
 	JC.Notify("Saving panel settings...")
 
@@ -302,9 +346,33 @@ func SavePanelForm() {
 
 			// Only fetch new rates if no cache exists!
 			if !ValidateCache() {
-				// Force Refresh
-				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallBypassImmediate)
+
+				// Force refresh without fail!
+				pkt := pdt.UsePanelKey()
+				sid := pkt.GetSourceCoinString()
+				tid := pkt.GetTargetCoinString()
+
+				payloads := []any{sid + "|" + tid}
+
+				JC.FetcherManager.GroupPayloadCall("rates", payloads, func(results []JC.FetchResult) {
+					for _, result := range results {
+						JT.ExchangeCache.SoftReset()
+
+						status := DetectHTTPResponse(result.Code)
+
+						switch status {
+						case 0:
+							opk := pdt.Get()
+							if opk != "" {
+								pdt.Update(opk)
+							}
+						case 1, 2, 3:
+							pdt.Status = JC.STATE_ERROR
+						}
+
+						ProcessUpdatePanelComplete(status)
+					}
+				})
 			}
 
 			JC.Notify("Panel settings saved.")
@@ -320,7 +388,9 @@ func OpenNewPanelForm() {
 		d := JP.NewPanelForm(
 			"new",
 			"",
-			SavePanelForm,
+			func(npdt *JT.PanelDataType) {
+				SavePanelForm(npdt)
+			},
 			func(npdt *JT.PanelDataType) {
 
 				JP.Grid.Add(CreatePanel(npdt))
@@ -338,7 +408,9 @@ func OpenNewPanelForm() {
 
 func OpenPanelEditForm(pk string, uuid string) {
 	fyne.Do(func() {
-		d := JP.NewPanelForm(pk, uuid, SavePanelForm, nil)
+		d := JP.NewPanelForm(pk, uuid, func(npdt *JT.PanelDataType) {
+			SavePanelForm(npdt)
+		}, nil)
 
 		d.Show()
 		d.Resize(fyne.NewSize(400, 300))
@@ -358,16 +430,16 @@ func OpenSettingForm() {
 					if JT.BT.IsEmpty() {
 						JC.Logln("Rebuilding tickers due to empty ticker list")
 						JT.TickersInit()
-						JC.Tickers = JX.NewTickerGrid()
+						JX.Grid = JX.NewTickerGrid()
 					}
 
 					JA.AppStatusManager.SetConfigStatus(true)
 
 					JT.TickerCache.SoftReset()
-					JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+					JC.WorkerManager.Call("update_tickers", JC.CallQueued)
 
 					JT.ExchangeCache.SoftReset()
-					JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+					JC.WorkerManager.Call("update_rates", JC.CallQueued)
 				}
 			} else {
 				JC.Notify("Failed to save configuration.")
@@ -401,7 +473,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 
 func RegisterActions() {
 	// Refresh ticker data
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh ticker data",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data",
 		func(btn *JW.HoverCursorIconButton) {
 			JC.FetcherManager.Call("cryptos_map", nil)
 		},
@@ -838,10 +910,10 @@ func RegisterFetchers() {
 				})
 
 				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+				JC.WorkerManager.Call("update_rates", JC.CallQueued)
 
 				JT.TickerCache.SoftReset()
-				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+				JC.WorkerManager.Call("update_tickers", JC.CallQueued)
 
 				JA.AppStatusManager.SetCryptoStatus(true)
 				JA.AppStatusManager.SetConfigStatus(true)

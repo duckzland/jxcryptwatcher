@@ -16,6 +16,10 @@ type PanelKeyType struct {
 	value string
 }
 
+func (p *PanelKeyType) Set(value string) {
+	p.value = value
+}
+
 func (p *PanelKeyType) UpdateValue(rate float64) string {
 	pkk := strings.Split(p.value, "|")
 	p.value = fmt.Sprintf("%s|%.20f", pkk[0], rate)

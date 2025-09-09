@@ -135,19 +135,19 @@ func NewTickerDisplay(
 			return
 		}
 
-		ticker.updateContent()
+		ticker.UpdateContent()
 
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	ticker.updateContent()
+	ticker.UpdateContent()
 
-	JA.FadeInBackground(background, 300*time.Millisecond, nil)
+	JA.FadeInBackground(background, 100*time.Millisecond, nil)
 
 	return ticker
 }
 
-func (h *TickerDisplay) updateContent() {
+func (h *TickerDisplay) UpdateContent() {
 
 	pwidth := h.Size().Width
 	pkt := JT.BT.GetData(h.GetTag())
