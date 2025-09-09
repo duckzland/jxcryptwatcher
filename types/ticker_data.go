@@ -69,14 +69,42 @@ func (p *TickerDataType) GetData() binding.String {
 	return p.Data
 }
 
-func (p *TickerDataType) Update() bool {
-	if TickerCache.Has(p.Type) {
-		nd := TickerCache.Get(p.Type)
-		if nd != "" {
-			p.Set(nd)
-			p.Status = JC.STATE_LOADED
-		}
+func (p *TickerDataType) HasData() bool {
+	raw := p.Get()
+
+	val, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return false
 	}
+
+	return val > 0
+}
+
+func (p *TickerDataType) Update() bool {
+
+	if !TickerCache.Has(p.Type) {
+		return false
+	}
+
+	npk := TickerCache.Get(p.Type)
+	opk := p.Get()
+	nst := p.Status
+
+	if npk == "" {
+		return false
+	}
+
+	p.Status = JC.STATE_LOADED
+
+	JC.Logln(fmt.Sprintf(
+		"Trying to update tickers %v with old value = %v, old status = %v to new value = %v, new status = %v",
+		p.Type, opk, p.Status, npk, nst,
+	))
+
+	if npk != opk {
+		p.Set(npk)
+	}
+
 	return true
 }
 

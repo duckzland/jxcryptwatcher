@@ -209,7 +209,7 @@ func ProcessTickerStatus(status int, tkt *JT.TickerDataType) {
 	case 0:
 		tkt.Update()
 	case 1:
-		if !JT.TickerCache.HasData() {
+		if !JT.TickerCache.HasData() && tkt.Status != JC.STATE_LOADED && !tkt.HasData() {
 			tkt.Set("-1")
 			tkt.Status = JC.STATE_ERROR
 		}
