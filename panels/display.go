@@ -199,7 +199,7 @@ func NewPanelDisplay(
 			return
 		}
 
-		JC.Logln("Panel status:", pkt.DidChange(), pkt.IsValueIncrease(), pkt.IsOnInitialValue())
+		// JC.Logln("Panel status:", "Changed:", pkt.DidChange(), "Value Increased:", pkt.IsValueIncrease(), "Initial Value:", pkt.IsOnInitialValue())
 
 		if pkt.Status == JC.STATE_LOADED {
 			if pkt.DidChange() {
@@ -250,7 +250,7 @@ func (h *PanelDisplay) UpdateContent() {
 
 	h.status = pkt.Status
 
-	JC.Logln("Updating content: ", pkt.Get(), pkt.Status)
+	// JC.Logln("Content update triggered with value:", pkt.Get(), "and status:", pkt.Status)
 
 	switch pkt.Status {
 	case JC.STATE_ERROR:

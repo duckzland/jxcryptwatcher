@@ -88,18 +88,28 @@ func (p *TickerDataType) Update() bool {
 
 	npk := TickerCache.Get(p.Type)
 	opk := p.Get()
+	nso := PanelKeyType{value: npk}
 	nst := p.Status
 
 	if npk == "" {
 		return false
 	}
 
-	p.Status = JC.STATE_LOADED
+	switch p.Status {
+	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
 
-	JC.Logln(fmt.Sprintf(
-		"Trying to update tickers %v with old value = %v, old status = %v to new value = %v, new status = %v",
-		p.Type, opk, p.Status, npk, nst,
-	))
+		// Watch out, value might be minus for things like percentage changes
+		if nso.GetValueFloat() >= 0 {
+			nst = JC.STATE_LOADED
+		}
+
+	case JC.STATE_LOADED:
+		// Do nothing?
+	}
+
+	p.Status = nst
+
+	// JC.Logln(fmt.Sprintf("Trying to update tickers %v with old value = %v, old status = %v to new value = %v, new status = %v", p.Type, opk, p.Status, npk, nst))
 
 	if npk != opk {
 		p.Set(npk)

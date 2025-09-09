@@ -110,10 +110,7 @@ func (p *PanelDataType) Update(pk string) bool {
 		// Do nothing?
 	}
 
-	JC.Logln(fmt.Sprintf(
-		"Trying to update panel with old value = %v, old status = %v to new value = %v, new status = %v",
-		opk, p.Status, npk, nst,
-	))
+	// JC.Logln(fmt.Sprintf("Trying to update panel with old value = %v, old status = %v to new value = %v, new status = %v", opk, p.Status, npk, nst))
 
 	p.Status = nst
 
