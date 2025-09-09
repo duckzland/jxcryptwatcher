@@ -99,7 +99,6 @@ func (sm *SnapshotManager) LoadCryptos() int {
 
 func (sm *SnapshotManager) LoadTickers() int {
 	raw, ok := JC.LoadFile("snapshots-tickers.json")
-	JC.Logln("Ticker snapshot loaded", raw)
 	if !ok || raw == "" || raw == "null" {
 		return NO_SNAPSHOT
 	}

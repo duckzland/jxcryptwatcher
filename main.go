@@ -69,11 +69,6 @@ func main() {
 			JT.TickerCache.Reset()
 		}
 
-		// Do saving as this isnt fired frequently
-		if JT.BP.Maps != nil && !JT.BP.Maps.IsEmpty() {
-			JA.AppSnapshotManager.SaveCryptos()
-		}
-
 		fyne.Do(func() {
 
 			JX.Grid = JX.NewTickerGrid()
