@@ -11,7 +11,7 @@ import (
 const (
 	NO_SNAPSHOT     = -1
 	HAVE_SNAPSHOT   = 0
-	MinSaveInterval = 5 * time.Minute
+	MinSaveInterval = 30 * time.Minute
 )
 
 var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
@@ -161,6 +161,12 @@ func (sm *SnapshotManager) LoadTickerData() int {
 	return HAVE_SNAPSHOT
 }
 func (sm *SnapshotManager) ShouldSave(domain string) bool {
+
+	// Save energy on mobile and only save when exit or on background
+	if JC.IsMobile {
+		return false
+	}
+
 	now := time.Now()
 
 	switch domain {

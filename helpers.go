@@ -610,6 +610,11 @@ func RegisterWorkers() {
 			return false
 		}
 
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to refresh display: app is paused")
+			return false
+		}
+
 		if !JT.ExchangeCache.HasData() {
 			JC.Notify("Unable to refresh display: no cached data")
 			return false
@@ -634,6 +639,11 @@ func RegisterWorkers() {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh rates: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to refresh rates: app is paused")
 			return false
 		}
 
@@ -668,6 +678,11 @@ func RegisterWorkers() {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh tickers: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to refresh tickers: app is paused")
 			return false
 		}
 
@@ -714,6 +729,11 @@ func RegisterWorkers() {
 			return false
 		}
 
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to do notification: app is paused")
+			return false
+		}
+
 		return true
 	})
 
@@ -733,6 +753,11 @@ func RegisterWorkers() {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to do notification: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to do notification: app is paused")
 			return false
 		}
 
@@ -831,6 +856,11 @@ func RegisterFetchers() {
 			return false
 		}
 
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch cryptos: app is paused")
+			return false
+		}
+
 		if !JA.AppStatusManager.ValidConfig() {
 			JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 			JC.Logln("Unable to do fetch cryptos: Invalid config")
@@ -862,6 +892,11 @@ func RegisterFetchers() {
 			return false
 		}
 
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch CMC100: app is paused")
+			return false
+		}
+
 		if !JT.Config.CanDoCMC100() {
 			JC.Logln("Unable to fetch CMC100: Invalid config")
 			return false
@@ -882,6 +917,11 @@ func RegisterFetchers() {
 	}, func() bool {
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to fetch fear greed: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch fear greed app is paused")
 			return false
 		}
 
@@ -908,6 +948,11 @@ func RegisterFetchers() {
 			return false
 		}
 
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch marketcap: app is paused")
+			return false
+		}
+
 		if !JT.Config.CanDoMarketCap() {
 			JC.Logln("Unable to fetch marketcap: Invalid config")
 			return false
@@ -927,7 +972,12 @@ func RegisterFetchers() {
 
 	}, func() bool {
 		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to fetch marketcap: app is not ready yet")
+			JC.Logln("Unable to fetch altcoin index: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch altcoin index: app is paused")
 			return false
 		}
 
@@ -955,6 +1005,11 @@ func RegisterFetchers() {
 	}, func() bool {
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to fetch rates: app is not ready yet")
+			return false
+		}
+
+		if JA.AppStatusManager.IsPaused() {
+			JC.Logln("Unable to fetch rates: app is paused")
 			return false
 		}
 

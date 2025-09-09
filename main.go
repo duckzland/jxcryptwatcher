@@ -111,6 +111,11 @@ func main() {
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
 
+			if JC.IsMobile {
+				JC.Logln("Battery Saver: Continuing apps")
+				JA.AppStatusManager.ContinueApp()
+			}
+
 			snapshotSaved = false
 
 			if !JA.AppStatusManager.IsReady() {
@@ -130,6 +135,11 @@ func main() {
 		})
 		lc.SetOnExitedForeground(func() {
 			JC.Logln("App exited foreground — snapshot time!")
+
+			if JC.IsMobile {
+				JC.Logln("Battery Saver: Pausing apps")
+				JA.AppStatusManager.PauseApp()
+			}
 
 			if !JA.AppStatusManager.IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")

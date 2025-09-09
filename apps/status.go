@@ -11,6 +11,7 @@ var AppStatusManager *AppStatus = &AppStatus{}
 
 type AppStatus struct {
 	ready            bool
+	paused           bool
 	bad_config       bool
 	bad_cryptos      bool
 	bad_tickers      bool
@@ -30,6 +31,7 @@ type AppStatus struct {
 
 func (a *AppStatus) Init() {
 	a.ready = false
+	a.paused = false
 	a.bad_config = false
 	a.bad_cryptos = false
 	a.bad_tickers = false
@@ -45,6 +47,10 @@ func (a *AppStatus) Init() {
 
 func (a *AppStatus) IsReady() bool {
 	return a.ready
+}
+
+func (a *AppStatus) IsPaused() bool {
+	return a.paused
 }
 
 func (a *AppStatus) IsDraggable() bool {
@@ -86,6 +92,24 @@ func (a *AppStatus) AppReady() *AppStatus {
 		a.lastChange = time.Now()
 		a.DebounceRefresh()
 	}
+
+	return a
+}
+
+func (a *AppStatus) PauseApp() *AppStatus {
+
+	a.paused = true
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
+
+	return a
+}
+
+func (a *AppStatus) ContinueApp() *AppStatus {
+
+	a.paused = false
+	a.lastChange = time.Now()
+	a.DebounceRefresh()
 
 	return a
 }
