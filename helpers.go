@@ -38,8 +38,6 @@ func UpdateRates() bool {
 		return false
 	}
 
-	JT.ExchangeCache.SoftReset()
-
 	jb := make(map[string]string)
 	list := JT.BP.Get()
 
@@ -69,31 +67,37 @@ func UpdateRates() bool {
 	successCount := 0
 
 	JC.Notify("Fetching the latest exchange rates...")
-	JA.AppStatusManager.StartFetchingRates()
 
-	JC.FetcherManager.GroupPayloadCall("rates", payloads, func(results []JC.FetchResult) {
-		defer JA.AppStatusManager.EndFetchingRates()
-
-		for _, result := range results {
-			JT.ExchangeCache.SoftReset()
-
-			ns := DetectHTTPResponse(result.Code)
-			if hasError == 0 || hasError < ns {
-				hasError = ns
+	JC.FetcherManager.GroupPayloadCall("rates", payloads,
+		func(shouldProceed bool) {
+			if shouldProceed {
+				JA.AppStatusManager.StartFetchingRates()
+				JT.ExchangeCache.SoftReset()
 			}
-			if ns == 0 {
-				successCount++
+		},
+		func(results []JC.FetchResult) {
+			defer JA.AppStatusManager.EndFetchingRates()
+
+			for _, result := range results {
+				JT.ExchangeCache.SoftReset()
+
+				ns := DetectHTTPResponse(result.Code)
+				if hasError == 0 || hasError < ns {
+					hasError = ns
+				}
+				if ns == 0 {
+					successCount++
+				}
+
+				JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
 			}
 
-			JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
-		}
+			JC.Logln("Fetching has error:", hasError)
 
-		JC.Logln("Fetching has error:", hasError)
+			ProcessUpdatePanelComplete(hasError)
 
-		ProcessUpdatePanelComplete(hasError)
-
-		JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
-	})
+			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
+		})
 
 	return true
 }
@@ -132,27 +136,32 @@ func UpdateTickers() bool {
 	var hasError int = 0
 
 	JC.Notify("Fetching the latest ticker data...")
-	JA.AppStatusManager.StartFetchingTickers()
-	JT.TickerCache.SoftReset()
 
-	JC.FetcherManager.GroupCall(keys, payloads, func(results map[string]JC.FetchResult) {
-		defer JA.AppStatusManager.EndFetchingTickers()
+	JC.FetcherManager.GroupCall(keys, payloads,
+		func(totalJob int) {
+			if totalJob > 0 {
+				JA.AppStatusManager.StartFetchingTickers()
+				JT.TickerCache.SoftReset()
+			}
+		},
+		func(results map[string]JC.FetchResult) {
+			defer JA.AppStatusManager.EndFetchingTickers()
 
-		for key, result := range results {
-			ns := DetectHTTPResponse(result.Code)
-			tktt := JT.BT.GetDataByType(key)
+			for key, result := range results {
+				ns := DetectHTTPResponse(result.Code)
+				tktt := JT.BT.GetDataByType(key)
 
-			for _, tkt := range tktt {
-				ProcessTickerStatus(ns, tkt)
+				for _, tkt := range tktt {
+					ProcessTickerStatus(ns, tkt)
+				}
+
+				if hasError == 0 || hasError < ns {
+					hasError = ns
+				}
 			}
 
-			if hasError == 0 || hasError < ns {
-				hasError = ns
-			}
-		}
-
-		ProcessUpdateTickerComplete(hasError)
-	})
+			ProcessUpdateTickerComplete(hasError)
+		})
 
 	return true
 }
@@ -354,25 +363,28 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 
 				payloads := []any{sid + "|" + tid}
 
-				JC.FetcherManager.GroupPayloadCall("rates", payloads, func(results []JC.FetchResult) {
-					for _, result := range results {
-						JT.ExchangeCache.SoftReset()
+				JC.FetcherManager.GroupPayloadCall("rates", payloads,
+					func(shouldProceed bool) {
+					},
+					func(results []JC.FetchResult) {
+						for _, result := range results {
+							JT.ExchangeCache.SoftReset()
 
-						status := DetectHTTPResponse(result.Code)
+							status := DetectHTTPResponse(result.Code)
 
-						switch status {
-						case 0:
-							opk := pdt.Get()
-							if opk != "" {
-								pdt.Update(opk)
+							switch status {
+							case 0:
+								opk := pdt.Get()
+								if opk != "" {
+									pdt.Update(opk)
+								}
+							case 1, 2, 3:
+								pdt.Status = JC.STATE_ERROR
 							}
-						case 1, 2, 3:
-							pdt.Status = JC.STATE_ERROR
-						}
 
-						ProcessUpdatePanelComplete(status)
-					}
-				})
+							ProcessUpdatePanelComplete(status)
+						}
+					})
 			}
 
 			JC.Notify("Panel settings saved.")

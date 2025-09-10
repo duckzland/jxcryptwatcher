@@ -110,10 +110,23 @@ func (m *Fetcher) Call(key string, payload any) {
 
 }
 
-func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, callback func(map[string]FetchResult)) {
+func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, preprocess func(totalJob int), callback func(map[string]FetchResult)) {
 	var wg sync.WaitGroup
 	results := make(map[string]FetchResult)
 	mu := sync.Mutex{}
+	total := 0
+
+	for _, key := range keys {
+		if cond, ok := m.conditions[key]; ok && cond != nil {
+			if cond() {
+				total++
+			}
+		}
+	}
+
+	if preprocess != nil {
+		preprocess(total)
+	}
 
 	for _, key := range keys {
 		if cond, ok := m.conditions[key]; ok && cond != nil {
@@ -150,11 +163,18 @@ func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, callback fun
 	}()
 }
 
-func (m *Fetcher) GroupPayloadCall(key string, payloads []any, callback func([]FetchResult)) {
+func (m *Fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(shouldProceed bool), callback func([]FetchResult)) {
 	if cond, ok := m.conditions[key]; ok && cond != nil {
 		if !cond() {
+			if preprocess != nil {
+				preprocess(false)
+			}
 			return
 		}
+	}
+
+	if preprocess != nil {
+		preprocess(true)
 	}
 
 	var wg sync.WaitGroup
