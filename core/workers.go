@@ -85,7 +85,11 @@ func (w *Worker) Register(key string, fn WorkerFunc, interval int64, debounce in
 			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 			defer ticker.Stop()
 			for range ticker.C {
-				if w.active[key] {
+				w.mu.Lock()
+				active := w.active[key]
+				w.mu.Unlock()
+
+				if active {
 					w.Call(key, CallQueued)
 				}
 			}
@@ -112,7 +116,11 @@ func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval in
 			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 			defer ticker.Stop()
 			for range ticker.C {
-				if w.active[key] {
+				w.mu.Lock()
+				active := w.active[key]
+				w.mu.Unlock()
+
+				if active {
 					w.Call(key, CallQueued)
 				}
 			}
@@ -132,11 +140,17 @@ func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shoul
 
 	go func() {
 		for {
-			_, ok := <-w.queues[key]
-			if !ok || !w.active[key] {
+			w.mu.Lock()
+			queue, ok := w.queues[key]
+			active := w.active[key]
+			cond := w.conditions[key]
+			w.mu.Unlock()
+
+			_, ok = <-queue
+			if !ok || !active {
 				return
 			}
-			if cond := w.conditions[key]; cond != nil && !cond() {
+			if cond != nil && !cond() {
 				continue
 			}
 			if delayMs > 0 {
@@ -148,22 +162,32 @@ func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shoul
 }
 
 func (w *Worker) Call(key string, mode CallMode) {
+	w.mu.Lock()
+	cond := w.conditions[key]
+	w.mu.Unlock()
+
 	if mode != CallBypassImmediate {
-		if cond, ok := w.conditions[key]; ok && cond != nil {
-			if !cond() {
-				return
-			}
+		if cond != nil && !cond() {
+			return
 		}
 	}
 
 	switch mode {
 	case CallImmediate, CallBypassImmediate:
 		go w.runWorker(key)
+
 	case CallQueued:
-		w.queues[key] <- struct{}{}
+		w.mu.Lock()
+		queue := w.queues[key]
+		w.mu.Unlock()
+		queue <- struct{}{}
+
 	case CallDebounced:
 		MainDebouncer.Call("worker_"+key, time.Duration(1000)*time.Millisecond, func() {
-			w.queues[key] <- struct{}{}
+			w.mu.Lock()
+			queue := w.queues[key]
+			w.mu.Unlock()
+			queue <- struct{}{}
 		})
 	}
 }
@@ -253,7 +277,11 @@ drain:
 }
 
 func (w *Worker) startQueueWorker(key string, buffered bool) {
-	for range w.queues[key] {
+	w.mu.Lock()
+	queue := w.queues[key]
+	w.mu.Unlock()
+
+	for range queue {
 		if buffered {
 			w.runBufferedWorker(key)
 		} else {
