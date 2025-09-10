@@ -278,3 +278,21 @@ func (w *Worker) GetLastUpdate(key string) time.Time {
 	}
 	return time.Time{}
 }
+
+func (w *Worker) PauseAll() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for key := range w.active {
+		w.active[key] = false
+		Logf("[Worker:%s] Paused", key)
+	}
+}
+
+func (w *Worker) ResumeAll() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for key := range w.active {
+		w.active[key] = true
+		Logf("[Worker:%s] Resumed", key)
+	}
+}

@@ -108,6 +108,7 @@ func main() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
+				JC.WorkerManager.ResumeAll()
 				JA.AppStatusManager.ContinueApp()
 			}
 
@@ -134,6 +135,7 @@ func main() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
 				JA.AppStatusManager.PauseApp()
+				JC.WorkerManager.PauseAll()
 			}
 
 			if !JA.AppStatusManager.IsReady() {
