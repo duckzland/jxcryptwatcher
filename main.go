@@ -106,13 +106,13 @@ func main() {
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
 
+			snapshotSaved = false
+
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.WorkerManager.ResumeAll()
 				JA.AppStatusManager.ContinueApp()
 			}
-
-			snapshotSaved = false
 
 			if !JA.AppStatusManager.IsReady() {
 				JC.Logln("Refused to fetch data as app is not ready yet")
