@@ -467,6 +467,33 @@ func ToggleDraggable() {
 	})
 }
 
+func ScheduledNotificationReset() {
+	JC.MainDebouncer.Call("notification_clear", 6000*time.Millisecond, func() {
+		JC.Logln("calling notification clear 1")
+		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
+		if !ok {
+			JC.Logln("calling notification clear 3")
+			return
+		}
+
+		// Break loop once notification is empty
+		if nc.GetText() == "" {
+			return
+		}
+
+		// Ensure message shown for at least 6 seconds
+		last := JC.WorkerManager.GetLastUpdate("notification")
+		if time.Since(last) > 6*time.Second {
+			JC.Logln("Clearing notification display due to inactivity")
+			fyne.Do(func() {
+				nc.ClearText()
+			})
+		} else {
+			ScheduledNotificationReset()
+		}
+	})
+}
+
 func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }
@@ -793,6 +820,8 @@ func RegisterWorkers() {
 			nc.UpdateText(latest)
 		})
 
+		ScheduledNotificationReset()
+
 		return true
 
 	}, 1000, 100, 1000, func() bool {
@@ -807,38 +836,6 @@ func RegisterWorkers() {
 		}
 
 		return true
-	})
-
-	JC.WorkerManager.Register("notification_idle_clear", func() {
-
-		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
-		if !ok {
-			return
-		}
-
-		JC.Logln("Clearing notification display due to inactivity")
-		fyne.Do(func() {
-			nc.ClearText()
-		})
-
-	}, 5000, 1000, func() bool {
-
-		if !JA.AppStatusManager.IsReady() {
-			JC.Logln("Unable to do notification: app is not ready yet")
-			return false
-		}
-
-		if JA.AppStatusManager.IsPaused() {
-			JC.Logln("Unable to do notification: app is paused")
-			return false
-		}
-
-		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
-		if !ok {
-			return false
-		}
-		last := JC.WorkerManager.GetLastUpdate("notification")
-		return time.Since(last) > 6*time.Second && nc.GetText() != ""
 	})
 }
 
