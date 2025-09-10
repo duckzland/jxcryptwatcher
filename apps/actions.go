@@ -48,3 +48,11 @@ func (a *AppActions) Refresh() {
 		}
 	})
 }
+
+func (a *AppActions) Disable() {
+	fyne.Do(func() {
+		for _, btn := range a.Buttons {
+			btn.Disable()
+		}
+	})
+}

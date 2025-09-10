@@ -36,6 +36,8 @@ func main() {
 
 	RegisterActions()
 
+	JA.AppActionManager.Disable()
+
 	RegisterFetchers()
 
 	RegisterWorkers()

@@ -528,6 +528,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 }
 
 func RegisterActions() {
+
 	// Refresh ticker data
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data",
 		func(btn *JW.HoverCursorIconButton) {
