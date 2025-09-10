@@ -185,9 +185,9 @@ func (h *TickerDisplay) UpdateContent() {
 			switch {
 			case percentage >= 75:
 				h.background.FillColor = JC.BlueColor
-			case percentage >= 60:
+			case percentage >= 50:
 				h.background.FillColor = JC.LightPurpleColor
-			case percentage >= 40:
+			case percentage >= 25:
 				h.background.FillColor = JC.LightOrangeColor
 			default:
 				h.background.FillColor = JC.OrangeColor
