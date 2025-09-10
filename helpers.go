@@ -518,6 +518,11 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.AppStatusManager.IsFetchingRates() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.IsFetchingCryptos() {
 				btn.Progress()
 				return
@@ -559,6 +564,11 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsDraggable() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingCryptos() {
 				btn.Disable()
 				return
 			}
@@ -695,6 +705,11 @@ func RegisterActions() {
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingCryptos() {
 				btn.Disable()
 				return
 			}
