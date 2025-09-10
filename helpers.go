@@ -88,7 +88,9 @@ func UpdateRates() bool {
 				if ns == 0 {
 					successCount++
 				}
+			}
 
+			if successCount != 0 {
 				JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
 			}
 
@@ -186,31 +188,34 @@ func DetectHTTPResponse(rs int64) int {
 	// JC.Logln("Raw rs value: ", rs)
 	switch rs {
 	case JC.NETWORKING_SUCCESS:
-		return 0
+		return JC.STATUS_SUCCESS
 
 	case JC.NETWORKING_ERROR_CONNECTION:
-		return 1
+		return JC.STATUS_NETWORK_ERROR
 
 	case JC.NETWORKING_BAD_CONFIG, JC.NETWORKING_URL_ERROR:
-		return 2
+		return JC.STATUS_CONFIG_ERROR
 
 	case JC.NETWORKING_BAD_DATA_RECEIVED, JC.NETWORKING_DATA_IN_CACHE, JC.NETWORKING_BAD_PAYLOAD, JC.NETWORKING_FAILED_CREATE_FILE:
-		return 3
+		return JC.STATUS_BAD_DATA_RECEIVED
 
 	}
 
-	return 0
+	return JC.STATUS_SUCCESS
 }
 
 func ProcessUpdatePanelComplete(status int) {
 	switch status {
-	case 0:
+	case JC.STATUS_SUCCESS:
+
 		JC.Notify("Exchange rates updated successfully")
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
 		JA.AppSnapshotManager.SavePanels()
 		JA.AppSnapshotManager.SaveExchangeData()
-	case 1:
+
+	case JC.STATUS_NETWORK_ERROR:
+
 		JC.Notify("Please check your network connection.")
 		JA.AppStatusManager.SetNetworkStatus(false)
 
@@ -225,7 +230,9 @@ func ProcessUpdatePanelComplete(status int) {
 				})
 			})
 		})
-	case 2:
+
+	case JC.STATUS_CONFIG_ERROR:
+
 		JC.Notify("Please check your settings.")
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(false)
@@ -241,7 +248,9 @@ func ProcessUpdatePanelComplete(status int) {
 				})
 			})
 		})
-	case 3:
+
+	case JC.STATUS_BAD_DATA_RECEIVED:
+
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
 	}
@@ -249,13 +258,16 @@ func ProcessUpdatePanelComplete(status int) {
 
 func ProcessUpdateTickerComplete(status int) {
 	switch status {
-	case 0:
+	case JC.STATUS_SUCCESS:
+
 		JC.Notify("Ticker rates updated successfully")
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
 		JA.AppSnapshotManager.SaveTickers()
 		JA.AppSnapshotManager.SaveTickerData()
-	case 1:
+
+	case JC.STATUS_NETWORK_ERROR:
+
 		JC.Notify("Please check your network connection.")
 		JA.AppStatusManager.SetNetworkStatus(false)
 		JA.AppStatusManager.SetConfigStatus(true)
@@ -271,8 +283,11 @@ func ProcessUpdateTickerComplete(status int) {
 				})
 			})
 		})
-	case 2:
+
+	case JC.STATUS_CONFIG_ERROR:
+
 		JC.Notify("Please check your settings.")
+
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(false)
 
@@ -287,7 +302,9 @@ func ProcessUpdateTickerComplete(status int) {
 				})
 			})
 		})
-	case 3:
+
+	case JC.STATUS_BAD_DATA_RECEIVED:
+
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
 	}
@@ -373,12 +390,14 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 							status := DetectHTTPResponse(result.Code)
 
 							switch status {
-							case 0:
+							case JC.STATUS_SUCCESS:
+
 								opk := pdt.Get()
 								if opk != "" {
 									pdt.Update(opk)
 								}
-							case 1, 2, 3:
+
+							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
 								pdt.Status = JC.STATE_ERROR
 							}
 
@@ -915,17 +934,19 @@ func RegisterFetchers() {
 
 		code := DetectHTTPResponse(result.Code)
 
-		if code != 0 {
+		if code != JC.STATUS_SUCCESS {
 			switch code {
-			case 1:
+			case JC.STATUS_NETWORK_ERROR:
 				JC.Notify("Please check your network connection.")
 				JA.AppStatusManager.SetNetworkStatus(false)
 				JA.AppStatusManager.SetConfigStatus(true)
-			case 2:
+
+			case JC.STATUS_CONFIG_ERROR:
 				JC.Notify("Please check your settings.")
 				JA.AppStatusManager.SetConfigStatus(false)
 				JA.AppStatusManager.SetNetworkStatus(true)
-			case 3:
+
+			case JC.STATUS_BAD_DATA_RECEIVED:
 				JA.AppStatusManager.SetNetworkStatus(true)
 				JA.AppStatusManager.SetConfigStatus(true)
 			}

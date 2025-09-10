@@ -11,12 +11,11 @@ import (
 var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
 
 type SnapshotManager struct {
-	lastPanels      string
-	lastCryptos     string
-	lastTickers     string
-	lastExchange    string
-	lastTickerCache string
-
+	lastPanels              string
+	lastCryptos             string
+	lastTickers             string
+	lastExchange            string
+	lastTickerCache         string
 	lastPanelsSaveTime      time.Time
 	lastCryptosSaveTime     time.Time
 	lastTickersSaveTime     time.Time
@@ -30,7 +29,6 @@ func (sm *SnapshotManager) Init() {
 	sm.lastTickers = ""
 	sm.lastExchange = ""
 	sm.lastTickerCache = ""
-
 	sm.lastPanelsSaveTime = time.Time{}
 	sm.lastCryptosSaveTime = time.Time{}
 	sm.lastTickersSaveTime = time.Time{}
