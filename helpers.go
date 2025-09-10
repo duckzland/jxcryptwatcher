@@ -612,6 +612,21 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.AppStatusManager.IsFetchingTickers() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingCryptos() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingRates() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.IsDraggable() {
 				btn.Disable()
 				return
@@ -637,6 +652,18 @@ func RegisterActions() {
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingCryptos() {
+				JA.AppStatusManager.DisallowDragging()
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsFetchingRates() {
+				JA.AppStatusManager.DisallowDragging()
 				btn.Disable()
 				return
 			}
@@ -741,6 +768,11 @@ func RegisterWorkers() {
 
 		if JA.AppStatusManager.IsPaused() {
 			JC.Logln("Unable to refresh rates: app is paused")
+			return false
+		}
+
+		if JA.AppStatusManager.IsDraggable() {
+			JC.Logln("Unable to refresh rates: app is dragging")
 			return false
 		}
 
