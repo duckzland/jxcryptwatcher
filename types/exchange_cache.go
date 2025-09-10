@@ -101,9 +101,13 @@ func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
 
 func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
 	var result []ExchangeDataType
+	cutoff := time.Now().Add(-24 * time.Hour)
+
 	ec.data.Range(func(key, value any) bool {
 		if ex, ok := value.(ExchangeDataType); ok {
-			result = append(result, ex)
+			if ex.Timestamp.After(cutoff) {
+				result = append(result, ex)
+			}
 		}
 		return true
 	})
@@ -122,10 +126,15 @@ func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
 
 func (ec *ExchangeDataCacheType) Hydrate(snapshot ExchangeDataCacheSnapshot) {
 	ec.data = sync.Map{}
+	cutoff := time.Now().Add(-24 * time.Hour)
+
 	for _, ex := range snapshot.Data {
-		ck := ec.CreateKeyFromExchangeData(&ex)
-		ec.data.Store(ck, ex)
+		if ex.Timestamp.After(cutoff) {
+			ck := ec.CreateKeyFromExchangeData(&ex)
+			ec.data.Store(ck, ex)
+		}
 	}
+
 	ec.Timestamp = snapshot.Timestamp
 	ec.LastUpdated = &snapshot.LastUpdated
 }
