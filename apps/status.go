@@ -237,6 +237,19 @@ func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
 	return a
 }
 
+func (a *AppStatus) InitData() *AppStatus {
+	// Capture new state
+	a.ready = JT.BP.Maps != nil
+	a.no_panels = JT.BP.IsEmpty()
+	a.bad_config = !JT.Config.IsValid()
+	a.bad_cryptos = JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	a.panels_count = JT.BP.TotalData()
+	a.bad_tickers = !JT.Config.IsValidTickers()
+	a.lastChange = time.Now()
+
+	return a
+}
+
 func (a *AppStatus) DetectData() *AppStatus {
 	// Capture new state
 	newReady := JT.BP.Maps != nil

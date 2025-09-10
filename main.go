@@ -74,7 +74,7 @@ func main() {
 			JX.Grid = JX.NewTickerGrid()
 			JP.Grid = JP.NewPanelGrid(CreatePanel)
 
-			JA.AppStatusManager.DetectData()
+			JA.AppStatusManager.InitData()
 			JA.AppLayoutManager.SetPage(JP.Grid)
 			JA.AppLayoutManager.SetTickers(JC.Tickers)
 			JA.AppLayoutManager.Refresh()
