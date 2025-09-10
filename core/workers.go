@@ -31,8 +31,8 @@ type Worker struct {
 	messageQueues   map[string]chan string
 	recentLogs      map[string]string
 	logTimestamps   map[string]time.Time
-
-	mu sync.Mutex
+	minDelayMs      map[string]int64
+	mu              sync.Mutex
 }
 
 var WorkerManager = &Worker{
@@ -46,6 +46,7 @@ var WorkerManager = &Worker{
 	messageQueues:   make(map[string]chan string),
 	recentLogs:      make(map[string]string),
 	logTimestamps:   make(map[string]time.Time),
+	minDelayMs:      make(map[string]int64),
 }
 
 func (w *Worker) logGrouped(key string, interval int64, msg string) {
@@ -92,7 +93,7 @@ func (w *Worker) Register(key string, fn WorkerFunc, interval int64, debounce in
 	}
 }
 
-func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, shouldRun func() bool) {
+func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, minDelayMs int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -102,6 +103,7 @@ func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval in
 	w.queues[key] = make(chan struct{}, 100)
 	w.conditions[key] = shouldRun
 	w.messageQueues[key] = make(chan string, bufferSize)
+	w.minDelayMs[key] = minDelayMs
 
 	go w.startQueueWorker(key, true)
 
@@ -215,7 +217,16 @@ func (w *Worker) runBufferedWorker(key string) {
 	lock := w.locks[key]
 	fn := w.bufferedWorkers[key]
 	msgCh := w.messageQueues[key]
+	lastRun := w.lastRun[key]
+	minDelay := w.minDelayMs[key]
 	w.mu.Unlock()
+
+	if minDelay > 0 {
+		elapsed := time.Since(lastRun).Milliseconds()
+		if elapsed < minDelay {
+			time.Sleep(time.Duration(minDelay-elapsed) * time.Millisecond)
+		}
+	}
 
 	lock.Lock()
 	defer lock.Unlock()

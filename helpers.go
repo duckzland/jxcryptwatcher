@@ -469,10 +469,8 @@ func ToggleDraggable() {
 
 func ScheduledNotificationReset() {
 	JC.MainDebouncer.Call("notification_clear", 6000*time.Millisecond, func() {
-		JC.Logln("calling notification clear 1")
 		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplayWidget)
 		if !ok {
-			JC.Logln("calling notification clear 3")
 			return
 		}
 
@@ -824,7 +822,7 @@ func RegisterWorkers() {
 
 		return true
 
-	}, 1000, 100, 1000, func() bool {
+	}, 1000, 100, 1000, 2000, func() bool {
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to do notification: app is not ready yet")
 			return false
