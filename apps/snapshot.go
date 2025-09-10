@@ -8,12 +8,6 @@ import (
 	JT "jxwatcher/types"
 )
 
-const (
-	NO_SNAPSHOT     = -1
-	HAVE_SNAPSHOT   = 0
-	MinSaveInterval = 30 * time.Minute
-)
-
 var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
 
 type SnapshotManager struct {
@@ -48,12 +42,12 @@ func (sm *SnapshotManager) Init() {
 func (sm *SnapshotManager) LoadPanels() int {
 	raw, ok := JC.LoadFile("snapshots-panels.json")
 	if !ok || raw == "" || raw == "null" {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var caches []JT.PanelDataCache
 	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var restored []*JT.PanelDataType
@@ -73,18 +67,18 @@ func (sm *SnapshotManager) LoadPanels() int {
 	sm.lastPanels = raw
 	sm.lastPanelsSaveTime = time.Now()
 
-	return HAVE_SNAPSHOT
+	return JC.HAVE_SNAPSHOT
 }
 
 func (sm *SnapshotManager) LoadCryptos() int {
 	raw, ok := JC.LoadFile("snapshots-cryptos.json")
 	if !ok || raw == "" || raw == "null" {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var cache JT.CryptosMapCache
 	if err := json.Unmarshal([]byte(raw), &cache); err != nil {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	cm := &JT.CryptosMapType{}
@@ -94,18 +88,18 @@ func (sm *SnapshotManager) LoadCryptos() int {
 	sm.lastCryptos = raw
 	sm.lastCryptosSaveTime = time.Now()
 
-	return HAVE_SNAPSHOT
+	return JC.HAVE_SNAPSHOT
 }
 
 func (sm *SnapshotManager) LoadTickers() int {
 	raw, ok := JC.LoadFile("snapshots-tickers.json")
 	if !ok || raw == "" || raw == "null" {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var caches []JT.TickerDataCache
 	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var restored []*JT.TickerDataType
@@ -128,37 +122,37 @@ func (sm *SnapshotManager) LoadTickers() int {
 	sm.lastTickers = raw
 	sm.lastTickersSaveTime = time.Now()
 
-	return HAVE_SNAPSHOT
+	return JC.HAVE_SNAPSHOT
 }
 
 func (sm *SnapshotManager) LoadExchangeData() int {
 	raw, ok := JC.LoadFile("snapshots-exchange.json")
 	if !ok || raw == "" || raw == "null" {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var snapshot JT.ExchangeDataCacheSnapshot
 	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	JT.ExchangeCache.Hydrate(snapshot)
-	return HAVE_SNAPSHOT
+	return JC.HAVE_SNAPSHOT
 }
 
 func (sm *SnapshotManager) LoadTickerData() int {
 	raw, ok := JC.LoadFile("snapshots-ticker-cache.json")
 	if !ok || raw == "" || raw == "null" {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	var snapshot JT.TickerDataCacheSnapshot
 	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
-		return NO_SNAPSHOT
+		return JC.NO_SNAPSHOT
 	}
 
 	JT.TickerCache.Hydrate(snapshot)
-	return HAVE_SNAPSHOT
+	return JC.HAVE_SNAPSHOT
 }
 
 func (sm *SnapshotManager) ShouldSave(domain string) bool {
@@ -176,7 +170,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 			return true
 		}
 
-		if now.Sub(sm.lastPanelsSaveTime) <= MinSaveInterval {
+		if now.Sub(sm.lastPanelsSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
 			return false
 		}
 
@@ -194,7 +188,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 			return true
 		}
 
-		if now.Sub(sm.lastCryptosSaveTime) <= MinSaveInterval {
+		if now.Sub(sm.lastCryptosSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
 			return false
 		}
 
@@ -212,7 +206,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 			return true
 		}
 
-		if now.Sub(sm.lastTickersSaveTime) <= MinSaveInterval {
+		if now.Sub(sm.lastTickersSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
 			return false
 		}
 
@@ -230,7 +224,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 			return true
 		}
 
-		if now.Sub(sm.lastExchangeSaveTime) <= MinSaveInterval {
+		if now.Sub(sm.lastExchangeSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
 			return false
 		}
 
@@ -248,7 +242,7 @@ func (sm *SnapshotManager) ShouldSave(domain string) bool {
 			return true
 		}
 
-		if now.Sub(sm.lastTickerCacheSaveTime) <= MinSaveInterval {
+		if now.Sub(sm.lastTickerCacheSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
 			return false
 		}
 

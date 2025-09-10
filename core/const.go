@@ -1,5 +1,7 @@
 package core
 
+import "time"
+
 const EPSILON = 1e-9
 const NETWORKING_SUCCESS = 0
 const NETWORKING_ERROR_CONNECTION = -1
@@ -22,3 +24,4 @@ const VALUE_DECREASE = -1
 
 const NO_SNAPSHOT = -1
 const HAVE_SNAPSHOT = 0
+const MINIMUM_SNAPSHOT_SAVE_INTERVAL = 30 * time.Minute

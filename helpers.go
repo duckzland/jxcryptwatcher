@@ -1147,3 +1147,71 @@ func RegisterFetchers() {
 		return true
 	})
 }
+
+func RegisterLifecycle() {
+
+	// Hook into lifecycle events
+	if lc := JC.App.Lifecycle(); lc != nil {
+
+		var snapshotSaved bool = false
+
+		lc.SetOnEnteredForeground(func() {
+			JC.Logln("App entered foreground")
+
+			snapshotSaved = false
+
+			if JC.IsMobile {
+				JC.Logln("Battery Saver: Continuing apps")
+				JC.WorkerManager.ResumeAll()
+				JA.AppStatusManager.ContinueApp()
+			}
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to fetch data as app is not ready yet")
+				return
+			}
+
+			if !JA.AppStatusManager.HasError() && JC.IsMobile {
+				// Force Refresh
+				JT.ExchangeCache.SoftReset()
+				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+
+				// Force Refresh
+				JT.TickerCache.SoftReset()
+				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+			}
+		})
+		lc.SetOnExitedForeground(func() {
+			JC.Logln("App exited foreground — snapshot time!")
+
+			if JC.IsMobile {
+				JC.Logln("Battery Saver: Pausing apps")
+				JA.AppStatusManager.PauseApp()
+				JC.WorkerManager.PauseAll()
+			}
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to take snapshot as app is not ready yet")
+				return
+			}
+
+			if !snapshotSaved && JC.IsMobile {
+				JA.AppSnapshotManager.ForceSaveAll()
+				snapshotSaved = true
+			}
+		})
+		lc.SetOnStopped(func() {
+			JC.Logln("App stopped")
+
+			if !JA.AppStatusManager.IsReady() {
+				JC.Logln("Refused to take snapshot as app is not ready yet")
+				return
+			}
+
+			if !snapshotSaved {
+				JA.AppSnapshotManager.ForceSaveAll()
+				snapshotSaved = true
+			}
+		})
+	}
+}
