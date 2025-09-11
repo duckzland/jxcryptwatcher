@@ -97,7 +97,6 @@ type PanelDisplay struct {
 	content       fyne.CanvasObject
 	child         fyne.CanvasObject
 	container     *PanelGridContainer
-	lastClick     time.Time
 	visible       bool
 	disabled      bool
 	dragScroll    float32

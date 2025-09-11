@@ -165,12 +165,13 @@ func NewPanelForm(
 
 			if panelKey == "new" {
 				ns = JT.BP.Append(newKey)
-				ns.Status.Set(JC.STATE_FETCHING_NEW)
 
 				if ns == nil {
 					JC.Notify("Unable to add new panel. Please try again.")
 					return
 				}
+
+				ns.Status.Set(JC.STATE_FETCHING_NEW)
 
 				if onNew != nil {
 					onNew(ns)

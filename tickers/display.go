@@ -78,7 +78,6 @@ type TickerDisplay struct {
 	tag        string
 	title      string
 	content    fyne.CanvasObject
-	child      fyne.CanvasObject
 	background *canvas.Rectangle
 	refTitle   *canvas.Text
 	refContent *canvas.Text
