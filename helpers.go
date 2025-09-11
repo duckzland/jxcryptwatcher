@@ -1185,7 +1185,7 @@ func RegisterLifecycle() {
 			}
 		})
 		lc.SetOnExitedForeground(func() {
-			JC.Logln("App exited foreground — snapshot time!")
+			JC.Logln("App exited foreground")
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
