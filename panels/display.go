@@ -120,7 +120,7 @@ func NewPanelDisplay(
 ) *PanelDisplay {
 
 	uuid := JC.CreateUUID()
-	pdt.ID = uuid
+	pdt.ID.Set(uuid)
 
 	title := canvas.NewText("", JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -190,7 +190,7 @@ func NewPanelDisplay(
 	panel.ExtendBaseWidget(panel)
 	action.Hide()
 
-	panel.status = pdt.Status
+	panel.status = pdt.Status.Get()
 
 	str.AddListener(binding.NewDataListener(func() {
 
@@ -201,7 +201,7 @@ func NewPanelDisplay(
 
 		// JC.Logln("Panel status:", "Changed:", pkt.DidChange(), "Value Increased:", pkt.IsValueIncrease(), "Initial Value:", pkt.IsOnInitialValue())
 
-		if pkt.Status == JC.STATE_LOADED {
+		if pkt.Status.IsEqual(JC.STATE_LOADED) {
 			if pkt.DidChange() {
 				switch pkt.IsValueIncrease() {
 				case JC.VALUE_INCREASE:
@@ -248,11 +248,11 @@ func (h *PanelDisplay) UpdateContent() {
 		return
 	}
 
-	h.status = pkt.Status
+	h.status = pkt.Status.Get()
 
 	// JC.Logln("Content update triggered with value:", pkt.Get(), "and status:", pkt.Status)
 
-	switch pkt.Status {
+	switch pkt.Status.Get() {
 	case JC.STATE_ERROR:
 		h.refTitle.Text = "Error loading data"
 		h.refSubtitle.Hide()

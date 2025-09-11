@@ -28,12 +28,12 @@ func (sm *SnapshotManager) LoadPanels() int {
 
 	var restored []*JT.PanelDataType
 	for _, c := range caches {
-		p := &JT.PanelDataType{
-			Status: c.Status,
-			OldKey: c.OldKey,
-		}
+		p := &JT.PanelDataType{}
 		p.Init()
+		p.Status.Set(c.Status)
+		p.OldKey.Set(c.OldKey)
 		p.Data.Set(c.Key)
+
 		restored = append(restored, p)
 	}
 

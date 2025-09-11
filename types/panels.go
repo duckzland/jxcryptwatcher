@@ -63,7 +63,7 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 
 	np := []PanelType{}
 	for _, pot := range data {
-		pdt := maps.GetData(pot.ID)
+		pdt := maps.GetData(pot.ID.Get())
 		pk := pdt.UsePanelKey()
 
 		panel := PanelType{

@@ -12,10 +12,10 @@ import (
 
 type PanelDataType struct {
 	Data   binding.String
-	OldKey string
+	OldKey JC.StringStore
 	Parent *PanelsMapType
-	Status int
-	ID     string
+	Status JC.IntStore
+	ID     JC.StringStore
 	mu     sync.Mutex
 }
 
@@ -26,14 +26,20 @@ type PanelDataCache struct {
 }
 
 func (p *PanelDataType) Init() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	p.Data = binding.NewString()
+	p.ID = JC.StringStore{}
+	p.OldKey = JC.StringStore{}
+	p.Status = JC.IntStore{}
 }
 
 func (p *PanelDataType) Insert(panel PanelType, rate float32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.Get()
+	p.OldKey.Set(p.Get())
 	pkt := &PanelKeyType{}
 	p.Data.Set(pkt.GenerateKeyFromPanel(panel, rate))
 }
@@ -42,7 +48,7 @@ func (p *PanelDataType) Set(pk string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.Get()
+	p.OldKey.Set(p.Get())
 	p.Data.Set(pk)
 }
 
@@ -68,7 +74,7 @@ func (p *PanelDataType) GetValueString() string {
 }
 
 func (p *PanelDataType) GetOldValueString() string {
-	pko := PanelKeyType{value: p.OldKey}
+	pko := PanelKeyType{value: p.OldKey.Get()}
 	return pko.GetValueString()
 }
 
@@ -99,9 +105,9 @@ func (p *PanelDataType) Update(pk string) bool {
 	}
 
 	nso := PanelKeyType{value: npk}
-	nst := p.Status
+	nst := p.Status.Get()
 
-	switch p.Status {
+	switch p.Status.Get() {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
 		if nso.GetValueFloat() >= 0 {
 			nst = JC.STATE_LOADED
@@ -112,11 +118,11 @@ func (p *PanelDataType) Update(pk string) bool {
 
 	// JC.Logln(fmt.Sprintf("Trying to update panel with old value = %v, old status = %v to new value = %v, new status = %v", opk, p.Status, npk, nst))
 
-	p.Status = nst
+	p.Status.Set(nst)
 
 	if npk != opk {
 		p.Set(npk)
-		p.OldKey = opk
+		p.OldKey.Set(opk)
 	}
 
 	return true
@@ -175,13 +181,13 @@ func (p *PanelDataType) FormatContent() string {
 }
 
 func (p *PanelDataType) DidChange() bool {
-	opt := &PanelKeyType{p.OldKey}
-	return p.OldKey != p.Get() && opt.GetValueFloat() != -1 && p.Status == JC.STATE_LOADED
+	opt := &PanelKeyType{p.OldKey.Get()}
+	return p.OldKey.Get() != p.Get() && opt.GetValueFloat() != -1 && p.Status.IsEqual(JC.STATE_LOADED)
 }
 
 func (p *PanelDataType) IsOnInitialValue() bool {
-	opt := &PanelKeyType{p.OldKey}
-	return opt.GetValueFloat() == -1 && p.Status == JC.STATE_LOADED
+	opt := &PanelKeyType{p.OldKey.Get()}
+	return opt.GetValueFloat() == -1 && p.Status.IsEqual(JC.STATE_LOADED)
 }
 
 func (p *PanelDataType) IsValueIncrease() int {
@@ -220,8 +226,8 @@ func (p *PanelDataType) IsEqualContentString(pk string) bool {
 
 func (p *PanelDataType) Serialize() PanelDataCache {
 	return PanelDataCache{
-		Status: p.Status,
+		Status: p.Status.Get(),
 		Key:    p.Get(),
-		OldKey: p.OldKey,
+		OldKey: p.OldKey.Get(),
 	}
 }

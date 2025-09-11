@@ -27,7 +27,7 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 			pk.Parent = pc
 		}
 
-		pk.Status = JC.STATE_LOADING
+		pk.Status.Set(JC.STATE_LOADING)
 	}
 
 	pc.Data = data
@@ -72,7 +72,7 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref.Init()
 	ref.Update(pk)
 	ref.Parent = pc
-	ref.Status = JC.STATE_FETCHING_NEW
+	ref.Status.Set(JC.STATE_FETCHING_NEW)
 
 	return ref
 }
@@ -84,7 +84,7 @@ func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
 
 	index := -1
 	for i, pdt := range pc.Data {
-		if pdt.ID == uuid {
+		if pdt.ID.IsEqual(uuid) {
 			index = i
 			break
 		}
@@ -128,7 +128,7 @@ func (pc *PanelsMapType) RefreshData() bool {
 	defer pc.mu.RUnlock()
 
 	for _, pot := range pc.Data {
-		pdt := pc.GetData(pot.ID)
+		pdt := pc.GetData(pot.ID.Get())
 		pko := pdt.UsePanelKey()
 		mmp := pc.Maps
 
@@ -163,7 +163,7 @@ func (pc *PanelsMapType) GetIndex(uuid string) int {
 	defer pc.mu.RUnlock()
 
 	for i, pdt := range pc.Data {
-		if pdt.ID == uuid {
+		if pdt.ID.IsEqual(uuid) {
 			return i
 		}
 	}
@@ -177,7 +177,7 @@ func (pc *PanelsMapType) GetData(uuid string) *PanelDataType {
 
 	for i := range pc.Data {
 		pdt := pc.GetDataByIndex(i)
-		if pdt.ID == uuid {
+		if pdt.ID.IsEqual(uuid) {
 			return pc.Data[i]
 		}
 	}
@@ -219,7 +219,7 @@ func (pc *PanelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Pane
 			continue
 		}
 
-		pdt.Status = newStatus
+		pdt.Status.Set(newStatus)
 	}
 }
 
@@ -242,7 +242,7 @@ func (pm *PanelsMapType) Serialize() []PanelDataCache {
 
 	var out []PanelDataCache
 	for _, p := range pm.Data {
-		if p.Status != JC.STATE_LOADED {
+		if !p.Status.IsEqual(JC.STATE_LOADED) {
 			continue
 		}
 		out = append(out, p.Serialize())
