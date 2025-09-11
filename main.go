@@ -42,6 +42,8 @@ func main() {
 
 	RegisterWorkers()
 
+	JC.Notify("Application is starting...")
+
 	RegisterLifecycle()
 
 	JC.Window.SetContent(JA.NewAppLayoutManager())
@@ -86,7 +88,6 @@ func main() {
 			JA.AppLayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())
-			JC.Notify("Application is starting...")
 
 			JP.Grid.Refresh()
 

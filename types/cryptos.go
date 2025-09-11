@@ -186,6 +186,7 @@ func (c *CryptosType) GetCryptos() int64 {
 func CryptosInit() {
 	Cryptos := &CryptosType{}
 	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
+	CM.ClearMapCache()
 
 	BP.SetMaps(CM)
 }

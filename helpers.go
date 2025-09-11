@@ -295,6 +295,55 @@ func ProcessUpdateTickerComplete(status int) {
 	}
 }
 
+func ProcessFetchingCryptosComplete(status int) {
+
+	switch status {
+	case JC.STATUS_SUCCESS:
+
+		JT.CryptosInit()
+		JA.AppStatusManager.DetectData()
+
+		if !JA.AppStatusManager.ValidCryptos() {
+			JC.Notify("Failed to convert crypto data to map")
+			JA.AppStatusManager.SetCryptoStatus(false)
+
+			return
+		}
+
+		JC.Notify("Crypto map regenerated successfully")
+
+		if JT.BP.RefreshData() {
+			fyne.Do(func() {
+				JP.Grid.ForceRefresh()
+			})
+
+			JT.ExchangeCache.SoftReset()
+			JC.WorkerManager.Call("update_rates", JC.CallQueued)
+
+			JT.TickerCache.SoftReset()
+			JC.WorkerManager.Call("update_tickers", JC.CallQueued)
+
+			JA.AppStatusManager.SetCryptoStatus(true)
+			JA.AppStatusManager.SetConfigStatus(true)
+			JA.AppStatusManager.SetNetworkStatus(true)
+		}
+
+	case JC.STATUS_NETWORK_ERROR:
+		JC.Notify("Please check your network connection.")
+		JA.AppStatusManager.SetNetworkStatus(false)
+		JA.AppStatusManager.SetConfigStatus(true)
+
+	case JC.STATUS_CONFIG_ERROR:
+		JC.Notify("Please check your settings.")
+		JA.AppStatusManager.SetConfigStatus(false)
+		JA.AppStatusManager.SetNetworkStatus(true)
+
+	case JC.STATUS_BAD_DATA_RECEIVED:
+		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatusManager.SetConfigStatus(true)
+	}
+}
+
 func ValidateCache() bool {
 
 	list := JT.BP.Get()
@@ -909,6 +958,7 @@ func RegisterFetchers() {
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			c := JT.CryptosType{}
 			code := c.GetCryptos()
+
 			return JC.FetchResult{
 				Code: code,
 				Data: c,
@@ -918,67 +968,8 @@ func RegisterFetchers() {
 
 		defer JA.AppStatusManager.EndFetchingCryptos()
 
-		code := DetectHTTPResponse(result.Code)
-
-		if code != JC.STATUS_SUCCESS {
-			switch code {
-			case JC.STATUS_NETWORK_ERROR:
-				JC.Notify("Please check your network connection.")
-				JA.AppStatusManager.SetNetworkStatus(false)
-				JA.AppStatusManager.SetConfigStatus(true)
-
-			case JC.STATUS_CONFIG_ERROR:
-				JC.Notify("Please check your settings.")
-				JA.AppStatusManager.SetConfigStatus(false)
-				JA.AppStatusManager.SetNetworkStatus(true)
-
-			case JC.STATUS_BAD_DATA_RECEIVED:
-				JA.AppStatusManager.SetNetworkStatus(true)
-				JA.AppStatusManager.SetConfigStatus(true)
-			}
-
-			JA.AppStatusManager.SetCryptoStatus(false)
-
-			return
-		}
-
-		cryptos, ok := result.Data.(JT.CryptosType)
-		if !ok {
-			JC.Notify("Invalid crypto data format")
-			JA.AppStatusManager.SetCryptoStatus(false)
-			return
-		}
-
-		CM := cryptos.ConvertToMap()
-		if CM == nil {
-			JC.Notify("Failed to convert crypto data to map")
-			JA.AppStatusManager.SetCryptoStatus(false)
-			return
-		}
-
-		JT.BP.SetMaps(CM)
-		JT.BP.Maps.ClearMapCache()
-		JA.AppStatusManager.DetectData()
-
-		if JA.AppStatusManager.ValidCryptos() {
-			JC.Notify("Crypto map regenerated successfully")
-
-			if JT.BP.RefreshData() {
-				fyne.Do(func() {
-					JP.Grid.ForceRefresh()
-				})
-
-				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallQueued)
-
-				JT.TickerCache.SoftReset()
-				JC.WorkerManager.Call("update_tickers", JC.CallQueued)
-
-				JA.AppStatusManager.SetCryptoStatus(true)
-				JA.AppStatusManager.SetConfigStatus(true)
-				JA.AppStatusManager.SetNetworkStatus(true)
-			}
-		}
+		status := DetectHTTPResponse(result.Code)
+		ProcessFetchingCryptosComplete(status)
 
 	}, func() bool {
 
@@ -1012,6 +1003,7 @@ func RegisterFetchers() {
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.CMC100Fetcher{}
 			code := ft.GetRate()
+
 			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, func(fr JC.FetchResult) {
@@ -1040,6 +1032,7 @@ func RegisterFetchers() {
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.FearGreedFetcher{}
 			code := ft.GetRate()
+
 			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, func(fr JC.FetchResult) {
@@ -1068,6 +1061,7 @@ func RegisterFetchers() {
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.MarketCapFetcher{}
 			code := ft.GetRate()
+
 			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, func(fr JC.FetchResult) {
@@ -1096,6 +1090,7 @@ func RegisterFetchers() {
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.AltSeasonFetcher{}
 			code := ft.GetRate()
+
 			return JC.FetchResult{Code: code}, nil
 		},
 	}, delay, func(fr JC.FetchResult) {
@@ -1123,9 +1118,11 @@ func RegisterFetchers() {
 	JC.FetcherManager.Register("rates", &JC.DynamicPayloadFetcher{
 		Handler: func(ctx context.Context, payload any) (JC.FetchResult, error) {
 			rk, ok := payload.(string)
+
 			if !ok {
 				return JC.FetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
 			}
+
 			ex := &JT.ExchangeResults{}
 			code := ex.GetRate(rk)
 			return JC.FetchResult{Code: code, Data: ex}, nil
