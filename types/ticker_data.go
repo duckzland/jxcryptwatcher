@@ -23,12 +23,12 @@ type TickerDataCache struct {
 
 type TickerDataType struct {
 	Data   binding.String
-	OldKey string
+	OldKey JC.StringStore
 	Type   string
 	Title  string
 	Format string
-	ID     string
-	Status int
+	ID     JC.StringStore
+	Status JC.IntStore
 	mu     sync.Mutex
 }
 
@@ -40,7 +40,7 @@ func (p *TickerDataType) Insert(rate string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.Get()
+	p.OldKey.Set(p.Get())
 	p.Data.Set(rate)
 }
 
@@ -48,7 +48,7 @@ func (p *TickerDataType) Set(rate string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.OldKey = p.Get()
+	p.OldKey.Set(p.Get())
 	p.Data.Set(rate)
 }
 
@@ -89,13 +89,13 @@ func (p *TickerDataType) Update() bool {
 	npk := TickerCache.Get(p.Type)
 	opk := p.Get()
 	nso := PanelKeyType{value: npk}
-	nst := p.Status
+	nst := p.Status.Get()
 
 	if npk == "" {
 		return false
 	}
 
-	switch p.Status {
+	switch p.Status.Get() {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
 
 		// Watch out, value might be minus for things like percentage changes
@@ -107,7 +107,7 @@ func (p *TickerDataType) Update() bool {
 		// Do nothing?
 	}
 
-	p.Status = nst
+	p.Status.Set(nst)
 
 	// JC.Logln(fmt.Sprintf("Trying to update tickers %v with old value = %v, old status = %v to new value = %v, new status = %v", p.Type, opk, p.Status, npk, nst))
 
@@ -148,7 +148,7 @@ func (p *TickerDataType) FormatContent() string {
 }
 
 func (p *TickerDataType) DidChange() bool {
-	return p.OldKey != p.Get() && p.Status == JC.STATE_LOADED
+	return !p.OldKey.IsEqual(p.Get()) && p.Status.IsEqual(JC.STATE_LOADED)
 }
 
 func (t *TickerDataType) Serialize() TickerDataCache {
@@ -156,8 +156,8 @@ func (t *TickerDataType) Serialize() TickerDataCache {
 		Type:   t.Type,
 		Title:  t.Title,
 		Format: t.Format,
-		Status: t.Status,
+		Status: t.Status.Get(),
 		Key:    t.Get(),
-		OldKey: t.OldKey,
+		OldKey: t.OldKey.Get(),
 	}
 }

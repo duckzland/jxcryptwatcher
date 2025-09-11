@@ -90,7 +90,7 @@ func NewTickerDisplay(
 ) *TickerDisplay {
 
 	uuid := JC.CreateUUID()
-	tdt.ID = uuid
+	tdt.ID.Set(uuid)
 
 	title := canvas.NewText("", JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -155,7 +155,7 @@ func (h *TickerDisplay) UpdateContent() {
 		return
 	}
 
-	switch pkt.Status {
+	switch pkt.Status.Get() {
 	case JC.STATE_ERROR:
 		h.refStatus.Text = "Error loading data"
 		h.refStatus.Show()

@@ -22,7 +22,7 @@ func (pc *TickersMapType) Set(data []*TickerDataType) {
 
 	for _, tdt := range data {
 		tdt.Init()
-		tdt.Status = JC.STATE_LOADING
+		tdt.Status.Set(JC.STATE_LOADING)
 	}
 
 	pc.Data = data
@@ -37,7 +37,7 @@ func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	}
 
 	ticker.Init()
-	ticker.Status = JC.STATE_LOADING
+	ticker.Status.Set(JC.STATE_LOADING)
 
 	pc.Data = append(pc.Data, ticker)
 }
@@ -69,7 +69,7 @@ func (pc *TickersMapType) GetData(uuid string) *TickerDataType {
 	defer pc.mu.RUnlock()
 
 	for i, tdt := range pc.Data {
-		if tdt.ID == uuid {
+		if tdt.ID.IsEqual(uuid) {
 			return pc.Data[i]
 		}
 	}
@@ -105,7 +105,7 @@ func (pc *TickersMapType) Reset() {
 
 	for i, tdt := range pc.Data {
 		tdt.Set("")
-		tdt.Status = JC.STATE_LOADING
+		tdt.Status.Set(JC.STATE_LOADING)
 
 		pc.Data[i] = tdt
 	}
@@ -120,7 +120,7 @@ func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 			continue
 		}
 
-		pdt.Status = newStatus
+		pdt.Status.Set(newStatus)
 	}
 }
 
@@ -138,7 +138,7 @@ func (pc *TickersMapType) Serialize() []TickerDataCache {
 	var out []TickerDataCache
 	for _, t := range pc.Data {
 
-		if t.Status != JC.STATE_LOADED {
+		if !t.Status.IsEqual(JC.STATE_LOADED) {
 			continue
 		}
 
@@ -155,7 +155,6 @@ func TickersInit() {
 			Title:  "Market Cap",
 			Type:   "market_cap",
 			Format: "shortcurrency",
-			Status: JC.STATE_LOADING,
 		})
 	}
 
@@ -164,7 +163,6 @@ func TickersInit() {
 			Title:  "CMC100",
 			Type:   "cmc100",
 			Format: "currency",
-			Status: JC.STATE_LOADING,
 		})
 	}
 
@@ -173,7 +171,6 @@ func TickersInit() {
 			Title:  "Altcoin Index",
 			Type:   "altcoin_index",
 			Format: "percentage",
-			Status: JC.STATE_LOADING,
 		})
 	}
 
@@ -182,7 +179,6 @@ func TickersInit() {
 			Title:  "Fear & Greed",
 			Type:   "feargreed",
 			Format: "percentage",
-			Status: JC.STATE_LOADING,
 		})
 	}
 }

@@ -78,11 +78,11 @@ func (sm *SnapshotManager) LoadTickers() int {
 			Type:   c.Type,
 			Title:  c.Title,
 			Format: c.Format,
-			Status: c.Status,
-			OldKey: c.OldKey,
 		}
 		t.Init()
 		t.Data.Set(c.Key)
+		t.Status.Set(c.Status)
+		t.OldKey.Set(c.OldKey)
 		restored = append(restored, t)
 	}
 
