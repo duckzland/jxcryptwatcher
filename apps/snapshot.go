@@ -74,13 +74,12 @@ func (sm *SnapshotManager) LoadTickers() int {
 
 	var restored []*JT.TickerDataType
 	for _, c := range caches {
-		t := &JT.TickerDataType{
-			Type:   c.Type,
-			Title:  c.Title,
-			Format: c.Format,
-		}
+		t := &JT.TickerDataType{}
 		t.Init()
 		t.Data.Set(c.Key)
+		t.Type.Set(c.Type)
+		t.Title.Set(c.Title)
+		t.Format.Set(c.Format)
 		t.Status.Set(c.Status)
 		t.OldKey.Set(c.OldKey)
 		restored = append(restored, t)

@@ -24,9 +24,9 @@ type TickerDataCache struct {
 type TickerDataType struct {
 	Data   binding.String
 	OldKey JC.StringStore
-	Type   string
-	Title  string
-	Format string
+	Type   JC.StringStore
+	Title  JC.StringStore
+	Format JC.StringStore
 	ID     JC.StringStore
 	Status JC.IntStore
 	mu     sync.Mutex
@@ -34,6 +34,9 @@ type TickerDataType struct {
 
 func (p *TickerDataType) Init() {
 	p.Data = binding.NewString()
+	p.ID = JC.StringStore{}
+	p.Status = JC.IntStore{}
+	p.OldKey = JC.StringStore{}
 }
 
 func (p *TickerDataType) Insert(rate string) {
@@ -82,11 +85,11 @@ func (p *TickerDataType) HasData() bool {
 
 func (p *TickerDataType) Update() bool {
 
-	if !TickerCache.Has(p.Type) {
+	if !TickerCache.Has(p.Type.Get()) {
 		return false
 	}
 
-	npk := TickerCache.Get(p.Type)
+	npk := TickerCache.Get(p.Type.Get())
 	opk := p.Get()
 	nso := PanelKeyType{value: npk}
 	nst := p.Status.Get()
@@ -126,7 +129,7 @@ func (p *TickerDataType) FormatContent() string {
 		return raw
 	}
 
-	switch p.Format {
+	switch p.Format.Get() {
 	case "nodecimal":
 		return fmt.Sprintf("%.0f", val)
 	case "number":
@@ -153,9 +156,9 @@ func (p *TickerDataType) DidChange() bool {
 
 func (t *TickerDataType) Serialize() TickerDataCache {
 	return TickerDataCache{
-		Type:   t.Type,
-		Title:  t.Title,
-		Format: t.Format,
+		Type:   t.Type.Get(),
+		Title:  t.Title.Get(),
+		Format: t.Format.Get(),
 		Status: t.Status.Get(),
 		Key:    t.Get(),
 		OldKey: t.OldKey.Get(),

@@ -119,7 +119,7 @@ func NewTickerDisplay(
 			content,
 			status,
 		),
-		title:      tdt.Title,
+		title:      tdt.Title.Get(),
 		background: background,
 		refTitle:   title,
 		refContent: content,
@@ -179,7 +179,7 @@ func (h *TickerDisplay) UpdateContent() {
 
 		h.background.FillColor = JC.TickerBG
 
-		if pkt.Type == "altcoin_index" {
+		if pkt.Type.IsEqual("altcoin_index") {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 
 			switch {
@@ -194,7 +194,7 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type == "feargreed" {
+		if pkt.Type.IsEqual("feargreed") {
 			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 
 			switch {
@@ -211,7 +211,7 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type == "market_cap" {
+		if pkt.Type.IsEqual("market_cap") {
 			raw := JT.TickerCache.Get("market_cap_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 
@@ -222,7 +222,7 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type == "cmc100" {
+		if pkt.Type.IsEqual("cmc100") {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 

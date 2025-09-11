@@ -84,7 +84,7 @@ func (pc *TickersMapType) GetDataByType(ticker_type string) []*TickerDataType {
 	nd := []*TickerDataType{}
 
 	for i, tdt := range pc.Data {
-		if tdt.Type == ticker_type {
+		if tdt.Type.IsEqual(ticker_type) {
 			nd = append(nd, pc.Data[i])
 		}
 	}
@@ -151,34 +151,38 @@ func TickersInit() {
 	BT.Init()
 
 	if Config.CanDoMarketCap() {
-		BT.Add(&TickerDataType{
-			Title:  "Market Cap",
-			Type:   "market_cap",
-			Format: "shortcurrency",
-		})
+		tdt := &TickerDataType{}
+		tdt.Title.Set("Market Cap")
+		tdt.Type.Set("market_cap")
+		tdt.Format.Set("shortcurrency")
+
+		BT.Add(tdt)
 	}
 
 	if Config.CanDoCMC100() {
-		BT.Add(&TickerDataType{
-			Title:  "CMC100",
-			Type:   "cmc100",
-			Format: "currency",
-		})
+		tdt := &TickerDataType{}
+		tdt.Title.Set("CMC100")
+		tdt.Type.Set("cmc100")
+		tdt.Format.Set("currency")
+
+		BT.Add(tdt)
 	}
 
 	if Config.CanDoAltSeason() {
-		BT.Add(&TickerDataType{
-			Title:  "Altcoin Index",
-			Type:   "altcoin_index",
-			Format: "percentage",
-		})
+		tdt := &TickerDataType{}
+		tdt.Title.Set("Altcoin Index")
+		tdt.Type.Set("altcoin_index")
+		tdt.Format.Set("percentage")
+
+		BT.Add(tdt)
 	}
 
 	if Config.CanDoFearGreed() {
-		BT.Add(&TickerDataType{
-			Title:  "Fear & Greed",
-			Type:   "feargreed",
-			Format: "percentage",
-		})
+		tdt := &TickerDataType{}
+		tdt.Title.Set("Fear & Greed")
+		tdt.Type.Set("feargreed")
+		tdt.Format.Set("percentage")
+
+		BT.Add(tdt)
 	}
 }
