@@ -170,13 +170,6 @@ func (c *CryptosType) GetCryptos() int64 {
 	JC.Logln("Fetched cryptodata from CMC")
 	JC.Notify("Successfully retrieved cryptos data from exchange.")
 
-	// Debug simulating invalid json
-	// payload = "{///}"
-	// payload = "{}"
-	// payload = `{"values":{}}`
-	// payload = `{"values":[{}]}`
-	// payload = `{"values":[[]]}`
-
 	JC.PrintMemUsage("End fetching cryptos data")
 
 	return JC.NETWORKING_SUCCESS
