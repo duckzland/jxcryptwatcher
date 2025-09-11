@@ -82,10 +82,11 @@ func UpdateRates() bool {
 				JT.ExchangeCache.SoftReset()
 
 				ns := DetectHTTPResponse(result.Code)
-				if hasError == 0 || hasError < ns {
+				if hasError == JC.STATUS_SUCCESS || hasError < ns {
 					hasError = ns
 				}
-				if ns == 0 {
+
+				if ns == JC.STATUS_SUCCESS {
 					successCount++
 				}
 			}
@@ -344,7 +345,7 @@ func ProcessFetchingCryptosComplete(status int) {
 	}
 }
 
-func ValidateCache() bool {
+func ValidateRatesCache() bool {
 
 	list := JT.BP.Get()
 	for _, pot := range list {
@@ -405,7 +406,7 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 		if JT.SavePanels() {
 
 			// Only fetch new rates if no cache exists!
-			if !ValidateCache() {
+			if !ValidateRatesCache() {
 
 				// Force refresh without fail!
 				pkt := pdt.UsePanelKey()
@@ -1198,7 +1199,7 @@ func RegisterLifecycle() {
 			}
 
 			if !snapshotSaved && JC.IsMobile {
-				JA.AppSnapshotManager.ForceSaveAll()
+				JA.AppSnapshotManager.Save()
 				snapshotSaved = true
 			}
 		})
@@ -1211,7 +1212,7 @@ func RegisterLifecycle() {
 			}
 
 			if !snapshotSaved {
-				JA.AppSnapshotManager.ForceSaveAll()
+				JA.AppSnapshotManager.Save()
 				snapshotSaved = true
 			}
 		})

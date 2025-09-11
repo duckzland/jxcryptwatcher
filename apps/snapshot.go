@@ -2,7 +2,6 @@ package apps
 
 import (
 	"encoding/json"
-	"time"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -10,31 +9,10 @@ import (
 
 var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
 
-type SnapshotManager struct {
-	lastPanels              string
-	lastCryptos             string
-	lastTickers             string
-	lastExchange            string
-	lastTickerCache         string
-	lastPanelsSaveTime      time.Time
-	lastCryptosSaveTime     time.Time
-	lastTickersSaveTime     time.Time
-	lastExchangeSaveTime    time.Time
-	lastTickerCacheSaveTime time.Time
-}
+type SnapshotManager struct{}
 
 func (sm *SnapshotManager) Init() {
-	sm.lastPanels = ""
-	sm.lastCryptos = ""
-	sm.lastTickers = ""
-	sm.lastExchange = ""
-	sm.lastTickerCache = ""
-	sm.lastPanelsSaveTime = time.Time{}
-	sm.lastCryptosSaveTime = time.Time{}
-	sm.lastTickersSaveTime = time.Time{}
-	sm.lastExchangeSaveTime = time.Time{}
-	sm.lastTickerCacheSaveTime = time.Time{}
-
+	// Nothing to do
 }
 
 func (sm *SnapshotManager) LoadPanels() int {
@@ -62,9 +40,6 @@ func (sm *SnapshotManager) LoadPanels() int {
 	JT.BP.Init()
 	JT.BP.Hydrate(restored)
 
-	sm.lastPanels = raw
-	sm.lastPanelsSaveTime = time.Now()
-
 	return JC.HAVE_SNAPSHOT
 }
 
@@ -82,9 +57,6 @@ func (sm *SnapshotManager) LoadCryptos() int {
 	cm := &JT.CryptosMapType{}
 	cm.Hydrate(cache.Data)
 	JT.BP.SetMaps(cm)
-
-	sm.lastCryptos = raw
-	sm.lastCryptosSaveTime = time.Now()
 
 	return JC.HAVE_SNAPSHOT
 }
@@ -116,9 +88,6 @@ func (sm *SnapshotManager) LoadTickers() int {
 
 	JT.BT.Init()
 	JT.BT.Hydrate(restored)
-
-	sm.lastTickers = raw
-	sm.lastTickersSaveTime = time.Now()
 
 	return JC.HAVE_SNAPSHOT
 }
@@ -153,161 +122,7 @@ func (sm *SnapshotManager) LoadTickerData() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) ShouldSave(domain string) bool {
-
-	// Save energy on mobile and only save when exit or on background
-	if JC.IsMobile {
-		return false
-	}
-
-	now := time.Now()
-
-	switch domain {
-	case "panels":
-		if sm.lastPanels == "" {
-			return true
-		}
-
-		if now.Sub(sm.lastPanelsSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
-			return false
-		}
-
-		data, _ := json.Marshal(JT.BP.Serialize())
-		serialized := string(data)
-
-		if serialized != sm.lastPanels {
-			sm.lastPanels = serialized
-			sm.lastPanelsSaveTime = now
-			return true
-		}
-
-	case "cryptos":
-		if sm.lastCryptos == "" {
-			return true
-		}
-
-		if now.Sub(sm.lastCryptosSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
-			return false
-		}
-
-		data, _ := json.Marshal(JT.BP.Maps.Serialize())
-		serialized := string(data)
-
-		if serialized != sm.lastCryptos {
-			sm.lastCryptos = serialized
-			sm.lastCryptosSaveTime = now
-			return true
-		}
-
-	case "tickers":
-		if sm.lastTickers == "" {
-			return true
-		}
-
-		if now.Sub(sm.lastTickersSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
-			return false
-		}
-
-		data, _ := json.Marshal(JT.BT.Serialize())
-		serialized := string(data)
-
-		if serialized != sm.lastTickers {
-			sm.lastTickers = serialized
-			sm.lastTickersSaveTime = now
-			return true
-		}
-
-	case "exchange":
-		if sm.lastExchange == "" {
-			return true
-		}
-
-		if now.Sub(sm.lastExchangeSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
-			return false
-		}
-
-		data, _ := json.Marshal(JT.ExchangeCache.Serialize())
-		serialized := string(data)
-
-		if serialized != sm.lastExchange {
-			sm.lastExchange = serialized
-			sm.lastExchangeSaveTime = now
-			return true
-		}
-
-	case "ticker_cache":
-		if sm.lastTickerCache == "" {
-			return true
-		}
-
-		if now.Sub(sm.lastTickerCacheSaveTime) <= JC.MINIMUM_SNAPSHOT_SAVE_INTERVAL {
-			return false
-		}
-
-		data, _ := json.Marshal(JT.TickerCache.Serialize())
-		serialized := string(data)
-
-		if serialized != sm.lastTickerCache {
-			sm.lastTickerCache = serialized
-			sm.lastTickerCacheSaveTime = now
-			return true
-		}
-	}
-
-	return false
-}
-
-func (sm *SnapshotManager) SavePanels() {
-	if !sm.ShouldSave("panels") {
-		return
-	}
-
-	JC.MainDebouncer.Call("snapshots_save_panels", 2*time.Second, func() {
-		JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
-	})
-}
-
-func (sm *SnapshotManager) SaveCryptos() {
-	if !sm.ShouldSave("cryptos") {
-		return
-	}
-
-	JC.MainDebouncer.Call("snapshots_save_cryptos", 2*time.Second, func() {
-		JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
-	})
-}
-
-func (sm *SnapshotManager) SaveTickers() {
-	if !sm.ShouldSave("tickers") {
-		return
-	}
-
-	JC.MainDebouncer.Call("snapshots_save_tickers", 2*time.Second, func() {
-		JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
-	})
-}
-
-func (sm *SnapshotManager) SaveExchangeData() {
-	if !sm.ShouldSave("exchange") {
-		return
-	}
-
-	JC.MainDebouncer.Call("snapshots_save_exchange", 2*time.Second, func() {
-		JC.SaveFile("snapshots-exchange.json", JT.ExchangeCache.Serialize())
-	})
-}
-
-func (sm *SnapshotManager) SaveTickerData() {
-	if !sm.ShouldSave("ticker_cache") {
-		return
-	}
-
-	JC.MainDebouncer.Call("snapshots_save_ticker_cache", 2*time.Second, func() {
-		JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
-	})
-}
-
-func (sm *SnapshotManager) ForceSaveAll() {
+func (sm *SnapshotManager) Save() {
 	if !JT.BP.IsEmpty() {
 		JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
 	}
