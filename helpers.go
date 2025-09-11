@@ -154,7 +154,10 @@ func UpdateTickers() bool {
 				tktt := JT.BT.GetDataByType(key)
 
 				for _, tkt := range tktt {
-					ProcessTickerStatus(ns, tkt)
+					switch ns {
+					case JC.STATUS_SUCCESS:
+						tkt.Update()
+					}
 				}
 
 				if hasError == 0 || hasError < ns {
@@ -166,21 +169,6 @@ func UpdateTickers() bool {
 		})
 
 	return true
-}
-
-func ProcessTickerStatus(status int, tkt *JT.TickerDataType) {
-	switch status {
-	case 0:
-		tkt.Update()
-	case 1:
-		if !JT.TickerCache.HasData() && tkt.Status != JC.STATE_LOADED && !tkt.HasData() {
-			tkt.Set("-1")
-			tkt.Status = JC.STATE_ERROR
-		}
-	case 2:
-		tkt.Set("-1")
-		tkt.Status = JC.STATE_ERROR
-	}
 }
 
 func DetectHTTPResponse(rs int64) int {
@@ -211,8 +199,6 @@ func ProcessUpdatePanelComplete(status int) {
 		JC.Notify("Exchange rates updated successfully")
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
-		JA.AppSnapshotManager.SavePanels()
-		JA.AppSnapshotManager.SaveExchangeData()
 
 	case JC.STATUS_NETWORK_ERROR:
 
@@ -257,14 +243,13 @@ func ProcessUpdatePanelComplete(status int) {
 }
 
 func ProcessUpdateTickerComplete(status int) {
+
 	switch status {
 	case JC.STATUS_SUCCESS:
 
 		JC.Notify("Ticker rates updated successfully")
 		JA.AppStatusManager.SetNetworkStatus(true)
 		JA.AppStatusManager.SetConfigStatus(true)
-		JA.AppSnapshotManager.SaveTickers()
-		JA.AppSnapshotManager.SaveTickerData()
 
 	case JC.STATUS_NETWORK_ERROR:
 
@@ -977,8 +962,6 @@ func RegisterFetchers() {
 
 		if JA.AppStatusManager.ValidCryptos() {
 			JC.Notify("Crypto map regenerated successfully")
-
-			JA.AppSnapshotManager.SaveCryptos()
 
 			if JT.BP.RefreshData() {
 				fyne.Do(func() {

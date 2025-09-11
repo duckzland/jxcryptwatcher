@@ -77,7 +77,7 @@ func (p *TickerDataType) HasData() bool {
 		return false
 	}
 
-	return val > 0
+	return val >= 0
 }
 
 func (p *TickerDataType) Update() bool {
