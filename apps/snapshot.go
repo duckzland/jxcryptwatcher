@@ -123,23 +123,14 @@ func (sm *SnapshotManager) LoadTickerData() int {
 }
 
 func (sm *SnapshotManager) Save() {
-	if !JT.BP.IsEmpty() {
-		JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
-	}
 
-	if JT.BP.Maps != nil && !JT.BP.Maps.IsEmpty() {
-		JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
-	}
+	JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
 
-	if !JT.BT.IsEmpty() {
-		JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
-	}
+	JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
 
-	if !JT.ExchangeCache.IsEmpty() {
-		JC.SaveFile("snapshots-exchange.json", JT.ExchangeCache.Serialize())
-	}
+	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
 
-	if !JT.TickerCache.IsEmpty() {
-		JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
-	}
+	JC.SaveFile("snapshots-exchange.json", JT.ExchangeCache.Serialize())
+
+	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
 }
