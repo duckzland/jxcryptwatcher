@@ -61,7 +61,7 @@ fi
 
 # Options
 name="JXWatcher"
-icon="assets/256x256/jxwatcher.png"
+icon="assets/android/jxwatcher.png"
 
 # Dynamic variable based on source code
 id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/android.go)
@@ -114,6 +114,8 @@ cat > AndroidManifest.xml <<EOF
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Maybe needed in the future
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
@@ -121,6 +123,7 @@ cat > AndroidManifest.xml <<EOF
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
+    -->
 
     <!-- Application block -->
     <application android:label="$name" android:debuggable="$androidXMLDebug">
