@@ -26,8 +26,7 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 		if pk.Parent == nil {
 			pk.Parent = pc
 		}
-
-		pk.Status.Set(JC.STATE_LOADING)
+		pk.SetStatus(JC.STATE_LOADING)
 	}
 
 	pc.Data = data
@@ -36,12 +35,10 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 func (pc *PanelsMapType) SetMaps(maps *CryptosMapType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-
 	pc.Maps = maps
 }
 
 func (pc *PanelsMapType) Remove(uuid string) bool {
-
 	index := pc.GetIndex(uuid)
 	values := pc.Data
 
@@ -51,11 +48,8 @@ func (pc *PanelsMapType) Remove(uuid string) bool {
 
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-
 	pc.Data = append(values[:index], values[index+1:]...)
-
 	return true
-
 }
 
 func (pc *PanelsMapType) Append(pk string) *PanelDataType {
@@ -66,25 +60,23 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 		pc.Data = []*PanelDataType{}
 	}
 
-	pc.Data = append(pc.Data, &PanelDataType{})
-	ref := pc.Data[len(pc.Data)-1]
-
+	ref := &PanelDataType{}
 	ref.Init()
 	ref.Update(pk)
 	ref.Parent = pc
-	ref.Status.Set(JC.STATE_FETCHING_NEW)
+	ref.SetStatus(JC.STATE_FETCHING_NEW)
 
+	pc.Data = append(pc.Data, ref)
 	return ref
 }
 
 func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
-
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
 	index := -1
 	for i, pdt := range pc.Data {
-		if pdt.ID.IsEqual(uuid) {
+		if pdt.IsID(uuid) {
 			index = i
 			break
 		}
@@ -94,7 +86,6 @@ func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
 		return false
 	}
 
-	// Move element by shifting others
 	if index < newIndex {
 		for i := index; i < newIndex; i++ {
 			pc.Data[i], pc.Data[i+1] = pc.Data[i+1], pc.Data[i]
@@ -117,9 +108,7 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 	}
 
 	pdt := pc.Data[index]
-
 	pdt.Update(pk)
-
 	return pdt
 }
 
@@ -128,7 +117,10 @@ func (pc *PanelsMapType) RefreshData() bool {
 	defer pc.mu.RUnlock()
 
 	for _, pot := range pc.Data {
-		pdt := pc.GetData(pot.ID.Get())
+		pdt := pc.GetData(pot.GetID())
+		if pdt == nil {
+			continue
+		}
 		pko := pdt.UsePanelKey()
 		mmp := pc.Maps
 
@@ -142,7 +134,6 @@ func (pc *PanelsMapType) RefreshData() bool {
 		}
 
 		pdt.Update(pko.GenerateKeyFromPanel(npk, float32(pko.GetValueFloat())))
-
 		JC.Logln("Panel refreshed: ", pdt.Get())
 	}
 
@@ -163,11 +154,10 @@ func (pc *PanelsMapType) GetIndex(uuid string) int {
 	defer pc.mu.RUnlock()
 
 	for i, pdt := range pc.Data {
-		if pdt.ID.IsEqual(uuid) {
+		if pdt.IsID(uuid) {
 			return i
 		}
 	}
-
 	return -1
 }
 
@@ -177,11 +167,10 @@ func (pc *PanelsMapType) GetData(uuid string) *PanelDataType {
 
 	for i := range pc.Data {
 		pdt := pc.GetDataByIndex(i)
-		if pdt.ID.IsEqual(uuid) {
-			return pc.Data[i]
+		if pdt != nil && pdt.IsID(uuid) {
+			return pdt
 		}
 	}
-
 	return nil
 }
 
@@ -192,21 +181,18 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	if index >= 0 && index < len(pc.Data) {
 		return pc.Data[index]
 	}
-
 	return nil
 }
 
 func (pc *PanelsMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-
 	return len(pc.Data) == 0
 }
 
 func (pc *PanelsMapType) TotalData() int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-
 	return len(pc.Data)
 }
 
@@ -218,8 +204,7 @@ func (pc *PanelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Pane
 		if shouldChange != nil && !shouldChange(pdt) {
 			continue
 		}
-
-		pdt.Status.Set(newStatus)
+		pdt.SetStatus(newStatus)
 	}
 }
 
@@ -232,7 +217,6 @@ func (pc *PanelsMapType) Hydrate(data []*PanelDataType) {
 			pk.Parent = pc
 		}
 	}
-
 	pc.Data = data
 }
 
@@ -242,7 +226,7 @@ func (pm *PanelsMapType) Serialize() []PanelDataCache {
 
 	var out []PanelDataCache
 	for _, p := range pm.Data {
-		if !p.Status.IsEqual(JC.STATE_LOADED) {
+		if !p.IsStatus(JC.STATE_LOADED) {
 			continue
 		}
 		out = append(out, p.Serialize())
@@ -251,14 +235,11 @@ func (pm *PanelsMapType) Serialize() []PanelDataCache {
 }
 
 func (pc *PanelsMapType) UsePanelKey(pk string) *PanelKeyType {
-	pko := PanelKeyType{value: pk}
-
-	return &pko
+	return &PanelKeyType{value: pk}
 }
 
 func (pc *PanelsMapType) ValidateKey(pk string) bool {
 	pko := PanelKeyType{value: pk}
-
 	return pko.Validate()
 }
 
@@ -268,19 +249,10 @@ func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 	}
 
 	pko := PanelKeyType{value: pk}
-
 	sid := pko.GetSourceCoinInt()
 	tid := pko.GetTargetCoinInt()
 
-	if !pc.ValidateId(sid) {
-		return false
-	}
-
-	if !pc.ValidateId(tid) {
-		return false
-	}
-
-	return true
+	return pc.ValidateId(sid) && pc.ValidateId(tid)
 }
 
 func (pc *PanelsMapType) ValidateId(id int64) bool {

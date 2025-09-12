@@ -119,7 +119,7 @@ func NewPanelDisplay(
 ) *PanelDisplay {
 
 	uuid := JC.CreateUUID()
-	pdt.ID.Set(uuid)
+	pdt.SetID(uuid)
 
 	title := canvas.NewText("", JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -189,18 +189,15 @@ func NewPanelDisplay(
 	panel.ExtendBaseWidget(panel)
 	action.Hide()
 
-	panel.status = pdt.Status.Get()
+	panel.status = pdt.GetStatus()
 
 	str.AddListener(binding.NewDataListener(func() {
-
 		pkt := JT.BP.GetData(panel.GetTag())
 		if pkt == nil {
 			return
 		}
 
-		// JC.Logln("Panel status:", "Changed:", pkt.DidChange(), "Value Increased:", pkt.IsValueIncrease(), "Initial Value:", pkt.IsOnInitialValue())
-
-		if pkt.Status.IsEqual(JC.STATE_LOADED) {
+		if pkt.IsStatus(JC.STATE_LOADED) {
 			if pkt.DidChange() {
 				switch pkt.IsValueIncrease() {
 				case JC.VALUE_INCREASE:
@@ -211,22 +208,17 @@ func NewPanelDisplay(
 					panel.background.Refresh()
 				}
 			} else if pkt.IsOnInitialValue() {
-				// Previous has no value
 				panel.background.FillColor = JC.PanelBG
 			} else if panel.status == JC.STATE_ERROR {
-				// Previous is on error state
 				panel.background.FillColor = JC.PanelBG
 			}
 		}
 
-		// Update content must fire when text (pk) change!
 		panel.UpdateContent()
-
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	panel.UpdateContent()
-
 	JA.FadeInBackground(background, 100*time.Millisecond, nil)
 
 	return panel
@@ -247,11 +239,9 @@ func (h *PanelDisplay) UpdateContent() {
 		return
 	}
 
-	h.status = pkt.Status.Get()
+	h.status = pkt.GetStatus()
 
-	// JC.Logln("Content update triggered with value:", pkt.Get(), "and status:", pkt.Status)
-
-	switch pkt.Status.Get() {
+	switch pkt.GetStatus() {
 	case JC.STATE_ERROR:
 		h.refTitle.Text = "Error loading data"
 		h.refSubtitle.Hide()

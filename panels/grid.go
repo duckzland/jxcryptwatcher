@@ -211,10 +211,10 @@ func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 
 	for _, pot := range list {
 		// Retrieve and initialize panel data
-		pkt := JT.BP.GetData(pot.ID.Get())
+		pkt := JT.BP.GetData(pot.GetID())
 
 		if pkt.UsePanelKey().GetValueFloat() == -1 {
-			pkt.Status.Set(JC.STATE_LOADING)
+			pkt.SetStatus(JC.STATE_LOADING)
 		}
 
 		// Create the panel

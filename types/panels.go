@@ -14,8 +14,6 @@ import (
 type PanelsType []PanelType
 
 func (p *PanelsType) LoadFile() *PanelsType {
-
-	// Build the file URI relative to Fyne's root storage
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if err != nil {
 		JC.Logln("Error getting parsing uri for file:", err)
@@ -23,7 +21,6 @@ func (p *PanelsType) LoadFile() *PanelsType {
 		return p
 	}
 
-	// Attempt to open the file with Fyne
 	reader, err := storage.Reader(fileURI)
 	if err != nil {
 		JC.Logln("Failed to open panels.json:", err)
@@ -32,7 +29,6 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	}
 	defer reader.Close()
 
-	// Read the JSON data
 	buffer := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buffer, reader); err != nil {
 		JC.Logln("Failed to read panels.json:", err)
@@ -40,7 +36,6 @@ func (p *PanelsType) LoadFile() *PanelsType {
 		return p
 	}
 
-	// Decode JSON into your struct
 	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
 		p = &PanelsType{}
 		JC.Logln(fmt.Errorf("Failed to decode panels.json: %w", err))
@@ -53,9 +48,6 @@ func (p *PanelsType) LoadFile() *PanelsType {
 }
 
 func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
-
-	// It is ok to just copy the object as we are going
-	// to write the data to file
 	maps.mu.RLock()
 	data := make([]*PanelDataType, len(maps.Data))
 	copy(data, maps.Data)
@@ -63,7 +55,10 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 
 	np := []PanelType{}
 	for _, pot := range data {
-		pdt := maps.GetData(pot.ID.Get())
+		pdt := maps.GetData(pot.GetID())
+		if pdt == nil {
+			continue
+		}
 		pk := pdt.UsePanelKey()
 
 		panel := PanelType{

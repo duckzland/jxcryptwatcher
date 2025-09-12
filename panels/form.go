@@ -171,7 +171,7 @@ func NewPanelForm(
 					return
 				}
 
-				ns.Status.Set(JC.STATE_FETCHING_NEW)
+				ns.SetStatus(JC.STATE_FETCHING_NEW)
 
 				if onNew != nil {
 					onNew(ns)
@@ -190,7 +190,7 @@ func NewPanelForm(
 
 				// Coin change, need to refresh data and invalidate the rates
 				if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
-					ns.Status.Set(JC.STATE_LOADING)
+					ns.SetStatus(JC.STATE_LOADING)
 					ns.Set(newKey)
 				}
 

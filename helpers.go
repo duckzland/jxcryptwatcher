@@ -21,7 +21,7 @@ func UpdateDisplay() bool {
 	list := JT.BP.Get()
 	for _, pot := range list {
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetData(pot.ID.Get())
+		pkt := JT.BP.GetData(pot.GetID())
 		pk := pkt.Get()
 		pkt.Update(pk)
 
@@ -42,7 +42,7 @@ func UpdateRates() bool {
 	list := JT.BP.Get()
 
 	for _, pot := range list {
-		pk := JT.BP.GetData(pot.ID.Get())
+		pk := JT.BP.GetData(pot.GetID())
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
@@ -351,7 +351,7 @@ func ValidateRatesCache() bool {
 	for _, pot := range list {
 
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetData(pot.ID.Get())
+		pkt := JT.BP.GetData(pot.GetID())
 		pks := pkt.UsePanelKey()
 		ck := JT.ExchangeCache.CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 
@@ -433,7 +433,7 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 								}
 
 							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
-								pdt.Status.IsEqual(JC.STATE_ERROR)
+								pdt.IsStatus(JC.STATE_ERROR)
 							}
 
 							ProcessUpdatePanelComplete(status)
