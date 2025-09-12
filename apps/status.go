@@ -1,15 +1,17 @@
 package apps
 
 import (
+	"sync"
 	"time"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
 
-var AppStatusManager *AppStatus = &AppStatus{}
+var AppStatusManager = &AppStatus{}
 
 type AppStatus struct {
+	mu               sync.RWMutex
 	ready            bool
 	paused           bool
 	bad_config       bool
@@ -30,6 +32,7 @@ type AppStatus struct {
 }
 
 func (a *AppStatus) Init() {
+	a.mu.Lock()
 	a.ready = false
 	a.paused = false
 	a.bad_config = false
@@ -43,215 +46,292 @@ func (a *AppStatus) Init() {
 	a.valid_cryptos = true
 	a.network_status = true
 	a.lastChange = time.Now()
+	a.mu.Unlock()
 }
 
 func (a *AppStatus) IsReady() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.ready
 }
 
 func (a *AppStatus) IsPaused() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.paused
 }
 
 func (a *AppStatus) IsDraggable() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.allow_dragging
 }
 
 func (a *AppStatus) IsFetchingCryptos() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.fetching_cryptos
 }
 
 func (a *AppStatus) IsFetchingRates() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.fetching_rates
 }
 
 func (a *AppStatus) IsFetchingTickers() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.fetching_tickers
 }
 
 func (a *AppStatus) IsValidConfig() bool {
-	return a.valid_config == true
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.valid_config
 }
 
 func (a *AppStatus) IsValidCrypto() bool {
-	return a.valid_cryptos == true
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.valid_cryptos
 }
 
 func (a *AppStatus) IsGoodNetworkStatus() bool {
-	return a.network_status == true
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.network_status
 }
 
 func (a *AppStatus) IsDirty() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.lastChange.After(a.lastRefresh)
 }
 
 func (a *AppStatus) AppReady() *AppStatus {
-
-	if a.ready == false {
+	a.mu.Lock()
+	changed := !a.ready
+	if changed {
 		a.ready = true
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) PauseApp() *AppStatus {
-
+	a.mu.Lock()
 	a.paused = true
 	a.lastChange = time.Now()
-	a.DebounceRefresh()
+	a.mu.Unlock()
 
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) ContinueApp() *AppStatus {
-
+	a.mu.Lock()
 	a.paused = false
 	a.lastChange = time.Now()
-	a.DebounceRefresh()
+	a.mu.Unlock()
 
+	a.DebounceRefresh()
 	return a
 }
 
 func (a *AppStatus) StartFetchingCryptos() *AppStatus {
-
-	if a.fetching_cryptos == false {
+	a.mu.Lock()
+	changed := !a.fetching_cryptos
+	if changed {
 		a.fetching_cryptos = true
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
-	return a
-}
-
-func (a *AppStatus) StartFetchingRates() *AppStatus {
-
-	if a.fetching_rates == false {
-		a.fetching_rates = true
-		a.lastChange = time.Now()
-		a.DebounceRefresh()
-	}
-
-	return a
-}
-
-func (a *AppStatus) StartFetchingTickers() *AppStatus {
-
-	if a.fetching_tickers == false {
-		a.fetching_tickers = true
-		a.lastChange = time.Now()
-		a.DebounceRefresh()
-	}
-
 	return a
 }
 
 func (a *AppStatus) EndFetchingCryptos() *AppStatus {
-
-	if a.fetching_cryptos == true {
+	a.mu.Lock()
+	changed := a.fetching_cryptos
+	if changed {
 		a.fetching_cryptos = false
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DetectData()
-		// Dont rely on detect data only!
 		a.DebounceRefresh()
 	}
+	return a
+}
 
+func (a *AppStatus) StartFetchingRates() *AppStatus {
+	a.mu.Lock()
+	changed := !a.fetching_rates
+	if changed {
+		a.fetching_rates = true
+		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
+		a.DebounceRefresh()
+	}
 	return a
 }
 
 func (a *AppStatus) EndFetchingRates() *AppStatus {
-
-	if a.fetching_rates == true {
+	a.mu.Lock()
+	changed := a.fetching_rates
+	if changed {
 		a.fetching_rates = false
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
+	return a
+}
 
+func (a *AppStatus) StartFetchingTickers() *AppStatus {
+	a.mu.Lock()
+	changed := !a.fetching_tickers
+	if changed {
+		a.fetching_tickers = true
+		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
+		a.DebounceRefresh()
+	}
 	return a
 }
 
 func (a *AppStatus) EndFetchingTickers() *AppStatus {
-
-	if a.fetching_tickers == true {
+	a.mu.Lock()
+	changed := a.fetching_tickers
+	if changed {
 		a.fetching_tickers = false
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) AllowDragging() *AppStatus {
-
-	if a.allow_dragging == false {
+	a.mu.Lock()
+	changed := !a.allow_dragging
+	if changed {
 		a.allow_dragging = true
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) DisallowDragging() *AppStatus {
-
-	if a.allow_dragging == true {
+	a.mu.Lock()
+	changed := a.allow_dragging
+	if changed {
 		a.allow_dragging = false
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
-
-	if status != a.valid_config {
+	a.mu.Lock()
+	changed := a.valid_config != status
+	if changed {
 		a.valid_config = status
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) SetCryptoStatus(status bool) *AppStatus {
-
-	if status != a.valid_cryptos {
+	a.mu.Lock()
+	changed := a.valid_cryptos != status
+	if changed {
 		a.valid_cryptos = status
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
-
-	if status != a.network_status {
+	a.mu.Lock()
+	changed := a.network_status != status
+	if changed {
 		a.network_status = status
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) InitData() *AppStatus {
-	// Capture new state
-	a.ready = JT.BP.Maps != nil
-	a.no_panels = JT.BP.IsEmpty()
-	a.bad_config = !JT.Config.IsValid()
-	a.bad_cryptos = JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
-	a.panels_count = JT.BP.TotalData()
-	a.bad_tickers = !JT.Config.IsValidTickers()
+	ready := JT.BP.Maps != nil
+	noPanels := JT.BP.IsEmpty()
+	badConfig := !JT.Config.IsValid()
+	badCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	panelsCount := JT.BP.TotalData()
+	badTickers := !JT.Config.IsValidTickers()
+
+	a.mu.Lock()
+	a.ready = ready
+	a.no_panels = noPanels
+	a.bad_config = badConfig
+	a.bad_cryptos = badCryptos
+	a.panels_count = panelsCount
+	a.bad_tickers = badTickers
 	a.lastChange = time.Now()
+	a.mu.Unlock()
 
 	return a
 }
 
 func (a *AppStatus) DetectData() *AppStatus {
-	// Capture new state
 	newReady := JT.BP.Maps != nil
 	newNoPanels := JT.BP.IsEmpty()
 	newBadConfig := !JT.Config.IsValid()
@@ -259,15 +339,15 @@ func (a *AppStatus) DetectData() *AppStatus {
 	newPanelsCount := JT.BP.TotalData()
 	newBadTickers := !JT.Config.IsValidTickers()
 
-	// Detect changes
-	if a.ready != newReady ||
+	a.mu.Lock()
+	changed := a.ready != newReady ||
 		a.no_panels != newNoPanels ||
 		a.bad_config != newBadConfig ||
 		a.bad_cryptos != newBadCryptos ||
 		a.bad_tickers != newBadTickers ||
-		a.panels_count != newPanelsCount {
+		a.panels_count != newPanelsCount
 
-		// Apply changes
+	if changed {
 		a.ready = newReady
 		a.no_panels = newNoPanels
 		a.bad_config = newBadConfig
@@ -275,25 +355,36 @@ func (a *AppStatus) DetectData() *AppStatus {
 		a.bad_tickers = newBadTickers
 		a.panels_count = newPanelsCount
 		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
 		a.DebounceRefresh()
 	}
-
 	return a
 }
 
 func (a *AppStatus) HasError() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.bad_config || a.bad_cryptos
 }
 
 func (a *AppStatus) ValidConfig() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return !a.bad_config
 }
 
 func (a *AppStatus) ValidCryptos() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return !a.bad_cryptos
 }
 
 func (a *AppStatus) ValidPanels() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return !a.no_panels
 }
 
@@ -301,22 +392,22 @@ func (a *AppStatus) DebounceRefresh() *AppStatus {
 	JC.MainDebouncer.Call("refreshing_status", 16*time.Millisecond, func() {
 		a.Refresh()
 	})
-
 	return a
 }
 
 func (a *AppStatus) Refresh() *AppStatus {
+	a.mu.Lock()
+	shouldUpdate := a.lastChange.After(a.lastRefresh)
+	a.lastRefresh = time.Now()
+	a.mu.Unlock()
 
-	// Attempt to refresh main layout to change content
-	if a.IsDirty() {
+	if shouldUpdate {
 		AppLayoutManager.Refresh()
 		AppActionManager.Refresh()
 	}
 
-	a.lastRefresh = time.Now()
-
 	JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d",
-		a.ready, a.no_panels, a.bad_config, a.bad_cryptos, a.bad_cryptos, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
+		a.IsReady(), a.ValidPanels(), !a.ValidConfig(), !a.ValidCryptos(), a.bad_tickers, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
 
 	return a
 }
