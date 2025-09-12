@@ -19,7 +19,7 @@ func (r *PanelActionLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) 
 		obj := objects[i]
 		objSize := obj.MinSize()
 		x -= objSize.Width + r.margin
-		obj.Move(fyne.NewPos(x, r.margin)) // Vertically center
+		obj.Move(fyne.NewPos(x, r.margin))
 		obj.Resize(objSize)
 	}
 }
@@ -34,7 +34,7 @@ func (r *PanelActionLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 			maxHeight = size.Height
 		}
 	}
-	return fyne.NewSize(totalWidth, r.height+r.margin) // Fixed height
+	return fyne.NewSize(totalWidth, r.height+r.margin)
 }
 
 func NewPanelActionBar(

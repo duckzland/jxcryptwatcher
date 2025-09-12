@@ -229,7 +229,6 @@ func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 		o[i] = p[i]
 	}
 
-	// Using direct spread injection for objects to save multiple refresh calls
 	grid := NewPanelGridContainer(
 		&PanelGridLayout{
 			MinCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),

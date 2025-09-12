@@ -12,7 +12,7 @@ import (
 const MemoryDebug = false
 
 func InitLogger() {
-	log.SetOutput(os.Stdout) // Disable all logs
+	log.SetOutput(os.Stdout)
 }
 
 func Logln(v ...any) {
