@@ -388,6 +388,12 @@ func (a *AppStatus) ValidPanels() bool {
 	return !a.no_panels
 }
 
+func (a *AppStatus) ValidTickers() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return !a.bad_tickers
+}
+
 func (a *AppStatus) DebounceRefresh() *AppStatus {
 	JC.MainDebouncer.Call("refreshing_status", 16*time.Millisecond, func() {
 		a.Refresh()
