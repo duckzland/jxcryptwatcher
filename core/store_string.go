@@ -3,7 +3,7 @@ package core
 import "sync"
 
 type StringStore struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	value string
 }
 
@@ -17,18 +17,20 @@ func (s *StringStore) Unlock() {
 
 func (s *StringStore) Set(val string) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.value = val
+	s.mu.Unlock()
 }
 
 func (s *StringStore) Get() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.value
+	s.mu.RLock()
+	val := s.value
+	s.mu.RUnlock()
+	return val
 }
 
 func (s *StringStore) IsEqual(x string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.value == x
+	s.mu.RLock()
+	equal := s.value == x
+	s.mu.RUnlock()
+	return equal
 }

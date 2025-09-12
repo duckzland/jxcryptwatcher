@@ -11,9 +11,7 @@ var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
 
 type SnapshotManager struct{}
 
-func (sm *SnapshotManager) Init() {
-	// Nothing to do
-}
+func (sm *SnapshotManager) Init() {}
 
 func (sm *SnapshotManager) LoadPanels() int {
 	raw, ok := JC.LoadFile("snapshots-panels.json")
@@ -33,7 +31,6 @@ func (sm *SnapshotManager) LoadPanels() int {
 		p.Status.Set(c.Status)
 		p.OldKey.Set(c.OldKey)
 		p.Data.Set(c.Key)
-
 		restored = append(restored, p)
 	}
 
@@ -76,12 +73,12 @@ func (sm *SnapshotManager) LoadTickers() int {
 	for _, c := range caches {
 		t := &JT.TickerDataType{}
 		t.Init()
-		t.Data.Set(c.Key)
-		t.Type.Set(c.Type)
-		t.Title.Set(c.Title)
-		t.Format.Set(c.Format)
-		t.Status.Set(c.Status)
-		t.OldKey.Set(c.OldKey)
+		t.Set(c.Key)
+		t.SetType(c.Type)
+		t.SetTitle(c.Title)
+		t.SetFormat(c.Format)
+		t.SetStatus(c.Status)
+		t.SetOldKey(c.OldKey)
 		restored = append(restored, t)
 	}
 
@@ -122,14 +119,9 @@ func (sm *SnapshotManager) LoadTickerData() int {
 }
 
 func (sm *SnapshotManager) Save() {
-
 	JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
-
 	JC.SaveFile("snapshots-cryptos.json", JT.BP.Maps.Serialize())
-
 	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
-
 	JC.SaveFile("snapshots-exchange.json", JT.ExchangeCache.Serialize())
-
 	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
 }

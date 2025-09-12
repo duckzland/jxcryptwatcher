@@ -22,7 +22,7 @@ func (pc *TickersMapType) Set(data []*TickerDataType) {
 
 	for _, tdt := range data {
 		tdt.Init()
-		tdt.Status.Set(JC.STATE_LOADING)
+		tdt.SetStatus(JC.STATE_LOADING)
 	}
 
 	pc.Data = data
@@ -37,7 +37,7 @@ func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	}
 
 	ticker.Init()
-	ticker.Status.Set(JC.STATE_LOADING)
+	ticker.SetStatus(JC.STATE_LOADING)
 
 	pc.Data = append(pc.Data, ticker)
 }
@@ -46,12 +46,10 @@ func (pc *TickersMapType) Update(uuid string) bool {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	tdt := pc.GetData(uuid)
-
+	tdt := pc.getDataUnsafe(uuid)
 	if tdt != nil {
 		return tdt.Update()
 	}
-
 	return false
 }
 
@@ -67,35 +65,34 @@ func (pc *TickersMapType) Get() []*TickerDataType {
 func (pc *TickersMapType) GetData(uuid string) *TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
+	return pc.getDataUnsafe(uuid)
+}
 
-	for i, tdt := range pc.Data {
-		if tdt.ID.IsEqual(uuid) {
-			return pc.Data[i]
+func (pc *TickersMapType) getDataUnsafe(uuid string) *TickerDataType {
+	for _, tdt := range pc.Data {
+		if tdt.IsID(uuid) {
+			return tdt
 		}
 	}
-
 	return nil
 }
 
-func (pc *TickersMapType) GetDataByType(ticker_type string) []*TickerDataType {
+func (pc *TickersMapType) GetDataByType(tickerType string) []*TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
 	nd := []*TickerDataType{}
-
-	for i, tdt := range pc.Data {
-		if tdt.Type.IsEqual(ticker_type) {
-			nd = append(nd, pc.Data[i])
+	for _, tdt := range pc.Data {
+		if tdt.IsType(tickerType) {
+			nd = append(nd, tdt)
 		}
 	}
-
 	return nd
 }
 
 func (pc *TickersMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-
 	return len(pc.Data) == 0
 }
 
@@ -103,11 +100,9 @@ func (pc *TickersMapType) Reset() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	for i, tdt := range pc.Data {
+	for _, tdt := range pc.Data {
 		tdt.Set("")
-		tdt.Status.Set(JC.STATE_LOADING)
-
-		pc.Data[i] = tdt
+		tdt.SetStatus(JC.STATE_LOADING)
 	}
 }
 
@@ -119,15 +114,13 @@ func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 		if shouldChange != nil && !shouldChange(pdt) {
 			continue
 		}
-
-		pdt.Status.Set(newStatus)
+		pdt.SetStatus(newStatus)
 	}
 }
 
 func (pc *TickersMapType) Hydrate(data []*TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-
 	pc.Data = data
 }
 
@@ -137,12 +130,9 @@ func (pc *TickersMapType) Serialize() []TickerDataCache {
 
 	var out []TickerDataCache
 	for _, t := range pc.Data {
-
-		if !t.Status.IsEqual(JC.STATE_LOADED) {
-			continue
+		if t.IsStatus(JC.STATE_LOADED) {
+			out = append(out, t.Serialize())
 		}
-
-		out = append(out, t.Serialize())
 	}
 	return out
 }
@@ -152,37 +142,33 @@ func TickersInit() {
 
 	if Config.CanDoMarketCap() {
 		tdt := &TickerDataType{}
-		tdt.Title.Set("Market Cap")
-		tdt.Type.Set("market_cap")
-		tdt.Format.Set("shortcurrency")
-
+		tdt.SetTitle("Market Cap")
+		tdt.SetType("market_cap")
+		tdt.SetFormat("shortcurrency")
 		BT.Add(tdt)
 	}
 
 	if Config.CanDoCMC100() {
 		tdt := &TickerDataType{}
-		tdt.Title.Set("CMC100")
-		tdt.Type.Set("cmc100")
-		tdt.Format.Set("currency")
-
+		tdt.SetTitle("CMC100")
+		tdt.SetType("cmc100")
+		tdt.SetFormat("currency")
 		BT.Add(tdt)
 	}
 
 	if Config.CanDoAltSeason() {
 		tdt := &TickerDataType{}
-		tdt.Title.Set("Altcoin Index")
-		tdt.Type.Set("altcoin_index")
-		tdt.Format.Set("percentage")
-
+		tdt.SetTitle("Altcoin Index")
+		tdt.SetType("altcoin_index")
+		tdt.SetFormat("percentage")
 		BT.Add(tdt)
 	}
 
 	if Config.CanDoFearGreed() {
 		tdt := &TickerDataType{}
-		tdt.Title.Set("Fear & Greed")
-		tdt.Type.Set("feargreed")
-		tdt.Format.Set("percentage")
-
+		tdt.SetTitle("Fear & Greed")
+		tdt.SetType("feargreed")
+		tdt.SetFormat("percentage")
 		BT.Add(tdt)
 	}
 }

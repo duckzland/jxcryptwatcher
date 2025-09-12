@@ -42,7 +42,6 @@ func (p *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	for _, obj := range centerItems {
 		totalHeight += obj.MinSize().Height
 	}
-
 	totalHeight += spacer * float32(len(centerItems)-1)
 
 	startY := (size.Height - totalHeight) / 2
@@ -84,12 +83,9 @@ type TickerDisplay struct {
 	refStatus  *canvas.Text
 }
 
-func NewTickerDisplay(
-	tdt *JT.TickerDataType,
-) *TickerDisplay {
-
+func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
 	uuid := JC.CreateUUID()
-	tdt.ID.Set(uuid)
+	tdt.SetID(uuid)
 
 	title := canvas.NewText("", JC.TextColor)
 	title.Alignment = fyne.TextAlignCenter
@@ -118,7 +114,7 @@ func NewTickerDisplay(
 			content,
 			status,
 		),
-		title:      tdt.Title.Get(),
+		title:      tdt.GetTitle(),
 		background: background,
 		refTitle:   title,
 		refContent: content,
@@ -128,33 +124,28 @@ func NewTickerDisplay(
 	ticker.ExtendBaseWidget(ticker)
 
 	str.AddListener(binding.NewDataListener(func() {
-
 		pkt := JT.BT.GetData(ticker.GetTag())
 		if pkt == nil {
 			return
 		}
-
 		ticker.UpdateContent()
-
 		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	ticker.UpdateContent()
-
 	JA.FadeInBackground(background, 100*time.Millisecond, nil)
 
 	return ticker
 }
 
 func (h *TickerDisplay) UpdateContent() {
-
 	pwidth := h.Size().Width
 	pkt := JT.BT.GetData(h.GetTag())
 	if pkt == nil {
 		return
 	}
 
-	switch pkt.Status.Get() {
+	switch pkt.GetStatus() {
 	case JC.STATE_ERROR:
 		h.refStatus.Text = "Error loading data"
 		h.refStatus.Show()
@@ -175,12 +166,10 @@ func (h *TickerDisplay) UpdateContent() {
 		h.refStatus.Hide()
 		h.refTitle.Show()
 		h.refContent.Show()
-
 		h.background.FillColor = JC.TickerBG
 
-		if pkt.Type.IsEqual("altcoin_index") {
+		if pkt.IsType("altcoin_index") {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
-
 			switch {
 			case percentage >= 75:
 				h.background.FillColor = JC.BlueColor
@@ -193,9 +182,8 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type.IsEqual("feargreed") {
+		if pkt.IsType("feargreed") {
 			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
-
 			switch {
 			case index >= 75:
 				h.background.FillColor = JC.GreenColor
@@ -210,10 +198,9 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type.IsEqual("market_cap") {
+		if pkt.IsType("market_cap") {
 			raw := JT.TickerCache.Get("market_cap_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
-
 			if index > 0 {
 				h.background.FillColor = JC.GreenColor
 			} else if index < 0 {
@@ -221,10 +208,9 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 
-		if pkt.Type.IsEqual("cmc100") {
+		if pkt.IsType("cmc100") {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
-
 			if index >= 0 {
 				h.background.FillColor = JC.GreenColor
 			} else if index < 0 {
@@ -232,7 +218,6 @@ func (h *TickerDisplay) UpdateContent() {
 			}
 		}
 	}
-
 }
 
 func (h *TickerDisplay) GetTag() string {
