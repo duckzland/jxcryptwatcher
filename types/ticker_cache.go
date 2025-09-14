@@ -21,20 +21,45 @@ type TickerDataCacheEntry struct {
 
 type TickerDataCacheType struct {
 	data        sync.Map
-	Timestamp   time.Time
-	LastUpdated *time.Time
+	timestamp   time.Time
+	lastUpdated *time.Time
 	metaLock    sync.RWMutex
 }
 
+// Getters and Setters
+func (tc *TickerDataCacheType) GetTimestamp() time.Time {
+	tc.metaLock.RLock()
+	defer tc.metaLock.RUnlock()
+	return tc.timestamp
+}
+
+func (tc *TickerDataCacheType) SetTimestamp(t time.Time) {
+	tc.metaLock.Lock()
+	tc.timestamp = t
+	tc.metaLock.Unlock()
+}
+
+func (tc *TickerDataCacheType) GetLastUpdated() *time.Time {
+	tc.metaLock.RLock()
+	defer tc.metaLock.RUnlock()
+	return tc.lastUpdated
+}
+
+func (tc *TickerDataCacheType) SetLastUpdated(t *time.Time) {
+	tc.metaLock.Lock()
+	tc.lastUpdated = t
+	tc.metaLock.Unlock()
+}
+
+// Initialization
 func (tc *TickerDataCacheType) Init() *TickerDataCacheType {
 	tc.data = sync.Map{}
-	tc.metaLock.Lock()
-	tc.Timestamp = time.Now()
-	tc.LastUpdated = nil
-	tc.metaLock.Unlock()
+	tc.SetTimestamp(time.Now())
+	tc.SetLastUpdated(nil)
 	return tc
 }
 
+// Core operations
 func (tc *TickerDataCacheType) Get(key string) string {
 	if val, ok := tc.data.Load(key); ok {
 		if strVal, ok := val.(string); ok {
@@ -46,44 +71,31 @@ func (tc *TickerDataCacheType) Get(key string) string {
 
 func (tc *TickerDataCacheType) Insert(key, value string, timestamp time.Time) *TickerDataCacheType {
 	tc.data.Store(key, value)
-
-	tc.metaLock.Lock()
-	tc.Timestamp = time.Now()
-	tc.LastUpdated = &timestamp
-	tc.metaLock.Unlock()
-
+	tc.SetTimestamp(time.Now())
+	tc.SetLastUpdated(&timestamp)
 	return tc
 }
 
 func (tc *TickerDataCacheType) Remove(key string) *TickerDataCacheType {
 	tc.data.Delete(key)
-
-	tc.metaLock.Lock()
-	tc.Timestamp = time.Now()
-	tc.metaLock.Unlock()
-
+	tc.SetTimestamp(time.Now())
 	return tc
 }
 
 func (tc *TickerDataCacheType) SoftReset() *TickerDataCacheType {
-	tc.metaLock.Lock()
-	tc.Timestamp = time.Now()
-	tc.LastUpdated = nil
-	tc.metaLock.Unlock()
+	tc.SetTimestamp(time.Now())
+	tc.SetLastUpdated(nil)
 	return tc
 }
 
 func (tc *TickerDataCacheType) Reset() *TickerDataCacheType {
 	tc.data = sync.Map{}
-
-	tc.metaLock.Lock()
-	tc.Timestamp = time.Now()
-	tc.LastUpdated = nil
-	tc.metaLock.Unlock()
-
+	tc.SetTimestamp(time.Now())
+	tc.SetLastUpdated(nil)
 	return tc
 }
 
+// Status checks
 func (tc *TickerDataCacheType) Has(key string) bool {
 	d, ok := tc.data.Load(key)
 	return ok && d != nil
@@ -103,16 +115,15 @@ func (tc *TickerDataCacheType) IsEmpty() bool {
 }
 
 func (tc *TickerDataCacheType) ShouldRefresh() bool {
-	tc.metaLock.RLock()
-	defer tc.metaLock.RUnlock()
-
-	if tc.LastUpdated == nil {
+	last := tc.GetLastUpdated()
+	if last == nil {
 		return true
 	}
-	return time.Now().After(tc.LastUpdated.Add(TickerUpdateThreshold)) &&
-		time.Now().After(tc.Timestamp.Add(TickerUpdateThreshold))
+	return time.Now().After(last.Add(TickerUpdateThreshold)) &&
+		time.Now().After(tc.GetTimestamp().Add(TickerUpdateThreshold))
 }
 
+// Serialization
 func (tc *TickerDataCacheType) Serialize() TickerDataCacheSnapshot {
 	var entries []TickerDataCacheEntry
 
@@ -128,13 +139,12 @@ func (tc *TickerDataCacheType) Serialize() TickerDataCacheSnapshot {
 		return true
 	})
 
-	tc.metaLock.RLock()
-	timestamp := tc.Timestamp
+	timestamp := tc.GetTimestamp()
+	last := tc.GetLastUpdated()
 	var lastUpdated time.Time
-	if tc.LastUpdated != nil {
-		lastUpdated = *tc.LastUpdated
+	if last != nil {
+		lastUpdated = *last
 	}
-	tc.metaLock.RUnlock()
 
 	return TickerDataCacheSnapshot{
 		Data:        entries,
@@ -148,9 +158,6 @@ func (tc *TickerDataCacheType) Hydrate(snapshot TickerDataCacheSnapshot) {
 	for _, entry := range snapshot.Data {
 		tc.data.Store(entry.Key, entry.Value)
 	}
-
-	tc.metaLock.Lock()
-	tc.Timestamp = snapshot.Timestamp
-	tc.LastUpdated = &snapshot.LastUpdated
-	tc.metaLock.Unlock()
+	tc.SetTimestamp(snapshot.Timestamp)
+	tc.SetLastUpdated(&snapshot.LastUpdated)
 }
