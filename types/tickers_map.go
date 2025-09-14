@@ -1,22 +1,22 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"sync"
+
+	JC "jxwatcher/core"
 )
 
 var BT TickersMapType
 
 type TickersMapType struct {
 	mu   sync.RWMutex
-	Data []*TickerDataType
+	data []*TickerDataType
 }
 
 func (pc *TickersMapType) Init() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-
-	pc.Data = []*TickerDataType{}
+	pc.data = []*TickerDataType{}
 }
 
 func (pc *TickersMapType) Set(data []*TickerDataType) {
@@ -27,22 +27,21 @@ func (pc *TickersMapType) Set(data []*TickerDataType) {
 		tdt.Init()
 		tdt.SetStatus(JC.STATE_LOADING)
 	}
-
-	pc.Data = data
+	pc.data = data
 }
 
 func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	if pc.Data == nil {
-		pc.Data = []*TickerDataType{}
+	if pc.data == nil {
+		pc.data = []*TickerDataType{}
 	}
 
 	ticker.Init()
 	ticker.SetStatus(JC.STATE_LOADING)
 
-	pc.Data = append(pc.Data, ticker)
+	pc.data = append(pc.data, ticker)
 }
 
 func (pc *TickersMapType) Update(uuid string) bool {
@@ -60,8 +59,8 @@ func (pc *TickersMapType) Get() []*TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	dataCopy := make([]*TickerDataType, len(pc.Data))
-	copy(dataCopy, pc.Data)
+	dataCopy := make([]*TickerDataType, len(pc.data))
+	copy(dataCopy, pc.data)
 	return dataCopy
 }
 
@@ -72,7 +71,7 @@ func (pc *TickersMapType) GetData(uuid string) *TickerDataType {
 }
 
 func (pc *TickersMapType) getDataUnsafe(uuid string) *TickerDataType {
-	for _, tdt := range pc.Data {
+	for _, tdt := range pc.data {
 		if tdt.IsID(uuid) {
 			return tdt
 		}
@@ -84,8 +83,8 @@ func (pc *TickersMapType) GetDataByType(tickerType string) []*TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	nd := []*TickerDataType{}
-	for _, tdt := range pc.Data {
+	var nd []*TickerDataType
+	for _, tdt := range pc.data {
 		if tdt.IsType(tickerType) {
 			nd = append(nd, tdt)
 		}
@@ -96,14 +95,14 @@ func (pc *TickersMapType) GetDataByType(tickerType string) []*TickerDataType {
 func (pc *TickersMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-	return len(pc.Data) == 0
+	return len(pc.data) == 0
 }
 
 func (pc *TickersMapType) Reset() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	for _, tdt := range pc.Data {
+	for _, tdt := range pc.data {
 		tdt.Set("")
 		tdt.SetStatus(JC.STATE_LOADING)
 	}
@@ -113,7 +112,7 @@ func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	for _, pdt := range pc.Data {
+	for _, pdt := range pc.data {
 		if shouldChange != nil && !shouldChange(pdt) {
 			continue
 		}
@@ -124,7 +123,7 @@ func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 func (pc *TickersMapType) Hydrate(data []*TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-	pc.Data = data
+	pc.data = data
 }
 
 func (pc *TickersMapType) Serialize() []TickerDataCache {
@@ -132,7 +131,7 @@ func (pc *TickersMapType) Serialize() []TickerDataCache {
 	defer pc.mu.RUnlock()
 
 	var out []TickerDataCache
-	for _, t := range pc.Data {
+	for _, t := range pc.data {
 		if t.IsStatus(JC.STATE_LOADED) {
 			out = append(out, t.Serialize())
 		}
