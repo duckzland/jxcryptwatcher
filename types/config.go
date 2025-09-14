@@ -83,6 +83,7 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			FearGreedEndpoint: "https://api.coinmarketcap.com/data-api/v3/fear-greed/chart",
 			CMC100Endpoint:    "https://api.coinmarketcap.com/data-api/v3/top100/supplement",
 			MarketCapEndpoint: "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical",
+			Version:           "1.4.0",
 			Delay:             60,
 		}
 
@@ -91,7 +92,7 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			Config = data
 			return &Config
 		} else {
-			JC.Logln("Created config.json with default values")
+			JC.Logln("Created config.json with default values", data)
 			Config = data
 		}
 	}
