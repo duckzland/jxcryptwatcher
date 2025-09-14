@@ -24,4 +24,6 @@ fyne_metadata_init.go
 ghtoken.txt
 robotgo/build/*
 robotgo/screenshots/*
+robotgo/*
+robotgo
 */*.old
