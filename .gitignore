@@ -7,6 +7,7 @@ cryptos.json
 panels.json
 main
 jxcryptowatcher
+core/local.go
 build/*
 scripts/*
 scripts

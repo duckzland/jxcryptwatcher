@@ -39,12 +39,9 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Expires", "0")
 
-	// startUnix, endUnix := GetMonthBounds(time.Now())
 	q := url.Values{}
-	// q.Add("start", strconv.FormatInt(startUnix, 10))
-	// q.Add("end", strconv.FormatInt(endUnix, 10))
 
-	// req.URL.RawQuery = q.Encode()
+	AlterRequests(q, req)
 
 	if prefetch != nil {
 		prefetch(q, req)
