@@ -82,7 +82,7 @@ cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 # Debug compiling flags
-if [[ $1 == "debug" ]]; then
+if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     ldflags=""
     gcflags="-l"
     tags="desktop"
@@ -92,6 +92,14 @@ if [[ $1 == "debug" ]]; then
     cldflags="-pthread"
 
     echo_success "Debug mode enabled: building with debug flags"
+fi
+
+if [[ $1 == "local" ]]; then
+    tags="production,desktop,local"
+fi
+
+if [[ $1 == "local-debug" ]]; then
+    tags="desktop,local"
 fi
 
 # Only no need to regenerate this

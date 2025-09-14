@@ -86,7 +86,7 @@ cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 androidXMLDebug="false"
 
 ## Debugging options, you will need to set -release to false
-if [[ $1 == "debug" ]]; then
+if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     tags="jxandroid"
     release="false"
 
@@ -97,6 +97,14 @@ if [[ $1 == "debug" ]]; then
     androidXMLDebug="true"
 
     echo_start "Debug mode enabled: building with debug flags"
+fi
+
+if [[ $1 == "local" ]]; then
+    tags="production,jxandroid,local"
+fi
+
+if [[ $1 == "local-debug" ]]; then
+    tags="jxandroid,local"
 fi
 
 ## Target os, this will create only for android with arm64 processor
