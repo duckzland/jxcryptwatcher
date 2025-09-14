@@ -43,6 +43,7 @@ func (c *ConfigType) LoadFile() *ConfigType {
 
 func (c *ConfigType) updateDefault() *ConfigType {
 	if c.Version == "" || c.Version == "1.2.0" {
+		JC.Logln("Updating old config")
 		c.Version = "1.2.6"
 
 		if c.AltSeasonEndpoint == "" {
@@ -74,7 +75,7 @@ func (c *ConfigType) CheckFile() *ConfigType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
-	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
+	exists, _ := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
 	if !exists {
 		data := ConfigType{
 			DataEndpoint:      "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json",
@@ -92,13 +93,9 @@ func (c *ConfigType) CheckFile() *ConfigType {
 			Config = data
 			return &Config
 		} else {
-			JC.Logln("Created config.json with default values", data)
+			JC.Logln("Created config.json with default values")
 			Config = data
 		}
-	}
-
-	if err != nil {
-		JC.Logln(err)
 	}
 
 	return c

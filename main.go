@@ -16,13 +16,13 @@ import (
 func main() {
 	JC.InitLogger()
 
+	JC.Logln("App is booting...")
+
 	JC.App = app.NewWithID(JC.AppID)
 
 	JC.App.Settings().SetTheme(JA.NewTheme())
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
-
-	JT.ConfigInit()
 
 	JT.ExchangeCache.Init()
 
@@ -36,15 +36,13 @@ func main() {
 
 	RegisterActions()
 
-	JA.AppActionManager.Disable()
-
 	RegisterFetchers()
 
 	RegisterWorkers()
 
-	JC.Notify("Application is starting...")
-
 	RegisterLifecycle()
+
+	JC.Notify("Application is starting...")
 
 	JC.Window.SetContent(JA.NewAppLayoutManager())
 
@@ -55,7 +53,9 @@ func main() {
 	}
 
 	// Prevent locking when initialized at first install
-	JC.MainDebouncer.Call("initializing", 33*time.Millisecond, func() {
+	JC.MainDebouncer.Call("initializing", 1*time.Millisecond, func() {
+
+		JT.ConfigInit()
 
 		if JA.AppSnapshotManager.LoadCryptos() == JC.NO_SNAPSHOT {
 			JT.CryptosInit()

@@ -98,9 +98,6 @@ func (p *PanelsType) CreateFile() *PanelsType {
 }
 
 func (p *PanelsType) CheckFile() *PanelsType {
-	panelsMu.Lock()
-	defer panelsMu.Unlock()
-
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
 		p.CreateFile()

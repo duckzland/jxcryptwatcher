@@ -68,7 +68,7 @@ func (w *Worker) logGrouped(key string, interval int64, msg string) {
 	}
 }
 
-func (w *Worker) Register(key string, fn WorkerFunc, interval int64, debounce int64, shouldRun func() bool) {
+func (w *Worker) Register(key string, fn WorkerFunc, getInterval func() int64, debounce int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -80,21 +80,27 @@ func (w *Worker) Register(key string, fn WorkerFunc, interval int64, debounce in
 
 	go w.startQueueWorker(key, false)
 
-	if interval > 0 {
-		go func() {
-			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
-			defer ticker.Stop()
-			for range ticker.C {
-				w.mu.Lock()
-				active := w.active[key]
-				w.mu.Unlock()
+	go func() {
+		for {
+			w.mu.Lock()
+			active := w.active[key]
+			w.mu.Unlock()
 
-				if active {
-					w.Call(key, CallQueued)
-				}
+			if !active {
+				time.Sleep(100 * time.Millisecond)
+				continue
 			}
-		}()
-	}
+
+			w.Call(key, CallQueued)
+
+			interval := getInterval()
+			if interval <= 0 {
+				interval = 1000
+			}
+
+			time.Sleep(time.Duration(interval) * time.Millisecond)
+		}
+	}()
 }
 
 func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, minDelayMs int64, shouldRun func() bool) {

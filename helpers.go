@@ -566,7 +566,7 @@ func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
 func RegisterActions() {
 
 	// Refresh ticker data
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
 			JC.FetcherManager.Call("cryptos_map", nil)
 		},
@@ -610,7 +610,7 @@ func RegisterActions() {
 		}))
 
 	// Refresh exchange rates
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
 
 			// Open the network status temporarily
@@ -680,7 +680,7 @@ func RegisterActions() {
 		}))
 
 	// Open settings
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
 			OpenSettingForm()
 		},
@@ -724,7 +724,7 @@ func RegisterActions() {
 		}))
 
 	// Panel drag toggle
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
 			ToggleDraggable()
 		},
@@ -767,7 +767,7 @@ func RegisterActions() {
 		}))
 
 	// Add new panel
-	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel",
+	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
 			OpenNewPanelForm()
 		},
@@ -797,9 +797,6 @@ func RegisterActions() {
 }
 
 func RegisterWorkers() {
-
-	tickerDelay := max(JT.Config.Delay*1000, 300000)
-	ratesDelay := max(JT.Config.Delay*1000, 30000)
 
 	JC.WorkerManager.RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
@@ -842,7 +839,9 @@ func RegisterWorkers() {
 
 	JC.WorkerManager.Register("update_rates", func() {
 		UpdateRates()
-	}, ratesDelay, 1000, func() bool {
+	}, func() int64 {
+		return max(JT.Config.Delay*1000, 30000)
+	}, 1000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh rates: app is not ready yet")
@@ -879,7 +878,9 @@ func RegisterWorkers() {
 
 	JC.WorkerManager.Register("update_tickers", func() {
 		UpdateTickers()
-	}, tickerDelay, 5000, func() bool {
+	}, func() int64 {
+		return max(JT.Config.Delay*1000, 30000)
+	}, 5000, func() bool {
 
 		if !JA.AppStatusManager.IsReady() {
 			JC.Logln("Unable to refresh tickers: app is not ready yet")

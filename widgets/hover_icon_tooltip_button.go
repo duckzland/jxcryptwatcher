@@ -22,6 +22,7 @@ func NewHoverCursorIconButton(
 	text string,
 	icon fyne.Resource,
 	tip string,
+	state string,
 	onTapped func(*HoverCursorIconButton),
 	validate func(*HoverCursorIconButton),
 ) *HoverCursorIconButton {
@@ -37,7 +38,8 @@ func NewHoverCursorIconButton(
 	b.tag = tag
 	b.disabled = false
 	b.validate = validate
-	b.state = ""
+
+	b.setState(state)
 
 	b.Button.OnTapped = func() {
 		if b.disabled == false {
@@ -130,7 +132,7 @@ func (b *HoverCursorIconButton) Call() {
 	b.Button.OnTapped()
 }
 
-func (b *HoverCursorIconButton) changeState(state string) {
+func (b *HoverCursorIconButton) setState(state string) {
 
 	if b.state == state {
 		return
@@ -148,11 +150,20 @@ func (b *HoverCursorIconButton) changeState(state string) {
 	case "error":
 		b.disabled = false
 		b.Button.Importance = widget.DangerImportance
-	case "reset":
+	case "reset", "normal":
 		b.disabled = false
 		b.Button.Importance = widget.MediumImportance
 	}
 
 	b.state = state
+}
+
+func (b *HoverCursorIconButton) changeState(state string) {
+
+	if b.state == state {
+		return
+	}
+
+	b.setState(state)
 	b.Button.Refresh()
 }
