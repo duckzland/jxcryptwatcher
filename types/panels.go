@@ -5,18 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-
-	"fyne.io/fyne/v2/storage"
+	"sync"
 
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2/storage"
 )
+
+var panelsMu sync.RWMutex
 
 type PanelsType []PanelType
 
 func (p *PanelsType) LoadFile() *PanelsType {
+	panelsMu.Lock()
+	defer panelsMu.Unlock()
+
 	fileURI, err := storage.ParseURI(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if err != nil {
-		JC.Logln("Error getting parsing uri for file:", err)
+		JC.Logln("Error parsing URI for file:", err)
 		JC.Notify("Unable to load panels data from file.")
 		return p
 	}
@@ -48,6 +54,9 @@ func (p *PanelsType) LoadFile() *PanelsType {
 }
 
 func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
+	panelsMu.RLock()
+	defer panelsMu.RUnlock()
+
 	maps.mu.RLock()
 	data := make([]*PanelDataType, len(maps.GetData()))
 	copy(data, maps.GetData())
@@ -81,11 +90,17 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 }
 
 func (p *PanelsType) CreateFile() *PanelsType {
+	panelsMu.Lock()
+	defer panelsMu.Unlock()
+
 	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), "[]")
 	return p
 }
 
 func (p *PanelsType) CheckFile() *PanelsType {
+	panelsMu.Lock()
+	defer panelsMu.Unlock()
+
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
 		p.CreateFile()
@@ -99,6 +114,9 @@ func (p *PanelsType) CheckFile() *PanelsType {
 }
 
 func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
+	panelsMu.RLock()
+	defer panelsMu.RUnlock()
+
 	for i := range *p {
 		pp := &(*p)[i]
 
@@ -119,12 +137,18 @@ func PanelsInit() {
 	BP.Init()
 	BP.SetMaps(maps)
 
+	panelsMu.Lock()
 	Panels := PanelsType{}
+	panelsMu.Unlock()
+
 	Panels.CheckFile().LoadFile().ConvertToMap(&BP)
 }
 
 func SavePanels() bool {
+	panelsMu.RLock()
 	Panels := PanelsType{}
+	panelsMu.RUnlock()
+
 	return Panels.SaveFile(&BP)
 }
 
