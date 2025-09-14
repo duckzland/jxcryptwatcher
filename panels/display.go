@@ -410,8 +410,8 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := JM.AppLayoutManager.ContentTopY - edgeThreshold
-				edgeBottomY := JM.AppLayoutManager.ContentBottomY - edgeThreshold
+				edgeTopY := JM.AppLayoutManager.ContentTopY() - edgeThreshold
+				edgeBottomY := JM.AppLayoutManager.ContentBottomY() - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {

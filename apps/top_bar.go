@@ -20,7 +20,7 @@ type TopBarLayout struct {
 func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if AppLayoutManager == nil || AppLayoutManager.Container.Size().Width <= 0 || AppLayoutManager.Container.Size().Height <= 0 {
+	if AppLayoutManager == nil || AppLayoutManager.ContainerSize().Width <= 0 || AppLayoutManager.ContainerSize().Height <= 0 {
 		return
 	}
 

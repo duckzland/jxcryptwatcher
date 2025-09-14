@@ -36,7 +36,7 @@ type PanelGridLayout struct {
 func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayoutManager == nil || JA.AppLayoutManager.Container.Size().Width <= 0 || JA.AppLayoutManager.Container.Size().Height <= 0 {
+	if JA.AppLayoutManager == nil || JA.AppLayoutManager.ContainerSize().Width <= 0 || JA.AppLayoutManager.ContainerSize().Height <= 0 {
 		return
 	}
 
