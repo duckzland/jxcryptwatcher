@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"sync"
 
-	"fyne.io/fyne/v2/data/binding"
-
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2/data/binding"
 )
 
 type PanelDataCache struct {
@@ -18,48 +18,48 @@ type PanelDataCache struct {
 
 type PanelDataType struct {
 	mu     sync.RWMutex
-	Data   binding.String
-	OldKey string
-	ID     string
-	Status int
-	Parent *PanelsMapType
+	data   binding.String
+	oldKey string
+	id     string
+	status int
+	parent *PanelsMapType
 }
 
 func (p *PanelDataType) Init() {
 	p.mu.Lock()
-	p.Data = binding.NewString()
-	p.ID = ""
-	p.OldKey = ""
-	p.Status = JC.STATE_LOADING
+	p.data = binding.NewString()
+	p.id = ""
+	p.oldKey = ""
+	p.status = JC.STATE_LOADING
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) Set(val string) {
 	p.mu.Lock()
-	old, err := p.Data.Get()
+	old, err := p.data.Get()
 	if err == nil {
-		p.OldKey = old
+		p.oldKey = old
 	}
-	p.Data.Set(val)
+	p.data.Set(val)
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) Insert(panel PanelType, rate float32) {
 	p.mu.Lock()
-	old, err := p.Data.Get()
+	old, err := p.data.Get()
 	if err == nil {
-		p.OldKey = old
+		p.oldKey = old
 	}
 	pkt := &PanelKeyType{}
-	p.Data.Set(pkt.GenerateKeyFromPanel(panel, rate))
+	p.data.Set(pkt.GenerateKeyFromPanel(panel, rate))
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) Get() string {
 	p.mu.RLock()
 	val := ""
-	if p.Data != nil {
-		v, err := p.Data.Get()
+	if p.data != nil {
+		v, err := p.data.Get()
 		if err == nil {
 			val = v
 		}
@@ -70,69 +70,81 @@ func (p *PanelDataType) Get() string {
 
 func (p *PanelDataType) GetData() binding.String {
 	p.mu.RLock()
-	d := p.Data
+	d := p.data
 	p.mu.RUnlock()
 	return d
 }
 
 func (p *PanelDataType) GetStatus() int {
 	p.mu.RLock()
-	v := p.Status
+	v := p.status
 	p.mu.RUnlock()
 	return v
 }
 
 func (p *PanelDataType) SetStatus(val int) {
 	p.mu.Lock()
-	p.Status = val
+	p.status = val
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) GetID() string {
 	p.mu.RLock()
-	v := p.ID
+	v := p.id
 	p.mu.RUnlock()
 	return v
 }
 
 func (p *PanelDataType) SetID(val string) {
 	p.mu.Lock()
-	p.ID = val
+	p.id = val
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) GetOldKey() string {
 	p.mu.RLock()
-	v := p.OldKey
+	v := p.oldKey
 	p.mu.RUnlock()
 	return v
 }
 
 func (p *PanelDataType) SetOldKey(val string) {
 	p.mu.Lock()
-	p.OldKey = val
+	p.oldKey = val
+	p.mu.Unlock()
+}
+
+func (p *PanelDataType) GetParent() *PanelsMapType {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.parent
+}
+
+func (p *PanelDataType) SetParent(val *PanelsMapType) {
+	p.mu.Lock()
+	p.parent = val
 	p.mu.Unlock()
 }
 
 func (p *PanelDataType) IsStatus(val int) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.Status == val
+	return p.status == val
 }
 
 func (p *PanelDataType) IsID(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.ID == val
+	return p.id == val
 }
 
 func (p *PanelDataType) IsKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	if p.Data == nil {
+	if p.data == nil {
 		return val == ""
 	}
-	current, err := p.Data.Get()
+	current, err := p.data.Get()
 	if err != nil {
 		return false
 	}
@@ -142,7 +154,13 @@ func (p *PanelDataType) IsKey(val string) bool {
 func (p *PanelDataType) IsOldKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.OldKey == val
+	return p.oldKey == val
+}
+
+func (p *PanelDataType) HasParent() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.parent != nil
 }
 
 func (p *PanelDataType) GetValueString() string {
@@ -151,7 +169,7 @@ func (p *PanelDataType) GetValueString() string {
 
 func (p *PanelDataType) GetOldValueString() string {
 	p.mu.RLock()
-	old := p.OldKey
+	old := p.oldKey
 	p.mu.RUnlock()
 	pko := PanelKeyType{value: old}
 	return pko.GetValueString()
@@ -160,7 +178,7 @@ func (p *PanelDataType) GetOldValueString() string {
 func (p *PanelDataType) RefreshData() {
 	npk := p.UsePanelKey().UpdateValue(-3)
 	p.mu.Lock()
-	p.Data.Set(npk)
+	p.data.Set(npk)
 	p.mu.Unlock()
 }
 
@@ -245,8 +263,8 @@ func (p *PanelDataType) FormatContent() string {
 
 func (p *PanelDataType) DidChange() bool {
 	p.mu.RLock()
-	old := p.OldKey
-	status := p.Status
+	old := p.oldKey
+	status := p.status
 	p.mu.RUnlock()
 	opt := &PanelKeyType{old}
 	return old != p.Get() && opt.GetValueFloat() != -1 && status == JC.STATE_LOADED
@@ -254,8 +272,8 @@ func (p *PanelDataType) DidChange() bool {
 
 func (p *PanelDataType) IsOnInitialValue() bool {
 	p.mu.RLock()
-	old := p.OldKey
-	status := p.Status
+	old := p.oldKey
+	status := p.status
 	p.mu.RUnlock()
 	opt := &PanelKeyType{old}
 	return opt.GetValueFloat() == -1 && status == JC.STATE_LOADED

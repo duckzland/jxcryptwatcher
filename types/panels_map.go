@@ -23,8 +23,8 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 	defer pc.mu.Unlock()
 
 	for _, pk := range data {
-		if pk.Parent == nil {
-			pk.Parent = pc
+		if !pk.HasParent() {
+			pk.SetParent(pc)
 		}
 		pk.SetStatus(JC.STATE_LOADING)
 	}
@@ -63,7 +63,7 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref := &PanelDataType{}
 	ref.Init()
 	ref.Update(pk)
-	ref.Parent = pc
+	ref.SetParent(pc)
 	ref.SetStatus(JC.STATE_FETCHING_NEW)
 
 	pc.Data = append(pc.Data, ref)
@@ -213,8 +213,8 @@ func (pc *PanelsMapType) Hydrate(data []*PanelDataType) {
 	defer pc.mu.Unlock()
 
 	for _, pk := range data {
-		if pk.Parent == nil {
-			pk.Parent = pc
+		if !pk.HasParent() {
+			pk.SetParent(pc)
 		}
 	}
 	pc.Data = data
