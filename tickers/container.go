@@ -76,6 +76,7 @@ func (c *TickerGridContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.Tic
 		}
 	}
 }
+
 func NewTickerGridContainer(
 	layout *TickerGridLayout,
 	Objects []fyne.CanvasObject,

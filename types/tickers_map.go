@@ -13,6 +13,9 @@ type TickersMapType struct {
 }
 
 func (pc *TickersMapType) Init() {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
 	pc.Data = []*TickerDataType{}
 }
 

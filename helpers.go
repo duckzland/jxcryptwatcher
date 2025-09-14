@@ -379,13 +379,11 @@ func RemovePanel(uuid string) {
 					// Give time for grid to relayout first!
 					JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
 						JA.AppLayoutManager.RefreshLayout()
-					})
 
-					go func() {
 						if JT.SavePanels() {
 							JC.Notify("Panel removed successfully.")
 						}
-					}()
+					})
 				}
 
 			}
@@ -497,7 +495,10 @@ func OpenSettingForm() {
 					if JT.BT.IsEmpty() {
 						JC.Logln("Rebuilding tickers due to empty ticker list")
 						JT.TickersInit()
-						JX.Grid = JX.NewTickerGrid()
+
+						fyne.Do(func() {
+							JX.Grid = JX.NewTickerGrid()
+						})
 					}
 
 					JA.AppStatusManager.SetConfigStatus(true)
@@ -873,13 +874,6 @@ func RegisterWorkers() {
 			return false
 		}
 
-		// Dont block this, when apps running and connection got dropped,
-		// It wont recover due to it is locked!
-		// if !JA.AppStatusManager.IsGoodNetworkStatus() {
-		// 	JC.Logln("Unable to refresh rates: Network status is bad")
-		// 	return false
-		// }
-
 		return true
 	})
 
@@ -906,13 +900,6 @@ func RegisterWorkers() {
 			JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
 			return false
 		}
-
-		// Dont block this, when apps running and connection got dropped,
-		// It wont recover due to it is locked!
-		// if !JA.AppStatusManager.IsGoodNetworkStatus() {
-		// 	JC.Logln("Unable to refresh tickers: Network status is bad")
-		// 	return false
-		// }
 
 		return true
 	})
