@@ -7,17 +7,20 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	JC "jxwatcher/core"
 )
+
+var Cryptos CryptosType
+var cryptosMu sync.RWMutex
 
 type CryptosType struct {
 	Values []CryptoType `json:"values"`
 }
 
 func (c *CryptosType) LoadFile() *CryptosType {
-
 	JC.PrintMemUsage("Start loading cryptos.json")
 
 	content, ok := JC.LoadFile("cryptos.json")
@@ -30,14 +33,11 @@ func (c *CryptosType) LoadFile() *CryptosType {
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
 		JC.Notify("Failed to load cryptos data")
 		JC.Logln(wrappedErr)
-
 		return c
 	}
 
 	JC.Logln("Cryptos Loaded")
-
 	JC.PrintMemUsage("End loading cryptos.json")
-
 	return c
 }
 
@@ -50,7 +50,6 @@ func (c *CryptosType) CreateFile() *CryptosType {
 	case JC.NETWORKING_BAD_DATA_RECEIVED, JC.NETWORKING_ERROR_CONNECTION, JC.NETWORKING_URL_ERROR:
 		return nil
 	}
-
 	return c
 }
 
@@ -62,7 +61,6 @@ func (c *CryptosType) CheckFile() *CryptosType {
 			JC.Logln("Failed to create cryptos.json with default values")
 			JC.Notify("Failed to create cryptos data file")
 			c = &CryptosType{}
-
 			return c
 		} else {
 			JC.Logln("Created cryptos.json with default values")
@@ -77,7 +75,6 @@ func (c *CryptosType) CheckFile() *CryptosType {
 }
 
 func (c *CryptosType) ConvertToMap() *CryptosMapType {
-
 	JC.PrintMemUsage("Start populating cryptos")
 
 	CM := &CryptosMapType{}
@@ -95,12 +92,10 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 	}
 
 	JC.PrintMemUsage("End populating cryptos")
-
 	return CM
 }
 
 func (c *CryptosType) GetCryptos() int64 {
-
 	JC.PrintMemUsage("Start fetching cryptos data")
 	JC.Notify("Requesting latest cryptos data from exchange...")
 
@@ -132,7 +127,6 @@ func (c *CryptosType) GetCryptos() int64 {
 	JC.Logf("Fetching data from %v", req.URL)
 
 	resp, err := client.Do(req)
-
 	if err != nil {
 		JC.Logln("Error performing request:", err)
 		JC.Notify("Failed to fetch cryptos data from exchange.")
@@ -152,7 +146,6 @@ func (c *CryptosType) GetCryptos() int64 {
 		return JC.NETWORKING_FAILED_CREATE_FILE
 	}
 
-	// Decode JSON directly from response body to save memory
 	if err := json.Unmarshal(respBody, &c); err != nil {
 		JC.Logln(fmt.Errorf("Failed to examine cryptos data: %w", err))
 		return JC.NETWORKING_BAD_DATA_RECEIVED
@@ -169,15 +162,16 @@ func (c *CryptosType) GetCryptos() int64 {
 
 	JC.Logln("Fetched cryptodata from CMC")
 	JC.Notify("Successfully retrieved cryptos data from exchange.")
-
 	JC.PrintMemUsage("End fetching cryptos data")
 
 	return JC.NETWORKING_SUCCESS
-
 }
 
 func CryptosInit() {
-	Cryptos := &CryptosType{}
+	cryptosMu.Lock()
+	Cryptos = CryptosType{}
+	cryptosMu.Unlock()
+
 	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
 	CM.ClearMapCache()
 
