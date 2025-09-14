@@ -827,7 +827,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.ExchangeCache.Timestamp.After(JC.UpdateDisplayTimestamp) {
+		if !JT.ExchangeCache.GetTimestamp().After(JC.UpdateDisplayTimestamp) {
 			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
 			return false
 		}

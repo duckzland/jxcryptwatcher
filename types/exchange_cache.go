@@ -17,20 +17,45 @@ type ExchangeDataCacheSnapshot struct {
 
 type ExchangeDataCacheType struct {
 	data        sync.Map
-	Timestamp   time.Time
-	LastUpdated *time.Time
+	timestamp   time.Time
+	lastUpdated *time.Time
 	metaLock    sync.RWMutex
 }
 
+// Initialization
 func (ec *ExchangeDataCacheType) Init() *ExchangeDataCacheType {
 	ec.data = sync.Map{}
-	ec.metaLock.Lock()
-	ec.Timestamp = time.Now()
-	ec.LastUpdated = nil
-	ec.metaLock.Unlock()
+	ec.SetTimestamp(time.Now())
+	ec.SetLastUpdated(nil)
 	return ec
 }
 
+// Getters and Setters
+func (ec *ExchangeDataCacheType) GetTimestamp() time.Time {
+	ec.metaLock.RLock()
+	defer ec.metaLock.RUnlock()
+	return ec.timestamp
+}
+
+func (ec *ExchangeDataCacheType) SetTimestamp(t time.Time) {
+	ec.metaLock.Lock()
+	ec.timestamp = t
+	ec.metaLock.Unlock()
+}
+
+func (ec *ExchangeDataCacheType) GetLastUpdated() *time.Time {
+	ec.metaLock.RLock()
+	defer ec.metaLock.RUnlock()
+	return ec.lastUpdated
+}
+
+func (ec *ExchangeDataCacheType) SetLastUpdated(t *time.Time) {
+	ec.metaLock.Lock()
+	ec.lastUpdated = t
+	ec.metaLock.Unlock()
+}
+
+// Core operations
 func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
 	if val, ok := ec.data.Load(ck); ok {
 		ex := val.(ExchangeDataType)
@@ -42,44 +67,31 @@ func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
 func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCacheType {
 	ck := ec.CreateKeyFromExchangeData(ex)
 	ec.data.Store(ck, *ex)
-
-	ec.metaLock.Lock()
-	ec.Timestamp = time.Now()
-	ec.LastUpdated = &ex.Timestamp
-	ec.metaLock.Unlock()
-
+	ec.SetTimestamp(time.Now())
+	ec.SetLastUpdated(&ex.Timestamp)
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
 	ec.data.Delete(ck)
-
-	ec.metaLock.Lock()
-	ec.Timestamp = time.Now()
-	ec.metaLock.Unlock()
-
+	ec.SetTimestamp(time.Now())
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) SoftReset() *ExchangeDataCacheType {
-	ec.metaLock.Lock()
-	ec.Timestamp = time.Now()
-	ec.LastUpdated = nil
-	ec.metaLock.Unlock()
+	ec.SetTimestamp(time.Now())
+	ec.SetLastUpdated(nil)
 	return ec
 }
 
 func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 	ec.data = sync.Map{}
-
-	ec.metaLock.Lock()
-	ec.Timestamp = time.Now()
-	ec.LastUpdated = nil
-	ec.metaLock.Unlock()
-
+	ec.SetTimestamp(time.Now())
+	ec.SetLastUpdated(nil)
 	return ec
 }
 
+// Status checks
 func (ec *ExchangeDataCacheType) Has(ck string) bool {
 	d, ok := ec.data.Load(ck)
 	return ok && d != nil
@@ -99,15 +111,14 @@ func (ec *ExchangeDataCacheType) IsEmpty() bool {
 }
 
 func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
-	ec.metaLock.RLock()
-	defer ec.metaLock.RUnlock()
-
-	if ec.LastUpdated == nil {
+	last := ec.GetLastUpdated()
+	if last == nil {
 		return true
 	}
-	return time.Now().After(ec.LastUpdated.Add(CMCUpdateThreshold))
+	return time.Now().After(last.Add(CMCUpdateThreshold))
 }
 
+// Serialization
 func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
 	var result []ExchangeDataType
 	cutoff := time.Now().Add(-24 * time.Hour)
@@ -121,13 +132,12 @@ func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
 		return true
 	})
 
-	ec.metaLock.RLock()
-	timestamp := ec.Timestamp
+	timestamp := ec.GetTimestamp()
+	last := ec.GetLastUpdated()
 	var lastUpdated time.Time
-	if ec.LastUpdated != nil {
-		lastUpdated = *ec.LastUpdated
+	if last != nil {
+		lastUpdated = *last
 	}
-	ec.metaLock.RUnlock()
 
 	return ExchangeDataCacheSnapshot{
 		Data:        result,
@@ -147,12 +157,11 @@ func (ec *ExchangeDataCacheType) Hydrate(snapshot ExchangeDataCacheSnapshot) {
 		}
 	}
 
-	ec.metaLock.Lock()
-	ec.Timestamp = snapshot.Timestamp
-	ec.LastUpdated = &snapshot.LastUpdated
-	ec.metaLock.Unlock()
+	ec.SetTimestamp(snapshot.Timestamp)
+	ec.SetLastUpdated(&snapshot.LastUpdated)
 }
 
+// Key generation
 func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {
 	return ec.CreateKeyFromInt(ex.SourceId, ex.TargetId)
 }
