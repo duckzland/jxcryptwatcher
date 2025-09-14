@@ -18,10 +18,10 @@ import (
 
 func UpdateDisplay() bool {
 
-	list := JT.BP.Get()
+	list := JT.BP.GetData()
 	for _, pot := range list {
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetData(pot.GetID())
+		pkt := JT.BP.GetDataByID(pot.GetID())
 		pk := pkt.Get()
 		pkt.Update(pk)
 
@@ -39,10 +39,10 @@ func UpdateRates() bool {
 	}
 
 	jb := make(map[string]string)
-	list := JT.BP.Get()
+	list := JT.BP.GetData()
 
 	for _, pot := range list {
-		pk := JT.BP.GetData(pot.GetID())
+		pk := JT.BP.GetDataByID(pot.GetID())
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
@@ -347,11 +347,11 @@ func ProcessFetchingCryptosComplete(status int) {
 
 func ValidateRatesCache() bool {
 
-	list := JT.BP.Get()
+	list := JT.BP.GetData()
 	for _, pot := range list {
 
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetData(pot.GetID())
+		pkt := JT.BP.GetDataByID(pot.GetID())
 		pks := pkt.UsePanelKey()
 		ck := JT.ExchangeCache.CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 

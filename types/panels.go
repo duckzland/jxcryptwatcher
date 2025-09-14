@@ -49,13 +49,13 @@ func (p *PanelsType) LoadFile() *PanelsType {
 
 func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 	maps.mu.RLock()
-	data := make([]*PanelDataType, len(maps.Data))
-	copy(data, maps.Data)
+	data := make([]*PanelDataType, len(maps.GetData()))
+	copy(data, maps.GetData())
 	maps.mu.RUnlock()
 
 	np := []PanelType{}
 	for _, pot := range data {
-		pdt := maps.GetData(pot.GetID())
+		pdt := maps.GetDataByID(pot.GetID())
 		if pdt == nil {
 			continue
 		}
@@ -115,7 +115,7 @@ func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
 }
 
 func PanelsInit() {
-	maps := BP.Maps
+	maps := BP.GetMaps()
 	BP.Init()
 	BP.SetMaps(maps)
 

@@ -133,7 +133,7 @@ func (c *PanelGridContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.Panel
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
 
-			pdt := JT.BP.GetData(panel.GetTag())
+			pdt := JT.BP.GetDataByID(panel.GetTag())
 
 			if shouldUpdate != nil && !shouldUpdate(pdt) {
 				continue

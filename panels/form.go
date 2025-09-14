@@ -34,7 +34,7 @@ func NewPanelForm(
 	title := "Adding New Panel"
 	if panelKey != "new" {
 
-		pkt := JT.BP.GetData(uuid)
+		pkt := JT.BP.GetDataByID(uuid)
 		pko := pkt.UsePanelKey()
 
 		title = "Editing Panel"
@@ -178,7 +178,7 @@ func NewPanelForm(
 				}
 
 			} else {
-				ns = JT.BP.GetData(uuid)
+				ns = JT.BP.GetDataByID(uuid)
 				if ns == nil {
 					JC.Notify("Unable to update panel. Please try again.")
 					return

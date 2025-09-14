@@ -311,10 +311,10 @@ func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
 }
 
 func (a *AppStatus) InitData() *AppStatus {
-	ready := JT.BP.Maps != nil
+	ready := JT.BP.HasMaps()
 	noPanels := JT.BP.IsEmpty()
 	badConfig := !JT.Config.IsValid()
-	badCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	badCryptos := !JT.BP.HasMaps() || JT.BP.GetMaps().IsEmpty()
 	panelsCount := JT.BP.TotalData()
 	badTickers := !JT.Config.IsValidTickers()
 
@@ -332,10 +332,10 @@ func (a *AppStatus) InitData() *AppStatus {
 }
 
 func (a *AppStatus) DetectData() *AppStatus {
-	newReady := JT.BP.Maps != nil
+	newReady := JT.BP.HasMaps()
 	newNoPanels := JT.BP.IsEmpty()
 	newBadConfig := !JT.Config.IsValid()
-	newBadCryptos := JT.BP.Maps == nil || JT.BP.Maps.IsEmpty()
+	newBadCryptos := !JT.BP.HasMaps() || JT.BP.GetMaps().IsEmpty()
 	newPanelsCount := JT.BP.TotalData()
 	newBadTickers := !JT.Config.IsValidTickers()
 

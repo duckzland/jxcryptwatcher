@@ -192,7 +192,7 @@ func NewPanelDisplay(
 	panel.status = pdt.GetStatus()
 
 	str.AddListener(binding.NewDataListener(func() {
-		pkt := JT.BP.GetData(panel.GetTag())
+		pkt := JT.BP.GetDataByID(panel.GetTag())
 		if pkt == nil {
 			return
 		}
@@ -234,7 +234,7 @@ func (h *PanelDisplay) UpdateContent() {
 		h.refContent.TextSize = JC.PanelContentSizeSmall
 	}
 
-	pkt := JT.BP.GetData(h.GetTag())
+	pkt := JT.BP.GetDataByID(h.GetTag())
 	if pkt == nil {
 		return
 	}
@@ -554,14 +554,14 @@ func (h *PanelDisplay) syncPanelData() bool {
 	for _, obj := range Grid.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
 			uuid := panel.GetTag()
-			pdt := JT.BP.GetData(uuid)
+			pdt := JT.BP.GetDataByID(uuid)
 			if pdt != nil {
 				nd = append(nd, pdt)
 			}
 		}
 	}
 
-	JT.BP.Set(nd)
+	JT.BP.SetData(nd)
 
 	return true
 }

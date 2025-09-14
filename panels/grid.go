@@ -206,12 +206,12 @@ func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 	JC.PrintMemUsage("Start building panels")
 
 	// Get the list of panel data
-	list := JT.BP.Get()
+	list := JT.BP.GetData()
 	p := []*PanelDisplay{}
 
 	for _, pot := range list {
 		// Retrieve and initialize panel data
-		pkt := JT.BP.GetData(pot.GetID())
+		pkt := JT.BP.GetDataByID(pot.GetID())
 
 		if pkt.UsePanelKey().GetValueFloat() == -1 {
 			pkt.SetStatus(JC.STATE_LOADING)

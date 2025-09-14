@@ -10,15 +10,15 @@ var BP PanelsMapType = PanelsMapType{}
 
 type PanelsMapType struct {
 	mu   sync.RWMutex
-	Data []*PanelDataType
-	Maps *CryptosMapType
+	data []*PanelDataType
+	maps *CryptosMapType
 }
 
 func (pc *PanelsMapType) Init() {
-	pc.Data = []*PanelDataType{}
+	pc.SetData([]*PanelDataType{})
 }
 
-func (pc *PanelsMapType) Set(data []*PanelDataType) {
+func (pc *PanelsMapType) SetData(data []*PanelDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -28,27 +28,46 @@ func (pc *PanelsMapType) Set(data []*PanelDataType) {
 		}
 		pk.SetStatus(JC.STATE_LOADING)
 	}
+	pc.data = data
+}
 
-	pc.Data = data
+func (pc *PanelsMapType) GetData() []*PanelDataType {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	dataCopy := make([]*PanelDataType, len(pc.data))
+	copy(dataCopy, pc.data)
+	return dataCopy
 }
 
 func (pc *PanelsMapType) SetMaps(maps *CryptosMapType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-	pc.Maps = maps
+	pc.maps = maps
+}
+
+func (pc *PanelsMapType) GetMaps() *CryptosMapType {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+	return pc.maps
+}
+
+func (pc *PanelsMapType) HasMaps() bool {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+	return pc.maps != nil
 }
 
 func (pc *PanelsMapType) Remove(uuid string) bool {
 	index := pc.GetIndex(uuid)
-	values := pc.Data
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
 
-	if index < 0 || index >= len(values) {
+	if index < 0 || index >= len(pc.data) {
 		return false
 	}
 
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
-	pc.Data = append(values[:index], values[index+1:]...)
+	pc.data = append(pc.data[:index], pc.data[index+1:]...)
 	return true
 }
 
@@ -56,8 +75,8 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	if pc.Data == nil {
-		pc.Data = []*PanelDataType{}
+	if pc.data == nil {
+		pc.data = []*PanelDataType{}
 	}
 
 	ref := &PanelDataType{}
@@ -66,7 +85,7 @@ func (pc *PanelsMapType) Append(pk string) *PanelDataType {
 	ref.SetParent(pc)
 	ref.SetStatus(JC.STATE_FETCHING_NEW)
 
-	pc.Data = append(pc.Data, ref)
+	pc.data = append(pc.data, ref)
 	return ref
 }
 
@@ -75,7 +94,7 @@ func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
 	defer pc.mu.Unlock()
 
 	index := -1
-	for i, pdt := range pc.Data {
+	for i, pdt := range pc.data {
 		if pdt.IsID(uuid) {
 			index = i
 			break
@@ -88,11 +107,11 @@ func (pc *PanelsMapType) Move(uuid string, newIndex int) bool {
 
 	if index < newIndex {
 		for i := index; i < newIndex; i++ {
-			pc.Data[i], pc.Data[i+1] = pc.Data[i+1], pc.Data[i]
+			pc.data[i], pc.data[i+1] = pc.data[i+1], pc.data[i]
 		}
 	} else {
 		for i := index; i > newIndex; i-- {
-			pc.Data[i], pc.Data[i-1] = pc.Data[i-1], pc.Data[i]
+			pc.data[i], pc.data[i-1] = pc.data[i-1], pc.data[i]
 		}
 	}
 
@@ -103,11 +122,11 @@ func (pc *PanelsMapType) Update(pk string, index int) *PanelDataType {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	if index < 0 || index >= len(pc.Data) {
+	if index < 0 || index >= len(pc.data) {
 		return nil
 	}
 
-	pdt := pc.Data[index]
+	pdt := pc.data[index]
 	pdt.Update(pk)
 	return pdt
 }
@@ -116,13 +135,13 @@ func (pc *PanelsMapType) RefreshData() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	for _, pot := range pc.Data {
-		pdt := pc.GetData(pot.GetID())
+	for _, pot := range pc.data {
+		pdt := pc.GetDataByID(pot.GetID())
 		if pdt == nil {
 			continue
 		}
 		pko := pdt.UsePanelKey()
-		mmp := pc.Maps
+		mmp := pc.maps
 
 		npk := PanelType{
 			Source:       pko.GetSourceCoinInt(),
@@ -140,20 +159,11 @@ func (pc *PanelsMapType) RefreshData() bool {
 	return true
 }
 
-func (pc *PanelsMapType) Get() []*PanelDataType {
-	pc.mu.RLock()
-	defer pc.mu.RUnlock()
-
-	dataCopy := make([]*PanelDataType, len(pc.Data))
-	copy(dataCopy, pc.Data)
-	return dataCopy
-}
-
 func (pc *PanelsMapType) GetIndex(uuid string) int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	for i, pdt := range pc.Data {
+	for i, pdt := range pc.data {
 		if pdt.IsID(uuid) {
 			return i
 		}
@@ -161,11 +171,11 @@ func (pc *PanelsMapType) GetIndex(uuid string) int {
 	return -1
 }
 
-func (pc *PanelsMapType) GetData(uuid string) *PanelDataType {
+func (pc *PanelsMapType) GetDataByID(uuid string) *PanelDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	for i := range pc.Data {
+	for i := range pc.data {
 		pdt := pc.GetDataByIndex(i)
 		if pdt != nil && pdt.IsID(uuid) {
 			return pdt
@@ -178,8 +188,8 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	if index >= 0 && index < len(pc.Data) {
-		return pc.Data[index]
+	if index >= 0 && index < len(pc.data) {
+		return pc.data[index]
 	}
 	return nil
 }
@@ -187,20 +197,20 @@ func (pc *PanelsMapType) GetDataByIndex(index int) *PanelDataType {
 func (pc *PanelsMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-	return len(pc.Data) == 0
+	return len(pc.data) == 0
 }
 
 func (pc *PanelsMapType) TotalData() int {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-	return len(pc.Data)
+	return len(pc.data)
 }
 
 func (pc *PanelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *PanelDataType) bool) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	for _, pdt := range pc.Data {
+	for _, pdt := range pc.data {
 		if shouldChange != nil && !shouldChange(pdt) {
 			continue
 		}
@@ -217,15 +227,15 @@ func (pc *PanelsMapType) Hydrate(data []*PanelDataType) {
 			pk.SetParent(pc)
 		}
 	}
-	pc.Data = data
+	pc.data = data
 }
 
-func (pm *PanelsMapType) Serialize() []PanelDataCache {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
+func (pc *PanelsMapType) Serialize() []PanelDataCache {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
 
 	var out []PanelDataCache
-	for _, p := range pm.Data {
+	for _, p := range pc.data {
 		if !p.IsStatus(JC.STATE_LOADED) {
 			continue
 		}
@@ -256,25 +266,25 @@ func (pc *PanelsMapType) ValidatePanel(pk string) bool {
 }
 
 func (pc *PanelsMapType) ValidateId(id int64) bool {
-	return pc.Maps.ValidateId(id)
+	return pc.maps.ValidateId(id)
 }
 
 func (pc *PanelsMapType) GetOptions() []string {
-	return pc.Maps.GetOptions()
+	return pc.maps.GetOptions()
 }
 
 func (pc *PanelsMapType) GetDisplayById(id string) string {
-	return pc.Maps.GetDisplayById(id)
+	return pc.maps.GetDisplayById(id)
 }
 
 func (pc *PanelsMapType) GetIdByDisplay(id string) string {
-	return pc.Maps.GetIdByDisplay(id)
+	return pc.maps.GetIdByDisplay(id)
 }
 
 func (pc *PanelsMapType) GetSymbolById(id string) string {
-	return pc.Maps.GetSymbolById(id)
+	return pc.maps.GetSymbolById(id)
 }
 
 func (pc *PanelsMapType) GetSymbolByDisplay(id string) string {
-	return pc.Maps.GetSymbolByDisplay(id)
+	return pc.maps.GetSymbolByDisplay(id)
 }
