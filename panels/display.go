@@ -149,12 +149,12 @@ func NewPanelDisplay(
 		func() {
 			dynpk, _ := str.Get()
 			if onEdit != nil {
-				go onEdit(dynpk, uuid)
+				onEdit(dynpk, uuid)
 			}
 		},
 		func() {
 			if onDelete != nil {
-				go JA.FadeOutBackground(background, 300*time.Millisecond, func() {
+				JA.FadeOutBackground(background, 300*time.Millisecond, func() {
 					onDelete(uuid)
 				})
 			}

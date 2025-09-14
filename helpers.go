@@ -374,18 +374,18 @@ func RemovePanel(uuid string) {
 				JP.Grid.Remove(obj)
 
 				if JT.BP.Remove(uuid) {
-					fyne.Do(func() {
-						JP.Grid.ForceRefresh()
+					JP.Grid.ForceRefresh()
 
-						// Give time for grid to relayout first!
-						JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
-							JA.AppLayoutManager.RefreshLayout()
-						})
+					// Give time for grid to relayout first!
+					JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
+						JA.AppLayoutManager.RefreshLayout()
 					})
 
-					if JT.SavePanels() {
-						JC.Notify("Panel removed successfully.")
-					}
+					go func() {
+						if JT.SavePanels() {
+							JC.Notify("Panel removed successfully.")
+						}
+					}()
 				}
 
 			}
@@ -450,44 +450,45 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 }
 
 func OpenNewPanelForm() {
-	fyne.Do(func() {
-		d := JP.NewPanelForm(
-			"new",
-			"",
-			func(npdt *JT.PanelDataType) {
-				SavePanelForm(npdt)
-			},
-			func(npdt *JT.PanelDataType) {
 
-				JP.Grid.Add(CreatePanel(npdt))
-				JP.Grid.ForceRefresh()
-				JA.AppStatusManager.DetectData()
+	d := JP.NewPanelForm(
+		"new",
+		"",
+		func(npdt *JT.PanelDataType) {
+			SavePanelForm(npdt)
+		},
+		func(npdt *JT.PanelDataType) {
 
-				JC.Notify("New panel created.")
-			},
-		)
+			JP.Grid.Add(CreatePanel(npdt))
+			JP.Grid.ForceRefresh()
+			JA.AppStatusManager.DetectData()
 
-		d.Show()
-		d.Resize(fyne.NewSize(400, 300))
-	})
+			JC.Notify("New panel created.")
+		},
+	)
+
+	d.Show()
+	d.Resize(fyne.NewSize(400, 300))
+
 }
 
 func OpenPanelEditForm(pk string, uuid string) {
-	fyne.Do(func() {
-		d := JP.NewPanelForm(pk, uuid, func(npdt *JT.PanelDataType) {
-			SavePanelForm(npdt)
-		}, nil)
 
-		d.Show()
-		d.Resize(fyne.NewSize(400, 300))
-	})
+	d := JP.NewPanelForm(pk, uuid, func(npdt *JT.PanelDataType) {
+		SavePanelForm(npdt)
+	}, nil)
+
+	d.Show()
+	d.Resize(fyne.NewSize(400, 300))
+
 }
 
 func OpenSettingForm() {
-	fyne.Do(func() {
-		d := JA.NewSettingsForm(func() {
-			JC.Notify("Saving configuration...")
 
+	d := JA.NewSettingsForm(func() {
+		JC.Notify("Saving configuration...")
+
+		go func() {
 			if JT.Config.SaveFile() != nil {
 				JC.Notify("Configuration saved successfully.")
 				JA.AppStatusManager.DetectData()
@@ -510,11 +511,12 @@ func OpenSettingForm() {
 			} else {
 				JC.Notify("Failed to save configuration.")
 			}
-		})
-
-		d.Show()
-		d.Resize(fyne.NewSize(400, 300))
+		}()
 	})
+
+	d.Show()
+	d.Resize(fyne.NewSize(400, 300))
+
 }
 
 func ToggleDraggable() {
@@ -525,12 +527,10 @@ func ToggleDraggable() {
 		JA.AppStatusManager.AllowDragging()
 	}
 
-	fyne.Do(func() {
-		JP.Grid.ForceRefresh()
-		if JP.ActiveAction != nil {
-			JP.ActiveAction.HideTarget()
-		}
-	})
+	JP.Grid.ForceRefresh()
+	if JP.ActiveAction != nil {
+		JP.ActiveAction.HideTarget()
+	}
 }
 
 func ScheduledNotificationReset() {
@@ -681,7 +681,7 @@ func RegisterActions() {
 	// Open settings
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("open_settings", "", theme.SettingsIcon(), "Open settings",
 		func(btn *JW.HoverCursorIconButton) {
-			go OpenSettingForm()
+			OpenSettingForm()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
@@ -725,7 +725,7 @@ func RegisterActions() {
 	// Panel drag toggle
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering",
 		func(btn *JW.HoverCursorIconButton) {
-			go ToggleDraggable()
+			ToggleDraggable()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
@@ -768,7 +768,7 @@ func RegisterActions() {
 	// Add new panel
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("add_panel", "", theme.ContentAddIcon(), "Add new panel",
 		func(btn *JW.HoverCursorIconButton) {
-			go OpenNewPanelForm()
+			OpenNewPanelForm()
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {

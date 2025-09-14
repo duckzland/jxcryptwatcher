@@ -395,7 +395,7 @@ func (a *AppStatus) ValidTickers() bool {
 }
 
 func (a *AppStatus) DebounceRefresh() *AppStatus {
-	JC.MainDebouncer.Call("refreshing_status", 16*time.Millisecond, func() {
+	JC.MainDebouncer.Call("refreshing_status", 8*time.Millisecond, func() {
 		a.Refresh()
 	})
 	return a
