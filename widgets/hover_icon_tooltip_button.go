@@ -125,7 +125,7 @@ func (b *HoverCursorIconButton) Refresh() {
 	if b.validate != nil {
 		b.validate(b)
 	}
-	b.Button.Refresh()
+	fyne.Do(b.Button.Refresh)
 }
 
 func (b *HoverCursorIconButton) Call() {
@@ -165,5 +165,5 @@ func (b *HoverCursorIconButton) changeState(state string) {
 	}
 
 	b.setState(state)
-	b.Button.Refresh()
+	fyne.Do(b.Button.Refresh)
 }
