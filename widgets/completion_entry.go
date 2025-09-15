@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 
 	JC "jxwatcher/core"
 )
@@ -36,6 +37,7 @@ type CompletionEntry struct {
 	newHash          string
 	lowerSuggestions []string
 	lastInput        string
+	uuid             string
 }
 
 func NewCompletionEntry(
@@ -46,13 +48,16 @@ func NewCompletionEntry(
 	c := &CompletionEntry{Suggestions: options, popup: popup}
 	c.ExtendBaseWidget(c)
 
+	id := uuid.New()
+	c.uuid = id.String()
+
 	c.OnChanged = c.SearchSuggestions
 
 	c.EntryHeight = -1
 
 	c.PopupPosition = fyne.NewPos(-1, -1)
 
-	c.itemHeight = 30
+	c.itemHeight = 36
 
 	c.Options = options
 
@@ -99,46 +104,35 @@ func (c *CompletionEntry) GetCurrentInput() string {
 func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	if s == c.lastInput {
-		// JC.Logln("Skipping duplicate input:", s)
 		return
 	}
+
 	c.lastInput = s
 
 	if c.pause {
-		JC.MainDebouncer.Cancel("show_suggestion")
-		// JC.Logln("Cancelling due to pause?")
+		JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
 		return
 	}
 
-	delay := 50 * time.Millisecond
+	delay := 10 * time.Millisecond
 	if c.popup.Visible() {
-		delay = 100 * time.Millisecond
-
-	}
-	if JC.IsMobile {
-		if c.popup.Visible() {
-			delay = 200 * time.Millisecond
-		}
+		delay = 50 * time.Millisecond
 	}
 
 	minText := 1
 
 	// Bail out early
 	if len(s) < minText || s == "" {
-		JC.MainDebouncer.Cancel("show_suggestion")
+		JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
 		fyne.Do(func() {
 			c.HideCompletion()
 		})
 		return
 	}
 
-	// JC.Logln("Registering debouncer call for", s)
-
-	JC.MainDebouncer.Call("show_suggestion", delay, func() {
+	JC.MainDebouncer.Call("show_suggestion_"+c.uuid, delay, func() {
 
 		input := c.GetCurrentInput()
-
-		// JC.Logln("Debounced trigger for:", input)
 
 		if len(input) < minText || input == "" {
 			fyne.Do(func() {
@@ -167,13 +161,13 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		results = JC.ReorderByMatch(results, input)
 
 		if JC.EqualStringSlices(results, c.Options) {
-			// JC.Logln("Same results, skipping UI update")
 			return
 		}
 
 		fyne.Do(func() {
 			c.SetOptions(results)
 			c.ShowCompletion()
+			c.DynamicResize()
 		})
 	})
 }
@@ -181,9 +175,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 	// Fyne weird. without this backspace doesnt work?
 	c.Entry.TypedKey(event)
-
-	// Seems redundant?
-	// c.SearchSuggestions(c.Text)
 }
 
 func (c *CompletionEntry) FocusLost() {
@@ -193,7 +184,7 @@ func (c *CompletionEntry) FocusLost() {
 	if JC.IsMobile {
 
 		// Fix for when android keyboard hiding, position got bad
-		JC.MainDebouncer.Call("completion_entry_positioning", 100*time.Millisecond, func() {
+		JC.MainDebouncer.Call("completion_entry_positioning_"+c.uuid, 100*time.Millisecond, func() {
 			fyne.Do(func() {
 				if c.popup.Visible() {
 					c.popup.Move(c.popUpPos())
@@ -244,6 +235,16 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 	}
 }
 
+func (c *CompletionEntry) DynamicResize() {
+	mx := c.maxSize()
+	ox := c.popup.Size()
+
+	if mx.Width != ox.Width || mx.Height != ox.Height {
+		c.popup.Resize(mx)
+		canvas.Refresh(c.popup)
+	}
+}
+
 func (c *CompletionEntry) SetOptions(itemList []string) {
 
 	c.Options = itemList
@@ -255,18 +256,15 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 
 func (c *CompletionEntry) ShowCompletion() {
 	if c.pause {
-		// JC.Logln("Entry is paused")
 		return
 	}
 
 	if len(c.Options) == 0 || len(c.Text) == 0 {
-		// JC.Logln("Entry has no options")
 		c.HideCompletion()
 		return
 	}
 
 	if c.popup.Visible() && len(c.popup.Objects) != 0 {
-		// JC.Logln("Popup already visible, not recalculating position again")
 		return
 	}
 
@@ -291,12 +289,12 @@ func (c *CompletionEntry) ShowCompletion() {
 		refresh = true
 	}
 
-	if refresh {
-		canvas.Refresh(c.popup)
-	}
-
 	if len(c.popup.Objects) == 0 {
 		c.popup.Add(c.container)
+	}
+
+	if refresh {
+		canvas.Refresh(c.popup)
 	}
 
 	c.popup.Show()
@@ -346,27 +344,22 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	}
 
 	// Disabling Dynamic height for now.
-	// padding := (theme.Padding() * 2) * c.Scale
+	padding := (theme.Padding() * 2) * c.Scale
 	// separator := theme.SeparatorThicknessSize()
 
-	// listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
-	// maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
+	listHeight := float32(len(c.Options)) * (c.itemHeight)
+	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
 
-	// if maxHeight > 300 {
-	// 	maxHeight = 300
-	// }
+	if maxHeight > 300 {
+		maxHeight = 300
+	}
 
-	// if JC.IsMobile {
-	// 	maxHeight = 200
-	// }
-
-	// if listHeight > maxHeight {
-	// 	listHeight = maxHeight
-	// }
-
-	listHeight := float32(300)
 	if JC.IsMobile {
-		listHeight = float32(200)
+		maxHeight = 200
+	}
+
+	if listHeight > maxHeight {
+		listHeight = maxHeight
 	}
 
 	return fyne.NewSize(c.EntryWidth, listHeight)
@@ -385,7 +378,7 @@ func (c *CompletionEntry) popUpPos() fyne.Position {
 }
 
 func (c *CompletionEntry) setTextFromMenu(s string) {
-	JC.MainDebouncer.Cancel("show_suggestion")
+	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
 	c.pause = true
 	c.Entry.SetText(s)
 	c.Entry.CursorColumn = len([]rune(s))
@@ -440,18 +433,14 @@ func newNavigableList(
 			return NewSelectableText()
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			// Lazy reveal logic
 			if i >= visibleCount-10 && visibleCount < len(n.filteredData) {
-				// oldCount := visibleCount
 				visibleCount += 50
 				if visibleCount > len(n.filteredData) {
 					visibleCount = len(n.filteredData)
 				}
-				// JC.Logln("Lazy refresh: showing", visibleCount, "of", len(n.filteredData), "items (added", visibleCount-oldCount, ")")
 				n.Refresh()
 			}
 
-			// Update item content
 			item := n.filteredData[i]
 			if st, ok := o.(*SelectableText); ok {
 				st.SetText(item)
