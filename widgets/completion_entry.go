@@ -1,8 +1,6 @@
 package widgets
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"strings"
 	"time"
 
@@ -19,23 +17,24 @@ var ActiveEntry *CompletionEntry = nil
 
 type CompletionEntry struct {
 	widget.Entry
-	popup         *fyne.Container
-	container     *fyne.Container
-	navigableList *navigableList
-	pause         bool
-	itemHeight    float32
-	Parent        *ExtendedFormDialog
-	Options       []string
-	Suggestions   []string
-	CustomCreate  func() fyne.CanvasObject
-	CustomUpdate  func(id widget.ListItemID, object fyne.CanvasObject)
-	PopupPosition fyne.Position
-	EntryHeight   float32
-	EntryWidth    float32
-	Canvas        fyne.Canvas
-	Scale         float32
-	optionsHash   string
-	newHash       string
+	popup            *fyne.Container
+	container        *fyne.Container
+	navigableList    *navigableList
+	pause            bool
+	itemHeight       float32
+	Parent           *ExtendedFormDialog
+	Options          []string
+	Suggestions      []string
+	CustomCreate     func() fyne.CanvasObject
+	CustomUpdate     func(id widget.ListItemID, object fyne.CanvasObject)
+	PopupPosition    fyne.Position
+	EntryHeight      float32
+	EntryWidth       float32
+	Canvas           fyne.Canvas
+	Scale            float32
+	optionsHash      string
+	newHash          string
+	lowerSuggestions []string
 }
 
 func NewCompletionEntry(
@@ -54,6 +53,8 @@ func NewCompletionEntry(
 	c.itemHeight = 30
 
 	c.Options = options
+
+	c.Suggestions = options
 
 	c.navigableList = newNavigableList(
 		c.Options,
@@ -79,23 +80,26 @@ func NewCompletionEntry(
 		),
 	)
 
-	return c
-}
+	// Caching the suggestions, this is needed for faster search!
+	go func() {
+		c.lowerSuggestions = make([]string, len(c.Suggestions))
+		for i, s := range c.Suggestions {
+			c.lowerSuggestions[i] = strings.ToLower(s)
+		}
+	}()
 
-func (c *CompletionEntry) hashOptions(options []string) string {
-	h := sha1.New()
-	h.Write([]byte(strings.Join(options, "\n")))
-	return hex.EncodeToString(h.Sum(nil))
+	return c
 }
 
 func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	if c.pause {
 		JC.MainDebouncer.Cancel("show_suggestion")
+		JC.Logln("Cancelling due to pause?")
 		return
 	}
 
-	delay := 10 * time.Millisecond
+	delay := 50 * time.Millisecond
 
 	// then show them
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
@@ -111,9 +115,10 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		results := []string{}
 
 		// Search the text
-		for _, part := range c.Suggestions {
-			if strings.Contains(strings.ToLower(part), strings.ToLower(s)) {
-				results = append(results, part)
+		lowerS := strings.ToLower(s)
+		for i, part := range c.lowerSuggestions {
+			if strings.Contains(part, lowerS) {
+				results = append(results, c.Suggestions[i])
 			}
 		}
 
@@ -127,27 +132,20 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, s)
 
-		c.optionsHash = c.hashOptions(c.Options)
-		c.newHash = c.hashOptions(results)
-
-		if c.newHash == c.optionsHash {
-			return
-		}
-
 		fyne.Do(func() {
 			c.SetOptions(results)
-
-			if !c.popup.Visible() {
-				c.ShowCompletion()
-			}
+			c.ShowCompletion()
 		})
 
 	})
 }
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
+	// Fyne weird. without this backspace doesnt work?
 	c.Entry.TypedKey(event)
-	//c.SearchSuggestions(c.Text)
+
+	// Seems redundant?
+	// c.SearchSuggestions(c.Text)
 }
 
 func (c *CompletionEntry) FocusLost() {
@@ -185,7 +183,7 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 }
 
 func (c *CompletionEntry) HideCompletion() {
-	if c.popup != nil && c.popup.Visible() {
+	if c.popup != nil {
 		c.popup.Hide()
 	}
 }
@@ -196,6 +194,7 @@ func (c *CompletionEntry) Refresh() {
 
 func (c *CompletionEntry) Resize(size fyne.Size) {
 	c.Entry.Resize(size)
+
 	if c.popup != nil {
 		c.popup.Resize(c.maxSize())
 		c.popup.Move(c.popUpPos())
@@ -203,30 +202,28 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 }
 
 func (c *CompletionEntry) SetOptions(itemList []string) {
-	if c.optionsHash == c.newHash {
-		return
-	}
 
 	c.Options = itemList
-	c.newHash = c.optionsHash
 
 	if c.navigableList != nil {
 		c.navigableList.SetOptions(c.Options)
 	}
-
-	c.Entry.Refresh()
 }
 
 func (c *CompletionEntry) ShowCompletion() {
-
 	if c.pause {
 		JC.Logln("Entry is paused")
 		return
 	}
 
-	if len(c.Options) == 0 {
+	if len(c.Options) == 0 || len(c.Text) == 0 {
 		JC.Logln("Entry has no options")
 		c.HideCompletion()
+		return
+	}
+
+	if c.popup.Visible() && len(c.popup.Objects) != 0 {
+		JC.Logln("Popup already visible, not recalculating position again")
 		return
 	}
 
@@ -253,6 +250,10 @@ func (c *CompletionEntry) ShowCompletion() {
 
 	if refresh {
 		canvas.Refresh(c.popup)
+	}
+
+	if len(c.popup.Objects) == 0 {
+		c.popup.Add(c.container)
 	}
 
 	c.popup.Show()
@@ -301,21 +302,28 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	padding := (theme.Padding() * 2) * c.Scale
-	separator := theme.SeparatorThicknessSize()
+	// Disabling Dynamic height for now.
+	// padding := (theme.Padding() * 2) * c.Scale
+	// separator := theme.SeparatorThicknessSize()
 
-	listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
-	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
+	// listHeight := float32(len(c.Options))*(c.itemHeight+padding+separator) + padding
+	// maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
 
-	if maxHeight > 300 {
-		maxHeight = 300
-	}
+	// if maxHeight > 300 {
+	// 	maxHeight = 300
+	// }
 
+	// if JC.IsMobile {
+	// 	maxHeight = 200
+	// }
+
+	// if listHeight > maxHeight {
+	// 	listHeight = maxHeight
+	// }
+
+	listHeight := float32(300)
 	if JC.IsMobile {
-		maxHeight = 200
-	}
-	if listHeight > maxHeight {
-		listHeight = maxHeight
+		listHeight = float32(200)
 	}
 
 	return fyne.NewSize(c.EntryWidth, listHeight)
@@ -341,44 +349,6 @@ func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.Entry.Refresh()
 	c.popup.Hide()
 	c.pause = false
-}
-
-func (c *CompletionEntry) CreateRenderer() fyne.WidgetRenderer {
-	entryRenderer := c.Entry.CreateRenderer()
-
-	// Inject popup container
-	if len(c.popup.Objects) == 0 {
-		c.popup.Add(c.container)
-		c.popup.Hide()
-	}
-
-	return &completionEntryRenderer{
-		entryRenderer: entryRenderer,
-	}
-}
-
-type completionEntryRenderer struct {
-	entryRenderer fyne.WidgetRenderer
-}
-
-func (r *completionEntryRenderer) Layout(size fyne.Size) {
-	r.entryRenderer.Layout(size)
-}
-
-func (r *completionEntryRenderer) MinSize() fyne.Size {
-	return r.entryRenderer.MinSize()
-}
-
-func (r *completionEntryRenderer) Refresh() {
-	r.entryRenderer.Refresh()
-}
-
-func (r *completionEntryRenderer) Objects() []fyne.CanvasObject {
-	return r.entryRenderer.Objects()
-}
-
-func (r *completionEntryRenderer) Destroy() {
-	r.entryRenderer.Destroy()
 }
 
 type navigableList struct {
@@ -446,13 +416,16 @@ func (n *navigableList) FocusLost() {
 }
 
 func (n *navigableList) SetOptions(items []string) {
-	if len(n.items) == len(items) && strings.Join(n.items, "") == strings.Join(items, "") {
+	if JC.EqualStringSlices(n.items, items) {
+		JC.Logln("Trying to inject the same items")
 		return
 	}
+
 	n.Unselect(n.selected)
 	n.items = items
 	n.Refresh()
 	n.selected = -1
+	JC.Logln("Injecting new items", len(items))
 }
 
 func (n *navigableList) TypedKey(event *fyne.KeyEvent) {

@@ -77,6 +77,8 @@ func main() {
 			JT.TickerCache.Reset()
 		}
 
+		JT.BP.GetOptions()
+
 		fyne.Do(func() {
 
 			JX.Grid = JX.NewTickerGrid()
