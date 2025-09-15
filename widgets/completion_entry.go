@@ -97,19 +97,12 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	delay := 10 * time.Millisecond
 
-	JC.Logln("Attempting to search suggestions", s)
-
 	// then show them
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
-
-		JC.Logln("firing search suggestion", s)
-
-		c.optionsHash = c.hashOptions(c.Options)
 
 		minText := 1
 		if len(s) < minText || s == "" {
 			fyne.Do(func() {
-				JC.Logln("hiding search suggestion", s)
 				c.HideCompletion()
 			})
 			return
@@ -134,6 +127,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, s)
 
+		c.optionsHash = c.hashOptions(c.Options)
 		c.newHash = c.hashOptions(results)
 
 		if c.newHash == c.optionsHash {
@@ -194,8 +188,6 @@ func (c *CompletionEntry) HideCompletion() {
 	if c.popup != nil && c.popup.Visible() {
 		c.popup.Hide()
 	}
-
-	// JC.MainDebouncer.Cancel("show_suggestion")
 }
 
 func (c *CompletionEntry) Refresh() {
@@ -227,8 +219,6 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 
 func (c *CompletionEntry) ShowCompletion() {
 
-	// JC.MainDebouncer.Cancel("show_suggestion")
-
 	if c.pause {
 		JC.Logln("Entry is paused")
 		return
@@ -239,8 +229,6 @@ func (c *CompletionEntry) ShowCompletion() {
 		c.HideCompletion()
 		return
 	}
-
-	JC.Logln("Firing show completion")
 
 	c.navigableList.UnselectAll()
 	c.navigableList.selected = -1
