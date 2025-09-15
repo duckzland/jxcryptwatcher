@@ -110,14 +110,14 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		return
 	}
 
-	delay := 100 * time.Millisecond
+	delay := 50 * time.Millisecond
 	if c.popup.Visible() {
-		delay = 200 * time.Millisecond
+		delay = 100 * time.Millisecond
 
 	}
 	if JC.IsMobile {
 		if c.popup.Visible() {
-			delay = 400 * time.Millisecond
+			delay = 200 * time.Millisecond
 		}
 	}
 
