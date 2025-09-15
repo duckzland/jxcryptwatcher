@@ -84,6 +84,16 @@ func NewCompletionEntry(
 	go func() {
 		c.lowerSuggestions = make([]string, len(c.Suggestions))
 		for i, s := range c.Suggestions {
+			// if JC.IsMobile {
+			// 	// Strip " - name" from the symbol part
+			// 	sep := strings.IndexByte(s, '|')
+			// 	if sep > 0 {
+			// 		dash := strings.Index(s[sep+1:], " - ")
+			// 		if dash > -1 {
+			// 			s = s[:sep+1] + s[sep+1:sep+1+dash]
+			// 		}
+			// 	}
+			// }
 			c.lowerSuggestions[i] = strings.ToLower(s)
 		}
 	}()
@@ -100,11 +110,19 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	}
 
 	delay := 50 * time.Millisecond
+	minText := 1
+
+	// Bail out early
+	if len(s) < minText || s == "" {
+		JC.MainDebouncer.Cancel("show_suggestion")
+		fyne.Do(func() {
+			c.HideCompletion()
+		})
+		return
+	}
 
 	// then show them
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
-
-		minText := 1
 		if len(s) < minText || s == "" {
 			fyne.Do(func() {
 				c.HideCompletion()
@@ -112,17 +130,16 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 			return
 		}
 
+		lowerS := strings.ToLower(s)
 		results := []string{}
 
-		// Search the text
-		lowerS := strings.ToLower(s)
 		for i, part := range c.lowerSuggestions {
 			if strings.Contains(part, lowerS) {
-				results = append(results, c.Suggestions[i])
+				display := c.Suggestions[i]
+				results = append(results, display)
 			}
 		}
 
-		// no results
 		if len(results) == 0 {
 			fyne.Do(func() {
 				c.HideCompletion()
@@ -136,7 +153,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 			c.SetOptions(results)
 			c.ShowCompletion()
 		})
-
 	})
 }
 
@@ -174,6 +190,7 @@ func (c *CompletionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
+		c.navigableList.SetFilteredData(c.Options)
 		c.ShowCompletion()
 	}
 }
@@ -185,6 +202,10 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 func (c *CompletionEntry) HideCompletion() {
 	if c.popup != nil {
 		c.popup.Hide()
+	}
+
+	if c.navigableList != nil {
+		c.navigableList.SetFilteredData([]string{})
 	}
 }
 
@@ -206,7 +227,7 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 	c.Options = itemList
 
 	if c.navigableList != nil {
-		c.navigableList.SetOptions(c.Options)
+		c.navigableList.SetFilteredData(c.Options)
 	}
 }
 
@@ -356,8 +377,8 @@ type navigableList struct {
 	selected        int
 	setTextFromMenu func(string)
 	hide            func()
+	filteredData    []string
 	navigating      bool
-	items           []string
 	customCreate    func() fyne.CanvasObject
 	customUpdate    func(id widget.ListItemID, object fyne.CanvasObject)
 }
@@ -374,14 +395,13 @@ func newNavigableList(
 		selected:        -1,
 		setTextFromMenu: setTextFromMenu,
 		hide:            hide,
-		items:           items,
 		customCreate:    create,
 		customUpdate:    update,
 	}
 
 	n.List = widget.List{
 		Length: func() int {
-			return len(n.items)
+			return len(n.filteredData)
 		},
 		CreateItem: func() fyne.CanvasObject {
 			if fn := n.customCreate; fn != nil {
@@ -390,15 +410,18 @@ func newNavigableList(
 			return widget.NewLabel("")
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
+			item := n.filteredData[i]
+
 			if fn := n.customUpdate; fn != nil {
 				fn(i, o)
 				return
 			}
-			o.(*widget.Label).SetText(n.items[i])
+			o.(*widget.Label).SetText(item)
 		},
-		OnSelected: func(id widget.ListItemID) {
-			if !n.navigating && id > -1 {
-				setTextFromMenu(n.items[id])
+		OnSelected: func(i widget.ListItemID) {
+			if !n.navigating && i > -1 {
+				item := n.filteredData[i]
+				n.setTextFromMenu(item)
 			}
 			n.navigating = false
 		},
@@ -408,30 +431,29 @@ func newNavigableList(
 
 	return n
 }
-
 func (n *navigableList) FocusGained() {
 }
 
 func (n *navigableList) FocusLost() {
 }
 
-func (n *navigableList) SetOptions(items []string) {
-	if JC.EqualStringSlices(n.items, items) {
-		JC.Logln("Trying to inject the same items")
+func (n *navigableList) SetFilteredData(items []string) {
+	if JC.EqualStringSlices(n.filteredData, items) {
+		JC.Logln("Same filtered data, skipping update")
 		return
 	}
-
 	n.Unselect(n.selected)
-	n.items = items
+	n.filteredData = items
 	n.Refresh()
 	n.selected = -1
-	JC.Logln("Injecting new items", len(items))
+
+	JC.Logln("Injecting filtered view with", len(items), "items")
 }
 
 func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
 	switch event.Name {
 	case fyne.KeyDown:
-		if n.selected < len(n.items)-1 {
+		if n.selected < len(n.filteredData)-1 {
 			n.selected++
 		} else {
 			n.selected = 0
@@ -443,7 +465,7 @@ func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
 		if n.selected > 0 {
 			n.selected--
 		} else {
-			n.selected = len(n.items) - 1
+			n.selected = len(n.filteredData) - 1
 		}
 		n.navigating = true
 		n.Select(n.selected)

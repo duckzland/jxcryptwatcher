@@ -77,8 +77,6 @@ func main() {
 			JT.TickerCache.Reset()
 		}
 
-		JT.BP.GetOptions()
-
 		fyne.Do(func() {
 
 			JX.Grid = JX.NewTickerGrid()
@@ -87,11 +85,12 @@ func main() {
 			JA.AppStatusManager.InitData()
 			JA.AppLayoutManager.SetPage(JP.Grid)
 			JA.AppLayoutManager.SetTickers(JC.Tickers)
+			JP.Grid.Refresh()
+			JT.BP.GetOptions()
+
 			JA.AppLayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())
-
-			JP.Grid.Refresh()
 
 			if !JA.AppStatusManager.HasError() {
 
@@ -103,6 +102,7 @@ func main() {
 				JT.TickerCache.SoftReset()
 				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
 			}
+
 		})
 	})
 
