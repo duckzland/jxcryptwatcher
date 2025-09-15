@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
@@ -8,17 +10,18 @@ import (
 )
 
 type ExtendedFormDialog struct {
-	dialog         *dialog.CustomDialog
-	confirm        *HoverCursorIconButton
-	cancel         *HoverCursorIconButton
-	items          []*widget.FormItem
-	callback       func(bool)
-	form           *widget.Form
-	parent         fyne.Window
-	topContent     []*fyne.Container
-	bottomContent  []*fyne.Container
-	overlayContent *fyne.Container
-	popup          *widget.PopUp
+	dialog          *dialog.CustomDialog
+	confirm         *HoverCursorIconButton
+	cancel          *HoverCursorIconButton
+	items           []*widget.FormItem
+	callback        func(bool)
+	form            *widget.Form
+	parent          fyne.Window
+	topContent      []*fyne.Container
+	bottomContent   []*fyne.Container
+	overlayContent  *fyne.Container
+	popup           *widget.PopUp
+	validationTimer *time.Timer
 }
 
 func NewExtendedFormDialog(
@@ -51,7 +54,15 @@ func NewExtendedFormDialog(
 
 	fd.dialog.SetButtons([]fyne.CanvasObject{fd.cancel, fd.confirm})
 	fd.setSubmitState(fd.form.Validate())
-	fd.form.SetOnValidationChanged(fd.setSubmitState)
+
+	fd.form.SetOnValidationChanged(func(err error) {
+		if fd.validationTimer != nil {
+			fd.validationTimer.Stop()
+		}
+		fd.validationTimer = time.AfterFunc(300*time.Millisecond, func() {
+			fd.setSubmitState(err)
+		})
+	})
 
 	return fd
 }

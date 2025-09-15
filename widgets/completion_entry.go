@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"reflect"
 	"strings"
 	"time"
 
@@ -51,6 +52,30 @@ func NewCompletionEntry(
 
 	c.SetOptions(options)
 
+	c.navigableList = newNavigableList(
+		c.Options,
+		c.setTextFromMenu,
+		c.HideCompletion,
+		c.CustomCreate,
+		c.CustomUpdate,
+	)
+
+	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+		c.HideCompletion()
+	})
+
+	closeBtn.Resize(fyne.NewSize(32, 32))
+	closeBtn.Move(fyne.NewPos(0, 0))
+
+	c.container = container.NewStack(
+		canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
+		container.New(
+			&CompletionListEntryLayout{},
+			c.navigableList,
+			closeBtn,
+		),
+	)
+
 	return c
 }
 
@@ -62,42 +87,40 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	}
 
 	minText := 1
-
-	// completion start for text length >= 3
 	if len(s) < minText {
 		c.HideCompletion()
 		return
 	}
 
-	results := []string{}
-	// Search the text
-	for _, part := range c.Suggestions {
-		if strings.Contains(strings.ToLower(part), strings.ToLower(s)) {
-			results = append(results, part)
-		}
-	}
-
-	// no results
-	if len(results) == 0 {
-		c.HideCompletion()
-		return
-	}
-
-	results = JC.ReorderByMatch(results, s)
-
-	delay := 50 * time.Millisecond
-
-	// Mobile uses virtual keyboard, give more time for user to type
-	if JC.IsMobile {
-		delay = 100 * time.Millisecond
-	}
+	delay := 10 * time.Millisecond
 
 	// then show them
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
-		fyne.Do(func() {
-			c.SetOptions(results)
-			c.ShowCompletion()
-		})
+		results := []string{}
+
+		// Search the text
+		for _, part := range c.Suggestions {
+			if strings.Contains(strings.ToLower(part), strings.ToLower(s)) {
+				results = append(results, part)
+			}
+		}
+
+		// no results
+		if len(results) == 0 {
+			fyne.Do(func() {
+				c.HideCompletion()
+			})
+			return
+		}
+
+		results = JC.ReorderByMatch(results, s)
+
+		if !reflect.DeepEqual(c.Options, results) {
+			fyne.Do(func() {
+				c.SetOptions(results)
+				c.ShowCompletion()
+			})
+		}
 	})
 }
 
@@ -141,10 +164,8 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 }
 
 func (c *CompletionEntry) HideCompletion() {
-	if c.popup != nil {
-		c.popup.Objects = nil
+	if c.popup != nil && c.popup.Visible() {
 		c.popup.Hide()
-		c.popup.Refresh()
 	}
 
 	JC.MainDebouncer.Cancel("show_suggestion")
@@ -152,9 +173,6 @@ func (c *CompletionEntry) HideCompletion() {
 
 func (c *CompletionEntry) Refresh() {
 	c.Entry.Refresh()
-	if c.navigableList != nil {
-		c.navigableList.SetOptions(c.Options)
-	}
 }
 
 func (c *CompletionEntry) Resize(size fyne.Size) {
@@ -166,42 +184,14 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 }
 
 func (c *CompletionEntry) SetOptions(itemList []string) {
-	c.Options = itemList
-	c.Refresh()
-}
+	if !reflect.DeepEqual(c.Options, itemList) {
+		c.Options = itemList
 
-func (c *CompletionEntry) CreateList() {
-	if c.navigableList == nil {
-		c.navigableList = newNavigableList(
-			c.Options,
-			c.setTextFromMenu,
-			c.HideCompletion,
-			c.CustomCreate,
-			c.CustomUpdate,
-		)
-	}
+		if c.navigableList != nil {
+			c.navigableList.SetOptions(c.Options)
+		}
 
-	if c.container == nil {
-		closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
-			c.HideCompletion()
-		})
-
-		cc := container.New(
-			&CompletionListEntryLayout{},
-			c.navigableList,
-			closeBtn,
-		)
-
-		bg := canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground))
-
-		c.container = container.NewStack(bg, cc)
-
-		closeBtn.Resize(fyne.NewSize(32, 32))
-		closeBtn.Move(fyne.NewPos(0, 0))
-	}
-
-	if len(c.popup.Objects) == 0 {
-		c.popup.Add(c.container)
+		c.Entry.Refresh()
 	}
 }
 
@@ -218,17 +208,34 @@ func (c *CompletionEntry) ShowCompletion() {
 		return
 	}
 
-	c.CreateList()
+	if len(c.popup.Objects) == 0 {
+		c.popup.Add(c.container)
+	}
 
 	c.navigableList.UnselectAll()
 	c.navigableList.selected = -1
 
 	mx := c.maxSize()
+	ox := c.popup.Size()
 
-	c.popup.Resize(mx)
-	c.popup.Move(c.popUpPos())
+	mp := c.popUpPos()
+	op := c.popup.Position()
 
-	canvas.Refresh(c.popup)
+	refresh := false
+
+	if mx.Width != ox.Width {
+		c.popup.Resize(mx)
+		refresh = true
+	}
+
+	if mp.X != op.X || mp.Y != op.Y {
+		c.popup.Move(c.popUpPos())
+		refresh = true
+	}
+
+	if refresh {
+		canvas.Refresh(c.popup)
+	}
 
 	c.popup.Show()
 
@@ -260,15 +267,6 @@ func (c *CompletionEntry) calculatePosition() bool {
 	c.PopupPosition = px
 
 	c.EntryHeight = c.Size().Height
-	// c.EntryHeight += (theme.Padding() * 2) * c.Scale
-
-	// if JC.IsMobile {
-	// 	c.EntryHeight += (theme.InputBorderSize() * 2) * c.Scale
-
-	// 	// Hackish, different device, different android version have different height..
-	// 	// Not sure how to properly get precise height value across different device and android version yet.
-	// 	c.EntryHeight += 8 * c.Scale
-	// }
 
 	c.EntryWidth = c.Size().Width
 
@@ -393,10 +391,12 @@ func (n *navigableList) FocusLost() {
 }
 
 func (n *navigableList) SetOptions(items []string) {
-	n.Unselect(n.selected)
-	n.items = items
-	n.Refresh()
-	n.selected = -1
+	if !reflect.DeepEqual(n.items, items) {
+		n.Unselect(n.selected)
+		n.items = items
+		n.Refresh()
+		n.selected = -1
+	}
 }
 
 func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
