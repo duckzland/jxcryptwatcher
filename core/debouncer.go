@@ -6,60 +6,90 @@ import (
 )
 
 type Debouncer struct {
-	mu      sync.Mutex
-	timers  map[string]*time.Timer
-	mutexes map[string]*sync.Mutex
+	mu       sync.Mutex
+	channels map[string]chan struct{}
+	stoppers map[string]chan struct{}
 }
 
 func NewDebouncer() *Debouncer {
 	return &Debouncer{
-		timers:  make(map[string]*time.Timer),
-		mutexes: make(map[string]*sync.Mutex),
+		channels: make(map[string]chan struct{}),
+		stoppers: make(map[string]chan struct{}),
 	}
-}
-
-func (d *Debouncer) getMutex(key string) *sync.Mutex {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if m, ok := d.mutexes[key]; ok {
-		return m
-	}
-	m := &sync.Mutex{}
-	d.mutexes[key] = m
-	return m
 }
 
 func (d *Debouncer) Call(key string, delay time.Duration, fn func()) {
-	m := d.getMutex(key)
-	m.Lock()
-	defer m.Unlock()
-
 	d.mu.Lock()
-	if timer, exists := d.timers[key]; exists {
-		timer.Stop()
-	}
-	d.timers[key] = time.AfterFunc(delay, func() {
-		m.Lock()
-		defer m.Unlock()
-		fn()
+	ch, exists := d.channels[key]
+	stopCh := d.stoppers[key]
+	if !exists {
+		ch = make(chan struct{}, 1)
+		stopCh = make(chan struct{})
+		d.channels[key] = ch
+		d.stoppers[key] = stopCh
+		go func() {
+			var timer *time.Timer
+			for {
+				select {
+				case <-stopCh:
+					if timer != nil {
+						timer.Stop()
+					}
+					return
 
-		d.mu.Lock()
-		delete(d.timers, key)
-		d.mu.Unlock()
-	})
+				case <-ch:
+					if timer != nil {
+						timer.Stop()
+					}
+					timer = time.NewTimer(delay)
+
+				innerLoop:
+					for {
+						select {
+						case <-stopCh:
+							if timer != nil {
+								timer.Stop()
+							}
+							return
+
+						case <-ch:
+							if timer != nil {
+								timer.Stop()
+							}
+							timer = time.NewTimer(delay)
+
+						case <-func() <-chan time.Time {
+							if timer != nil {
+								return timer.C
+							}
+							return make(chan time.Time)
+						}():
+							fn()
+							timer = nil
+							break innerLoop
+						}
+					}
+				}
+			}
+		}()
+	}
 	d.mu.Unlock()
+
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
 }
 
 func (d *Debouncer) Cancel(key string) {
-	m := d.getMutex(key)
-	m.Lock()
-	defer m.Unlock()
-
 	d.mu.Lock()
-	if timer, exists := d.timers[key]; exists {
-		timer.Stop()
-		delete(d.timers, key)
+	if stopCh, exists := d.stoppers[key]; exists {
+		close(stopCh)
+		delete(d.stoppers, key)
+	}
+	if ch, exists := d.channels[key]; exists {
+		close(ch)
+		delete(d.channels, key)
 	}
 	d.mu.Unlock()
 }

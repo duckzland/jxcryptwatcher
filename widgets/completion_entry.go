@@ -35,6 +35,7 @@ type CompletionEntry struct {
 	optionsHash      string
 	newHash          string
 	lowerSuggestions []string
+	lastInput        string
 }
 
 func NewCompletionEntry(
@@ -48,6 +49,7 @@ func NewCompletionEntry(
 	c.OnChanged = c.SearchSuggestions
 
 	c.EntryHeight = -1
+
 	c.PopupPosition = fyne.NewPos(-1, -1)
 
 	c.itemHeight = 30
@@ -57,7 +59,6 @@ func NewCompletionEntry(
 	c.Suggestions = options
 
 	c.navigableList = newNavigableList(
-		c.Options,
 		c.setTextFromMenu,
 		c.HideCompletion,
 		c.CustomCreate,
@@ -84,16 +85,6 @@ func NewCompletionEntry(
 	go func() {
 		c.lowerSuggestions = make([]string, len(c.Suggestions))
 		for i, s := range c.Suggestions {
-			// if JC.IsMobile {
-			// 	// Strip " - name" from the symbol part
-			// 	sep := strings.IndexByte(s, '|')
-			// 	if sep > 0 {
-			// 		dash := strings.Index(s[sep+1:], " - ")
-			// 		if dash > -1 {
-			// 			s = s[:sep+1] + s[sep+1:sep+1+dash]
-			// 		}
-			// 	}
-			// }
 			c.lowerSuggestions[i] = strings.ToLower(s)
 		}
 	}()
@@ -101,15 +92,35 @@ func NewCompletionEntry(
 	return c
 }
 
+func (c *CompletionEntry) GetCurrentInput() string {
+	return c.lastInput
+}
+
 func (c *CompletionEntry) SearchSuggestions(s string) {
+
+	if s == c.lastInput {
+		// JC.Logln("Skipping duplicate input:", s)
+		return
+	}
+	c.lastInput = s
 
 	if c.pause {
 		JC.MainDebouncer.Cancel("show_suggestion")
-		JC.Logln("Cancelling due to pause?")
+		// JC.Logln("Cancelling due to pause?")
 		return
 	}
 
-	delay := 50 * time.Millisecond
+	delay := 100 * time.Millisecond
+	if c.popup.Visible() {
+		delay = 200 * time.Millisecond
+
+	}
+	if JC.IsMobile {
+		if c.popup.Visible() {
+			delay = 400 * time.Millisecond
+		}
+	}
+
 	minText := 1
 
 	// Bail out early
@@ -121,16 +132,22 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		return
 	}
 
-	// then show them
+	// JC.Logln("Registering debouncer call for", s)
+
 	JC.MainDebouncer.Call("show_suggestion", delay, func() {
-		if len(s) < minText || s == "" {
+
+		input := c.GetCurrentInput()
+
+		// JC.Logln("Debounced trigger for:", input)
+
+		if len(input) < minText || input == "" {
 			fyne.Do(func() {
 				c.HideCompletion()
 			})
 			return
 		}
 
-		lowerS := strings.ToLower(s)
+		lowerS := strings.ToLower(input)
 		results := []string{}
 
 		for i, part := range c.lowerSuggestions {
@@ -147,7 +164,12 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 			return
 		}
 
-		results = JC.ReorderByMatch(results, s)
+		results = JC.ReorderByMatch(results, input)
+
+		if JC.EqualStringSlices(results, c.Options) {
+			// JC.Logln("Same results, skipping UI update")
+			return
+		}
 
 		fyne.Do(func() {
 			c.SetOptions(results)
@@ -233,18 +255,18 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 
 func (c *CompletionEntry) ShowCompletion() {
 	if c.pause {
-		JC.Logln("Entry is paused")
+		// JC.Logln("Entry is paused")
 		return
 	}
 
 	if len(c.Options) == 0 || len(c.Text) == 0 {
-		JC.Logln("Entry has no options")
+		// JC.Logln("Entry has no options")
 		c.HideCompletion()
 		return
 	}
 
 	if c.popup.Visible() && len(c.popup.Objects) != 0 {
-		JC.Logln("Popup already visible, not recalculating position again")
+		// JC.Logln("Popup already visible, not recalculating position again")
 		return
 	}
 
@@ -384,7 +406,6 @@ type navigableList struct {
 }
 
 func newNavigableList(
-	items []string,
 	setTextFromMenu func(string),
 	hide func(),
 	create func() fyne.CanvasObject,
@@ -399,24 +420,44 @@ func newNavigableList(
 		customUpdate:    update,
 	}
 
+	visibleCount := 10
+
+	if JC.IsMobile {
+		visibleCount = 6
+	}
+
 	n.List = widget.List{
 		Length: func() int {
-			return len(n.filteredData)
+			if visibleCount > len(n.filteredData) {
+				return len(n.filteredData)
+			}
+			return visibleCount
 		},
 		CreateItem: func() fyne.CanvasObject {
 			if fn := n.customCreate; fn != nil {
 				return fn()
 			}
-			return widget.NewLabel("")
+			return NewSelectableText()
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			item := n.filteredData[i]
-
-			if fn := n.customUpdate; fn != nil {
-				fn(i, o)
-				return
+			// Lazy reveal logic
+			if i >= visibleCount-10 && visibleCount < len(n.filteredData) {
+				// oldCount := visibleCount
+				visibleCount += 50
+				if visibleCount > len(n.filteredData) {
+					visibleCount = len(n.filteredData)
+				}
+				// JC.Logln("Lazy refresh: showing", visibleCount, "of", len(n.filteredData), "items (added", visibleCount-oldCount, ")")
+				n.Refresh()
 			}
-			o.(*widget.Label).SetText(item)
+
+			// Update item content
+			item := n.filteredData[i]
+			if st, ok := o.(*SelectableText); ok {
+				st.SetText(item)
+				st.SetIndex(i)
+				st.SetParent(n)
+			}
 		},
 		OnSelected: func(i widget.ListItemID) {
 			if !n.navigating && i > -1 {
@@ -439,7 +480,7 @@ func (n *navigableList) FocusLost() {
 
 func (n *navigableList) SetFilteredData(items []string) {
 	if JC.EqualStringSlices(n.filteredData, items) {
-		JC.Logln("Same filtered data, skipping update")
+		// JC.Logln("Same filtered data, skipping update")
 		return
 	}
 	n.Unselect(n.selected)
@@ -447,7 +488,7 @@ func (n *navigableList) SetFilteredData(items []string) {
 	n.Refresh()
 	n.selected = -1
 
-	JC.Logln("Injecting filtered view with", len(items), "items")
+	// JC.Logln("Injecting filtered view with", len(items), "items")
 }
 
 func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
