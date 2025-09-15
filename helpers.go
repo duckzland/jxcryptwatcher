@@ -79,7 +79,6 @@ func UpdateRates() bool {
 			defer JA.AppStatusManager.EndFetchingRates()
 
 			for _, result := range results {
-				JT.ExchangeCache.SoftReset()
 
 				ns := DetectHTTPResponse(result.Code)
 				if hasError == JC.STATUS_SUCCESS || hasError < ns {
