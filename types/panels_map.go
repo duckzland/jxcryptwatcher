@@ -225,6 +225,9 @@ func (pc *PanelsMapType) Hydrate(data []*PanelDataType) {
 	for _, pk := range data {
 		if !pk.HasParent() {
 			pk.SetParent(pc)
+			if !pc.ValidatePanel(pk.Get()) {
+				pk.SetStatus(JC.STATE_BAD_CONFIG)
+			}
 		}
 	}
 	pc.data = data

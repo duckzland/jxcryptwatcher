@@ -17,6 +17,7 @@ const STATE_LOADED = 0
 const STATE_LOADING = -1
 const STATE_ERROR = -2
 const STATE_FETCHING_NEW = -3
+const STATE_BAD_CONFIG = -4
 
 const VALUE_INCREASE = 1
 const VALUE_NO_CHANGE = 0

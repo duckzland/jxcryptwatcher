@@ -189,6 +189,10 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 		return JC.NETWORKING_BAD_PAYLOAD
 	}
 
+	if sid == "" || tid == "" {
+		return JC.NETWORKING_BAD_PAYLOAD
+	}
+
 	return JC.GetRequest(
 		Config.ExchangeEndpoint,
 		er,

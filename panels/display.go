@@ -239,6 +239,10 @@ func (h *PanelDisplay) UpdateContent() {
 		return
 	}
 
+	if !JT.BP.ValidatePanel(pkt.Get()) {
+		pkt.SetStatus(JC.STATE_BAD_CONFIG)
+	}
+
 	h.status = pkt.GetStatus()
 
 	switch pkt.GetStatus() {
@@ -266,15 +270,15 @@ func (h *PanelDisplay) UpdateContent() {
 		h.DisableClick()
 		h.background.FillColor = JC.PanelBG
 
+	case JC.STATE_BAD_CONFIG:
+		h.refTitle.Text = "Invalid Panel"
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.background.FillColor = JC.ErrorColor
+		h.EnableClick()
+
 	default:
-		if !JT.BP.ValidatePanel(pkt.Get()) {
-			h.refTitle.Text = "Invalid Panel"
-			h.refSubtitle.Hide()
-			h.refBottomText.Hide()
-			h.refContent.Hide()
-			h.background.FillColor = JC.PanelBG
-			return
-		}
 
 		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.refTitle.TextSize)
 		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.refSubtitle.TextSize)
@@ -454,7 +458,9 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 func (h *PanelDisplay) DragEnd() {
 	if !JM.AppStatusManager.IsDraggable() {
 		h.dragging = false
-		h.container.DragEnd()
+		if h.container != nil {
+			h.container.DragEnd()
+		}
 		return
 	}
 

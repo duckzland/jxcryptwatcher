@@ -43,6 +43,12 @@ func UpdateRates() bool {
 
 	for _, pot := range list {
 		pk := JT.BP.GetDataByID(pot.GetID())
+
+		if !JT.BP.ValidatePanel(pk.Get()) {
+			pk.SetStatus(JC.STATE_BAD_CONFIG)
+			continue
+		}
+
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
@@ -397,16 +403,26 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 	JC.Notify("Saving panel settings...")
 
 	JP.Grid.ForceRefresh()
+
+	if !JT.BP.ValidatePanel(pdt.Get()) {
+		pdt.SetStatus(JC.STATE_BAD_CONFIG)
+	}
+
 	JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
 
 	go func() {
 		if JT.SavePanels() {
+
+			if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
+				return
+			}
 
 			// Only fetch new rates if no cache exists!
 			if !ValidateRatesCache() {
 
 				// Force refresh without fail!
 				pkt := pdt.UsePanelKey()
+
 				sid := pkt.GetSourceCoinString()
 				tid := pkt.GetTargetCoinString()
 
@@ -430,7 +446,7 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 								}
 
 							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
-								pdt.IsStatus(JC.STATE_ERROR)
+								pdt.SetStatus(JC.STATE_ERROR)
 							}
 
 							ProcessUpdatePanelComplete(status)
