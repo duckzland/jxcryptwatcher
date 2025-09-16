@@ -58,7 +58,7 @@ func NewPanelForm(
 		decimalsEntry.SetText("6")
 	}
 
-	valueEntry.Validator = func(s string) error {
+	valueEntry.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
@@ -75,7 +75,7 @@ func NewPanelForm(
 		}
 
 		return nil
-	}
+	})
 
 	sourceEntry.SetValidator(func(s string) error {
 
@@ -119,7 +119,7 @@ func NewPanelForm(
 		return nil
 	})
 
-	decimalsEntry.Validator = func(s string) error {
+	decimalsEntry.SetValidator(func(s string) error {
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
 		}
@@ -138,7 +138,7 @@ func NewPanelForm(
 		}
 
 		return nil
-	}
+	})
 
 	formItems := []*widget.FormItem{
 		widget.NewFormItem("Value", valueEntry),

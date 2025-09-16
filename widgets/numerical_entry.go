@@ -52,3 +52,7 @@ func (e *numericalEntry) Keyboard() mobile.KeyboardType {
 func (e *numericalEntry) SetDefaultValue(s string) {
 	e.Text = s
 }
+
+func (e *numericalEntry) SetValidator(fn func(string) error) {
+	e.Validator = fn
+}
