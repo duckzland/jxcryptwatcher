@@ -77,7 +77,7 @@ func NewPanelForm(
 		return nil
 	}
 
-	sourceEntry.Validator = func(s string) error {
+	sourceEntry.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("Please select a cryptocurrency.")
@@ -96,9 +96,9 @@ func NewPanelForm(
 		}
 
 		return nil
-	}
+	})
 
-	targetEntry.Validator = func(s string) error {
+	targetEntry.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("Please select a cryptocurrency.")
@@ -117,7 +117,7 @@ func NewPanelForm(
 		}
 
 		return nil
-	}
+	})
 
 	decimalsEntry.Validator = func(s string) error {
 		if len(s) == 0 {

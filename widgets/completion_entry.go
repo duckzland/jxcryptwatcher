@@ -31,6 +31,8 @@ type CompletionEntry struct {
 	canvas           fyne.Canvas
 	lastInput        string
 	uuid             string
+	userValidator    func(string) error
+	skipValidation   bool
 }
 
 func NewCompletionEntry(
@@ -56,7 +58,11 @@ func NewCompletionEntry(
 
 	c.navigableList = NewNavigableList(
 		c.setTextFromMenu,
-		c.HideCompletion,
+		func() {
+			c.HideCompletion()
+			c.skipValidation = false
+			c.SetValidationError(c.Validator(c.Text))
+		},
 	)
 
 	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
@@ -166,9 +172,13 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
+	c.skipValidation = true
 }
 
 func (c *CompletionEntry) FocusLost() {
+
+	c.skipValidation = false
+	c.SetValidationError(c.Validator(c.Text))
 
 	c.Entry.FocusLost()
 
@@ -187,6 +197,10 @@ func (c *CompletionEntry) FocusLost() {
 }
 
 func (c *CompletionEntry) FocusGained() {
+
+	c.skipValidation = false
+	c.SetValidationError(c.Validator(c.Text))
+
 	c.Entry.FocusGained()
 
 	if ActiveEntry != nil && ActiveEntry != c {
@@ -204,6 +218,7 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 }
 
 func (c *CompletionEntry) HideCompletion() {
+
 	if c.popup != nil {
 		c.popup.Hide()
 	}
@@ -220,6 +235,7 @@ func (c *CompletionEntry) Refresh() {
 }
 
 func (c *CompletionEntry) Resize(size fyne.Size) {
+
 	c.Entry.Resize(size)
 
 	JC.MainDebouncer.Call("completion_resizing_"+c.uuid, 50*time.Millisecond, func() {
@@ -232,6 +248,17 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 		})
 	})
 
+}
+
+func (c *CompletionEntry) SetValidator(fn func(string) error) {
+	c.Validator = func(s string) error {
+		if c.skipValidation {
+			c.SetValidationError(nil)
+			return nil
+		}
+
+		return fn(s)
+	}
 }
 
 func (c *CompletionEntry) DynamicResize() {
@@ -258,6 +285,7 @@ func (c *CompletionEntry) SetParent(parent *ExtendedFormDialog) {
 }
 
 func (c *CompletionEntry) ShowCompletion() {
+
 	if c.pause {
 		return
 	}
@@ -386,6 +414,10 @@ func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.Entry.Refresh()
 	c.popup.Hide()
 	c.pause = false
+
+	c.skipValidation = false
+	c.SetValidationError(c.Validator(c.Text))
+
 }
 
 type CompletionListEntryLayout struct {
