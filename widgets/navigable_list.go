@@ -26,9 +26,8 @@ func NewNavigableList(
 		selected:        -1,
 		setTextFromMenu: setTextFromMenu,
 		hide:            hide,
+		visibleCount:    10,
 	}
-
-	n.visibleCount = 10
 
 	if JC.IsMobile {
 		n.visibleCount = 6
