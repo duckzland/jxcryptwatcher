@@ -611,7 +611,6 @@ func RegisterActions() {
 	// Refresh exchange rates
 	JA.AppActionManager.AddButton(JW.NewHoverCursorIconButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn *JW.HoverCursorIconButton) {
-
 			// Open the network status temporarily
 			JA.AppStatusManager.SetNetworkStatus(true)
 

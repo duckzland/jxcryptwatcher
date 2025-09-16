@@ -13,6 +13,10 @@ func FadeInBackground(rect *canvas.Rectangle, duration time.Duration, callback f
 	steps := 30
 	interval := duration / time.Duration(steps)
 
+	if JC.IsMobile {
+		interval = interval / 4
+	}
+
 	go func() {
 		_, _, _, a := rect.FillColor.RGBA()
 		origAlpha := float32(a) / 257.0

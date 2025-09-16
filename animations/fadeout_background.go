@@ -13,6 +13,10 @@ func FadeOutBackground(rect *canvas.Rectangle, duration time.Duration, callback 
 	steps := 30
 	interval := duration / time.Duration(steps)
 
+	if JC.IsMobile {
+		interval = interval / 4
+	}
+
 	go func() {
 		// Start from full opacity
 		origColor := rect.FillColor

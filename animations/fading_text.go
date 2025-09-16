@@ -2,6 +2,7 @@ package animations
 
 import (
 	"image/color"
+	JC "jxwatcher/core"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -25,13 +26,18 @@ func StartFadingText(
 			}
 		}
 
+		delay := 80 * time.Millisecond
+		if JC.IsMobile {
+			delay = 40 * time.Millisecond
+		}
+
 		for _, c := range *fadeSteps {
 			fyne.Do(func() {
 				text.Color = c
 				text.Refresh()
 			})
 
-			time.Sleep(80 * time.Millisecond)
+			time.Sleep(delay)
 		}
 
 		if callback != nil {

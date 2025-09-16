@@ -87,7 +87,6 @@ func main() {
 			JA.AppLayoutManager.SetTickers(JC.Tickers)
 			JP.Grid.Refresh()
 			JT.BP.GetOptions()
-
 			JA.AppLayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())
@@ -102,7 +101,6 @@ func main() {
 				JT.TickerCache.SoftReset()
 				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
 			}
-
 		})
 	})
 
