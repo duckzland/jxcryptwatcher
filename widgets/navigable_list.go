@@ -14,6 +14,7 @@ type navigableList struct {
 	hide            func()
 	filteredData    []string
 	navigating      bool
+	visibleCount    int
 }
 
 func NewNavigableList(
@@ -27,27 +28,27 @@ func NewNavigableList(
 		hide:            hide,
 	}
 
-	visibleCount := 10
+	n.visibleCount = 10
 
 	if JC.IsMobile {
-		visibleCount = 6
+		n.visibleCount = 6
 	}
 
 	n.List = widget.List{
 		Length: func() int {
-			if visibleCount > len(n.filteredData) {
+			if n.visibleCount > len(n.filteredData) {
 				return len(n.filteredData)
 			}
-			return visibleCount
+			return n.visibleCount
 		},
 		CreateItem: func() fyne.CanvasObject {
 			return NewSelectableText()
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			if i >= visibleCount-10 && visibleCount < len(n.filteredData) {
-				visibleCount += 50
-				if visibleCount > len(n.filteredData) {
-					visibleCount = len(n.filteredData)
+			if i >= n.visibleCount-10 && n.visibleCount < len(n.filteredData) {
+				n.visibleCount += 50
+				if n.visibleCount > len(n.filteredData) {
+					n.visibleCount = len(n.filteredData)
 				}
 				n.Refresh()
 			}
@@ -72,6 +73,7 @@ func NewNavigableList(
 
 	return n
 }
+
 func (n *navigableList) FocusGained() {
 }
 
@@ -85,8 +87,18 @@ func (n *navigableList) SetFilteredData(items []string) {
 
 	n.Unselect(n.selected)
 	n.filteredData = items
-	n.Refresh()
 	n.selected = -1
+
+	n.visibleCount = 10
+	if JC.IsMobile {
+		n.visibleCount = 6
+	}
+
+	n.List.ScrollToTop()
+
+	for i := 0; i < n.visibleCount && i < len(n.filteredData); i++ {
+		n.List.RefreshItem(i)
+	}
 }
 
 func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
