@@ -10,11 +10,10 @@ import (
 
 type SelectableText struct {
 	widget.BaseWidget
-	index    int
-	parent   *navigableList
-	text     string
-	label    *canvas.Text
-	selected bool
+	index  int
+	parent *navigableList
+	text   string
+	label  *canvas.Text
 }
 
 func NewSelectableText() *SelectableText {
@@ -71,11 +70,11 @@ func (r *selectableTextRenderer) MinSize() fyne.Size {
 }
 
 func (r *selectableTextRenderer) Refresh() {
-
 }
 
 func (r *selectableTextRenderer) Objects() []fyne.CanvasObject {
 	return []fyne.CanvasObject{r.text}
 }
 
-func (r *selectableTextRenderer) Destroy() {}
+func (r *selectableTextRenderer) Destroy() {
+}

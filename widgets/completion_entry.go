@@ -66,8 +66,11 @@ func NewCompletionEntry(
 	closeBtn.Resize(fyne.NewSize(32, 32))
 	closeBtn.Move(fyne.NewPos(0, 0))
 
+	bg := canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground))
+	bg.CornerRadius = JC.PanelBorderRadius
+
 	c.container = container.NewStack(
-		canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
+		bg,
 		container.New(
 			&CompletionListEntryLayout{},
 			c.navigableList,
@@ -153,10 +156,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, input)
 
-		if JC.EqualStringSlices(results, c.options) {
-			return
-		}
-
 		fyne.Do(func() {
 			c.SetOptions(results)
 			c.ShowCompletion()
@@ -166,7 +165,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 }
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
-	// Fyne weird. without this backspace doesnt work?
 	c.Entry.TypedKey(event)
 }
 
@@ -213,6 +211,8 @@ func (c *CompletionEntry) HideCompletion() {
 	if c.navigableList != nil {
 		c.navigableList.SetFilteredData([]string{})
 	}
+
+	c.popupPosition = fyne.NewPos(-1, -1)
 }
 
 func (c *CompletionEntry) Refresh() {
@@ -222,10 +222,16 @@ func (c *CompletionEntry) Refresh() {
 func (c *CompletionEntry) Resize(size fyne.Size) {
 	c.Entry.Resize(size)
 
-	if c.popup != nil {
-		c.popup.Resize(c.maxSize())
-		c.popup.Move(c.popUpPos())
-	}
+	JC.MainDebouncer.Call("completion_resizing_"+c.uuid, 50*time.Millisecond, func() {
+		fyne.Do(func() {
+			if c.popup != nil && c.popup.Visible() {
+				c.popupPosition = fyne.NewPos(-1, -1)
+				c.popup.Resize(c.maxSize())
+				c.popup.Move(c.popUpPos())
+			}
+		})
+	})
+
 }
 
 func (c *CompletionEntry) DynamicResize() {
@@ -261,9 +267,12 @@ func (c *CompletionEntry) ShowCompletion() {
 		return
 	}
 
-	if c.popup.Visible() && len(c.popup.Objects) != 0 {
+	if c.popup.Visible() && c.popupPosition.Y != -1 {
 		return
 	}
+
+	// Always reset position cache!
+	c.calculatePosition(true)
 
 	c.navigableList.UnselectAll()
 	c.navigableList.selected = -1
@@ -299,7 +308,7 @@ func (c *CompletionEntry) ShowCompletion() {
 	ActiveEntry = c
 }
 
-func (c *CompletionEntry) calculatePosition() bool {
+func (c *CompletionEntry) calculatePosition(force bool) bool {
 
 	if c.canvas == nil {
 		c.canvas = fyne.CurrentApp().Driver().CanvasForObject(c)
@@ -313,6 +322,10 @@ func (c *CompletionEntry) calculatePosition() bool {
 		return false
 	}
 
+	if c.popupPosition.Y != -1 && !force {
+		return true
+	}
+
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
 	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.overlayContent)
 	px := p.Subtract(x)
@@ -324,7 +337,7 @@ func (c *CompletionEntry) calculatePosition() bool {
 
 func (c *CompletionEntry) maxSize() fyne.Size {
 
-	if !c.calculatePosition() {
+	if !c.calculatePosition(false) {
 		return fyne.NewSize(0, 0)
 	}
 
@@ -332,10 +345,7 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	// Disabling Dynamic height for now.
 	padding := (theme.Padding() * 2) * c.canvas.Scale()
-	// separator := theme.SeparatorThicknessSize()
-
 	listHeight := float32(len(c.options)) * (c.itemHeight)
 	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height - padding
 
@@ -355,12 +365,13 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 }
 
 func (c *CompletionEntry) popUpPos() fyne.Position {
-	if !c.calculatePosition() {
+	if !c.calculatePosition(false) {
 		return fyne.NewPos(0, 0)
 	}
 
 	entryPos := c.popupPosition
-	entryPos.Y += c.Size().Width
+	entryPos.Y += c.Size().Height
+	entryPos.Y += 2
 
 	return entryPos
 
@@ -375,4 +386,51 @@ func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.Entry.Refresh()
 	c.popup.Hide()
 	c.pause = false
+}
+
+type CompletionListEntryLayout struct {
+	cSize fyne.Size
+}
+
+func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	if len(objects) < 2 {
+		return
+	}
+
+	if size == l.cSize {
+		return
+	}
+
+	l.cSize = size
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	height := size.Height
+	closeWidth := closeBtn.Size().Width
+
+	closeBtn.Resize(fyne.NewSize(closeWidth, closeWidth))
+	closeBtn.Move(fyne.NewPos(-closeWidth-2, 2))
+
+	listEntry.Resize(fyne.NewSize(size.Width, height))
+	listEntry.Move(fyne.NewPos(0, 0))
+}
+
+func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	if len(objects) < 2 {
+		return fyne.NewSize(0, 0)
+	}
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	listMin := listEntry.MinSize()
+	closeMin := closeBtn.MinSize()
+
+	width := listMin.Width + closeMin.Width
+	height := fyne.Max(listMin.Height, closeMin.Height)
+
+	l.cSize = fyne.NewSize(width, height)
+
+	return l.cSize
 }

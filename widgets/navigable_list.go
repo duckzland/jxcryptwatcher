@@ -1,10 +1,10 @@
 package widgets
 
 import (
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
+
+	JC "jxwatcher/core"
 )
 
 type navigableList struct {
@@ -115,50 +115,3 @@ func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
 }
 
 func (n *navigableList) TypedRune(r rune) {}
-
-type CompletionListEntryLayout struct {
-	cSize fyne.Size
-}
-
-func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	if len(objects) < 2 {
-		return
-	}
-
-	if size == l.cSize {
-		return
-	}
-
-	l.cSize = size
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	height := size.Height
-	closeWidth := closeBtn.Size().Width
-
-	closeBtn.Resize(fyne.NewSize(closeWidth, height))
-	closeBtn.Move(fyne.NewPos(size.Width-closeWidth, 0))
-
-	listEntry.Resize(fyne.NewSize(size.Width-closeWidth, height))
-	listEntry.Move(fyne.NewPos(0, 0))
-}
-
-func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	if len(objects) < 2 {
-		return fyne.NewSize(0, 0)
-	}
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	listMin := listEntry.MinSize()
-	closeMin := closeBtn.MinSize()
-
-	width := listMin.Width + closeMin.Width
-	height := fyne.Max(listMin.Height, closeMin.Height)
-
-	l.cSize = fyne.NewSize(width, height)
-
-	return l.cSize
-}
