@@ -9,34 +9,32 @@ import (
 	JC "jxwatcher/core"
 )
 
-func FadeOutBackground(rect *canvas.Rectangle, duration time.Duration, callback func()) {
-	steps := 30
-	interval := duration / time.Duration(steps)
-
+func FadeOutBackground(
+	rect *canvas.Rectangle,
+	duration time.Duration,
+	callback func(),
+) {
+	alphaSteps := []uint8{255, 192, 128, 64, 0}
 	if JC.IsMobile {
-		interval = interval / 4
+		alphaSteps = []uint8{255, 128, 0}
 	}
 
+	interval := duration / time.Duration(len(alphaSteps))
+	ticker := time.NewTicker(interval)
+
 	go func() {
-		// Start from full opacity
-		origColor := rect.FillColor
-		_, _, _, a := origColor.RGBA()
-		startAlpha := float32(a) / 257.0 // RGBA returns 0–65535, so divide by 257 to get 0–255
+		defer ticker.Stop()
 
-		for i := 0; i <= steps; i++ {
-			progress := 1.0 - float32(i)/float32(steps)
-			alpha := startAlpha * progress
-
-			time.Sleep(interval)
-
+		for _, alpha := range alphaSteps {
+			<-ticker.C
 			fyne.Do(func() {
-				rect.FillColor = JC.SetAlpha(origColor, alpha)
+				rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 				rect.Refresh()
 			})
 		}
 
 		if callback != nil {
-			callback()
+			fyne.Do(callback)
 		}
 	}()
 }

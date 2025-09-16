@@ -9,31 +9,32 @@ import (
 	JC "jxwatcher/core"
 )
 
-func FadeInBackground(rect *canvas.Rectangle, duration time.Duration, callback func()) {
-	steps := 30
-	interval := duration / time.Duration(steps)
-
+func FadeInBackground(
+	rect *canvas.Rectangle,
+	duration time.Duration,
+	callback func(),
+) {
+	alphaSteps := []uint8{0, 64, 128, 192, 255}
 	if JC.IsMobile {
-		interval = interval / 4
+		alphaSteps = []uint8{0, 128, 255}
 	}
 
+	interval := duration / time.Duration(len(alphaSteps))
+	ticker := time.NewTicker(interval)
+
 	go func() {
-		_, _, _, a := rect.FillColor.RGBA()
-		origAlpha := float32(a) / 257.0
+		defer ticker.Stop()
 
-		for i := 0; i <= steps; i++ {
-			progress := float32(i) / float32(steps)
-
-			time.Sleep(interval)
-
+		for _, alpha := range alphaSteps {
+			<-ticker.C
 			fyne.Do(func() {
-				rect.FillColor = JC.SetAlpha(rect.FillColor, origAlpha*progress)
+				rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 				rect.Refresh()
 			})
 		}
 
 		if callback != nil {
-			callback()
+			fyne.Do(callback)
 		}
 	}()
 }
