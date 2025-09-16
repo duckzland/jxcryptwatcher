@@ -203,8 +203,8 @@ func NewPanelForm(
 		}
 	}, JC.Window)
 
-	sourceEntry.Parent = parent
-	targetEntry.Parent = parent
+	sourceEntry.SetParent(parent)
+	targetEntry.SetParent(parent)
 
 	return parent
 }

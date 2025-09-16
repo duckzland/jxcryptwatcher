@@ -21,6 +21,7 @@ func StartFlashingText(
 		if JC.IsMobile {
 			interval = interval / 2
 		}
+
 		for i := 0; i < flashes*2; i++ {
 			time.Sleep(interval)
 			fyne.Do(func() {

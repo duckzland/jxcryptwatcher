@@ -1,0 +1,164 @@
+package widgets
+
+import (
+	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/widget"
+)
+
+type navigableList struct {
+	widget.List
+	selected        int
+	setTextFromMenu func(string)
+	hide            func()
+	filteredData    []string
+	navigating      bool
+}
+
+func NewNavigableList(
+	setTextFromMenu func(string),
+	hide func(),
+) *navigableList {
+
+	n := &navigableList{
+		selected:        -1,
+		setTextFromMenu: setTextFromMenu,
+		hide:            hide,
+	}
+
+	visibleCount := 10
+
+	if JC.IsMobile {
+		visibleCount = 6
+	}
+
+	n.List = widget.List{
+		Length: func() int {
+			if visibleCount > len(n.filteredData) {
+				return len(n.filteredData)
+			}
+			return visibleCount
+		},
+		CreateItem: func() fyne.CanvasObject {
+			return NewSelectableText()
+		},
+		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
+			if i >= visibleCount-10 && visibleCount < len(n.filteredData) {
+				visibleCount += 50
+				if visibleCount > len(n.filteredData) {
+					visibleCount = len(n.filteredData)
+				}
+				n.Refresh()
+			}
+
+			item := n.filteredData[i]
+			if st, ok := o.(*SelectableText); ok {
+				st.SetText(item)
+				st.SetIndex(i)
+				st.SetParent(n)
+			}
+		},
+		OnSelected: func(i widget.ListItemID) {
+			if !n.navigating && i > -1 {
+				item := n.filteredData[i]
+				n.setTextFromMenu(item)
+			}
+			n.navigating = false
+		},
+	}
+
+	n.ExtendBaseWidget(n)
+
+	return n
+}
+func (n *navigableList) FocusGained() {
+}
+
+func (n *navigableList) FocusLost() {
+}
+
+func (n *navigableList) SetFilteredData(items []string) {
+	if JC.EqualStringSlices(n.filteredData, items) {
+		return
+	}
+
+	n.Unselect(n.selected)
+	n.filteredData = items
+	n.Refresh()
+	n.selected = -1
+}
+
+func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
+	switch event.Name {
+	case fyne.KeyDown:
+		if n.selected < len(n.filteredData)-1 {
+			n.selected++
+		} else {
+			n.selected = 0
+		}
+		n.navigating = true
+		n.Select(n.selected)
+
+	case fyne.KeyUp:
+		if n.selected > 0 {
+			n.selected--
+		} else {
+			n.selected = len(n.filteredData) - 1
+		}
+		n.navigating = true
+		n.Select(n.selected)
+	case fyne.KeyEscape:
+		n.hide()
+
+	}
+}
+
+func (n *navigableList) TypedRune(r rune) {}
+
+type CompletionListEntryLayout struct {
+	cSize fyne.Size
+}
+
+func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	if len(objects) < 2 {
+		return
+	}
+
+	if size == l.cSize {
+		return
+	}
+
+	l.cSize = size
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	height := size.Height
+	closeWidth := closeBtn.Size().Width
+
+	closeBtn.Resize(fyne.NewSize(closeWidth, height))
+	closeBtn.Move(fyne.NewPos(size.Width-closeWidth, 0))
+
+	listEntry.Resize(fyne.NewSize(size.Width-closeWidth, height))
+	listEntry.Move(fyne.NewPos(0, 0))
+}
+
+func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	if len(objects) < 2 {
+		return fyne.NewSize(0, 0)
+	}
+
+	listEntry := objects[0]
+	closeBtn := objects[1]
+
+	listMin := listEntry.MinSize()
+	closeMin := closeBtn.MinSize()
+
+	width := listMin.Width + closeMin.Width
+	height := fyne.Max(listMin.Height, closeMin.Height)
+
+	l.cSize = fyne.NewSize(width, height)
+
+	return l.cSize
+}

@@ -21,21 +21,14 @@ type CompletionEntry struct {
 	popup            *fyne.Container
 	container        *fyne.Container
 	navigableList    *navigableList
+	parent           *ExtendedFormDialog
 	pause            bool
 	itemHeight       float32
-	Parent           *ExtendedFormDialog
-	Options          []string
-	Suggestions      []string
-	CustomCreate     func() fyne.CanvasObject
-	CustomUpdate     func(id widget.ListItemID, object fyne.CanvasObject)
-	PopupPosition    fyne.Position
-	EntryHeight      float32
-	EntryWidth       float32
-	Canvas           fyne.Canvas
-	Scale            float32
-	optionsHash      string
-	newHash          string
+	options          []string
+	suggestions      []string
 	lowerSuggestions []string
+	popupPosition    fyne.Position
+	canvas           fyne.Canvas
 	lastInput        string
 	uuid             string
 }
@@ -45,7 +38,7 @@ func NewCompletionEntry(
 	popup *fyne.Container,
 ) *CompletionEntry {
 
-	c := &CompletionEntry{Suggestions: options, popup: popup}
+	c := &CompletionEntry{suggestions: options, popup: popup}
 	c.ExtendBaseWidget(c)
 
 	id := uuid.New()
@@ -53,21 +46,17 @@ func NewCompletionEntry(
 
 	c.OnChanged = c.SearchSuggestions
 
-	c.EntryHeight = -1
-
-	c.PopupPosition = fyne.NewPos(-1, -1)
+	c.popupPosition = fyne.NewPos(-1, -1)
 
 	c.itemHeight = 36
 
-	c.Options = options
+	c.options = options
 
-	c.Suggestions = options
+	c.suggestions = options
 
-	c.navigableList = newNavigableList(
+	c.navigableList = NewNavigableList(
 		c.setTextFromMenu,
 		c.HideCompletion,
-		c.CustomCreate,
-		c.CustomUpdate,
 	)
 
 	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
@@ -86,10 +75,14 @@ func NewCompletionEntry(
 		),
 	)
 
+	c.popup.Add(c.container)
+
+	c.popup.Hide()
+
 	// Caching the suggestions, this is needed for faster search!
 	go func() {
-		c.lowerSuggestions = make([]string, len(c.Suggestions))
-		for i, s := range c.Suggestions {
+		c.lowerSuggestions = make([]string, len(c.suggestions))
+		for i, s := range c.suggestions {
 			c.lowerSuggestions[i] = strings.ToLower(s)
 		}
 	}()
@@ -146,7 +139,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		for i, part := range c.lowerSuggestions {
 			if strings.Contains(part, lowerS) {
-				display := c.Suggestions[i]
+				display := c.suggestions[i]
 				results = append(results, display)
 			}
 		}
@@ -160,7 +153,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, input)
 
-		if JC.EqualStringSlices(results, c.Options) {
+		if JC.EqualStringSlices(results, c.options) {
 			return
 		}
 
@@ -203,7 +196,7 @@ func (c *CompletionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
-		c.navigableList.SetFilteredData(c.Options)
+		c.navigableList.SetFilteredData(c.options)
 		c.ShowCompletion()
 	}
 }
@@ -247,11 +240,15 @@ func (c *CompletionEntry) DynamicResize() {
 
 func (c *CompletionEntry) SetOptions(itemList []string) {
 
-	c.Options = itemList
+	c.options = itemList
 
 	if c.navigableList != nil {
-		c.navigableList.SetFilteredData(c.Options)
+		c.navigableList.SetFilteredData(c.options)
 	}
+}
+
+func (c *CompletionEntry) SetParent(parent *ExtendedFormDialog) {
+	c.parent = parent
 }
 
 func (c *CompletionEntry) ShowCompletion() {
@@ -259,7 +256,7 @@ func (c *CompletionEntry) ShowCompletion() {
 		return
 	}
 
-	if len(c.Options) == 0 || len(c.Text) == 0 {
+	if len(c.options) == 0 || len(c.Text) == 0 {
 		c.HideCompletion()
 		return
 	}
@@ -304,31 +301,23 @@ func (c *CompletionEntry) ShowCompletion() {
 
 func (c *CompletionEntry) calculatePosition() bool {
 
-	if c.Canvas == nil {
-		c.Canvas = fyne.CurrentApp().Driver().CanvasForObject(c)
+	if c.canvas == nil {
+		c.canvas = fyne.CurrentApp().Driver().CanvasForObject(c)
 	}
 
-	if c.Canvas != nil {
-		c.Scale = c.Canvas.Scale()
-	}
-
-	if c.Canvas == nil || c.Scale == 0 {
+	if c.canvas == nil {
 		return false
 	}
 
-	if c.Parent == nil || c.Parent.overlayContent == nil {
+	if c.parent == nil || c.parent.overlayContent == nil {
 		return false
 	}
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.Parent.overlayContent)
+	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.overlayContent)
 	px := p.Subtract(x)
 
-	c.PopupPosition = px
-
-	c.EntryHeight = c.Size().Height
-
-	c.EntryWidth = c.Size().Width
+	c.popupPosition = px
 
 	return true
 }
@@ -339,16 +328,16 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	if c.Canvas == nil {
+	if c.canvas == nil {
 		return fyne.NewSize(0, 0)
 	}
 
 	// Disabling Dynamic height for now.
-	padding := (theme.Padding() * 2) * c.Scale
+	padding := (theme.Padding() * 2) * c.canvas.Scale()
 	// separator := theme.SeparatorThicknessSize()
 
-	listHeight := float32(len(c.Options)) * (c.itemHeight)
-	maxHeight := c.Canvas.Size().Height - c.PopupPosition.Y - c.EntryHeight - padding
+	listHeight := float32(len(c.options)) * (c.itemHeight)
+	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height - padding
 
 	if maxHeight > 300 {
 		maxHeight = 300
@@ -362,7 +351,7 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		listHeight = maxHeight
 	}
 
-	return fyne.NewSize(c.EntryWidth, listHeight)
+	return fyne.NewSize(c.Size().Width, listHeight)
 }
 
 func (c *CompletionEntry) popUpPos() fyne.Position {
@@ -370,8 +359,8 @@ func (c *CompletionEntry) popUpPos() fyne.Position {
 		return fyne.NewPos(0, 0)
 	}
 
-	entryPos := c.PopupPosition
-	entryPos.Y += c.EntryHeight
+	entryPos := c.popupPosition
+	entryPos.Y += c.Size().Width
 
 	return entryPos
 
@@ -379,179 +368,11 @@ func (c *CompletionEntry) popUpPos() fyne.Position {
 
 func (c *CompletionEntry) setTextFromMenu(s string) {
 	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+
 	c.pause = true
 	c.Entry.SetText(s)
 	c.Entry.CursorColumn = len([]rune(s))
 	c.Entry.Refresh()
 	c.popup.Hide()
 	c.pause = false
-}
-
-type navigableList struct {
-	widget.List
-	selected        int
-	setTextFromMenu func(string)
-	hide            func()
-	filteredData    []string
-	navigating      bool
-	customCreate    func() fyne.CanvasObject
-	customUpdate    func(id widget.ListItemID, object fyne.CanvasObject)
-}
-
-func newNavigableList(
-	setTextFromMenu func(string),
-	hide func(),
-	create func() fyne.CanvasObject,
-	update func(id widget.ListItemID, object fyne.CanvasObject),
-) *navigableList {
-
-	n := &navigableList{
-		selected:        -1,
-		setTextFromMenu: setTextFromMenu,
-		hide:            hide,
-		customCreate:    create,
-		customUpdate:    update,
-	}
-
-	visibleCount := 10
-
-	if JC.IsMobile {
-		visibleCount = 6
-	}
-
-	n.List = widget.List{
-		Length: func() int {
-			if visibleCount > len(n.filteredData) {
-				return len(n.filteredData)
-			}
-			return visibleCount
-		},
-		CreateItem: func() fyne.CanvasObject {
-			if fn := n.customCreate; fn != nil {
-				return fn()
-			}
-			return NewSelectableText()
-		},
-		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			if i >= visibleCount-10 && visibleCount < len(n.filteredData) {
-				visibleCount += 50
-				if visibleCount > len(n.filteredData) {
-					visibleCount = len(n.filteredData)
-				}
-				n.Refresh()
-			}
-
-			item := n.filteredData[i]
-			if st, ok := o.(*SelectableText); ok {
-				st.SetText(item)
-				st.SetIndex(i)
-				st.SetParent(n)
-			}
-		},
-		OnSelected: func(i widget.ListItemID) {
-			if !n.navigating && i > -1 {
-				item := n.filteredData[i]
-				n.setTextFromMenu(item)
-			}
-			n.navigating = false
-		},
-	}
-
-	n.ExtendBaseWidget(n)
-
-	return n
-}
-func (n *navigableList) FocusGained() {
-}
-
-func (n *navigableList) FocusLost() {
-}
-
-func (n *navigableList) SetFilteredData(items []string) {
-	if JC.EqualStringSlices(n.filteredData, items) {
-		// JC.Logln("Same filtered data, skipping update")
-		return
-	}
-	n.Unselect(n.selected)
-	n.filteredData = items
-	n.Refresh()
-	n.selected = -1
-
-	// JC.Logln("Injecting filtered view with", len(items), "items")
-}
-
-func (n *navigableList) TypedKey(event *fyne.KeyEvent) {
-	switch event.Name {
-	case fyne.KeyDown:
-		if n.selected < len(n.filteredData)-1 {
-			n.selected++
-		} else {
-			n.selected = 0
-		}
-		n.navigating = true
-		n.Select(n.selected)
-
-	case fyne.KeyUp:
-		if n.selected > 0 {
-			n.selected--
-		} else {
-			n.selected = len(n.filteredData) - 1
-		}
-		n.navigating = true
-		n.Select(n.selected)
-	case fyne.KeyEscape:
-		n.hide()
-
-	}
-}
-
-func (n *navigableList) TypedRune(r rune) {}
-
-type CompletionListEntryLayout struct {
-	cSize fyne.Size
-}
-
-func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	if len(objects) < 2 {
-		return
-	}
-
-	if size == l.cSize {
-		return
-	}
-
-	l.cSize = size
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	height := size.Height
-	closeWidth := closeBtn.Size().Width
-
-	// Layout close button on the right
-	closeBtn.Resize(fyne.NewSize(closeWidth, height))
-	closeBtn.Move(fyne.NewPos(size.Width-closeWidth, 0))
-
-	// Layout list entry to fill remaining space
-	listEntry.Resize(fyne.NewSize(size.Width-closeWidth, height))
-	listEntry.Move(fyne.NewPos(0, 0))
-}
-
-func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	if len(objects) < 2 {
-		return fyne.NewSize(0, 0)
-	}
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	listMin := listEntry.MinSize()
-	closeMin := closeBtn.MinSize()
-
-	width := listMin.Width + closeMin.Width
-	height := fyne.Max(listMin.Height, closeMin.Height)
-
-	l.cSize = fyne.NewSize(width, height)
-
-	return l.cSize
 }
