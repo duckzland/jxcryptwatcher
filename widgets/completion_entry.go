@@ -46,7 +46,17 @@ func NewCompletionEntry(
 	id := uuid.New()
 	c.uuid = id.String()
 
-	c.OnChanged = c.SearchSuggestions
+	c.OnChanged = func(s string) {
+		c.SearchSuggestions(s)
+		JC.MainDebouncer.Call("Validating-"+c.uuid, 300*time.Millisecond, func() {
+			fyne.Do(func() {
+				if !c.popup.Visible() {
+					c.skipValidation = false
+					c.SetValidationError(c.Validator(c.Text))
+				}
+			})
+		})
+	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
 
@@ -56,18 +66,9 @@ func NewCompletionEntry(
 
 	c.suggestions = options
 
-	c.navigableList = NewNavigableList(
-		c.setTextFromMenu,
-		func() {
-			c.HideCompletion()
-			c.skipValidation = false
-			c.SetValidationError(c.Validator(c.Text))
-		},
-	)
+	c.navigableList = NewNavigableList(c.setTextFromMenu, c.HideCompletion)
 
-	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
-		c.HideCompletion()
-	})
+	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), c.HideCompletion)
 
 	closeBtn.Resize(fyne.NewSize(32, 32))
 	closeBtn.Move(fyne.NewPos(0, 0))
@@ -173,12 +174,10 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 	c.skipValidation = true
+	JC.MainDebouncer.Cancel("validating-" + c.uuid)
 }
 
 func (c *CompletionEntry) FocusLost() {
-
-	c.skipValidation = false
-	c.SetValidationError(c.Validator(c.Text))
 
 	c.Entry.FocusLost()
 
@@ -198,8 +197,7 @@ func (c *CompletionEntry) FocusLost() {
 
 func (c *CompletionEntry) FocusGained() {
 
-	c.skipValidation = false
-	c.SetValidationError(c.Validator(c.Text))
+	c.SetValidationError(nil)
 
 	c.Entry.FocusGained()
 
@@ -218,6 +216,8 @@ func (c *CompletionEntry) SetDefaultValue(s string) {
 }
 
 func (c *CompletionEntry) HideCompletion() {
+
+	c.skipValidation = false
 
 	if c.popup != nil {
 		c.popup.Hide()
@@ -251,15 +251,23 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 }
 
 func (c *CompletionEntry) SetValidator(fn func(string) error) {
-	// c.Validator = func(s string) error {
-	// 	if c.skipValidation {
-	// 		c.SetValidationError(nil)
-	// 		return nil
-	// 	}
+	c.Validator = func(s string) error {
+		if c.skipValidation {
+			c.SetValidationError(nil)
+			return nil
+		}
 
-	// 	return fn(s)
-	// }
-	c.Validator = fn
+		return fn(s)
+	}
+}
+
+func (c *CompletionEntry) Validate() error {
+	// This is important to prevent user trying to click save when skipvalidation is active!
+	c.skipValidation = false
+	err := c.Validator(c.Entry.Text)
+	c.SetValidationError(err)
+
+	return err
 }
 
 func (c *CompletionEntry) DynamicResize() {
@@ -286,6 +294,8 @@ func (c *CompletionEntry) SetParent(parent *ExtendedFormDialog) {
 }
 
 func (c *CompletionEntry) ShowCompletion() {
+
+	c.skipValidation = true
 
 	if c.pause {
 		return

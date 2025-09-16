@@ -14,7 +14,7 @@ type ExtendedFormDialog struct {
 	confirm         *HoverCursorIconButton
 	cancel          *HoverCursorIconButton
 	items           []*widget.FormItem
-	callback        func(bool)
+	callback        func(bool) bool
 	form            *widget.Form
 	parent          fyne.Window
 	topContent      []*fyne.Container
@@ -29,7 +29,7 @@ func NewExtendedFormDialog(
 	items []*widget.FormItem,
 	topContent []*fyne.Container,
 	bottomContent []*fyne.Container,
-	callback func(bool),
+	callback func(bool) bool,
 	parent fyne.Window,
 ) *ExtendedFormDialog {
 
@@ -45,7 +45,7 @@ func NewExtendedFormDialog(
 			fd.dialog.Hide()
 		}, nil),
 		items:         items,
-		callback:      func(resp bool) { callback(resp) },
+		callback:      func(resp bool) bool { return callback(resp) },
 		form:          form,
 		parent:        parent,
 		topContent:    topContent,
@@ -77,6 +77,7 @@ func (d *ExtendedFormDialog) setSubmitState(err error) {
 }
 
 func (d *ExtendedFormDialog) Submit() {
+
 	if d.confirm.Disabled() {
 		return
 	}
@@ -85,10 +86,23 @@ func (d *ExtendedFormDialog) Submit() {
 }
 
 func (d *ExtendedFormDialog) hideWithResponse(resp bool) {
-	d.dialog.Hide()
-	if d.callback != nil {
-		d.callback(resp)
+
+	err := d.form.Validate()
+	d.setSubmitState(err)
+
+	if err != nil {
+		return
 	}
+
+	if d.callback != nil {
+		if d.callback(resp) {
+			d.dialog.Hide()
+			return
+		}
+	}
+
+	d.dialog.Hide()
+
 }
 
 func (d *ExtendedFormDialog) Show() {

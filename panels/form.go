@@ -1,7 +1,6 @@
 package panels
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -150,7 +149,7 @@ func NewPanelForm(
 
 	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
 
-	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) {
+	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) bool {
 		if b {
 			var npk JT.PanelKeyType
 			var ns *JT.PanelDataType
@@ -159,20 +158,6 @@ func NewPanelForm(
 			tid := JT.BP.GetIdByDisplay(targetEntry.Text)
 			bid := JT.BP.GetSymbolById(sid)
 			mid := JT.BP.GetSymbolById(tid)
-
-			if sid == "" || tid == "" || bid == "" || mid == "" {
-				JC.Notify("Invalid source or target selection. Please check your entries.")
-
-				if sid == "" || bid == "" {
-					sourceEntry.SetValidationError(errors.New("Invalid currency"))
-				}
-
-				if tid == "" || mid == "" {
-					targetEntry.SetValidationError(errors.New("Invalid currency"))
-				}
-
-				return
-			}
 
 			newKey := npk.GenerateKey(
 				sid,
@@ -189,7 +174,7 @@ func NewPanelForm(
 
 				if ns == nil {
 					JC.Notify("Unable to add new panel. Please try again.")
-					return
+					return false
 				}
 
 				ns.SetStatus(JC.STATE_FETCHING_NEW)
@@ -202,7 +187,7 @@ func NewPanelForm(
 				ns = JT.BP.GetDataByID(uuid)
 				if ns == nil {
 					JC.Notify("Unable to update panel. Please try again.")
-					return
+					return false
 				}
 
 				pkt := ns.UsePanelKey()
@@ -222,6 +207,8 @@ func NewPanelForm(
 				onSave(ns)
 			}
 		}
+
+		return true
 	}, JC.Window)
 
 	sourceEntry.SetParent(parent)

@@ -3,9 +3,9 @@ package apps
 import (
 	"sync"
 
-	JW "jxwatcher/widgets"
-
 	"fyne.io/fyne/v2"
+
+	JW "jxwatcher/widgets"
 )
 
 var AppActionManager *AppActions = &AppActions{}
