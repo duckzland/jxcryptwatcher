@@ -140,19 +140,19 @@ func (pc *PanelsMapType) RefreshData() bool {
 		if pdt == nil {
 			continue
 		}
+
 		pko := pdt.UsePanelKey()
-		mmp := pc.maps
 
 		npk := PanelType{
 			Source:       pko.GetSourceCoinInt(),
 			Target:       pko.GetTargetCoinInt(),
 			Decimals:     pko.GetDecimalsInt(),
 			Value:        pko.GetSourceValueFloat(),
-			SourceSymbol: mmp.GetSymbolById(pko.GetSourceCoinString()),
-			TargetSymbol: mmp.GetSymbolById(pko.GetTargetCoinString()),
+			SourceSymbol: pc.GetSymbolById(pko.GetSourceCoinString()),
+			TargetSymbol: pc.GetSymbolById(pko.GetTargetCoinString()),
 		}
 
-		pdt.Update(pko.GenerateKeyFromPanel(npk, float32(pko.GetValueFloat())))
+		pdt.Update(pko.GenerateKeyFromPanel(npk, pko.GetValueFloat()))
 		JC.Logln("Panel refreshed: ", pdt.Get())
 	}
 
@@ -236,7 +236,7 @@ func (pc *PanelsMapType) Serialize() []PanelDataCache {
 
 	var out []PanelDataCache
 	for _, p := range pc.data {
-		if !p.IsStatus(JC.STATE_LOADED) {
+		if !pc.ValidateKey(p.Get()) {
 			continue
 		}
 		out = append(out, p.Serialize())

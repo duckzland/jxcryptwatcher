@@ -251,14 +251,15 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 }
 
 func (c *CompletionEntry) SetValidator(fn func(string) error) {
-	c.Validator = func(s string) error {
-		if c.skipValidation {
-			c.SetValidationError(nil)
-			return nil
-		}
+	// c.Validator = func(s string) error {
+	// 	if c.skipValidation {
+	// 		c.SetValidationError(nil)
+	// 		return nil
+	// 	}
 
-		return fn(s)
-	}
+	// 	return fn(s)
+	// }
+	c.Validator = fn
 }
 
 func (c *CompletionEntry) DynamicResize() {

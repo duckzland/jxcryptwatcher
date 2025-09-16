@@ -44,7 +44,7 @@ func (p *PanelDataType) Set(val string) {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) Insert(panel PanelType, rate float32) {
+func (p *PanelDataType) Insert(panel PanelType, rate float64) {
 	p.mu.Lock()
 	old, err := p.data.Get()
 	if err == nil {
@@ -309,10 +309,39 @@ func (p *PanelDataType) IsEqualContentString(pk string) bool {
 	return p.IsKey(pk)
 }
 
+func (p *PanelDataType) RefreshKey(key string) string {
+
+	if !p.parent.ValidateKey(key) {
+		return key
+	}
+
+	pkt := &PanelKeyType{value: key}
+	source := pkt.GetSourceCoinString()
+	target := pkt.GetTargetCoinString()
+	value := pkt.GetSourceValueString()
+	sourceSymbol := pkt.GetSourceSymbolString()
+	targetSymbol := pkt.GetTargetSymbolString()
+	decimals := pkt.GetDecimalsString()
+	rate := pkt.GetValueFloat()
+
+	parent := p.GetParent()
+
+	if parent != nil && sourceSymbol == "" {
+		sourceSymbol = parent.GetSymbolById(source)
+	}
+
+	if parent != nil && targetSymbol == "" {
+		targetSymbol = parent.GetSymbolById(target)
+	}
+
+	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
+}
+
 func (p *PanelDataType) Serialize() PanelDataCache {
+
 	return PanelDataCache{
 		Status: p.GetStatus(),
-		Key:    p.Get(),
-		OldKey: p.GetOldKey(),
+		Key:    p.RefreshKey(p.Get()),
+		OldKey: p.RefreshKey(p.GetOldKey()),
 	}
 }

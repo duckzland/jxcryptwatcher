@@ -71,10 +71,12 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 		pk := pdt.UsePanelKey()
 
 		panel := PanelType{
-			Source:   pk.GetSourceCoinInt(),
-			Target:   pk.GetTargetCoinInt(),
-			Value:    pk.GetSourceValueFloat(),
-			Decimals: pk.GetDecimalsInt(),
+			Source:       pk.GetSourceCoinInt(),
+			Target:       pk.GetTargetCoinInt(),
+			Value:        pk.GetSourceValueFloat(),
+			Decimals:     pk.GetDecimalsInt(),
+			SourceSymbol: pk.GetSourceSymbolString(),
+			TargetSymbol: pk.GetTargetSymbolString(),
 		}
 
 		np = append(np, panel)

@@ -27,10 +27,15 @@ func (sm *SnapshotManager) LoadPanels() int {
 	var restored []*JT.PanelDataType
 	for _, c := range caches {
 		p := &JT.PanelDataType{}
+
+		if !p.GetParent().ValidateKey(c.Key) {
+			continue
+		}
+
 		p.Init()
 		p.SetStatus(c.Status)
 		p.SetOldKey(c.OldKey)
-		p.Set(c.Key)
+		p.Set(p.RefreshKey(c.Key))
 		restored = append(restored, p)
 	}
 
@@ -54,6 +59,7 @@ func (sm *SnapshotManager) LoadCryptos() int {
 	cm := &JT.CryptosMapType{}
 	cm.Hydrate(cache.Data)
 	JT.BP.SetMaps(cm)
+	JT.BP.GetOptions()
 
 	return JC.HAVE_SNAPSHOT
 }

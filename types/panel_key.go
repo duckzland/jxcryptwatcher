@@ -27,15 +27,15 @@ func (p *PanelKeyType) UpdateValue(rate float64) string {
 }
 
 func (p *PanelKeyType) RefreshKey() string {
-	return p.GenerateKeyFromPanel(p.GetPanel(), float32(p.GetValueFloat()))
+	return p.GenerateKeyFromPanel(p.GetPanel(), p.GetValueFloat())
 }
 
-func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float32) string {
+func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float64) string {
 	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%.20f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 	return p.value
 }
 
-func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float32) string {
+func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float64) string {
 	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%.20f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
 	return p.value
 }

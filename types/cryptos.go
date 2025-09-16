@@ -176,4 +176,5 @@ func CryptosInit() {
 	CM.ClearMapCache()
 
 	BP.SetMaps(CM)
+	BP.GetOptions()
 }

@@ -86,7 +86,6 @@ func main() {
 			JA.AppLayoutManager.SetPage(JP.Grid)
 			JA.AppLayoutManager.SetTickers(JC.Tickers)
 			JP.Grid.Refresh()
-			JT.BP.GetOptions()
 			JA.AppLayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.AppStatusManager.IsReady())

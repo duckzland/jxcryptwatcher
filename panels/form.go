@@ -1,6 +1,7 @@
 package panels
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -153,12 +154,32 @@ func NewPanelForm(
 		if b {
 			var npk JT.PanelKeyType
 			var ns *JT.PanelDataType
+
+			sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
+			tid := JT.BP.GetIdByDisplay(targetEntry.Text)
+			bid := JT.BP.GetSymbolById(sid)
+			mid := JT.BP.GetSymbolById(tid)
+
+			if sid == "" || tid == "" || bid == "" || mid == "" {
+				JC.Notify("Invalid source or target selection. Please check your entries.")
+
+				if sid == "" || bid == "" {
+					sourceEntry.SetValidationError(errors.New("Invalid currency"))
+				}
+
+				if tid == "" || mid == "" {
+					targetEntry.SetValidationError(errors.New("Invalid currency"))
+				}
+
+				return
+			}
+
 			newKey := npk.GenerateKey(
-				JT.BP.GetIdByDisplay(sourceEntry.Text),
-				JT.BP.GetIdByDisplay(targetEntry.Text),
+				sid,
+				tid,
 				valueEntry.Text,
-				JT.BP.GetSymbolByDisplay(sourceEntry.Text),
-				JT.BP.GetSymbolByDisplay(targetEntry.Text),
+				bid,
+				mid,
 				decimalsEntry.Text,
 				-1,
 			)

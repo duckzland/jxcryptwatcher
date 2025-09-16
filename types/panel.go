@@ -5,6 +5,6 @@ type PanelType struct {
 	Target       int64   `json:"target"`
 	Value        float64 `json:"value"`
 	Decimals     int64   `json:"decimals"`
-	SourceSymbol string
-	TargetSymbol string
+	SourceSymbol string  `json:"source_symbol"`
+	TargetSymbol string  `json:"target_symbol"`
 }
