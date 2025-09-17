@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"slices"
 	"sync"
 
 	"fyne.io/fyne/v2"
@@ -46,6 +47,14 @@ func (a *AppActions) CallButton(tag string) bool {
 	}
 	btn.Call()
 	return true
+}
+
+func (a *AppActions) RemoveButton(btn *JW.HoverCursorIconButton) {
+	a.mu.Lock()
+	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.HoverCursorIconButton) bool {
+		return b == btn
+	})
+	a.mu.Unlock()
 }
 
 func (a *AppActions) Refresh() {
