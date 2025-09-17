@@ -9,6 +9,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	JC "jxwatcher/core"
 )
 
 type ExtendedFormDialog struct {
@@ -170,9 +172,23 @@ type ExtendedDialogContentLayout struct {
 	buttons       fyne.CanvasObject
 	bottomContent []*fyne.Container
 	padding       float32
+	cWidth        float32
+	cHeight       float32
 }
 
 func (l *ExtendedDialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	if size.Width == 0 || size.Height == 0 {
+		return
+	}
+
+	if l.cWidth == size.Width && l.cHeight == size.Height {
+		return
+	}
+
+	l.cWidth = size.Width
+	l.cHeight = size.Height
+
 	l.background.Resize(size)
 	l.background.Move(fyne.NewPos(0, 0))
 
@@ -228,15 +244,28 @@ type ExtendedDialogOverlayLayout struct {
 }
 
 func (l *ExtendedDialogOverlayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	if size.Height == 0 || size.Width == 0 {
+		return
+	}
+
+	if l.cHeight == size.Height && l.cWidth == size.Width {
+		return
+	}
+
 	if l.cWidth != size.Width {
 		l.cHeight = 0
 	}
 
-	l.cWidth = size.Width
-
-	if l.cHeight == 0 {
+	if JC.IsMobile {
+		if l.cHeight == 0 {
+			l.cHeight = size.Height
+		}
+	} else {
 		l.cHeight = size.Height
 	}
+
+	l.cWidth = size.Width
 
 	l.background.Resize(size)
 	l.background.Move(fyne.NewPos(0, 0))
