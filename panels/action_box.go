@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 
+	JA "jxwatcher/apps"
 	JW "jxwatcher/widgets"
 )
 
@@ -42,17 +43,33 @@ func NewPanelActionBar(
 	onDelete func(),
 ) fyne.CanvasObject {
 
-	editBtn := JW.NewHoverCursorIconButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal", func(*JW.HoverCursorIconButton) {
-		if onEdit != nil {
-			onEdit()
-		}
-	}, nil)
+	editBtn := JW.NewHoverCursorIconButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal",
+		func(*JW.HoverCursorIconButton) {
+			if onEdit != nil {
+				onEdit()
+			}
+		}, func(btn *JW.HoverCursorIconButton) {
+			if JA.AppStatusManager.IsOverlayShown() {
+				btn.Disable()
+				return
+			}
 
-	deleteBtn := JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal", func(*JW.HoverCursorIconButton) {
-		if onDelete != nil {
-			onDelete()
-		}
-	}, nil)
+			btn.Enable()
+		})
+
+	deleteBtn := JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
+		func(*JW.HoverCursorIconButton) {
+			if onDelete != nil {
+				onDelete()
+			}
+		}, func(btn *JW.HoverCursorIconButton) {
+			if JA.AppStatusManager.IsOverlayShown() {
+				btn.Disable()
+				return
+			}
+
+			btn.Enable()
+		})
 
 	return container.New(&PanelActionLayout{height: 30, margin: 3}, editBtn, deleteBtn)
 }
