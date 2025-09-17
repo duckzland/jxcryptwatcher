@@ -142,7 +142,7 @@ cat > AndroidManifest.xml <<EOF
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize">
 
             <!-- stateHidden or adjustNothing or adjustPan or adjustResize doesn't work -->
             
