@@ -13,6 +13,8 @@ import (
 var DragDropZones []*PanelDropZone
 var Grid *PanelGridContainer = &PanelGridContainer{}
 
+type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
+
 type PanelDropZone struct {
 	top    float32
 	left   float32
@@ -22,11 +24,11 @@ type PanelDropZone struct {
 }
 
 type PanelGridLayout struct {
-	MinCellSize  fyne.Size
-	DynCellSize  fyne.Size
-	ColCount     int
-	RowCount     int
-	InnerPadding [4]float32 // top, right, bottom, left
+	minCellSize  fyne.Size
+	dynCellSize  fyne.Size
+	colCount     int
+	rowCount     int
+	innerPadding [4]float32 // top, right, bottom, left
 	objectCount  int
 	cWidth       float32
 	minSize      fyne.Size
@@ -48,70 +50,70 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.objectCount = len(objects)
 	g.dirty = true
 
-	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
-	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
+	hPad := g.innerPadding[1] + g.innerPadding[3] // right + left
+	vPad := g.innerPadding[0] + g.innerPadding[2] // top + bottom
 
-	g.ColCount = 1
-	g.RowCount = 0
-	g.DynCellSize = g.MinCellSize
+	g.colCount = 1
+	g.rowCount = 0
+	g.dynCellSize = g.minCellSize
 	DragDropZones = []*PanelDropZone{}
 
 	sw := size.Width
 
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
-	th := (g.DynCellSize.Height * float32(mr)) + (float32(mr) * (g.InnerPadding[0] + g.InnerPadding[2]))
+	th := (g.dynCellSize.Height * float32(mr)) + (float32(mr) * (g.innerPadding[0] + g.innerPadding[2]))
 	if th > JA.AppLayoutManager.Height() {
 		sw -= 18
 	}
 
 	// Screen is too small for min width
-	if g.MinCellSize.Width > JA.AppLayoutManager.Width() {
-		g.MinCellSize.Width = JA.AppLayoutManager.Width() - hPad
+	if g.minCellSize.Width > JA.AppLayoutManager.Width() {
+		g.minCellSize.Width = JA.AppLayoutManager.Width() - hPad
 	}
 
-	if sw > g.MinCellSize.Width {
-		g.ColCount = int(math.Floor(float64(sw+hPad) / float64(g.MinCellSize.Width+hPad)))
+	if sw > g.minCellSize.Width {
+		g.colCount = int(math.Floor(float64(sw+hPad) / float64(g.minCellSize.Width+hPad)))
 
 		pads := float32(0)
-		for i := 0; i < g.ColCount; i++ {
+		for i := 0; i < g.colCount; i++ {
 			pads += hPad
 
 			// Properly count pads, the first in column will not need left padding
 			if i == 0 {
-				pads -= g.InnerPadding[3]
+				pads -= g.innerPadding[3]
 			}
 
 			// Properly count pads, the last in column will not need right padding
-			if i == g.ColCount-1 {
-				pads -= g.InnerPadding[1]
+			if i == g.colCount-1 {
+				pads -= g.innerPadding[1]
 			}
 		}
 
-		emptySpace := sw - (float32(g.ColCount) * g.MinCellSize.Width) - pads
+		emptySpace := sw - (float32(g.colCount) * g.minCellSize.Width) - pads
 		if emptySpace > 0 {
-			g.DynCellSize.Width += emptySpace / float32(g.ColCount)
+			g.dynCellSize.Width += emptySpace / float32(g.colCount)
 		}
 	}
 
 	// Fix division by zero
-	if g.ColCount == 0 {
-		g.ColCount = 1
+	if g.colCount == 0 {
+		g.colCount = 1
 	}
 
 	// Fix single column overflowing on android phone
-	if g.DynCellSize.Width > JA.AppLayoutManager.Width() {
-		g.DynCellSize.Width = JA.AppLayoutManager.Width()
+	if g.dynCellSize.Width > JA.AppLayoutManager.Width() {
+		g.dynCellSize.Width = JA.AppLayoutManager.Width()
 
 		if th > JA.AppLayoutManager.Height() {
-			g.DynCellSize.Width -= 18
+			g.dynCellSize.Width -= 18
 		}
 	}
 
-	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
+	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
 
 	if JA.DragPlaceholder != nil {
-		JA.DragPlaceholder.Resize(g.DynCellSize)
+		JA.DragPlaceholder.Resize(g.dynCellSize)
 	}
 
 	for _, child := range objects {
@@ -120,32 +122,32 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		}
 
 		// First in column, move to 0 horizontally
-		if i%g.ColCount == 0 {
+		if i%g.colCount == 0 {
 			x = 0
-			g.RowCount++
+			g.rowCount++
 		}
 
 		dz := PanelDropZone{
 			left:   x,
-			right:  x + g.DynCellSize.Width,
+			right:  x + g.dynCellSize.Width,
 			top:    y,
-			bottom: y + g.DynCellSize.Height,
+			bottom: y + g.dynCellSize.Height,
 			panel:  child.(*PanelDisplay),
 		}
 
 		DragDropZones = append(DragDropZones, &dz)
 
 		child.Move(fyne.NewPos(x, y))
-		child.Resize(g.DynCellSize)
+		child.Resize(g.dynCellSize)
 
 		// End of column, prepare to move down the next item
-		if (i+1)%g.ColCount == 0 {
-			y += g.DynCellSize.Height + vPad
+		if (i+1)%g.colCount == 0 {
+			y += g.dynCellSize.Height + vPad
 		}
 
 		// Still in column, just move right horizontally
-		if (i+1)%g.ColCount != 0 {
-			x += g.DynCellSize.Width + hPad
+		if (i+1)%g.colCount != 0 {
+			x += g.dynCellSize.Width + hPad
 		}
 
 		i++
@@ -153,12 +155,12 @@ func (g *PanelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 // Count approx how many rows will be, this isn't accurate and should be only used at the beginning of layouting
-// After layouting use g.RowCount instead
+// After layouting use g.rowCount instead
 func (g *PanelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne.CanvasObject) int {
 
 	r := 0
 	i := 0
-	c := int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
+	c := int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
 
 	for _, child := range objects {
 		if !child.Visible() {
@@ -181,9 +183,9 @@ func (g *PanelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 		return g.minSize
 	}
 
-	rows := max(g.RowCount, 1)
-	width := g.DynCellSize.Width
-	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
+	rows := max(g.rowCount, 1)
+	width := g.dynCellSize.Width
+	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
 
 	// Battling scrollbar, when we have scrollbar give space for it
 	if height > JC.MainLayoutContentHeight {
@@ -199,8 +201,6 @@ func (g *PanelGridLayout) Reset() {
 	g.cWidth = 0
 	g.objectCount = 0
 }
-
-type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
 
 func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 	JC.PrintMemUsage("Start building panels")
@@ -231,11 +231,11 @@ func NewPanelGrid(createPanel CreatePanelFunc) *PanelGridContainer {
 
 	grid := NewPanelGridContainer(
 		&PanelGridLayout{
-			MinCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-			DynCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-			ColCount:     1,
-			RowCount:     1,
-			InnerPadding: JC.PanelPadding,
+			minCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+			dynCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
+			colCount:     1,
+			rowCount:     1,
+			innerPadding: JC.PanelPadding,
 		},
 		o,
 	)
