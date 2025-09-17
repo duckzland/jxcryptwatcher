@@ -33,30 +33,31 @@ func NewHoverCursorIconButton(
 			Icon:       icon,
 			Importance: widget.MediumImportance,
 		},
+		tag:      tag,
+		disabled: false,
+		validate: validate,
 	}
-
-	b.tag = tag
-	b.disabled = false
-	b.validate = validate
 
 	b.setState(state)
 
 	b.Button.OnTapped = func() {
-		if b.disabled == false {
+		if !b.disabled {
 			onTapped(b)
 		}
 	}
 
-	b.ExtendBaseWidget(b)
+	// Only extend tooltip if tip is non-empty
 	if tip != "" {
+		b.ExtendToolTipWidget(b)
 		b.SetToolTip(tip)
 	}
+
+	b.Button.ExtendBaseWidget(b)
 
 	return b
 }
 
 func (b *HoverCursorIconButton) ExtendBaseWidget(wid fyne.Widget) {
-	b.ExtendToolTipWidget(wid)
 	b.Button.ExtendBaseWidget(wid)
 }
 
