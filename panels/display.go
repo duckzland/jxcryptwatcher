@@ -251,7 +251,7 @@ func (h *PanelDisplay) UpdateContent() {
 		h.refSubtitle.Hide()
 		h.refBottomText.Hide()
 		h.refContent.Hide()
-		h.DisableClick()
+		h.EnableClick()
 		h.background.FillColor = JC.ErrorColor
 
 	case JC.STATE_FETCHING_NEW:
@@ -259,7 +259,7 @@ func (h *PanelDisplay) UpdateContent() {
 		h.refSubtitle.Hide()
 		h.refBottomText.Hide()
 		h.refContent.Hide()
-		h.DisableClick()
+		h.EnableClick()
 		h.background.FillColor = JC.PanelBG
 
 	case JC.STATE_LOADING:
@@ -267,7 +267,7 @@ func (h *PanelDisplay) UpdateContent() {
 		h.refSubtitle.Hide()
 		h.refBottomText.Hide()
 		h.refContent.Hide()
-		h.DisableClick()
+		h.EnableClick()
 		h.background.FillColor = JC.PanelBG
 
 	case JC.STATE_BAD_CONFIG:
