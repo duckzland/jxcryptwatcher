@@ -357,7 +357,7 @@ func (c *CompletionEntry) calculatePosition(force bool) bool {
 		return false
 	}
 
-	if c.parent == nil || c.parent.overlayContent == nil {
+	if c.parent == nil || c.parent.content == nil {
 		return false
 	}
 
@@ -366,7 +366,7 @@ func (c *CompletionEntry) calculatePosition(force bool) bool {
 	}
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.overlayContent)
+	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.content)
 	px := p.Subtract(x)
 
 	c.popupPosition = px

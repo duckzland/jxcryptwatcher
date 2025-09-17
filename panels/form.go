@@ -149,7 +149,7 @@ func NewPanelForm(
 
 	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
 
-	parent := JW.NewExtendedFormDialog(title, formItems, nil, popupTarget, func(b bool) bool {
+	parent := JW.NewExtendedFormDialog(title, formItems, nil, nil, popupTarget, func(b bool) bool {
 		if b {
 			var npk JT.PanelKeyType
 			var ns *JT.PanelDataType
