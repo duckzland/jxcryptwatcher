@@ -221,13 +221,20 @@ func (l *ExtendedDialogContentLayout) MinSize(objects []fyne.CanvasObject) fyne.
 }
 
 type ExtendedDialogOverlayLayout struct {
-	background *canvas.Rectangle
-	dialogBox  fyne.CanvasObject
+	background    *canvas.Rectangle
+	dialogBox     fyne.CanvasObject
+	initialHeight float32 // cache original canvas height
 }
 
 func (l *ExtendedDialogOverlayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	canvasWidth := size.Width
-	canvasHeight := size.Height
+
+	// Cache the initial height once
+	if l.initialHeight == 0 {
+		l.initialHeight = size.Height
+	}
+
+	canvasHeight := l.initialHeight // use cached height
 
 	l.background.Resize(size)
 	l.background.Move(fyne.NewPos(0, 0))
@@ -244,7 +251,6 @@ func (l *ExtendedDialogOverlayLayout) Layout(objects []fyne.CanvasObject, size f
 	}
 
 	dialogHeight := l.dialogBox.MinSize().Height
-
 	emptySpace := canvasHeight - dialogHeight
 	posX := (canvasWidth - dialogWidth) / 2
 	posY := emptySpace / 4
