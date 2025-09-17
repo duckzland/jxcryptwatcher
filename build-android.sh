@@ -142,7 +142,9 @@ cat > AndroidManifest.xml <<EOF
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustPan">
+
+            <!-- stateHidden or adjustNothing or adjustPan or adjustResize doesn't work -->
             
             <meta-data android:name="android.app.lib_name" android:value="fyneapp" />
 
