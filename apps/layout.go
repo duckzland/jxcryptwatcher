@@ -23,6 +23,7 @@ var AppLayoutManager *AppLayout = nil
 var DragPlaceholder fyne.CanvasObject
 
 func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
 	if len(objects) < 2 {
 		return
 	}
@@ -441,6 +442,14 @@ func (m *AppLayout) Refresh() {
 			return
 		}
 	}
+}
+
+func (m *AppLayout) AddToContainer(container *fyne.Container) {
+	m.container.Add(container)
+}
+
+func (m *AppLayout) RemoveFromContainer(container *fyne.Container) {
+	m.container.Remove(container)
 }
 
 func NewAppLayoutManager() fyne.CanvasObject {

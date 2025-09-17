@@ -478,6 +478,12 @@ func OpenNewPanelForm() {
 
 			JC.Notify("New panel created.")
 		},
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.AddToContainer(layer)
+		},
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.RemoveFromContainer(layer)
+		},
 	)
 
 	d.Show()
@@ -487,9 +493,17 @@ func OpenNewPanelForm() {
 
 func OpenPanelEditForm(pk string, uuid string) {
 
-	d := JP.NewPanelForm(pk, uuid, func(npdt *JT.PanelDataType) {
-		SavePanelForm(npdt)
-	}, nil)
+	d := JP.NewPanelForm(pk, uuid,
+		func(npdt *JT.PanelDataType) {
+			SavePanelForm(npdt)
+		},
+		nil,
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.AddToContainer(layer)
+		},
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.RemoveFromContainer(layer)
+		})
 
 	d.Show()
 	d.Resize(fyne.NewSize(400, 300))
@@ -498,37 +512,44 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 func OpenSettingForm() {
 
-	d := JA.NewSettingsForm(func() {
-		JC.Notify("Saving configuration...")
+	d := JA.NewSettingsForm(
+		func() {
+			JC.Notify("Saving configuration...")
 
-		go func() {
-			if JT.Config.SaveFile() != nil {
-				JC.Notify("Configuration saved successfully.")
-				JA.AppStatusManager.DetectData()
+			go func() {
+				if JT.Config.SaveFile() != nil {
+					JC.Notify("Configuration saved successfully.")
+					JA.AppStatusManager.DetectData()
 
-				if JT.Config.IsValidTickers() {
-					if JT.BT.IsEmpty() {
-						JC.Logln("Rebuilding tickers due to empty ticker list")
-						JT.TickersInit()
+					if JT.Config.IsValidTickers() {
+						if JT.BT.IsEmpty() {
+							JC.Logln("Rebuilding tickers due to empty ticker list")
+							JT.TickersInit()
 
-						fyne.Do(func() {
-							JX.Grid = JX.NewTickerGrid()
-						})
+							fyne.Do(func() {
+								JX.Grid = JX.NewTickerGrid()
+							})
+						}
+
+						JA.AppStatusManager.SetConfigStatus(true)
+
+						JT.TickerCache.SoftReset()
+						JC.WorkerManager.Call("update_tickers", JC.CallQueued)
+
+						JT.ExchangeCache.SoftReset()
+						JC.WorkerManager.Call("update_rates", JC.CallQueued)
 					}
-
-					JA.AppStatusManager.SetConfigStatus(true)
-
-					JT.TickerCache.SoftReset()
-					JC.WorkerManager.Call("update_tickers", JC.CallQueued)
-
-					JT.ExchangeCache.SoftReset()
-					JC.WorkerManager.Call("update_rates", JC.CallQueued)
+				} else {
+					JC.Notify("Failed to save configuration.")
 				}
-			} else {
-				JC.Notify("Failed to save configuration.")
-			}
-		}()
-	})
+			}()
+		},
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.AddToContainer(layer)
+		},
+		func(layer *fyne.Container) {
+			JA.AppLayoutManager.RemoveFromContainer(layer)
+		})
 
 	d.Show()
 	d.Resize(fyne.NewSize(400, 300))

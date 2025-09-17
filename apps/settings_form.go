@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -12,7 +13,11 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-func NewSettingsForm(onSave func()) *JW.ExtendedFormDialog {
+func NewSettingsForm(
+	onSave func(),
+	onRender func(layer *fyne.Container),
+	onDestroy func(layer *fyne.Container),
+) *JW.ExtendedFormDialog {
 
 	delayEntry := JW.NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()
@@ -121,25 +126,29 @@ func NewSettingsForm(onSave func()) *JW.ExtendedFormDialog {
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
-	return JW.NewExtendedFormDialog("Settings", formItems, nil, nil, nil, func(b bool) bool {
-		if b {
+	return JW.NewExtendedFormDialog("Settings", formItems, nil, nil, nil,
+		func(b bool) bool {
+			if b {
 
-			delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
+				delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 
-			JT.Config.DataEndpoint = dataEndPointEntry.Text
-			JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
-			JT.Config.AltSeasonEndpoint = altSeasonsEndpointEntry.Text
-			JT.Config.FearGreedEndpoint = fearGreedEndpointEntry.Text
-			JT.Config.CMC100Endpoint = CMC100EndpointEntry.Text
-			JT.Config.MarketCapEndpoint = marketCapEndpointEntry.Text
+				JT.Config.DataEndpoint = dataEndPointEntry.Text
+				JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
+				JT.Config.AltSeasonEndpoint = altSeasonsEndpointEntry.Text
+				JT.Config.FearGreedEndpoint = fearGreedEndpointEntry.Text
+				JT.Config.CMC100Endpoint = CMC100EndpointEntry.Text
+				JT.Config.MarketCapEndpoint = marketCapEndpointEntry.Text
 
-			JT.Config.Delay = delay
+				JT.Config.Delay = delay
 
-			if onSave != nil {
-				onSave()
+				if onSave != nil {
+					onSave()
+				}
 			}
-		}
 
-		return true
-	}, JC.Window)
+			return true
+		},
+		onRender,
+		onDestroy,
+		JC.Window)
 }

@@ -23,6 +23,8 @@ type ExtendedFormDialog struct {
 	parent          fyne.Window
 	validationTimer *time.Timer
 	content         *fyne.Container
+	render          func(*fyne.Container)
+	destroy         func(*fyne.Container)
 }
 
 func NewExtendedFormDialog(
@@ -32,6 +34,8 @@ func NewExtendedFormDialog(
 	bottomContent []*fyne.Container,
 	absolutePositionedContent []*fyne.Container,
 	callback func(bool) bool,
+	render func(*fyne.Container),
+	destroy func(*fyne.Container),
 	parent fyne.Window,
 ) *ExtendedFormDialog {
 	fd := &ExtendedFormDialog{
@@ -39,13 +43,15 @@ func NewExtendedFormDialog(
 		form:     widget.NewForm(items...),
 		parent:   parent,
 		callback: callback,
+		render:   render,
+		destroy:  destroy,
 	}
 
 	fd.cancel = NewHoverCursorIconButton(
 		"cancel_save_panel",
 		"Cancel",
 		theme.CancelIcon(),
-		"",
+		"Close Form",
 		"normal",
 		func(*HoverCursorIconButton) {
 			fd.Hide()
@@ -54,10 +60,10 @@ func NewExtendedFormDialog(
 	)
 
 	fd.confirm = NewHoverCursorIconButton(
-		"cancel_save_panel",
+		"save_panel",
 		"Save",
 		theme.ConfirmIcon(),
-		"",
+		"Save and Close Form",
 		"normal",
 		func(*HoverCursorIconButton) {
 			fd.hideWithResponse(true)
@@ -114,7 +120,11 @@ func NewExtendedFormDialog(
 
 	fd.layer = container.New(outerLayout, outerLayout.background, fd.content)
 
-	fd.parent.Canvas().Overlays().Add(fd.layer)
+	if fd.render != nil {
+		fd.render(fd.layer)
+	} else {
+		fd.parent.Canvas().Overlays().Add(fd.layer)
+	}
 
 	return fd
 }
@@ -128,6 +138,11 @@ func (d *ExtendedFormDialog) Show() {
 }
 
 func (d *ExtendedFormDialog) Hide() {
+	if d.destroy != nil {
+		d.destroy(d.layer)
+		return
+	}
+
 	d.parent.Canvas().Overlays().Remove(d.layer)
 }
 

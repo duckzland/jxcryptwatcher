@@ -19,6 +19,8 @@ func NewPanelForm(
 	uuid string,
 	onSave func(pdt *JT.PanelDataType),
 	onNew func(pdt *JT.PanelDataType),
+	onRender func(layer *fyne.Container),
+	onDestroy func(layer *fyne.Container),
 ) *JW.ExtendedFormDialog {
 
 	cm := JT.BP.GetOptions()
@@ -149,67 +151,71 @@ func NewPanelForm(
 
 	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
 
-	parent := JW.NewExtendedFormDialog(title, formItems, nil, nil, popupTarget, func(b bool) bool {
-		if b {
-			var npk JT.PanelKeyType
-			var ns *JT.PanelDataType
+	parent := JW.NewExtendedFormDialog(title, formItems, nil, nil, popupTarget,
+		func(b bool) bool {
+			if b {
+				var npk JT.PanelKeyType
+				var ns *JT.PanelDataType
 
-			sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
-			tid := JT.BP.GetIdByDisplay(targetEntry.Text)
-			bid := JT.BP.GetSymbolById(sid)
-			mid := JT.BP.GetSymbolById(tid)
+				sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
+				tid := JT.BP.GetIdByDisplay(targetEntry.Text)
+				bid := JT.BP.GetSymbolById(sid)
+				mid := JT.BP.GetSymbolById(tid)
 
-			newKey := npk.GenerateKey(
-				sid,
-				tid,
-				valueEntry.Text,
-				bid,
-				mid,
-				decimalsEntry.Text,
-				-1,
-			)
+				newKey := npk.GenerateKey(
+					sid,
+					tid,
+					valueEntry.Text,
+					bid,
+					mid,
+					decimalsEntry.Text,
+					-1,
+				)
 
-			if panelKey == "new" {
-				ns = JT.BP.Append(newKey)
+				if panelKey == "new" {
+					ns = JT.BP.Append(newKey)
 
-				if ns == nil {
-					JC.Notify("Unable to add new panel. Please try again.")
-					return false
+					if ns == nil {
+						JC.Notify("Unable to add new panel. Please try again.")
+						return false
+					}
+
+					ns.SetStatus(JC.STATE_FETCHING_NEW)
+
+					if onNew != nil {
+						onNew(ns)
+					}
+
+				} else {
+					ns = JT.BP.GetDataByID(uuid)
+					if ns == nil {
+						JC.Notify("Unable to update panel. Please try again.")
+						return false
+					}
+
+					pkt := ns.UsePanelKey()
+					nkt := JT.PanelKeyType{}
+					nkt.Set(newKey)
+
+					// Coin change, need to refresh data and invalidate the rates
+					if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
+						ns.SetStatus(JC.STATE_LOADING)
+						ns.Set(newKey)
+					}
+
+					ns.Update(newKey)
 				}
 
-				ns.SetStatus(JC.STATE_FETCHING_NEW)
-
-				if onNew != nil {
-					onNew(ns)
+				if onSave != nil {
+					onSave(ns)
 				}
-
-			} else {
-				ns = JT.BP.GetDataByID(uuid)
-				if ns == nil {
-					JC.Notify("Unable to update panel. Please try again.")
-					return false
-				}
-
-				pkt := ns.UsePanelKey()
-				nkt := JT.PanelKeyType{}
-				nkt.Set(newKey)
-
-				// Coin change, need to refresh data and invalidate the rates
-				if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
-					ns.SetStatus(JC.STATE_LOADING)
-					ns.Set(newKey)
-				}
-
-				ns.Update(newKey)
 			}
 
-			if onSave != nil {
-				onSave(ns)
-			}
-		}
-
-		return true
-	}, JC.Window)
+			return true
+		},
+		onRender,
+		onDestroy,
+		JC.Window)
 
 	sourceEntry.SetParent(parent)
 	targetEntry.SetParent(parent)
