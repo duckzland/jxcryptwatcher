@@ -27,6 +27,7 @@ type AppStatus struct {
 	valid_config     bool
 	valid_cryptos    bool
 	network_status   bool
+	overlay_shown    bool
 	lastChange       time.Time
 	lastRefresh      time.Time
 }
@@ -83,6 +84,12 @@ func (a *AppStatus) IsFetchingTickers() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.fetching_tickers
+}
+
+func (a *AppStatus) IsOverlayShown() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.overlay_shown
 }
 
 func (a *AppStatus) IsValidConfig() bool {
@@ -255,6 +262,21 @@ func (a *AppStatus) DisallowDragging() *AppStatus {
 	changed := a.allow_dragging
 	if changed {
 		a.allow_dragging = false
+		a.lastChange = time.Now()
+	}
+	a.mu.Unlock()
+
+	if changed {
+		a.DebounceRefresh()
+	}
+	return a
+}
+
+func (a *AppStatus) SetOverlayShownStatus(status bool) *AppStatus {
+	a.mu.Lock()
+	changed := a.overlay_shown != status
+	if changed {
+		a.overlay_shown = status
 		a.lastChange = time.Now()
 	}
 	a.mu.Unlock()

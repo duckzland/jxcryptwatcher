@@ -463,6 +463,11 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 }
 
 func OpenNewPanelForm() {
+	if JA.AppStatusManager.IsOverlayShown() {
+		return
+	}
+
+	JA.AppStatusManager.SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(
 		"new",
@@ -483,15 +488,23 @@ func OpenNewPanelForm() {
 		},
 		func(layer *fyne.Container) {
 			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppStatusManager.SetOverlayShownStatus(false)
 		},
 	)
 
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
+	if d != nil {
+		d.Show()
+	}
 
 }
 
 func OpenPanelEditForm(pk string, uuid string) {
+
+	if JA.AppStatusManager.IsOverlayShown() {
+		return
+	}
+
+	JA.AppStatusManager.SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(pk, uuid,
 		func(npdt *JT.PanelDataType) {
@@ -503,14 +516,22 @@ func OpenPanelEditForm(pk string, uuid string) {
 		},
 		func(layer *fyne.Container) {
 			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppStatusManager.SetOverlayShownStatus(false)
 		})
 
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
+	if d != nil {
+		d.Show()
+	}
 
 }
 
 func OpenSettingForm() {
+
+	if JA.AppStatusManager.IsOverlayShown() {
+		return
+	}
+
+	JA.AppStatusManager.SetOverlayShownStatus(true)
 
 	d := JA.NewSettingsForm(
 		func() {
@@ -549,11 +570,12 @@ func OpenSettingForm() {
 		},
 		func(layer *fyne.Container) {
 			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppStatusManager.SetOverlayShownStatus(false)
 		})
 
-	d.Show()
-	d.Resize(fyne.NewSize(400, 300))
-
+	if d != nil {
+		d.Show()
+	}
 }
 
 func ToggleDraggable() {
@@ -612,6 +634,11 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.AppStatusManager.IsOverlayShown() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.IsDraggable() {
 				btn.Disable()
 				return
@@ -662,6 +689,11 @@ func RegisterActions() {
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsOverlayShown() {
 				btn.Disable()
 				return
 			}
@@ -725,6 +757,11 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.AppStatusManager.IsOverlayShown() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.IsFetchingTickers() {
 				btn.Disable()
 				return
@@ -769,6 +806,11 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.AppStatusManager.IsOverlayShown() {
+				btn.Disable()
+				return
+			}
+
 			if JA.AppStatusManager.IsFetchingCryptos() {
 				JA.AppStatusManager.DisallowDragging()
 				btn.Disable()
@@ -808,6 +850,11 @@ func RegisterActions() {
 		},
 		func(btn *JW.HoverCursorIconButton) {
 			if !JA.AppStatusManager.IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.AppStatusManager.IsOverlayShown() {
 				btn.Disable()
 				return
 			}

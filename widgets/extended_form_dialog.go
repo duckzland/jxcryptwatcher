@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -38,6 +39,7 @@ func NewExtendedFormDialog(
 	destroy func(*fyne.Container),
 	parent fyne.Window,
 ) *ExtendedFormDialog {
+
 	fd := &ExtendedFormDialog{
 		items:    items,
 		form:     widget.NewForm(items...),
@@ -114,7 +116,7 @@ func NewExtendedFormDialog(
 	fd.content = container.New(innerLayout, content...)
 
 	outerLayout := &ExtendedDialogOverlayLayout{
-		background: canvas.NewRectangle(color.NRGBA{R: 0, G: 0, B: 0, A: 128}),
+		background: NewExtendedOverlaysContainer(),
 		dialogBox:  fd.content,
 	}
 
@@ -253,7 +255,7 @@ func (l *ExtendedDialogContentLayout) MinSize(objects []fyne.CanvasObject) fyne.
 }
 
 type ExtendedDialogOverlayLayout struct {
-	background *canvas.Rectangle
+	background *ExtendedOverlaysContainer
 	dialogBox  fyne.CanvasObject
 	cHeight    float32
 	cWidth     float32
@@ -312,4 +314,53 @@ func (l *ExtendedDialogOverlayLayout) Layout(objects []fyne.CanvasObject, size f
 
 func (l *ExtendedDialogOverlayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(300, 300)
+}
+
+type ExtendedOverlaysContainer struct {
+	widget.BaseWidget
+}
+
+func NewExtendedOverlaysContainer() *ExtendedOverlaysContainer {
+	wrapper := &ExtendedOverlaysContainer{}
+	wrapper.ExtendBaseWidget(wrapper)
+
+	return wrapper
+}
+
+func (h *ExtendedOverlaysContainer) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(canvas.NewRectangle(color.NRGBA{R: 0, G: 0, B: 0, A: 128}))
+}
+
+func (h *ExtendedOverlaysContainer) Tapped(e *fyne.PointEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) DoubleTapped(e *fyne.PointEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) TappedSecondary(e *fyne.PointEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) MouseIn(*desktop.MouseEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) MouseMoved(*desktop.MouseEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) MouseOut() {
+}
+
+func (h *ExtendedOverlaysContainer) MouseDown(*desktop.MouseEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) MouseUp(*desktop.MouseEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) Dragged(ev *fyne.DragEvent) {
+}
+
+func (h *ExtendedOverlaysContainer) DragEnd() {
+}
+
+func (h *ExtendedOverlaysContainer) Cursor() desktop.StandardCursor {
+	return desktop.HiddenCursor
 }
