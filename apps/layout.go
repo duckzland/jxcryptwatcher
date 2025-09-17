@@ -74,6 +74,11 @@ func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	placeholder := objects[3]
 	placeholder.Move(fyne.NewPos(0, -JC.PanelHeight))
 
+	if len(objects) > 4 {
+		overlay := objects[4]
+		overlay.Resize(size)
+	}
+
 	JC.MainLayoutContentWidth = newContentWidth
 	JC.MainLayoutContentHeight = newContentHeight
 
@@ -360,6 +365,7 @@ func (m *AppLayout) RefreshLayout() {
 func (m *AppLayout) RefreshContainer() {
 	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
 		m.mu.RLock()
+		JC.Logln("Container refrshing")
 		fyne.Do(m.container.Refresh)
 		m.mu.RUnlock()
 	})

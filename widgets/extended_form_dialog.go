@@ -130,6 +130,7 @@ func NewExtendedFormDialog(
 }
 
 func (d *ExtendedFormDialog) Resize(size fyne.Size) {
+	JC.Logln("Resizing", size, d.parent.Canvas().Size())
 	d.layer.Resize(d.parent.Canvas().Size())
 }
 
