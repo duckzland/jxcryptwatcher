@@ -44,17 +44,29 @@ func NewNavigableList(
 			return NewSelectableText()
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			if i >= n.visibleCount-10 && n.visibleCount < len(n.filteredData) {
-				n.visibleCount += 50
-				if n.visibleCount > len(n.filteredData) {
-					n.visibleCount = len(n.filteredData)
+			const preloadThreshold = 10
+			const preloadStep = 50
+
+			if i >= n.visibleCount-preloadThreshold && n.visibleCount < len(n.filteredData) {
+				newCount := n.visibleCount + preloadStep
+				if newCount > len(n.filteredData) {
+					newCount = len(n.filteredData)
 				}
-				n.Refresh()
+
+				if newCount != n.visibleCount {
+					n.visibleCount = newCount
+
+					// Detect if layout needs refresh
+					if n.List.Length() < n.visibleCount {
+						n.Refresh()
+					}
+				}
 			}
 
+			// UpdateItem will be called by Fyne internally, so no need to refresh again
 			item := n.filteredData[i]
 			if st, ok := o.(*SelectableText); ok {
-				st.SetText(item)
+				st.SetText(item) // already guarded internally
 				st.SetIndex(i)
 				st.SetParent(n)
 			}
@@ -84,16 +96,22 @@ func (n *navigableList) SetFilteredData(items []string) {
 		return
 	}
 
-	n.Unselect(n.selected)
+	if n.selected >= 0 {
+		n.Unselect(n.selected)
+	}
+
 	n.filteredData = items
 	n.selected = -1
 
 	n.visibleCount = 10
+
 	if JC.IsMobile {
 		n.visibleCount = 6
 	}
 
-	n.List.ScrollToTop()
+	if n.List.GetScrollOffset() != 0 {
+		n.List.ScrollToTop()
+	}
 
 	for i := 0; i < n.visibleCount && i < len(n.filteredData); i++ {
 		n.List.RefreshItem(i)

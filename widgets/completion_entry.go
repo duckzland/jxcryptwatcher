@@ -118,15 +118,25 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	}
 
 	delay := 10 * time.Millisecond
+	if JC.IsMobile {
+		delay = 50 * time.Millisecond
+	}
+
 	if c.popup.Visible() {
 		delay = 50 * time.Millisecond
+
+		if JC.IsMobile {
+			delay = 150 * time.Millisecond
+		}
 	}
 
 	minText := 1
 
+	// Break last registered debouncer
+	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+
 	// Bail out early
 	if len(s) < minText || s == "" {
-		JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
 		fyne.Do(func() {
 			c.HideCompletion()
 		})
@@ -163,6 +173,11 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, input)
 
+		// Last minute cancel as it is expensive to relayout
+		if input != c.GetCurrentInput() {
+			return
+		}
+
 		fyne.Do(func() {
 			c.SetOptions(results)
 			c.ShowCompletion()
@@ -178,21 +193,7 @@ func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
 }
 
 func (c *CompletionEntry) FocusLost() {
-
 	c.Entry.FocusLost()
-
-	if JC.IsMobile {
-
-		// Fix for when android keyboard hiding, position got bad
-		JC.MainDebouncer.Call("completion_entry_positioning_"+c.uuid, 100*time.Millisecond, func() {
-			fyne.Do(func() {
-				if c.popup.Visible() {
-					c.popup.Move(c.popUpPos())
-					canvas.Refresh(c.popup)
-				}
-			})
-		})
-	}
 }
 
 func (c *CompletionEntry) FocusGained() {

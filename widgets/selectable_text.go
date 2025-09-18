@@ -17,25 +17,28 @@ type SelectableText struct {
 }
 
 func NewSelectableText() *SelectableText {
-	s := &SelectableText{}
+	s := &SelectableText{
+		label: canvas.NewText("", JC.TextColor),
+	}
+	s.label.TextSize = 14
+	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
 	return s
 }
 
 func (s *SelectableText) CreateRenderer() fyne.WidgetRenderer {
-	s.label = canvas.NewText(s.text, JC.TextColor)
-	s.label.TextSize = 14
-	s.label.Alignment = fyne.TextAlignLeading
-
-	return &selectableTextRenderer{
-		text: s.label,
-	}
+	return &selectableTextRenderer{text: s.label}
 }
 
 func (s *SelectableText) SetText(t string) {
+	if s.text == t {
+		return
+	}
+
 	s.text = t
 	if s.label != nil {
 		s.label.Text = t
+		s.label.Refresh()
 	}
 }
 

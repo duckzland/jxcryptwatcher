@@ -9,9 +9,29 @@ import (
 )
 
 func ReorderByMatch(arr []string, searchKey string) []string {
-	sort.SliceStable(arr, func(i, j int) bool {
-		return ExtractLeadingNumber(arr[i]) < ExtractLeadingNumber(arr[j])
+	type sortable struct {
+		value string
+		key   int
+	}
+
+	// Precompute keys
+	sortables := make([]sortable, len(arr))
+	for i, s := range arr {
+		sortables[i] = sortable{
+			value: s,
+			key:   ExtractLeadingNumber(s),
+		}
+	}
+
+	// Sort using precomputed keys
+	sort.SliceStable(sortables, func(i, j int) bool {
+		return sortables[i].key < sortables[j].key
 	})
+
+	// Rebuild result
+	for i, s := range sortables {
+		arr[i] = s.value
+	}
 
 	return arr
 }
