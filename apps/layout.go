@@ -86,7 +86,6 @@ func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if a.overlay != nil {
-		JC.Logln("Resizing overlays")
 		a.overlay.Resize(size)
 	}
 
