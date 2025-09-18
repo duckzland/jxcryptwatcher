@@ -484,10 +484,10 @@ func OpenNewPanelForm() {
 			JC.Notify("New panel created.")
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.AddToContainer(layer)
+			JA.AppLayoutManager.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppLayoutManager.RemoveOverlay(layer)
 			JA.AppStatusManager.SetOverlayShownStatus(false)
 		},
 	)
@@ -512,10 +512,10 @@ func OpenPanelEditForm(pk string, uuid string) {
 		},
 		nil,
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.AddToContainer(layer)
+			JA.AppLayoutManager.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppLayoutManager.RemoveOverlay(layer)
 			JA.AppStatusManager.SetOverlayShownStatus(false)
 		})
 
@@ -566,10 +566,10 @@ func OpenSettingForm() {
 			}()
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.AddToContainer(layer)
+			JA.AppLayoutManager.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveFromContainer(layer)
+			JA.AppLayoutManager.RemoveOverlay(layer)
 			JA.AppStatusManager.SetOverlayShownStatus(false)
 		})
 

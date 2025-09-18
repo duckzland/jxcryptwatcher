@@ -16,88 +16,104 @@ import (
 )
 
 type AppMainLayout struct {
-	padding float32
+	padding     float32
+	topBar      *fyne.Container
+	tickers     *fyne.Container
+	overlay     *fyne.Container
+	content     *container.Scroll
+	placeholder *canvas.Rectangle
 }
 
 var AppLayoutManager *AppLayout = nil
 var DragPlaceholder fyne.CanvasObject
 
-func (a *AppMainLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
-	if len(objects) < 2 {
+func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
+	if size.Width <= 0 || size.Height <= 0 || a.topBar == nil || a.content == nil {
 		return
 	}
 
-	bg := canvas.NewRectangle(JC.AppBG)
-	bg.SetMinSize(size)
-	bg.Resize(size)
+	const splitThreshold = 1600.0
+	const minTickerWidth = 700.0
+	padding := a.padding
 
-	topBar := objects[0]
-	topHeight := topBar.MinSize().Height
-	contentY := topHeight + 2*a.padding
+	var topHeight fyne.Size
+	var tickerHeight fyne.Size
+	var contentY float32 = padding
 
-	newContentWidth := size.Width - 2*a.padding
-	newContentHeight := size.Height - contentY - 2*a.padding
-
-	newTopBarPos := fyne.NewPos(a.padding, a.padding)
-	newTopBarSize := fyne.NewSize(newContentWidth, topHeight)
-
-	if topBar.Position() != newTopBarPos || topBar.Size() != newTopBarSize {
-		topBar.Move(newTopBarPos)
-		topBar.Resize(newTopBarSize)
-	}
-
-	tickers, ok := objects[1].(*fyne.Container)
-	if ok && len(tickers.Objects) > 0 {
-		tickerHeight := tickers.MinSize().Height
-		newTickersPos := fyne.NewPos(a.padding, contentY)
-		newTickersSize := fyne.NewSize(newContentWidth, tickerHeight)
-
-		if tickers.Position() != newTickersPos || tickers.Size() != newTickersSize {
-			tickers.Move(newTickersPos)
-			tickers.Resize(newTickersSize)
+	if size.Width >= splitThreshold {
+		tickerWidth := size.Width * 0.3
+		if tickerWidth < minTickerWidth {
+			tickerWidth = minTickerWidth
 		}
 
-		contentY += tickerHeight
-		newContentHeight -= tickerHeight
+		topBarWidth := size.Width - tickerWidth - 3*padding
+		topHeight := fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height)
+
+		a.tickers.Move(fyne.NewPos(padding, 0))
+		a.tickers.Resize(fyne.NewSize(tickerWidth, topHeight))
+
+		topBarHeight := a.topBar.MinSize().Height
+		topBarY := (topHeight - topBarHeight) / 2
+		a.topBar.Move(fyne.NewPos(tickerWidth+2*padding, topBarY))
+		a.topBar.Resize(fyne.NewSize(topBarWidth, topHeight))
+
+		contentY = topHeight
+	} else {
+
+		topHeight = a.topBar.MinSize()
+		a.topBar.Move(fyne.NewPos(padding, padding))
+		a.topBar.Resize(fyne.NewSize(size.Width-2*padding, topHeight.Height))
+
+		contentY += topHeight.Height + padding
+
+		if a.tickers != nil && len(a.tickers.Objects) > 0 {
+			tickerHeight = a.tickers.MinSize()
+
+			a.tickers.Move(fyne.NewPos(padding, contentY))
+			a.tickers.Resize(fyne.NewSize(size.Width-2*padding, tickerHeight.Height))
+
+			contentY += tickerHeight.Height
+		}
 	}
 
-	content := objects[2]
-	newContentPos := fyne.NewPos(a.padding, contentY)
-	newContentSize := fyne.NewSize(newContentWidth, newContentHeight)
+	contentHeight := size.Height - contentY - padding
 
-	if content.Position() != newContentPos || content.Size() != newContentSize {
-		content.Move(newContentPos)
-		content.Resize(newContentSize)
+	a.content.Move(fyne.NewPos(padding, contentY))
+	a.content.Resize(fyne.NewSize(size.Width-2*padding, contentHeight))
+
+	if a.placeholder != nil {
+		a.placeholder.Move(fyne.NewPos(0, -JC.PanelHeight))
 	}
 
-	placeholder := objects[3]
-	placeholder.Move(fyne.NewPos(0, -JC.PanelHeight))
-
-	if len(objects) > 4 {
-		overlay := objects[4]
-		overlay.Resize(size)
+	if a.overlay != nil {
+		JC.Logln("Resizing overlays")
+		a.overlay.Resize(size)
 	}
 
-	JC.MainLayoutContentWidth = newContentWidth
-	JC.MainLayoutContentHeight = newContentHeight
+	JC.MainLayoutContentWidth = size.Width - 2*padding
+	JC.MainLayoutContentHeight = contentHeight
 
 	AppLayoutManager.SetMaxOffset(-1)
-	AppLayoutManager.SetContentTopY(newContentPos.Y)
-	AppLayoutManager.SetContentBottomY(newContentPos.Y + newContentHeight)
+	AppLayoutManager.SetContentTopY(contentY)
+	AppLayoutManager.SetContentBottomY(contentY + contentHeight)
 }
 
-func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (a *AppMainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
+	var top fyne.Size
+	if a.topBar != nil {
+		top = a.topBar.MinSize()
+	}
 
-	top := objects[0].MinSize()
-	content := objects[2].MinSize()
+	var content fyne.Size
+	if a.content != nil {
+		content = a.content.MinSize()
+	}
 
 	width := fyne.Max(top.Width, content.Width) + 2*a.padding
 	height := top.Height + content.Height + 3*a.padding
 
-	tickers, ok := objects[1].(*fyne.Container)
-	if ok && len(tickers.Objects) > 0 {
-		height += tickers.MinSize().Height
+	if a.tickers != nil && len(a.tickers.Objects) > 0 {
+		height += a.tickers.MinSize().Height
 	}
 
 	return fyne.NewSize(width, height)
@@ -105,11 +121,11 @@ func (a *AppMainLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 type AppLayout struct {
 	mu               sync.RWMutex
-	topBar           fyne.CanvasObject
+	topBar           *fyne.Container
 	content          *fyne.CanvasObject
 	tickers          *fyne.Container
 	scroll           *container.Scroll
-	container        fyne.Container
+	container        *fyne.Container
 	actionAddPanel   *AppPage
 	actionFixSetting *AppPage
 	actionGetCryptos *AppPage
@@ -145,7 +161,7 @@ func (m *AppLayout) Scroll() *container.Scroll {
 	return m.scroll
 }
 
-func (m *AppLayout) Container() fyne.Container {
+func (m *AppLayout) Container() *fyne.Container {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.container
@@ -281,10 +297,17 @@ func (m *AppLayout) SetTickers(container *fyne.Container) {
 	if container == nil {
 		return
 	}
+
 	m.mu.Lock()
 	m.tickers = container
 	m.container.Objects[1] = container
+
+	if layout, ok := m.container.Layout.(*AppMainLayout); ok {
+		layout.tickers = container
+	}
 	m.mu.Unlock()
+
+	m.tickers.Refresh()
 	m.RefreshContainer()
 }
 
@@ -365,7 +388,6 @@ func (m *AppLayout) RefreshLayout() {
 func (m *AppLayout) RefreshContainer() {
 	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
 		m.mu.RLock()
-		JC.Logln("Container refrshing")
 		fyne.Do(m.container.Refresh)
 		m.mu.RUnlock()
 	})
@@ -458,13 +480,22 @@ func (m *AppLayout) RemoveFromContainer(container *fyne.Container) {
 	m.container.Remove(container)
 }
 
+func (m *AppLayout) SetOverlay(container *fyne.Container) {
+	m.container.Add(container)
+	if layout, ok := m.container.Layout.(*AppMainLayout); ok {
+		layout.overlay = container
+	}
+}
+
+func (m *AppLayout) RemoveOverlay(container *fyne.Container) {
+	m.container.Remove(container)
+	if layout, ok := m.container.Layout.(*AppMainLayout); ok {
+		layout.overlay = nil
+	}
+}
+
 func NewAppLayoutManager() fyne.CanvasObject {
 	JC.NotificationContainer = JW.NewNotificationDisplayWidget()
-
-	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
-	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.CornerRadius = JC.PanelBorderRadius
-	}
 
 	manager := &AppLayout{
 		topBar: NewTopBar(),
@@ -495,17 +526,30 @@ func NewAppLayoutManager() fyne.CanvasObject {
 
 	manager.tickers = container.NewWithoutLayout()
 
-	manager.container = *container.New(
-		&AppMainLayout{
-			padding: 10,
-		},
-		manager.topBar,
-		manager.tickers,
-		manager.scroll,
-		DragPlaceholder,
+	layout := &AppMainLayout{
+		padding:     10,
+		topBar:      manager.topBar,
+		tickers:     manager.tickers,
+		content:     manager.scroll,
+		placeholder: nil,
+		overlay:     nil, // set this if you have an overlay object
+	}
+
+	DragPlaceholder = canvas.NewRectangle(JC.Transparent)
+	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+		rect.CornerRadius = JC.PanelBorderRadius
+		layout.placeholder = rect
+	}
+
+	manager.container = container.New(
+		layout,
+		layout.topBar,
+		layout.tickers,
+		layout.content,
+		layout.placeholder,
 	)
 
 	return fynetooltip.AddWindowToolTipLayer(
-		&manager.container,
+		manager.container,
 		JC.Window.Canvas())
 }

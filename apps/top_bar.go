@@ -114,7 +114,7 @@ func (s *TopBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return s.minSize
 }
 
-func NewTopBar() fyne.CanvasObject {
+func NewTopBar() *fyne.Container {
 
 	topBg := canvas.NewRectangle(JC.PanelBG)
 	topBg.CornerRadius = 4
