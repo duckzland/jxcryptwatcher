@@ -27,26 +27,17 @@ type PanelLayout struct {
 	content    *canvas.Text
 	bottomText *canvas.Text
 	action     *PanelActionDisplay
-	cWidth     float32
-	cHeight    float32
 }
 
 func (pl *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
-	if size.Width == 0 && size.Height == 0 {
-		return
-	}
-
-	if pl.cWidth == size.Width && pl.cHeight == size.Height {
+	if size.Width <= 0 && size.Height <= 0 {
 		return
 	}
 
 	if len(objects) < 5 {
 		return
 	}
-
-	pl.cWidth = size.Width
-	pl.cHeight = size.Height
 
 	spacer := float32(-2)
 

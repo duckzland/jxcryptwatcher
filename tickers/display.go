@@ -21,8 +21,6 @@ type TickerLayout struct {
 	title      *canvas.Text
 	content    *canvas.Text
 	status     *canvas.Text
-	cWidth     float32
-	cHeight    float32
 }
 
 func (tl *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -31,16 +29,9 @@ func (tl *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	if tl.cWidth == size.Width && tl.cHeight == size.Height {
-		return
-	}
-
 	if len(objects) < 4 {
 		return
 	}
-
-	tl.cWidth = size.Width
-	tl.cHeight = size.Height
 
 	spacer := float32(-2)
 

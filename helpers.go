@@ -1267,8 +1267,8 @@ func RegisterLifecycle() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return
 			}
-			debug := true
-			if !snapshotSaved && JC.IsMobile || debug {
+
+			if !snapshotSaved && JC.IsMobile {
 				JA.AppSnapshotManager.Save()
 				snapshotSaved = true
 			}
