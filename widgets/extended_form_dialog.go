@@ -266,10 +266,6 @@ func (l *ExtendedDialogOverlayLayout) Layout(objects []fyne.CanvasObject, size f
 		return
 	}
 
-	if l.cHeight == size.Height && l.cWidth == size.Width {
-		return
-	}
-
 	if l.cWidth != size.Width {
 		l.cHeight = 0
 	}
