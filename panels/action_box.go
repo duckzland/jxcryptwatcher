@@ -52,7 +52,7 @@ func NewPanelActionBar(
 				}
 			}, func(btn *JW.HoverCursorIconButton) {
 				if JA.AppStatusManager.IsOverlayShown() {
-					btn.Hide()
+					btn.DisallowActions()
 					return
 				}
 
@@ -71,7 +71,7 @@ func NewPanelActionBar(
 				}
 			}, func(btn *JW.HoverCursorIconButton) {
 				if JA.AppStatusManager.IsOverlayShown() {
-					btn.Hide()
+					btn.DisallowActions()
 					return
 				}
 
@@ -80,7 +80,6 @@ func NewPanelActionBar(
 					return
 				}
 
-				btn.Show()
 				btn.Enable()
 			}),
 	}

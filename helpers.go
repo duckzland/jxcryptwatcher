@@ -635,7 +635,7 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsOverlayShown() {
-				btn.Disable()
+				btn.DisallowActions()
 				return
 			}
 
@@ -694,7 +694,7 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsOverlayShown() {
-				btn.Disable()
+				btn.DisallowActions()
 				return
 			}
 
@@ -758,7 +758,7 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsOverlayShown() {
-				btn.Disable()
+				btn.DisallowActions()
 				return
 			}
 
@@ -807,7 +807,7 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsOverlayShown() {
-				btn.Disable()
+				btn.DisallowActions()
 				return
 			}
 
@@ -855,7 +855,7 @@ func RegisterActions() {
 			}
 
 			if JA.AppStatusManager.IsOverlayShown() {
-				btn.Disable()
+				btn.DisallowActions()
 				return
 			}
 
