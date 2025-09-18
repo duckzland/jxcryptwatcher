@@ -52,14 +52,16 @@ func NewPanelActionBar(
 				}
 			}, func(btn *JW.HoverCursorIconButton) {
 				if JA.AppStatusManager.IsOverlayShown() {
-					btn.Disable()
+					btn.Hide()
 					return
 				}
 
 				if JA.AppStatusManager.IsDraggable() {
 					btn.Hide()
+					return
 				}
 
+				btn.Show()
 				btn.Enable()
 			}),
 		deleteBtn: JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
@@ -69,14 +71,16 @@ func NewPanelActionBar(
 				}
 			}, func(btn *JW.HoverCursorIconButton) {
 				if JA.AppStatusManager.IsOverlayShown() {
-					btn.Disable()
+					btn.Hide()
 					return
 				}
 
 				if JA.AppStatusManager.IsDraggable() {
 					btn.Hide()
+					return
 				}
 
+				btn.Show()
 				btn.Enable()
 			}),
 	}
