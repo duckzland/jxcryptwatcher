@@ -16,23 +16,39 @@ import (
 	JT "jxwatcher/types"
 )
 
-type TickerLayout struct{}
+type TickerLayout struct {
+	background *canvas.Rectangle
+	title      *canvas.Text
+	content    *canvas.Text
+	status     *canvas.Text
+	cWidth     float32
+	cHeight    float32
+}
 
-func (p *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (tl *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	if size.Width == 0 && size.Height == 0 {
+		return
+	}
+
+	if tl.cWidth == size.Width && tl.cHeight == size.Height {
+		return
+	}
+
 	if len(objects) < 4 {
 		return
 	}
-	bg := objects[0]
-	title := objects[1]
-	content := objects[2]
-	status := objects[3]
+
+	tl.cWidth = size.Width
+	tl.cHeight = size.Height
+
 	spacer := float32(-2)
 
-	bg.Resize(size)
-	bg.Move(fyne.NewPos(0, 0))
+	tl.background.Resize(size)
+	tl.background.Move(fyne.NewPos(0, 0))
 
 	centerItems := []fyne.CanvasObject{}
-	for _, obj := range []fyne.CanvasObject{title, content, status} {
+	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
 		if obj.Visible() && obj.MinSize().Height > 0 {
 			centerItems = append(centerItems, obj)
 		}
@@ -55,7 +71,7 @@ func (p *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-func (p *TickerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (tl *TickerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
@@ -87,38 +103,42 @@ func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
 	uuid := JC.CreateUUID()
 	tdt.SetID(uuid)
 
-	title := canvas.NewText("", JC.TextColor)
-	title.Alignment = fyne.TextAlignCenter
-	title.TextSize = JC.TickerTitleSize
+	tl := &TickerLayout{
+		background: canvas.NewRectangle(JC.TickerBG),
+		title:      canvas.NewText("", JC.TextColor),
+		content:    canvas.NewText("", JC.TextColor),
+		status:     canvas.NewText("", JC.TextColor),
+	}
 
-	status := canvas.NewText("", JC.TextColor)
-	status.Alignment = fyne.TextAlignCenter
-	status.TextStyle = fyne.TextStyle{Bold: true}
-	status.TextSize = JC.TickerTitleSize
+	tl.title.Alignment = fyne.TextAlignCenter
+	tl.title.TextSize = JC.TickerTitleSize
 
-	content := canvas.NewText("", JC.TextColor)
-	content.Alignment = fyne.TextAlignCenter
-	content.TextStyle = fyne.TextStyle{Bold: true}
-	content.TextSize = JC.TickerContentSize
+	tl.status.Alignment = fyne.TextAlignCenter
+	tl.status.TextStyle = fyne.TextStyle{Bold: true}
+	tl.status.TextSize = JC.TickerTitleSize
 
-	background := canvas.NewRectangle(JC.TickerBG)
-	background.SetMinSize(fyne.NewSize(100, 100))
-	background.CornerRadius = JC.TickerBorderRadius
+	tl.content.Alignment = fyne.TextAlignCenter
+	tl.content.TextStyle = fyne.TextStyle{Bold: true}
+	tl.content.TextSize = JC.TickerContentSize
+
+	tl.background.SetMinSize(fyne.NewSize(100, 100))
+	tl.background.CornerRadius = JC.TickerBorderRadius
 
 	str := tdt.GetData()
 	ticker := &TickerDisplay{
 		tag: uuid,
-		content: container.New(&TickerLayout{},
-			background,
-			title,
-			content,
-			status,
+		content: container.New(
+			tl,
+			tl.background,
+			tl.title,
+			tl.content,
+			tl.status,
 		),
 		title:      tdt.GetTitle(),
-		background: background,
-		refTitle:   title,
-		refContent: content,
-		refStatus:  status,
+		background: tl.background,
+		refTitle:   tl.title,
+		refContent: tl.content,
+		refStatus:  tl.status,
 	}
 
 	ticker.ExtendBaseWidget(ticker)
@@ -129,11 +149,11 @@ func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
 			return
 		}
 		ticker.UpdateContent()
-		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
+		JA.StartFlashingText(ticker.refContent, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	ticker.UpdateContent()
-	JA.FadeInBackground(background, 100*time.Millisecond, nil)
+	JA.FadeInBackground(ticker.background, 100*time.Millisecond, nil)
 
 	return ticker
 }

@@ -20,25 +20,41 @@ import (
 var ActiveAction *PanelDisplay = nil
 var activeDragging *PanelDisplay = nil
 
-type PanelLayout struct{}
+type PanelLayout struct {
+	background *canvas.Rectangle
+	title      *canvas.Text
+	subtitle   *canvas.Text
+	content    *canvas.Text
+	bottomText *canvas.Text
+	action     *PanelActionDisplay
+	cWidth     float32
+	cHeight    float32
+}
 
-func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (pl *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+
+	if size.Width == 0 && size.Height == 0 {
+		return
+	}
+
+	if pl.cWidth == size.Width && pl.cHeight == size.Height {
+		return
+	}
+
 	if len(objects) < 5 {
 		return
 	}
-	bg := objects[0]
-	title := objects[1]
-	content := objects[2]
-	subtitle := objects[3]
-	bottom := objects[4]
-	action := objects[5]
+
+	pl.cWidth = size.Width
+	pl.cHeight = size.Height
+
 	spacer := float32(-2)
 
-	bg.Resize(size)
-	bg.Move(fyne.NewPos(0, 0))
+	pl.background.Resize(size)
+	pl.background.Move(fyne.NewPos(0, 0))
 
 	centerItems := []fyne.CanvasObject{}
-	for _, obj := range []fyne.CanvasObject{title, content, subtitle, bottom} {
+	for _, obj := range []fyne.CanvasObject{pl.title, pl.content, pl.subtitle, pl.bottomText} {
 		if obj.Visible() && obj.MinSize().Height > 0 {
 			centerItems = append(centerItems, obj)
 		}
@@ -61,20 +77,12 @@ func (p *PanelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		currentY += objSize.Height + spacer
 	}
 
-	actionSize := action.MinSize()
-	action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
-	action.Resize(actionSize)
-
-	if JM.AppStatusManager.IsDraggable() {
-		action.Hide()
-		if ActiveAction != nil {
-			ActiveAction.visible = false
-			ActiveAction = nil
-		}
-	}
+	actionSize := pl.action.MinSize()
+	pl.action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
+	pl.action.Resize(actionSize)
 }
 
-func (p *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (pl *PanelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
@@ -120,32 +128,34 @@ func NewPanelDisplay(
 
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
-
-	title := canvas.NewText("", JC.TextColor)
-	title.Alignment = fyne.TextAlignCenter
-	title.TextStyle = fyne.TextStyle{Bold: true}
-	title.TextSize = JC.PanelTitleSize
-
-	subtitle := canvas.NewText("", JC.TextColor)
-	subtitle.Alignment = fyne.TextAlignCenter
-	subtitle.TextSize = JC.PanelSubTitleSize
-
-	content := canvas.NewText("", JC.TextColor)
-	content.Alignment = fyne.TextAlignCenter
-	content.TextStyle = fyne.TextStyle{Bold: true}
-	content.TextSize = JC.PanelContentSize
-
-	background := canvas.NewRectangle(JC.PanelBG)
-	background.SetMinSize(fyne.NewSize(100, 100))
-	background.CornerRadius = JC.PanelBorderRadius
-
-	bottomtext := canvas.NewText("", JC.TextColor)
-	bottomtext.Alignment = fyne.TextAlignCenter
-	bottomtext.TextSize = JC.PanelBottomTextSize
-
 	str := pdt.GetData()
 
-	action := NewPanelActionBar(
+	pl := &PanelLayout{
+		title:      canvas.NewText("", JC.TextColor),
+		subtitle:   canvas.NewText("", JC.TextColor),
+		content:    canvas.NewText("", JC.TextColor),
+		background: canvas.NewRectangle(JC.PanelBG),
+		bottomText: canvas.NewText("", JC.TextColor),
+	}
+
+	pl.title.Alignment = fyne.TextAlignCenter
+	pl.title.TextStyle = fyne.TextStyle{Bold: true}
+	pl.title.TextSize = JC.PanelTitleSize
+
+	pl.subtitle.Alignment = fyne.TextAlignCenter
+	pl.subtitle.TextSize = JC.PanelSubTitleSize
+
+	pl.content.Alignment = fyne.TextAlignCenter
+	pl.content.TextStyle = fyne.TextStyle{Bold: true}
+	pl.content.TextSize = JC.PanelContentSize
+
+	pl.background.SetMinSize(fyne.NewSize(100, 100))
+	pl.background.CornerRadius = JC.PanelBorderRadius
+
+	pl.bottomText.Alignment = fyne.TextAlignCenter
+	pl.bottomText.TextSize = JC.PanelBottomTextSize
+
+	pl.action = NewPanelActionBar(
 		func() {
 			dynpk, _ := str.Get()
 			if onEdit != nil {
@@ -154,7 +164,7 @@ func NewPanelDisplay(
 		},
 		func() {
 			if onDelete != nil {
-				JA.FadeOutBackground(background, 300*time.Millisecond, func() {
+				JA.FadeOutBackground(pl.background, 300*time.Millisecond, func() {
 					onDelete(uuid)
 				})
 			}
@@ -163,22 +173,23 @@ func NewPanelDisplay(
 
 	panel := &PanelDisplay{
 		tag: uuid,
-		content: container.New(&PanelLayout{},
-			background,
-			title,
-			content,
-			subtitle,
-			bottomtext,
-			action,
+		content: container.New(
+			pl,
+			pl.background,
+			pl.title,
+			pl.content,
+			pl.subtitle,
+			pl.bottomText,
+			pl.action,
 		),
-		child:         action,
+		child:         pl.action,
 		visible:       false,
 		disabled:      false,
-		background:    background,
-		refTitle:      title,
-		refContent:    content,
-		refSubtitle:   subtitle,
-		refBottomText: bottomtext,
+		background:    pl.background,
+		refTitle:      pl.title,
+		refContent:    pl.content,
+		refSubtitle:   pl.subtitle,
+		refBottomText: pl.bottomText,
 	}
 
 	panel.fps = 3 * time.Millisecond
@@ -187,7 +198,7 @@ func NewPanelDisplay(
 	}
 
 	panel.ExtendBaseWidget(panel)
-	action.Hide()
+	pl.action.Hide()
 
 	panel.status = pdt.GetStatus()
 
@@ -215,11 +226,11 @@ func NewPanelDisplay(
 		}
 
 		panel.UpdateContent()
-		JA.StartFlashingText(content, 50*time.Millisecond, JC.TextColor, 1)
+		JA.StartFlashingText(panel.refContent, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
 	panel.UpdateContent()
-	JA.FadeInBackground(background, 100*time.Millisecond, nil)
+	JA.FadeInBackground(panel.background, 100*time.Millisecond, nil)
 
 	return panel
 }

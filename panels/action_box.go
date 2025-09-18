@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/apps"
-	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 )
 
@@ -57,6 +56,10 @@ func NewPanelActionBar(
 					return
 				}
 
+				if JA.AppStatusManager.IsDraggable() {
+					btn.Hide()
+				}
+
 				btn.Enable()
 			}),
 		deleteBtn: JW.NewHoverCursorIconButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
@@ -65,10 +68,13 @@ func NewPanelActionBar(
 					onDelete()
 				}
 			}, func(btn *JW.HoverCursorIconButton) {
-				JC.Logln("Validation called")
 				if JA.AppStatusManager.IsOverlayShown() {
 					btn.Disable()
 					return
+				}
+
+				if JA.AppStatusManager.IsDraggable() {
+					btn.Hide()
 				}
 
 				btn.Enable()
