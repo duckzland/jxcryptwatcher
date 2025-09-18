@@ -44,7 +44,7 @@ func NewNavigableList(
 			return NewSelectableText()
 		},
 		UpdateItem: func(i widget.ListItemID, o fyne.CanvasObject) {
-			const preloadThreshold = 10
+			const preloadThreshold = 16
 			const preloadStep = 50
 
 			if i >= n.visibleCount-preloadThreshold && n.visibleCount < len(n.filteredData) {

@@ -38,7 +38,7 @@ func (s *SelectableText) SetText(t string) {
 	s.text = t
 	if s.label != nil {
 		s.label.Text = t
-		s.label.Refresh()
+		canvas.Refresh(s.label)
 	}
 }
 

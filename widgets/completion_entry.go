@@ -390,11 +390,11 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height - padding
 
 	if maxHeight > 300 {
-		maxHeight = 300
+		maxHeight = 7 * (c.itemHeight + padding + 4*c.canvas.Scale())
 	}
 
 	if JC.IsMobile {
-		maxHeight = 200
+		maxHeight = 5 * (c.itemHeight + padding + 4*c.canvas.Scale())
 	}
 
 	if listHeight > maxHeight {
