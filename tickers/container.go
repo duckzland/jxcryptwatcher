@@ -1,53 +1,23 @@
 package tickers
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
-	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
 
-type tickerGridRenderer struct {
-	container *TickerGridContainer
-}
-
-func (r *tickerGridRenderer) Layout(size fyne.Size) {
-	r.container.layout.Layout(r.container.Objects, size)
-}
-
-func (r *tickerGridRenderer) MinSize() fyne.Size {
-	return r.container.layout.MinSize(r.container.Objects)
-}
-
-func (r *tickerGridRenderer) Refresh() {
-	JC.MainDebouncer.Call("ticker_container_refresh", 10*time.Millisecond, func() {
-		fyne.Do(func() {
-			r.Layout(r.container.Size())
-		})
-	})
-}
-
-func (r *tickerGridRenderer) Objects() []fyne.CanvasObject {
-	return r.container.Objects
-}
-
-func (r *tickerGridRenderer) Destroy() {
-}
-
-type TickerGridContainer struct {
+type tickerContainer struct {
 	widget.BaseWidget
 	Objects []fyne.CanvasObject
-	layout  *TickerGridLayout
+	layout  *tickerGridLayout
 }
 
-func (c *TickerGridContainer) Add(obj fyne.CanvasObject) {
+func (c *tickerContainer) Add(obj fyne.CanvasObject) {
 	c.Objects = append(c.Objects, obj)
 }
 
-func (c *TickerGridContainer) Remove(obj fyne.CanvasObject) {
+func (c *tickerContainer) Remove(obj fyne.CanvasObject) {
 	for i, o := range c.Objects {
 		if o == obj {
 			c.Objects = append(c.Objects[:i], c.Objects[i+1:]...)
@@ -56,15 +26,15 @@ func (c *TickerGridContainer) Remove(obj fyne.CanvasObject) {
 	}
 }
 
-func (c *TickerGridContainer) CreateRenderer() fyne.WidgetRenderer {
-	return &tickerGridRenderer{
+func (c *tickerContainer) CreateRenderer() fyne.WidgetRenderer {
+	return &tickerContainerLayout{
 		container: c,
 	}
 }
 
-func (c *TickerGridContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.TickerDataType) bool) {
+func (c *tickerContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.TickerDataType) bool) {
 	for _, obj := range c.Objects {
-		if ticker, ok := obj.(*TickerDisplay); ok {
+		if ticker, ok := obj.(*tickerDisplay); ok {
 
 			pdt := JT.BT.GetData(ticker.GetTag())
 
@@ -77,11 +47,11 @@ func (c *TickerGridContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.Tic
 	}
 }
 
-func NewTickerGridContainer(
-	layout *TickerGridLayout,
+func NewTickerContainer(
+	layout *tickerGridLayout,
 	Objects []fyne.CanvasObject,
-) *TickerGridContainer {
-	c := &TickerGridContainer{
+) *tickerContainer {
+	c := &tickerContainer{
 		Objects: Objects,
 		layout:  layout,
 	}

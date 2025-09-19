@@ -13,22 +13,22 @@ var AppActionManager *AppActions = &AppActions{}
 
 type AppActions struct {
 	mu      sync.RWMutex
-	buttons []*JW.HoverCursorIconButton
+	buttons []*JW.ActionButton
 }
 
 func (a *AppActions) Init() {
 	a.mu.Lock()
-	a.buttons = []*JW.HoverCursorIconButton{}
+	a.buttons = []*JW.ActionButton{}
 	a.mu.Unlock()
 }
 
-func (a *AppActions) AddButton(btn *JW.HoverCursorIconButton) {
+func (a *AppActions) AddButton(btn *JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = append(a.buttons, btn)
 	a.mu.Unlock()
 }
 
-func (a *AppActions) GetButton(tag string) *JW.HoverCursorIconButton {
+func (a *AppActions) GetButton(tag string) *JW.ActionButton {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -49,9 +49,9 @@ func (a *AppActions) CallButton(tag string) bool {
 	return true
 }
 
-func (a *AppActions) RemoveButton(btn *JW.HoverCursorIconButton) {
+func (a *AppActions) RemoveButton(btn *JW.ActionButton) {
 	a.mu.Lock()
-	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.HoverCursorIconButton) bool {
+	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.ActionButton) bool {
 		return b == btn
 	})
 	a.mu.Unlock()

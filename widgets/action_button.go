@@ -8,27 +8,27 @@ import (
 	tooltip "github.com/dweymouth/fyne-tooltip/widget"
 )
 
-type HoverCursorIconButton struct {
+type ActionButton struct {
 	widget.Button
 	tooltip.ToolTipWidgetExtend
 	tag           string
 	state         string
 	disabled      bool
 	allow_actions bool
-	validate      func(*HoverCursorIconButton)
+	validate      func(*ActionButton)
 }
 
-func NewHoverCursorIconButton(
+func NewActionButton(
 	tag string,
 	text string,
 	icon fyne.Resource,
 	tip string,
 	state string,
-	onTapped func(*HoverCursorIconButton),
-	validate func(*HoverCursorIconButton),
-) *HoverCursorIconButton {
+	onTapped func(*ActionButton),
+	validate func(*ActionButton),
+) *ActionButton {
 
-	b := &HoverCursorIconButton{
+	b := &ActionButton{
 		Button: widget.Button{
 			Text:       text,
 			Icon:       icon,
@@ -60,11 +60,11 @@ func NewHoverCursorIconButton(
 	return b
 }
 
-func (b *HoverCursorIconButton) ExtendBaseWidget(wid fyne.Widget) {
+func (b *ActionButton) ExtendBaseWidget(wid fyne.Widget) {
 	b.Button.ExtendBaseWidget(wid)
 }
 
-func (b *HoverCursorIconButton) MouseIn(e *desktop.MouseEvent) {
+func (b *ActionButton) MouseIn(e *desktop.MouseEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -76,7 +76,7 @@ func (b *HoverCursorIconButton) MouseIn(e *desktop.MouseEvent) {
 	}
 }
 
-func (b *HoverCursorIconButton) MouseOut() {
+func (b *ActionButton) MouseOut() {
 	if !b.allow_actions {
 		b.ToolTipWidgetExtend.MouseOut()
 		return
@@ -89,7 +89,7 @@ func (b *HoverCursorIconButton) MouseOut() {
 	}
 }
 
-func (b *HoverCursorIconButton) MouseMoved(e *desktop.MouseEvent) {
+func (b *ActionButton) MouseMoved(e *desktop.MouseEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -101,7 +101,7 @@ func (b *HoverCursorIconButton) MouseMoved(e *desktop.MouseEvent) {
 	}
 }
 
-func (b *HoverCursorIconButton) Tapped(_ *fyne.PointEvent) {
+func (b *ActionButton) Tapped(_ *fyne.PointEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -112,53 +112,53 @@ func (b *HoverCursorIconButton) Tapped(_ *fyne.PointEvent) {
 	b.Button.Tapped(nil)
 }
 
-func (b *HoverCursorIconButton) Cursor() desktop.Cursor {
+func (b *ActionButton) Cursor() desktop.Cursor {
 	if !b.disabled && b.allow_actions {
 		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
 }
 
-func (b *HoverCursorIconButton) DisallowActions() {
+func (b *ActionButton) DisallowActions() {
 	b.changeState("disallow_actions")
 }
 
-func (b *HoverCursorIconButton) AllowActions() {
+func (b *ActionButton) AllowActions() {
 	b.changeState("allow_actions")
 }
 
-func (b *HoverCursorIconButton) Disable() {
+func (b *ActionButton) Disable() {
 	b.changeState("disabled")
 }
 
-func (b *HoverCursorIconButton) Enable() {
+func (b *ActionButton) Enable() {
 	b.changeState("reset")
 }
 
-func (b *HoverCursorIconButton) Error() {
+func (b *ActionButton) Error() {
 	b.changeState("error")
 }
 
-func (b *HoverCursorIconButton) Progress() {
+func (b *ActionButton) Progress() {
 	b.changeState("in_progress")
 }
 
-func (b *HoverCursorIconButton) Active() {
+func (b *ActionButton) Active() {
 	b.changeState("active")
 }
 
-func (b *HoverCursorIconButton) GetTag() string {
+func (b *ActionButton) GetTag() string {
 	return b.tag
 }
 
-func (b *HoverCursorIconButton) Refresh() {
+func (b *ActionButton) Refresh() {
 	if b.validate != nil {
 		b.validate(b)
 	}
 	fyne.Do(b.Button.Refresh)
 }
 
-func (b *HoverCursorIconButton) Call() {
+func (b *ActionButton) Call() {
 	if !b.allow_actions {
 		return
 	}
@@ -166,7 +166,7 @@ func (b *HoverCursorIconButton) Call() {
 	b.Button.OnTapped()
 }
 
-func (b *HoverCursorIconButton) setState(state string) {
+func (b *ActionButton) setState(state string) {
 
 	if b.state == state {
 		return
@@ -205,7 +205,7 @@ func (b *HoverCursorIconButton) setState(state string) {
 	b.state = state
 }
 
-func (b *HoverCursorIconButton) changeState(state string) {
+func (b *ActionButton) changeState(state string) {
 
 	if b.state == state {
 		return

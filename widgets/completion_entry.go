@@ -20,8 +20,8 @@ type CompletionEntry struct {
 	widget.Entry
 	popup            *fyne.Container
 	container        *fyne.Container
-	navigableList    *navigableList
-	parent           *ExtendedFormDialog
+	completionList   *completionList
+	parent           *DialogForm
 	pause            bool
 	itemHeight       float32
 	options          []string
@@ -37,10 +37,11 @@ type CompletionEntry struct {
 
 func NewCompletionEntry(
 	options []string,
+	searchOptions []string,
 	popup *fyne.Container,
 ) *CompletionEntry {
 
-	c := &CompletionEntry{suggestions: options, popup: popup}
+	c := &CompletionEntry{suggestions: options, lowerSuggestions: searchOptions, popup: popup}
 	c.ExtendBaseWidget(c)
 
 	id := uuid.New()
@@ -60,13 +61,13 @@ func NewCompletionEntry(
 
 	c.popupPosition = fyne.NewPos(-1, -1)
 
-	c.itemHeight = 36
+	c.itemHeight = 40
 
 	c.options = options
 
 	c.suggestions = options
 
-	c.navigableList = NewNavigableList(c.setTextFromMenu, c.HideCompletion)
+	c.completionList = NewCompletionList(c.setTextFromMenu, c.HideCompletion, c.itemHeight)
 
 	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), c.HideCompletion)
 
@@ -80,7 +81,7 @@ func NewCompletionEntry(
 		bg,
 		container.New(
 			&CompletionListEntryLayout{},
-			c.navigableList,
+			c.completionList,
 			closeBtn,
 		),
 	)
@@ -88,14 +89,6 @@ func NewCompletionEntry(
 	c.popup.Add(c.container)
 
 	c.popup.Hide()
-
-	// Caching the suggestions, this is needed for faster search!
-	go func() {
-		c.lowerSuggestions = make([]string, len(c.suggestions))
-		for i, s := range c.suggestions {
-			c.lowerSuggestions[i] = strings.ToLower(s)
-		}
-	}()
 
 	return c
 }
@@ -124,10 +117,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 	if c.popup.Visible() {
 		delay = 50 * time.Millisecond
-
-		if JC.IsMobile {
-			delay = 150 * time.Millisecond
-		}
 	}
 
 	minText := 1
@@ -207,7 +196,7 @@ func (c *CompletionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
-		c.navigableList.SetFilteredData(c.options)
+		c.completionList.SetFilteredData(c.options)
 		c.ShowCompletion()
 	}
 }
@@ -224,8 +213,8 @@ func (c *CompletionEntry) HideCompletion() {
 		c.popup.Hide()
 	}
 
-	if c.navigableList != nil {
-		c.navigableList.SetFilteredData([]string{})
+	if c.completionList != nil {
+		c.completionList.SetFilteredData([]string{})
 	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
@@ -285,12 +274,12 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 
 	c.options = itemList
 
-	if c.navigableList != nil {
-		c.navigableList.SetFilteredData(c.options)
+	if c.completionList != nil {
+		c.completionList.SetFilteredData(c.options)
 	}
 }
 
-func (c *CompletionEntry) SetParent(parent *ExtendedFormDialog) {
+func (c *CompletionEntry) SetParent(parent *DialogForm) {
 	c.parent = parent
 }
 
@@ -314,8 +303,8 @@ func (c *CompletionEntry) ShowCompletion() {
 	// Always reset position cache!
 	c.calculatePosition(true)
 
-	c.navigableList.UnselectAll()
-	c.navigableList.selected = -1
+	// c.completionList.UnselectAll()
+	c.completionList.selected = -1
 
 	mx := c.maxSize()
 	ox := c.popup.Size()
@@ -385,16 +374,11 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	padding := (theme.Padding() * 2) * c.canvas.Scale()
-	listHeight := float32(len(c.options)) * (c.itemHeight)
-	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height - padding
+	listHeight := float32(len(c.options)) * c.itemHeight
+	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height
 
 	if maxHeight > 300 {
-		maxHeight = 7 * (c.itemHeight + padding + 4*c.canvas.Scale())
-	}
-
-	if JC.IsMobile {
-		maxHeight = 5 * (c.itemHeight + padding + 4*c.canvas.Scale())
+		maxHeight = 7 * c.itemHeight
 	}
 
 	if listHeight > maxHeight {
@@ -430,51 +414,4 @@ func (c *CompletionEntry) setTextFromMenu(s string) {
 	c.skipValidation = false
 	c.SetValidationError(c.Validator(c.Text))
 
-}
-
-type CompletionListEntryLayout struct {
-	cSize fyne.Size
-}
-
-func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	if len(objects) < 2 {
-		return
-	}
-
-	if size == l.cSize {
-		return
-	}
-
-	l.cSize = size
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	height := size.Height
-	closeWidth := closeBtn.Size().Width
-
-	closeBtn.Resize(fyne.NewSize(closeWidth, closeWidth))
-	closeBtn.Move(fyne.NewPos(-closeWidth-2, 2))
-
-	listEntry.Resize(fyne.NewSize(size.Width, height))
-	listEntry.Move(fyne.NewPos(0, 0))
-}
-
-func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	if len(objects) < 2 {
-		return fyne.NewSize(0, 0)
-	}
-
-	listEntry := objects[0]
-	closeBtn := objects[1]
-
-	listMin := listEntry.MinSize()
-	closeMin := closeBtn.MinSize()
-
-	width := listMin.Width + closeMin.Width
-	height := fyne.Max(listMin.Height, closeMin.Height)
-
-	l.cSize = fyne.NewSize(width, height)
-
-	return l.cSize
 }

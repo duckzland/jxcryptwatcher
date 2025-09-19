@@ -17,7 +17,7 @@ func NewSettingsForm(
 	onSave func(),
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
-) *JW.ExtendedFormDialog {
+) *JW.DialogForm {
 
 	delayEntry := JW.NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()
@@ -126,7 +126,7 @@ func NewSettingsForm(
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
-	return JW.NewExtendedFormDialog("Settings", formItems, nil, nil, nil,
+	return JW.NewDialogForm("Settings", formItems, nil, nil, nil,
 		func(b bool) bool {
 			if b {
 

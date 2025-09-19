@@ -64,9 +64,9 @@ name="JXWatcher"
 icon="assets/android/jxwatcher.png"
 
 # Dynamic variable based on source code
-id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/android.go)
+id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/build_android.go)
 if [[ -z "$id" ]]; then
-    echo_error "Unable to extract AppID from core/android.go. Please ensure 'const AppID = \"...\"' is defined."
+    echo_error "Unable to extract AppID from core/build_android.go. Please ensure 'const AppID = \"...\"' is defined."
     exit 1
 fi
 

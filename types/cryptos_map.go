@@ -14,15 +14,17 @@ type CryptosMapCache struct {
 }
 
 type CryptosMapType struct {
-	data     sync.Map
-	maps     []string
-	mapsLock sync.RWMutex
+	data       sync.Map
+	maps       []string
+	searchMaps []string
+	mapsLock   sync.RWMutex
 }
 
 func (cm *CryptosMapType) Init() {
 	cm.data = sync.Map{}
 	cm.mapsLock.Lock()
 	cm.maps = []string{}
+	cm.searchMaps = []string{}
 	cm.mapsLock.Unlock()
 }
 
@@ -72,17 +74,45 @@ func (cm *CryptosMapType) GetOptions() []string {
 	cm.mapsLock.RUnlock()
 
 	var options []string
+	var lowerSearchMap []string
+
 	cm.data.Range(func(_, val any) bool {
-		options = append(options, val.(string))
+		str := val.(string)
+		options = append(options, str)
+		lowerSearchMap = append(lowerSearchMap, strings.ToLower(str))
 		return true
 	})
 
 	cm.mapsLock.Lock()
 	cm.maps = options
+	cm.searchMaps = lowerSearchMap
 	cm.mapsLock.Unlock()
 
 	JC.PrintMemUsage("End generating available crypto options")
 	return options
+}
+
+func (cm *CryptosMapType) GetSearchMap() []string {
+	JC.PrintMemUsage("Start retrieving lowercase crypto search map")
+
+	cm.mapsLock.RLock()
+	if len(cm.searchMaps) != 0 {
+		cached := cm.searchMaps
+		cm.mapsLock.RUnlock()
+		JC.PrintMemUsage("End using cached crypto search map")
+		return cached
+	}
+	cm.mapsLock.RUnlock()
+
+	// Trigger GetOptions() to generate both maps and searchMap
+	_ = cm.GetOptions()
+
+	cm.mapsLock.RLock()
+	cached := cm.searchMaps
+	cm.mapsLock.RUnlock()
+
+	JC.PrintMemUsage("End retrieving lowercase crypto search map")
+	return cached
 }
 
 func (cm *CryptosMapType) SetMaps(m []string) {

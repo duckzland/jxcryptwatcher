@@ -2,6 +2,7 @@ package apps
 
 import (
 	"image/color"
+	JC "jxwatcher/core"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
@@ -12,11 +13,11 @@ type JXWatcherTheme struct{}
 func (t *JXWatcherTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameForegroundOnWarning:
-		return color.White
+		return JC.TextColor
 	case theme.ColorNameForegroundOnError:
-		return color.White
+		return JC.TextColor
 	case theme.ColorNameError:
-		return color.RGBA{R: 220, G: 20, B: 60, A: 255} // danger background
+		return JC.ErrorColor // danger background
 	}
 	return theme.DarkTheme().Color(name, variant)
 }

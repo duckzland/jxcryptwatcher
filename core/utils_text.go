@@ -41,7 +41,7 @@ func SetAlpha(c color.Color, alpha float32) color.Color {
 
 func TruncateText(str string, maxWidth float32, fontSize float32) string {
 	// Measure full text width with custom font size
-	full := canvas.NewText(str, color.White)
+	full := canvas.NewText(str, TextColor)
 	full.TextSize = fontSize
 	size := full.MinSize()
 
@@ -54,7 +54,7 @@ func TruncateText(str string, maxWidth float32, fontSize float32) string {
 	ellipsis := "..."
 	for i := len(runes); i > 0; i-- {
 		trial := string(runes[:i]) + ellipsis
-		tmp := canvas.NewText(trial, color.White)
+		tmp := canvas.NewText(trial, TextColor)
 		tmp.TextSize = fontSize
 
 		if tmp.MinSize().Width <= maxWidth {

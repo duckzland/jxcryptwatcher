@@ -21,16 +21,17 @@ func NewPanelForm(
 	onNew func(pdt *JT.PanelDataType),
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
-) *JW.ExtendedFormDialog {
+) *JW.DialogForm {
 
 	cm := JT.BP.GetOptions()
+	cs := JT.BP.GetMaps().GetSearchMap()
 
 	popupSourceEntryTarget := container.NewStack()
 	popupTargetEntryTarget := container.NewStack()
 
 	valueEntry := JW.NewNumericalEntry(true)
-	sourceEntry := JW.NewCompletionEntry(cm, popupSourceEntryTarget)
-	targetEntry := JW.NewCompletionEntry(cm, popupTargetEntryTarget)
+	sourceEntry := JW.NewCompletionEntry(cm, cs, popupSourceEntryTarget)
+	targetEntry := JW.NewCompletionEntry(cm, cs, popupTargetEntryTarget)
 	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
@@ -151,7 +152,7 @@ func NewPanelForm(
 
 	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
 
-	parent := JW.NewExtendedFormDialog(title, formItems, nil, nil, popupTarget,
+	parent := JW.NewDialogForm(title, formItems, nil, nil, popupTarget,
 		func(b bool) bool {
 			if b {
 				var npk JT.PanelKeyType

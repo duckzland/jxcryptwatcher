@@ -24,6 +24,11 @@ var OrangeColor = color.RGBA{R: 195, G: 102, B: 51, A: 255}
 var YellowColor = color.RGBA{R: 192, G: 168, B: 64, A: 255}
 var TealGreenColor = color.RGBA{R: 40, G: 170, B: 140, A: 255}
 
+var FormHoverBGHover = color.RGBA{R: 30, G: 30, B: 30, A: 255}
+var FormSeparatorColor = color.Gray{Y: 64}
+
+var OverlayBG = color.NRGBA{R: 0, G: 0, B: 0, A: 128}
+
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelPlaceholderBG color.RGBA = color.RGBA{R: 20, G: 22, B: 30, A: 200}
 var PanelBorderRadius float32 = 6

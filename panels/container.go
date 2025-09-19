@@ -11,49 +11,22 @@ import (
 	JT "jxwatcher/types"
 )
 
-type panelGridRenderer struct {
-	container *PanelGridContainer
-}
-
-func (r *panelGridRenderer) Layout(size fyne.Size) {
-	r.container.layout.Layout(r.container.Objects, size)
-}
-
-func (r *panelGridRenderer) MinSize() fyne.Size {
-	return r.container.layout.MinSize(r.container.Objects)
-}
-
-func (r *panelGridRenderer) Refresh() {
-	JC.MainDebouncer.Call("panel_container_refresh", 10*time.Millisecond, func() {
-		fyne.Do(func() {
-			r.Layout(r.container.Size())
-		})
-	})
-}
-
-func (r *panelGridRenderer) Objects() []fyne.CanvasObject {
-	return r.container.Objects
-}
-
-func (r *panelGridRenderer) Destroy() {
-	r.container.dragging = false
-}
-
-type PanelGridContainer struct {
+type panelContainer struct {
 	widget.BaseWidget
 	Objects          []fyne.CanvasObject
-	layout           *PanelGridLayout
+	layout           *panelGridLayout
 	dragPosition     fyne.Position
 	dragging         bool
 	dragCursorOffset fyne.Position
 	fps              time.Duration
+	done             chan struct{}
 }
 
-func (c *PanelGridContainer) Add(obj fyne.CanvasObject) {
+func (c *panelContainer) Add(obj fyne.CanvasObject) {
 	c.Objects = append(c.Objects, obj)
 }
 
-func (c *PanelGridContainer) Remove(obj fyne.CanvasObject) {
+func (c *panelContainer) Remove(obj fyne.CanvasObject) {
 	for i, o := range c.Objects {
 		if o == obj {
 			c.Objects = append(c.Objects[:i], c.Objects[i+1:]...)
@@ -62,18 +35,18 @@ func (c *PanelGridContainer) Remove(obj fyne.CanvasObject) {
 	}
 }
 
-func (c *PanelGridContainer) ForceRefresh() {
+func (c *panelContainer) ForceRefresh() {
 	c.layout.Reset()
 	c.Refresh()
 }
 
-func (c *PanelGridContainer) CreateRenderer() fyne.WidgetRenderer {
-	return &panelGridRenderer{
+func (c *panelContainer) CreateRenderer() fyne.WidgetRenderer {
+	return &panelContainerLayout{
 		container: c,
 	}
 }
 
-func (c *PanelGridContainer) Dragged(ev *fyne.DragEvent) {
+func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 	if JM.AppStatusManager.IsDraggable() {
 		return
 	}
@@ -88,48 +61,58 @@ func (c *PanelGridContainer) Dragged(ev *fyne.DragEvent) {
 	if !c.dragging {
 		c.dragging = true
 		c.dragCursorOffset = ev.Position.Subtract(c.Position())
+		c.done = make(chan struct{})
+
 		sourceY := c.Position().Y
 		scrollStep := float32(10)
 		edgeThreshold := float32(30)
-		lastDirection := 0
 
 		go func() {
 			ticker := time.NewTicker(c.fps)
 			defer ticker.Stop()
 
-			for c.dragging {
-				<-ticker.C
+			for {
+				select {
+				case <-c.done:
+					return
+				case <-ticker.C:
+					targetY := c.dragPosition.Y - c.dragCursorOffset.Y
+					delta := targetY - sourceY
+					direction := 0
 
-				targetY := c.dragPosition.Y - c.dragCursorOffset.Y
-				direction := 0
+					if delta < -edgeThreshold {
+						direction = -1
+					} else if delta > edgeThreshold {
+						direction = 1
+					} else {
+						direction = 0
+					}
 
-				if targetY < sourceY-edgeThreshold {
-					direction = -1
-				} else if targetY > sourceY+edgeThreshold {
-					direction = 1
-				}
-
-				// Only scroll if direction is stable and non-zero
-				if direction != 0 && direction == lastDirection {
-					switch direction {
-					case -1:
-						JM.AppLayoutManager.ScrollBy(-scrollStep)
-					case 1:
-						JM.AppLayoutManager.ScrollBy(scrollStep)
+					if direction != 0 {
+						fyne.Do(func() {
+							switch direction {
+							case -1:
+								JM.AppLayoutManager.ScrollBy(-scrollStep)
+							case 1:
+								JM.AppLayoutManager.ScrollBy(scrollStep)
+							}
+						})
 					}
 				}
-
-				lastDirection = direction
 			}
 		}()
 	}
 }
 
-func (c *PanelGridContainer) DragEnd() {
+func (c *panelContainer) DragEnd() {
 	c.dragging = false
+	if c.done != nil {
+		close(c.done)
+		c.done = nil
+	}
 }
 
-func (c *PanelGridContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelDataType) bool) {
+func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelDataType) bool) {
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*PanelDisplay); ok {
 
@@ -143,11 +126,11 @@ func (c *PanelGridContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.Panel
 		}
 	}
 }
-func NewPanelGridContainer(
-	layout *PanelGridLayout,
+func NewpanelContainer(
+	layout *panelGridLayout,
 	Objects []fyne.CanvasObject,
-) *PanelGridContainer {
-	c := &PanelGridContainer{
+) *panelContainer {
+	c := &panelContainer{
 		Objects: Objects,
 		layout:  layout,
 	}

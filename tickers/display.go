@@ -16,70 +16,7 @@ import (
 	JT "jxwatcher/types"
 )
 
-type TickerLayout struct {
-	background *canvas.Rectangle
-	title      *canvas.Text
-	content    *canvas.Text
-	status     *canvas.Text
-}
-
-func (tl *TickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
-	if size.Width == 0 && size.Height == 0 {
-		return
-	}
-
-	if len(objects) < 4 {
-		return
-	}
-
-	spacer := float32(-2)
-
-	tl.background.Resize(size)
-	tl.background.Move(fyne.NewPos(0, 0))
-
-	centerItems := []fyne.CanvasObject{}
-	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
-		if obj.Visible() && obj.MinSize().Height > 0 {
-			centerItems = append(centerItems, obj)
-		}
-	}
-
-	var totalHeight float32
-	for _, obj := range centerItems {
-		totalHeight += obj.MinSize().Height
-	}
-	totalHeight += spacer * float32(len(centerItems)-1)
-
-	startY := (size.Height - totalHeight) / 2
-	currentY := startY
-
-	for _, obj := range centerItems {
-		objSize := obj.MinSize()
-		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
-		obj.Resize(objSize)
-		currentY += objSize.Height + spacer
-	}
-}
-
-func (tl *TickerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	width := float32(0)
-	height := float32(0)
-
-	for _, obj := range objects[1:4] {
-		if obj.Visible() && obj.MinSize().Height > 0 {
-			size := obj.MinSize()
-			if size.Width > width {
-				width = size.Width
-			}
-			height += size.Height
-		}
-	}
-
-	return fyne.NewSize(width, height)
-}
-
-type TickerDisplay struct {
+type tickerDisplay struct {
 	widget.BaseWidget
 	tag        string
 	title      string
@@ -90,11 +27,11 @@ type TickerDisplay struct {
 	refStatus  *canvas.Text
 }
 
-func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
+func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 	uuid := JC.CreateUUID()
 	tdt.SetID(uuid)
 
-	tl := &TickerLayout{
+	tl := &tickerLayout{
 		background: canvas.NewRectangle(JC.TickerBG),
 		title:      canvas.NewText("", JC.TextColor),
 		content:    canvas.NewText("", JC.TextColor),
@@ -116,7 +53,7 @@ func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
 	tl.background.CornerRadius = JC.TickerBorderRadius
 
 	str := tdt.GetData()
-	ticker := &TickerDisplay{
+	ticker := &tickerDisplay{
 		tag: uuid,
 		content: container.New(
 			tl,
@@ -149,7 +86,7 @@ func NewTickerDisplay(tdt *JT.TickerDataType) *TickerDisplay {
 	return ticker
 }
 
-func (h *TickerDisplay) UpdateContent() {
+func (h *tickerDisplay) UpdateContent() {
 	pwidth := h.Size().Width
 	pkt := JT.BT.GetData(h.GetTag())
 	if pkt == nil {
@@ -231,14 +168,14 @@ func (h *TickerDisplay) UpdateContent() {
 	}
 }
 
-func (h *TickerDisplay) GetTag() string {
+func (h *tickerDisplay) GetTag() string {
 	return h.tag
 }
 
-func (h *TickerDisplay) CreateRenderer() fyne.WidgetRenderer {
+func (h *tickerDisplay) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.content)
 }
 
-func (h *TickerDisplay) Cursor() desktop.Cursor {
+func (h *tickerDisplay) Cursor() desktop.Cursor {
 	return desktop.DefaultCursor
 }
