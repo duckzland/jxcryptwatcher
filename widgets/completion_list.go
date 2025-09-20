@@ -107,6 +107,7 @@ func (n *completionList) SetData(items []string) {
 	JC.MainDebouncer.Call("layout_update_"+n.uuid, delay, func() {
 		fyne.Do(func() {
 			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(n.itemTotal)))
+			n.scrollBox.ScrollToTop()
 			n.refreshContent()
 		})
 	})
