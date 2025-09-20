@@ -31,8 +31,7 @@ func NewPanelActionBar(
 					btn.Hide()
 					return
 				}
-
-				btn.Show()
+				
 				btn.Enable()
 			}),
 		deleteBtn: JW.NewActionButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
