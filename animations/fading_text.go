@@ -15,7 +15,9 @@ func StartFadingText(
 	fadeAlphas *[]uint8,
 ) {
 	if fadeAlphas == nil || len(*fadeAlphas) == 0 {
-		fadeAlphas = &[]uint8{200, 150, 100, 50, 0}
+		fadeAlphas = &[]uint8{
+			255, 200, 160, 120, 80, 40, 0,
+		}
 	}
 
 	delay := 80 * time.Millisecond

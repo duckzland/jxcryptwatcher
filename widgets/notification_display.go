@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	JA "jxwatcher/animations"
 	JC "jxwatcher/core"
 )
 
@@ -37,10 +38,13 @@ func (w *NotificationDisplay) UpdateText(msg string) {
 }
 
 func (w *NotificationDisplay) ClearText() {
-	w.text.Text = ""
-	w.text.Color = JC.TextColor
-	w.text.Refresh()
-	w.Refresh()
+	JA.StartFadingText(w.text, func() {
+		// Clear the text after fade completes
+		w.text.Text = ""
+		w.text.Color = JC.TextColor
+		w.text.Refresh()
+		w.Refresh()
+	}, nil)
 }
 
 func (w *NotificationDisplay) GetText() string {
