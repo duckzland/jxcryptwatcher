@@ -42,6 +42,8 @@ func main() {
 
 	RegisterLifecycle()
 
+	RegisterDispatcher()
+
 	JC.Notify("Application is starting...")
 
 	JC.Window.SetContent(JA.NewAppLayoutManager())

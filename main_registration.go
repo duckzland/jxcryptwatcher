@@ -681,3 +681,11 @@ func RegisterLifecycle() {
 		})
 	}
 }
+
+func RegisterDispatcher() {
+	if JC.IsMobile {
+		JC.AnimDispatcher = JC.NewDispatcher(10000, 1, 48*time.Millisecond)
+	} else {
+		JC.AnimDispatcher = JC.NewDispatcher(10000, 10, 1*time.Millisecond)
+	}
+}

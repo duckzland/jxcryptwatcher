@@ -27,14 +27,16 @@ func FadeInBackground(
 
 		for _, alpha := range alphaSteps {
 			<-ticker.C
-			fyne.Do(func() {
-				rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
-				rect.Refresh()
+			JC.AnimDispatcher.Submit(func() {
+				fyne.Do(func() {
+					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
+					rect.Refresh()
+				})
 			})
 		}
 
 		if callback != nil {
-			fyne.Do(callback)
+			JC.AnimDispatcher.Submit(callback)
 		}
 	}()
 }

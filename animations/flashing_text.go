@@ -41,9 +41,12 @@ func StartFlashingText(
 
 			if alpha != lastAlpha {
 				lastAlpha = alpha
-				fyne.Do(func() {
-					JC.SetTextAlpha(text, alpha)
-					text.Refresh()
+
+				JC.AnimDispatcher.Submit(func() {
+					fyne.Do(func() {
+						JC.SetTextAlpha(text, alpha)
+						text.Refresh()
+					})
 				})
 			}
 		}
