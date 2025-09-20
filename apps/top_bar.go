@@ -14,7 +14,7 @@ func NewTopBar() *fyne.Container {
 	topBg.CornerRadius = 4
 
 	return container.New(
-		&TopBarLayout{
+		&topBarLayout{
 			fixedWidth: JC.ActionBtnWidth,
 			spacer:     JC.ActionBtnGap,
 		},
@@ -22,10 +22,10 @@ func NewTopBar() *fyne.Container {
 			topBg,
 			JC.NotificationContainer,
 		),
-		AppActionManager.GetButton("refresh_cryptos"),
-		AppActionManager.GetButton("refresh_rates"),
-		AppActionManager.GetButton("open_settings"),
-		AppActionManager.GetButton("toggle_drag"),
-		AppActionManager.GetButton("add_panel"),
+		AppActions.GetButton("refresh_cryptos"),
+		AppActions.GetButton("refresh_rates"),
+		AppActions.GetButton("open_settings"),
+		AppActions.GetButton("toggle_drag"),
+		AppActions.GetButton("add_panel"),
 	)
 }

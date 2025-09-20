@@ -83,9 +83,9 @@ func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	JC.MainLayoutContentWidth = size.Width - 2*padding
 	JC.MainLayoutContentHeight = contentHeight
 
-	AppLayoutManager.SetMaxOffset(-1)
-	AppLayoutManager.SetContentTopY(contentY)
-	AppLayoutManager.SetContentBottomY(contentY + contentHeight)
+	AppLayout.SetMaxOffset(-1)
+	AppLayout.SetContentTopY(contentY)
+	AppLayout.SetContentBottomY(contentY + contentHeight)
 }
 
 func (a *AppMainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {

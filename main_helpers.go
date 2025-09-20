@@ -31,7 +31,7 @@ func UpdateDisplay() bool {
 
 func UpdateRates() bool {
 
-	if JA.AppStatusManager.IsFetchingRates() {
+	if JA.AppStatus.IsFetchingRates() {
 		return false
 	}
 
@@ -74,12 +74,12 @@ func UpdateRates() bool {
 	JC.FetcherManager.GroupPayloadCall("rates", payloads,
 		func(shouldProceed bool) {
 			if shouldProceed {
-				JA.AppStatusManager.StartFetchingRates()
+				JA.AppStatus.StartFetchingRates()
 				JT.ExchangeCache.SoftReset()
 			}
 		},
 		func(results []JC.FetchResult) {
-			defer JA.AppStatusManager.EndFetchingRates()
+			defer JA.AppStatus.EndFetchingRates()
 
 			for _, result := range results {
 
@@ -109,7 +109,7 @@ func UpdateRates() bool {
 
 func UpdateTickers() bool {
 
-	if JA.AppStatusManager.IsFetchingTickers() {
+	if JA.AppStatus.IsFetchingTickers() {
 		return false
 	}
 
@@ -145,12 +145,12 @@ func UpdateTickers() bool {
 	JC.FetcherManager.GroupCall(keys, payloads,
 		func(totalJob int) {
 			if totalJob > 0 {
-				JA.AppStatusManager.StartFetchingTickers()
+				JA.AppStatus.StartFetchingTickers()
 				JT.TickerCache.SoftReset()
 			}
 		},
 		func(results map[string]JC.FetchResult) {
-			defer JA.AppStatusManager.EndFetchingTickers()
+			defer JA.AppStatus.EndFetchingTickers()
 
 			for key, result := range results {
 				ns := DetectHTTPResponse(result.Code)
@@ -199,13 +199,13 @@ func ProcessUpdatePanelComplete(status int) {
 	case JC.STATUS_SUCCESS:
 
 		JC.Notify("Exchange rates updated successfully")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(true)
 
 	case JC.STATUS_NETWORK_ERROR:
 
 		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetNetworkStatus(false)
+		JA.AppStatus.SetNetworkStatus(false)
 
 		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
@@ -222,8 +222,8 @@ func ProcessUpdatePanelComplete(status int) {
 	case JC.STATUS_CONFIG_ERROR:
 
 		JC.Notify("Please check your settings.")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(false)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(false)
 
 		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
@@ -239,8 +239,8 @@ func ProcessUpdatePanelComplete(status int) {
 
 	case JC.STATUS_BAD_DATA_RECEIVED:
 
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(true)
 	}
 }
 
@@ -250,14 +250,14 @@ func ProcessUpdateTickerComplete(status int) {
 	case JC.STATUS_SUCCESS:
 
 		JC.Notify("Ticker rates updated successfully")
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(true)
 
 	case JC.STATUS_NETWORK_ERROR:
 
 		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetNetworkStatus(false)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(false)
+		JA.AppStatus.SetConfigStatus(true)
 
 		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
 			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
@@ -275,8 +275,8 @@ func ProcessUpdateTickerComplete(status int) {
 
 		JC.Notify("Please check your settings.")
 
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(false)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(false)
 
 		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
 			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
@@ -292,8 +292,8 @@ func ProcessUpdateTickerComplete(status int) {
 
 	case JC.STATUS_BAD_DATA_RECEIVED:
 
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(true)
 	}
 }
 
@@ -303,11 +303,11 @@ func ProcessFetchingCryptosComplete(status int) {
 	case JC.STATUS_SUCCESS:
 
 		JT.CryptosInit()
-		JA.AppStatusManager.DetectData()
+		JA.AppStatus.DetectData()
 
-		if !JA.AppStatusManager.ValidCryptos() {
+		if !JA.AppStatus.ValidCryptos() {
 			JC.Notify("Failed to convert crypto data to map")
-			JA.AppStatusManager.SetCryptoStatus(false)
+			JA.AppStatus.SetCryptoStatus(false)
 
 			return
 		}
@@ -325,24 +325,24 @@ func ProcessFetchingCryptosComplete(status int) {
 			JT.TickerCache.SoftReset()
 			JC.WorkerManager.Call("update_tickers", JC.CallQueued)
 
-			JA.AppStatusManager.SetCryptoStatus(true)
-			JA.AppStatusManager.SetConfigStatus(true)
-			JA.AppStatusManager.SetNetworkStatus(true)
+			JA.AppStatus.SetCryptoStatus(true)
+			JA.AppStatus.SetConfigStatus(true)
+			JA.AppStatus.SetNetworkStatus(true)
 		}
 
 	case JC.STATUS_NETWORK_ERROR:
 		JC.Notify("Please check your network connection.")
-		JA.AppStatusManager.SetNetworkStatus(false)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(false)
+		JA.AppStatus.SetConfigStatus(true)
 
 	case JC.STATUS_CONFIG_ERROR:
 		JC.Notify("Please check your settings.")
-		JA.AppStatusManager.SetConfigStatus(false)
-		JA.AppStatusManager.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(false)
+		JA.AppStatus.SetNetworkStatus(true)
 
 	case JC.STATUS_BAD_DATA_RECEIVED:
-		JA.AppStatusManager.SetNetworkStatus(true)
-		JA.AppStatusManager.SetConfigStatus(true)
+		JA.AppStatus.SetNetworkStatus(true)
+		JA.AppStatus.SetConfigStatus(true)
 	}
 }
 
@@ -379,7 +379,7 @@ func RemovePanel(uuid string) {
 
 					// Give time for grid to relayout first!
 					JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
-						JA.AppLayoutManager.RefreshLayout()
+						JA.AppLayout.RefreshLayout()
 
 						if JT.SavePanels() {
 							JC.Notify("Panel removed successfully.")
@@ -391,7 +391,7 @@ func RemovePanel(uuid string) {
 		}
 	}
 
-	JA.AppStatusManager.DetectData()
+	JA.AppStatus.DetectData()
 }
 
 func SavePanelForm(pdt *JT.PanelDataType) {
@@ -459,11 +459,11 @@ func SavePanelForm(pdt *JT.PanelDataType) {
 }
 
 func OpenNewPanelForm() {
-	if JA.AppStatusManager.IsOverlayShown() {
+	if JA.AppStatus.IsOverlayShown() {
 		return
 	}
 
-	JA.AppStatusManager.SetOverlayShownStatus(true)
+	JA.AppStatus.SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(
 		"new",
@@ -475,16 +475,16 @@ func OpenNewPanelForm() {
 
 			JP.Grid.Add(CreatePanel(npdt))
 			JP.Grid.ForceRefresh()
-			JA.AppStatusManager.DetectData()
+			JA.AppStatus.DetectData()
 
 			JC.Notify("New panel created.")
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.SetOverlay(layer)
+			JA.AppLayout.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveOverlay(layer)
-			JA.AppStatusManager.SetOverlayShownStatus(false)
+			JA.AppLayout.RemoveOverlay(layer)
+			JA.AppStatus.SetOverlayShownStatus(false)
 		},
 	)
 
@@ -496,11 +496,11 @@ func OpenNewPanelForm() {
 
 func OpenPanelEditForm(pk string, uuid string) {
 
-	if JA.AppStatusManager.IsOverlayShown() {
+	if JA.AppStatus.IsOverlayShown() {
 		return
 	}
 
-	JA.AppStatusManager.SetOverlayShownStatus(true)
+	JA.AppStatus.SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(pk, uuid,
 		func(npdt *JT.PanelDataType) {
@@ -508,11 +508,11 @@ func OpenPanelEditForm(pk string, uuid string) {
 		},
 		nil,
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.SetOverlay(layer)
+			JA.AppLayout.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveOverlay(layer)
-			JA.AppStatusManager.SetOverlayShownStatus(false)
+			JA.AppLayout.RemoveOverlay(layer)
+			JA.AppStatus.SetOverlayShownStatus(false)
 		})
 
 	if d != nil {
@@ -523,11 +523,11 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 func OpenSettingForm() {
 
-	if JA.AppStatusManager.IsOverlayShown() {
+	if JA.AppStatus.IsOverlayShown() {
 		return
 	}
 
-	JA.AppStatusManager.SetOverlayShownStatus(true)
+	JA.AppStatus.SetOverlayShownStatus(true)
 
 	d := JA.NewSettingsForm(
 		func() {
@@ -536,7 +536,7 @@ func OpenSettingForm() {
 			go func() {
 				if JT.Config.SaveFile() != nil {
 					JC.Notify("Configuration saved successfully.")
-					JA.AppStatusManager.DetectData()
+					JA.AppStatus.DetectData()
 
 					if JT.Config.IsValidTickers() {
 						if JT.BT.IsEmpty() {
@@ -548,7 +548,7 @@ func OpenSettingForm() {
 							})
 						}
 
-						JA.AppStatusManager.SetConfigStatus(true)
+						JA.AppStatus.SetConfigStatus(true)
 
 						JT.TickerCache.SoftReset()
 						JC.WorkerManager.Call("update_tickers", JC.CallQueued)
@@ -562,11 +562,11 @@ func OpenSettingForm() {
 			}()
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.SetOverlay(layer)
+			JA.AppLayout.SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.AppLayoutManager.RemoveOverlay(layer)
-			JA.AppStatusManager.SetOverlayShownStatus(false)
+			JA.AppLayout.RemoveOverlay(layer)
+			JA.AppStatus.SetOverlayShownStatus(false)
 		})
 
 	if d != nil {
@@ -576,10 +576,10 @@ func OpenSettingForm() {
 
 func ToggleDraggable() {
 
-	if JA.AppStatusManager.IsDraggable() {
-		JA.AppStatusManager.DisallowDragging()
+	if JA.AppStatus.IsDraggable() {
+		JA.AppStatus.DisallowDragging()
 	} else {
-		JA.AppStatusManager.AllowDragging()
+		JA.AppStatus.AllowDragging()
 	}
 
 	JP.Grid.ForceRefresh()

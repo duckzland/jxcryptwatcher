@@ -7,13 +7,13 @@ import (
 	JT "jxwatcher/types"
 )
 
-var AppSnapshotManager *SnapshotManager = &SnapshotManager{}
+var AppSnapshot *snapshotManager = &snapshotManager{}
 
-type SnapshotManager struct{}
+type snapshotManager struct{}
 
-func (sm *SnapshotManager) Init() {}
+func (sm *snapshotManager) Init() {}
 
-func (sm *SnapshotManager) LoadPanels() int {
+func (sm *snapshotManager) LoadPanels() int {
 	raw, ok := JC.LoadFile("snapshots-panels.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
@@ -45,7 +45,7 @@ func (sm *SnapshotManager) LoadPanels() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) LoadCryptos() int {
+func (sm *snapshotManager) LoadCryptos() int {
 	raw, ok := JC.LoadFile("snapshots-cryptos.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
@@ -64,7 +64,7 @@ func (sm *SnapshotManager) LoadCryptos() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) LoadTickers() int {
+func (sm *snapshotManager) LoadTickers() int {
 	raw, ok := JC.LoadFile("snapshots-tickers.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
@@ -94,7 +94,7 @@ func (sm *SnapshotManager) LoadTickers() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) LoadExchangeData() int {
+func (sm *snapshotManager) LoadExchangeData() int {
 	raw, ok := JC.LoadFile("snapshots-exchange.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
@@ -109,7 +109,7 @@ func (sm *SnapshotManager) LoadExchangeData() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) LoadTickerData() int {
+func (sm *snapshotManager) LoadTickerData() int {
 	raw, ok := JC.LoadFile("snapshots-ticker-cache.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
@@ -124,7 +124,7 @@ func (sm *SnapshotManager) LoadTickerData() int {
 	return JC.HAVE_SNAPSHOT
 }
 
-func (sm *SnapshotManager) Save() {
+func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
 	JC.SaveFile("snapshots-cryptos.json", JT.BP.GetMaps().Serialize())
 	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())

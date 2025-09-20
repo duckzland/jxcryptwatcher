@@ -8,9 +8,9 @@ import (
 	JT "jxwatcher/types"
 )
 
-var AppStatusManager = &AppStatus{}
+var AppStatus = &appStatus{}
 
-type AppStatus struct {
+type appStatus struct {
 	mu               sync.RWMutex
 	ready            bool
 	paused           bool
@@ -32,7 +32,7 @@ type AppStatus struct {
 	lastRefresh      time.Time
 }
 
-func (a *AppStatus) Init() {
+func (a *appStatus) Init() {
 	a.mu.Lock()
 	a.ready = false
 	a.paused = false
@@ -50,73 +50,73 @@ func (a *AppStatus) Init() {
 	a.mu.Unlock()
 }
 
-func (a *AppStatus) IsReady() bool {
+func (a *appStatus) IsReady() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.ready
 }
 
-func (a *AppStatus) IsPaused() bool {
+func (a *appStatus) IsPaused() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.paused
 }
 
-func (a *AppStatus) IsDraggable() bool {
+func (a *appStatus) IsDraggable() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.allow_dragging
 }
 
-func (a *AppStatus) IsFetchingCryptos() bool {
+func (a *appStatus) IsFetchingCryptos() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.fetching_cryptos
 }
 
-func (a *AppStatus) IsFetchingRates() bool {
+func (a *appStatus) IsFetchingRates() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.fetching_rates
 }
 
-func (a *AppStatus) IsFetchingTickers() bool {
+func (a *appStatus) IsFetchingTickers() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.fetching_tickers
 }
 
-func (a *AppStatus) IsOverlayShown() bool {
+func (a *appStatus) IsOverlayShown() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.overlay_shown
 }
 
-func (a *AppStatus) IsValidConfig() bool {
+func (a *appStatus) IsValidConfig() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.valid_config
 }
 
-func (a *AppStatus) IsValidCrypto() bool {
+func (a *appStatus) IsValidCrypto() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.valid_cryptos
 }
 
-func (a *AppStatus) IsGoodNetworkStatus() bool {
+func (a *appStatus) IsGoodNetworkStatus() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.network_status
 }
 
-func (a *AppStatus) IsDirty() bool {
+func (a *appStatus) IsDirty() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.lastChange.After(a.lastRefresh)
 }
 
-func (a *AppStatus) AppReady() *AppStatus {
+func (a *appStatus) AppReady() *appStatus {
 	a.mu.Lock()
 	changed := !a.ready
 	if changed {
@@ -131,7 +131,7 @@ func (a *AppStatus) AppReady() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) PauseApp() *AppStatus {
+func (a *appStatus) PauseApp() *appStatus {
 	a.mu.Lock()
 	a.paused = true
 	a.lastChange = time.Now()
@@ -141,7 +141,7 @@ func (a *AppStatus) PauseApp() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) ContinueApp() *AppStatus {
+func (a *appStatus) ContinueApp() *appStatus {
 	a.mu.Lock()
 	a.paused = false
 	a.lastChange = time.Now()
@@ -151,7 +151,7 @@ func (a *AppStatus) ContinueApp() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) StartFetchingCryptos() *AppStatus {
+func (a *appStatus) StartFetchingCryptos() *appStatus {
 	a.mu.Lock()
 	changed := !a.fetching_cryptos
 	if changed {
@@ -166,7 +166,7 @@ func (a *AppStatus) StartFetchingCryptos() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) EndFetchingCryptos() *AppStatus {
+func (a *appStatus) EndFetchingCryptos() *appStatus {
 	a.mu.Lock()
 	changed := a.fetching_cryptos
 	if changed {
@@ -182,7 +182,7 @@ func (a *AppStatus) EndFetchingCryptos() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) StartFetchingRates() *AppStatus {
+func (a *appStatus) StartFetchingRates() *appStatus {
 	a.mu.Lock()
 	changed := !a.fetching_rates
 	if changed {
@@ -197,7 +197,7 @@ func (a *AppStatus) StartFetchingRates() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) EndFetchingRates() *AppStatus {
+func (a *appStatus) EndFetchingRates() *appStatus {
 	a.mu.Lock()
 	changed := a.fetching_rates
 	if changed {
@@ -212,7 +212,7 @@ func (a *AppStatus) EndFetchingRates() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) StartFetchingTickers() *AppStatus {
+func (a *appStatus) StartFetchingTickers() *appStatus {
 	a.mu.Lock()
 	changed := !a.fetching_tickers
 	if changed {
@@ -227,7 +227,7 @@ func (a *AppStatus) StartFetchingTickers() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) EndFetchingTickers() *AppStatus {
+func (a *appStatus) EndFetchingTickers() *appStatus {
 	a.mu.Lock()
 	changed := a.fetching_tickers
 	if changed {
@@ -242,7 +242,7 @@ func (a *AppStatus) EndFetchingTickers() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) AllowDragging() *AppStatus {
+func (a *appStatus) AllowDragging() *appStatus {
 	a.mu.Lock()
 	changed := !a.allow_dragging
 	if changed {
@@ -257,7 +257,7 @@ func (a *AppStatus) AllowDragging() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) DisallowDragging() *AppStatus {
+func (a *appStatus) DisallowDragging() *appStatus {
 	a.mu.Lock()
 	changed := a.allow_dragging
 	if changed {
@@ -272,7 +272,7 @@ func (a *AppStatus) DisallowDragging() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetOverlayShownStatus(status bool) *AppStatus {
+func (a *appStatus) SetOverlayShownStatus(status bool) *appStatus {
 	a.mu.Lock()
 	changed := a.overlay_shown != status
 	if changed {
@@ -287,7 +287,7 @@ func (a *AppStatus) SetOverlayShownStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
+func (a *appStatus) SetConfigStatus(status bool) *appStatus {
 	a.mu.Lock()
 	changed := a.valid_config != status
 	if changed {
@@ -302,7 +302,7 @@ func (a *AppStatus) SetConfigStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetCryptoStatus(status bool) *AppStatus {
+func (a *appStatus) SetCryptoStatus(status bool) *appStatus {
 	a.mu.Lock()
 	changed := a.valid_cryptos != status
 	if changed {
@@ -317,7 +317,7 @@ func (a *AppStatus) SetCryptoStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
+func (a *appStatus) SetNetworkStatus(status bool) *appStatus {
 	a.mu.Lock()
 	changed := a.network_status != status
 	if changed {
@@ -332,7 +332,7 @@ func (a *AppStatus) SetNetworkStatus(status bool) *AppStatus {
 	return a
 }
 
-func (a *AppStatus) InitData() *AppStatus {
+func (a *appStatus) InitData() *appStatus {
 	ready := JT.BP.HasMaps()
 	noPanels := JT.BP.IsEmpty()
 	badConfig := !JT.Config.IsValid()
@@ -353,7 +353,7 @@ func (a *AppStatus) InitData() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) DetectData() *AppStatus {
+func (a *appStatus) DetectData() *appStatus {
 	newReady := JT.BP.HasMaps()
 	newNoPanels := JT.BP.IsEmpty()
 	newBadConfig := !JT.Config.IsValid()
@@ -386,52 +386,52 @@ func (a *AppStatus) DetectData() *AppStatus {
 	return a
 }
 
-func (a *AppStatus) HasError() bool {
+func (a *appStatus) HasError() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.bad_config || a.bad_cryptos
 }
 
-func (a *AppStatus) ValidConfig() bool {
+func (a *appStatus) ValidConfig() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return !a.bad_config
 }
 
-func (a *AppStatus) ValidCryptos() bool {
+func (a *appStatus) ValidCryptos() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return !a.bad_cryptos
 }
 
-func (a *AppStatus) ValidPanels() bool {
+func (a *appStatus) ValidPanels() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return !a.no_panels
 }
 
-func (a *AppStatus) ValidTickers() bool {
+func (a *appStatus) ValidTickers() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return !a.bad_tickers
 }
 
-func (a *AppStatus) DebounceRefresh() *AppStatus {
+func (a *appStatus) DebounceRefresh() *appStatus {
 	JC.MainDebouncer.Call("refreshing_status", 8*time.Millisecond, func() {
 		a.Refresh()
 	})
 	return a
 }
 
-func (a *AppStatus) Refresh() *AppStatus {
+func (a *appStatus) Refresh() *appStatus {
 	a.mu.Lock()
 	shouldUpdate := a.lastChange.After(a.lastRefresh)
 	a.lastRefresh = time.Now()
 	a.mu.Unlock()
 
 	if shouldUpdate {
-		AppLayoutManager.Refresh()
-		AppActionManager.Refresh()
+		AppLayout.Refresh()
+		AppActions.Refresh()
 	}
 
 	if !a.IsReady() || a.HasError() {

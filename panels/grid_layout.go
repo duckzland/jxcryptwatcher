@@ -23,7 +23,7 @@ type panelGridLayout struct {
 func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayoutManager == nil || JA.AppLayoutManager.ContainerSize().Width <= 0 || JA.AppLayoutManager.ContainerSize().Height <= 0 {
+	if JA.AppLayout == nil || JA.AppLayout.ContainerSize().Width <= 0 || JA.AppLayout.ContainerSize().Height <= 0 {
 		return
 	}
 
@@ -48,13 +48,13 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
 	th := (g.dynCellSize.Height * float32(mr)) + (float32(mr) * (g.innerPadding[0] + g.innerPadding[2]))
-	if th > JA.AppLayoutManager.Height() {
+	if th > JA.AppLayout.Height() {
 		sw -= 18
 	}
 
 	// Screen is too small for min width
-	if g.minCellSize.Width > JA.AppLayoutManager.Width() {
-		g.minCellSize.Width = JA.AppLayoutManager.Width() - hPad
+	if g.minCellSize.Width > JA.AppLayout.Width() {
+		g.minCellSize.Width = JA.AppLayout.Width() - hPad
 	}
 
 	if sw > g.minCellSize.Width {
@@ -87,10 +87,10 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	// Fix single column overflowing on android phone
-	if g.dynCellSize.Width > JA.AppLayoutManager.Width() {
-		g.dynCellSize.Width = JA.AppLayoutManager.Width()
+	if g.dynCellSize.Width > JA.AppLayout.Width() {
+		g.dynCellSize.Width = JA.AppLayout.Width()
 
-		if th > JA.AppLayoutManager.Height() {
+		if th > JA.AppLayout.Height() {
 			g.dynCellSize.Width -= 18
 		}
 	}

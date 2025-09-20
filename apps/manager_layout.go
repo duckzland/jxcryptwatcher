@@ -15,118 +15,118 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-var AppLayoutManager *AppLayout = nil
+var AppLayout *appLayout = nil
 var DragPlaceholder fyne.CanvasObject
 
-type AppLayout struct {
+type appLayout struct {
 	mu               sync.RWMutex
 	topBar           *fyne.Container
 	content          *fyne.CanvasObject
 	tickers          *fyne.Container
 	scroll           *container.Scroll
 	container        *fyne.Container
-	actionAddPanel   *AppPage
-	actionFixSetting *AppPage
-	actionGetCryptos *AppPage
-	loading          *AppPage
-	error            *AppPage
+	actionAddPanel   *appPage
+	actionFixSetting *appPage
+	actionGetCryptos *appPage
+	loading          *appPage
+	error            *appPage
 	maxOffset        float32
 	contentTopY      float32
 	contentBottomY   float32
 	state            int
 }
 
-func (m *AppLayout) TopBar() fyne.CanvasObject {
+func (m *appLayout) TopBar() fyne.CanvasObject {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.topBar
 }
 
-func (m *AppLayout) Content() *fyne.CanvasObject {
+func (m *appLayout) Content() *fyne.CanvasObject {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.content
 }
 
-func (m *AppLayout) Tickers() *fyne.Container {
+func (m *appLayout) Tickers() *fyne.Container {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.tickers
 }
 
-func (m *AppLayout) Scroll() *container.Scroll {
+func (m *appLayout) Scroll() *container.Scroll {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.scroll
 }
 
-func (m *AppLayout) Container() *fyne.Container {
+func (m *appLayout) Container() *fyne.Container {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.container
 }
 
-func (m *AppLayout) ContainerSize() fyne.Size {
+func (m *appLayout) ContainerSize() fyne.Size {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.container.Size()
 }
 
-func (m *AppLayout) ActionAddPanel() *AppPage {
+func (m *appLayout) ActionAddPanel() *appPage {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.actionAddPanel
 }
 
-func (m *AppLayout) ActionFixSetting() *AppPage {
+func (m *appLayout) ActionFixSetting() *appPage {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.actionFixSetting
 }
 
-func (m *AppLayout) ActionGetCryptos() *AppPage {
+func (m *appLayout) ActionGetCryptos() *appPage {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.actionGetCryptos
 }
 
-func (m *AppLayout) LoadingPage() *AppPage {
+func (m *appLayout) LoadingPage() *appPage {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.loading
 }
 
-func (m *AppLayout) ErrorPage() *AppPage {
+func (m *appLayout) ErrorPage() *appPage {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.error
 }
 
-func (m *AppLayout) MaxOffset() float32 {
+func (m *appLayout) MaxOffset() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.maxOffset
 }
 
-func (m *AppLayout) ContentTopY() float32 {
+func (m *appLayout) ContentTopY() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.contentTopY
 }
 
-func (m *AppLayout) ContentBottomY() float32 {
+func (m *appLayout) ContentBottomY() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.contentBottomY
 }
 
-func (m *AppLayout) State() int {
+func (m *appLayout) State() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.state
 }
 
-func (m *AppLayout) OffsetY() float32 {
+func (m *appLayout) OffsetY() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.scroll == nil {
@@ -135,7 +135,7 @@ func (m *AppLayout) OffsetY() float32 {
 	return m.scroll.Offset.Y
 }
 
-func (m *AppLayout) OffsetX() float32 {
+func (m *appLayout) OffsetX() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.scroll == nil {
@@ -144,7 +144,7 @@ func (m *AppLayout) OffsetX() float32 {
 	return m.scroll.Offset.X
 }
 
-func (m *AppLayout) Height() float32 {
+func (m *appLayout) Height() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.scroll == nil {
@@ -153,7 +153,7 @@ func (m *AppLayout) Height() float32 {
 	return m.scroll.Size().Height
 }
 
-func (m *AppLayout) Width() float32 {
+func (m *appLayout) Width() float32 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.scroll == nil {
@@ -162,37 +162,37 @@ func (m *AppLayout) Width() float32 {
 	return m.scroll.Size().Width
 }
 
-func (m *AppLayout) IsReady() bool {
+func (m *appLayout) IsReady() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.scroll != nil && m.content != nil
 }
 
-func (m *AppLayout) SetMaxOffset(val float32) {
+func (m *appLayout) SetMaxOffset(val float32) {
 	m.mu.Lock()
 	m.maxOffset = val
 	m.mu.Unlock()
 }
 
-func (m *AppLayout) SetContentTopY(val float32) {
+func (m *appLayout) SetContentTopY(val float32) {
 	m.mu.Lock()
 	m.contentTopY = val
 	m.mu.Unlock()
 }
 
-func (m *AppLayout) SetContentBottomY(val float32) {
+func (m *appLayout) SetContentBottomY(val float32) {
 	m.mu.Lock()
 	m.contentBottomY = val
 	m.mu.Unlock()
 }
 
-func (m *AppLayout) SetPage(container fyne.CanvasObject) {
+func (m *appLayout) SetPage(container fyne.CanvasObject) {
 	m.mu.Lock()
 	m.content = &container
 	m.mu.Unlock()
 }
 
-func (m *AppLayout) SetTickers(container *fyne.Container) {
+func (m *appLayout) SetTickers(container *fyne.Container) {
 	if container == nil {
 		return
 	}
@@ -210,7 +210,7 @@ func (m *AppLayout) SetTickers(container *fyne.Container) {
 	m.RefreshContainer()
 }
 
-func (m *AppLayout) SetOffsetY(offset float32) {
+func (m *appLayout) SetOffsetY(offset float32) {
 	m.mu.Lock()
 	if m.scroll == nil || m.scroll.Offset.Y == offset {
 		m.mu.Unlock()
@@ -221,7 +221,7 @@ func (m *AppLayout) SetOffsetY(offset float32) {
 	m.RefreshLayout()
 }
 
-func (m *AppLayout) ScrollBy(delta float32) {
+func (m *appLayout) ScrollBy(delta float32) {
 	current := m.OffsetY()
 	newOffset := current + delta
 
@@ -253,7 +253,7 @@ func (m *AppLayout) ScrollBy(delta float32) {
 	m.SetOffsetY(newOffset)
 }
 
-func (m *AppLayout) ComputeMaxScrollOffset() {
+func (m *appLayout) ComputeMaxScrollOffset() {
 	m.mu.RLock()
 	scroll := m.scroll
 	m.mu.RUnlock()
@@ -274,7 +274,7 @@ func (m *AppLayout) ComputeMaxScrollOffset() {
 	m.mu.Unlock()
 }
 
-func (m *AppLayout) RefreshLayout() {
+func (m *appLayout) RefreshLayout() {
 	JC.MainDebouncer.Call("refreshing_layout_layout", 5*time.Millisecond, func() {
 		m.mu.RLock()
 		if m.scroll != nil {
@@ -284,7 +284,7 @@ func (m *AppLayout) RefreshLayout() {
 	})
 }
 
-func (m *AppLayout) RefreshContainer() {
+func (m *appLayout) RefreshContainer() {
 	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
 		m.mu.RLock()
 		fyne.Do(m.container.Refresh)
@@ -292,7 +292,7 @@ func (m *AppLayout) RefreshContainer() {
 	})
 }
 
-func (m *AppLayout) Refresh() {
+func (m *appLayout) Refresh() {
 	if m == nil {
 		return
 	}
@@ -304,30 +304,30 @@ func (m *AppLayout) Refresh() {
 	scroll := m.scroll
 	m.mu.Unlock()
 
-	if content == nil || !AppStatusManager.IsReady() {
+	if content == nil || !AppStatus.IsReady() {
 		m.mu.Lock()
 		scroll.Content = m.loading
 		m.state = -1
 		m.mu.Unlock()
-	} else if !AppStatusManager.ValidConfig() {
+	} else if !AppStatus.ValidConfig() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
 		m.state = -2
 		m.mu.Unlock()
-	} else if !AppStatusManager.ValidCryptos() {
+	} else if !AppStatus.ValidCryptos() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
 		m.state = -3
 		m.mu.Unlock()
-	} else if !AppStatusManager.ValidPanels() {
+	} else if !AppStatus.ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionAddPanel
 		m.state = 0
 		m.mu.Unlock()
-	} else if !AppStatusManager.HasError() {
+	} else if !AppStatus.HasError() {
 		m.mu.Lock()
 		scroll.Content = *content
-		m.state = AppStatusManager.panels_count
+		m.state = AppStatus.panels_count
 		m.mu.Unlock()
 	} else {
 		m.mu.Lock()
@@ -344,8 +344,8 @@ func (m *AppLayout) Refresh() {
 		m.RefreshLayout()
 	}
 
-	if AppStatusManager.IsReady() {
-		if !AppStatusManager.ValidCryptos() {
+	if AppStatus.IsReady() {
+		if !AppStatus.ValidCryptos() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
@@ -354,70 +354,70 @@ func (m *AppLayout) Refresh() {
 		tickers := m.tickers
 		m.mu.RUnlock()
 
-		if tickers != nil && tickers != JC.Tickers && AppStatusManager.ValidTickers() {
+		if tickers != nil && tickers != JC.Tickers && AppStatus.ValidTickers() {
 			m.SetTickers(JC.Tickers)
 			return
 		}
 
-		if tickers != nil && tickers == JC.Tickers && !AppStatusManager.ValidTickers() {
+		if tickers != nil && tickers == JC.Tickers && !AppStatus.ValidTickers() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
 
-		if tickers == nil && AppStatusManager.ValidTickers() {
+		if tickers == nil && AppStatus.ValidTickers() {
 			m.SetTickers(JC.Tickers)
 			return
 		}
 	}
 }
 
-func (m *AppLayout) AddToContainer(container *fyne.Container) {
+func (m *appLayout) AddToContainer(container *fyne.Container) {
 	m.container.Add(container)
 }
 
-func (m *AppLayout) RemoveFromContainer(container *fyne.Container) {
+func (m *appLayout) RemoveFromContainer(container *fyne.Container) {
 	m.container.Remove(container)
 }
 
-func (m *AppLayout) SetOverlay(container *fyne.Container) {
+func (m *appLayout) SetOverlay(container *fyne.Container) {
 	m.container.Add(container)
 	if layout, ok := m.container.Layout.(*AppMainLayout); ok {
 		layout.overlay = container
 	}
 }
 
-func (m *AppLayout) RemoveOverlay(container *fyne.Container) {
+func (m *appLayout) RemoveOverlay(container *fyne.Container) {
 	m.container.Remove(container)
 	if layout, ok := m.container.Layout.(*AppMainLayout); ok {
 		layout.overlay = nil
 	}
 }
 
-func NewAppLayoutManager() fyne.CanvasObject {
+func NewAppLayout() fyne.CanvasObject {
 	JC.NotificationContainer = JW.NewNotificationDisplay()
 
-	manager := &AppLayout{
+	manager := &appLayout{
 		topBar: NewTopBar(),
 	}
 
-	AppLayoutManager = manager
+	AppLayout = manager
 
 	manager.loading = NewAppPage(nil, "Loading...", nil)
 	manager.error = NewAppPage(nil, "Failed to start application...", nil)
 
 	contentIcon := theme.ContentAddIcon()
 	manager.actionAddPanel = NewAppPage(&contentIcon, "Add Panel", func() {
-		AppActionManager.CallButton("add_panel")
+		AppActions.CallButton("add_panel")
 	})
 
 	settingIcon := theme.SettingsIcon()
 	manager.actionFixSetting = NewAppPage(&settingIcon, "Open Settings", func() {
-		AppActionManager.CallButton("open_settings")
+		AppActions.CallButton("open_settings")
 	})
 
 	restoreIcon := theme.ViewRestoreIcon()
 	manager.actionGetCryptos = NewAppPage(&restoreIcon, "Fetch Crypto Data", func() {
-		AppActionManager.CallButton("refresh_cryptos")
+		AppActions.CallButton("refresh_cryptos")
 	})
 
 	manager.scroll = container.NewVScroll(nil)

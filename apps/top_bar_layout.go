@@ -2,7 +2,7 @@ package apps
 
 import "fyne.io/fyne/v2"
 
-type TopBarLayout struct {
+type topBarLayout struct {
 	fixedWidth float32
 	spacer     float32
 	rows       int
@@ -11,10 +11,10 @@ type TopBarLayout struct {
 	dirty      bool
 }
 
-func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if AppLayoutManager == nil || AppLayoutManager.ContainerSize().Width <= 0 || AppLayoutManager.ContainerSize().Height <= 0 {
+	if AppLayout == nil || AppLayout.ContainerSize().Width <= 0 || AppLayout.ContainerSize().Height <= 0 {
 		return
 	}
 
@@ -83,7 +83,7 @@ func (s *TopBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-func (s *TopBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (s *topBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	if !s.dirty {
 		return s.minSize
 	}

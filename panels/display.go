@@ -233,7 +233,7 @@ func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
-	if JM.AppStatusManager.IsDraggable() {
+	if JM.AppStatus.IsDraggable() {
 		h.HideTarget()
 		return
 	}
@@ -278,7 +278,7 @@ func (h *PanelDisplay) HideTarget() {
 }
 
 func (h *PanelDisplay) Cursor() desktop.Cursor {
-	if JM.AppStatusManager.IsDraggable() {
+	if JM.AppStatus.IsDraggable() {
 		return desktop.PointerCursor
 	}
 
@@ -309,7 +309,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 
 		activeDragging = h
 		h.dragging = true
-		h.dragScroll = JM.AppLayoutManager.OffsetY()
+		h.dragScroll = JM.AppLayout.OffsetY()
 
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
 
@@ -346,8 +346,8 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := JM.AppLayoutManager.ContentTopY() - edgeThreshold
-				edgeBottomY := JM.AppLayoutManager.ContentBottomY() - edgeThreshold
+				edgeTopY := JM.AppLayout.ContentTopY() - edgeThreshold
+				edgeBottomY := JM.AppLayout.ContentBottomY() - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
@@ -370,9 +370,9 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 
 				// Scroll when placeholder is half out of viewport
 				if posY < edgeTopY {
-					JM.AppLayoutManager.ScrollBy(-scrollStep)
+					JM.AppLayout.ScrollBy(-scrollStep)
 				} else if posY > edgeBottomY {
-					JM.AppLayoutManager.ScrollBy(scrollStep)
+					JM.AppLayout.ScrollBy(scrollStep)
 				}
 			}
 		}()
@@ -380,7 +380,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	if JM.AppStatusManager.IsDraggable() {
+	if JM.AppStatus.IsDraggable() {
 		h.PanelDrag(ev)
 	} else {
 		h.container.Dragged(ev)
@@ -388,7 +388,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) DragEnd() {
-	if !JM.AppStatusManager.IsDraggable() {
+	if !JM.AppStatus.IsDraggable() {
 		h.dragging = false
 		if h.container != nil {
 			h.container.DragEnd()
@@ -407,7 +407,7 @@ func (h *PanelDisplay) DragEnd() {
 	}
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.AppLayoutManager.OffsetY()
+	h.dragOffset.Y -= h.dragScroll - JM.AppLayout.OffsetY()
 
 	h.snapToNearest()
 }

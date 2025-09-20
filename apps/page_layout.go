@@ -5,13 +5,13 @@ import (
 	"fyne.io/fyne/v2/canvas"
 )
 
-type AppPageLayout struct {
+type appPageLayout struct {
 	background *canvas.Rectangle
 	icon       *fyne.Container
 	content    *canvas.Text
 }
 
-func (p *AppPageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (p *appPageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	if size.Width == 0 && size.Height == 0 {
 		return
@@ -55,7 +55,7 @@ func (p *AppPageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-func (p *AppPageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (p *appPageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 

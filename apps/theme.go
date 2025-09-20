@@ -2,15 +2,16 @@ package apps
 
 import (
 	"image/color"
-	JC "jxwatcher/core"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
+
+	JC "jxwatcher/core"
 )
 
-type JXWatcherTheme struct{}
+type appTheme struct{}
 
-func (t *JXWatcherTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameForegroundOnWarning:
 		return JC.TextColor
@@ -22,17 +23,17 @@ func (t *JXWatcherTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVaria
 	return theme.DarkTheme().Color(name, variant)
 }
 
-func (t *JXWatcherTheme) Font(style fyne.TextStyle) fyne.Resource {
+func (t *appTheme) Font(style fyne.TextStyle) fyne.Resource {
 	return theme.DarkTheme().Font(style)
 }
-func (t *JXWatcherTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
+func (t *appTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
 	return theme.DarkTheme().Icon(name)
 }
-func (t *JXWatcherTheme) Size(name fyne.ThemeSizeName) float32 {
+func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DarkTheme().Size(name)
 }
 
 func NewTheme() fyne.Theme {
-	theme := &JXWatcherTheme{}
+	theme := &appTheme{}
 	return theme
 }
