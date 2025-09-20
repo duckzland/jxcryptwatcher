@@ -74,7 +74,9 @@ func NewCompletionEntry(
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.HideCompletion, c.itemHeight)
 
-	closeBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), c.HideCompletion)
+	closeBtn := NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn *ActionButton) {
+		c.HideCompletion()
+	}, nil)
 
 	closeBtn.Resize(fyne.NewSize(32, 32))
 	closeBtn.Move(fyne.NewPos(0, 0))
