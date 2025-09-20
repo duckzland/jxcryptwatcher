@@ -53,9 +53,7 @@ func (p *AppPage) CreateRenderer() fyne.WidgetRenderer {
 
 	objects = append(objects, layout.content)
 
-	containerContent := container.New(layout, objects...)
-
-	return widget.NewSimpleRenderer(containerContent)
+	return widget.NewSimpleRenderer(container.New(layout, objects...))
 }
 
 func (p *AppPage) Tapped(_ *fyne.PointEvent) {
