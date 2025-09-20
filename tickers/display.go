@@ -72,10 +72,6 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 	ticker.ExtendBaseWidget(ticker)
 
 	str.AddListener(binding.NewDataListener(func() {
-		pkt := JT.BT.GetData(ticker.GetTag())
-		if pkt == nil {
-			return
-		}
 		ticker.UpdateContent()
 		JA.StartFlashingText(ticker.refContent, 50*time.Millisecond, JC.TextColor, 1)
 	}))
