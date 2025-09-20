@@ -89,13 +89,10 @@ func (n *completionList) SetFilteredData(items []string) {
 	n.calculateDynamicItemSize()
 
 	JC.MainDebouncer.Call("layout_update", 50*time.Millisecond, func() {
-		defer JC.PrintPerfStats("Layout update", time.Now())
 		fyne.Do(func() {
 			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(len(n.filteredData))))
 			n.computeMaxScrollOffset()
 			n.refreshContent()
-
-			JC.Logln("Total item:", len(n.filteredData), n.scaledItemHeight, n.scaledItemHeight*float32(len(n.filteredData)))
 		})
 	})
 }

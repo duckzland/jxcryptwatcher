@@ -176,7 +176,6 @@ func UpdateTickers() bool {
 
 func DetectHTTPResponse(rs int64) int {
 
-	// JC.Logln("Raw rs value: ", rs)
 	switch rs {
 	case JC.NETWORKING_SUCCESS:
 		return JC.STATUS_SUCCESS

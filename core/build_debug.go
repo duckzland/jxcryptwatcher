@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const MemoryDebug = true
+const MemoryDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
