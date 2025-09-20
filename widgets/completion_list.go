@@ -10,16 +10,19 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 
 	JC "jxwatcher/core"
 )
 
 type completionList struct {
 	widget.BaseWidget
+	uuid             string
 	data             []string
 	selected         int
 	itemVisible      int
 	itemHeight       float32
+	itemTotal        int
 	scaledItemHeight float32
 	onChange         func(string)
 	onClose          func()
@@ -44,19 +47,24 @@ func NewCompletionList(
 	itemHeight float32,
 ) *completionList {
 	n := &completionList{
-		selected:      -1,
-		onChange:      onChange,
-		onClose:       onClose,
-		itemHeight:    itemHeight,
-		lastSize:      fyne.NewSize(0, 0),
-		scrollContent: canvas.NewRectangle(JC.Transparent),
-		contentBox:    container.New(layout.NewVBoxLayout()),
-		fps:           time.Millisecond * 32,
-		maxOffset:     0,
-		scrollLimiter: 0,
-		scrollOffset:  0,
-		dragging:      false,
+		selected:         -1,
+		onChange:         onChange,
+		onClose:          onClose,
+		itemHeight:       itemHeight,
+		scaledItemHeight: itemHeight,
+		itemTotal:        0,
+		lastSize:         fyne.NewSize(0, 0),
+		scrollContent:    canvas.NewRectangle(JC.Transparent),
+		contentBox:       container.New(layout.NewVBoxLayout()),
+		fps:              time.Millisecond * 32,
+		maxOffset:        0,
+		scrollLimiter:    0,
+		scrollOffset:     0,
+		dragging:         false,
 	}
+
+	id := uuid.New()
+	n.uuid = id.String()
 
 	n.scrollBox = container.NewVScroll(n.scrollContent)
 	n.scrollBox.OnScrolled = n.scrollingContent
@@ -80,7 +88,7 @@ func (n *completionList) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(n.root)
 }
 
-func (n *completionList) SetFilteredData(items []string) {
+func (n *completionList) SetData(items []string) {
 
 	if JC.EqualStringSlices(n.data, items) {
 		return
@@ -91,9 +99,14 @@ func (n *completionList) SetFilteredData(items []string) {
 	n.selected = -1
 	n.prepareForScroll()
 
-	JC.MainDebouncer.Call("layout_update", 50*time.Millisecond, func() {
+	delay := 10 * time.Millisecond
+	if JC.IsMobile {
+		delay = 50 * time.Millisecond
+	}
+
+	JC.MainDebouncer.Call("layout_update_"+n.uuid, delay, func() {
 		fyne.Do(func() {
-			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(len(n.data))))
+			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(n.itemTotal)))
 			n.refreshContent()
 		})
 	})
@@ -109,14 +122,14 @@ func (n *completionList) Cursor() desktop.Cursor {
 }
 
 func (n *completionList) OnSelected(index int) {
-	if index >= 0 && index < len(n.data) {
+	if index >= 0 && index < n.itemTotal {
 		n.onChange(n.data[index])
 	}
 }
 
 func (n *completionList) TypedKey(event *fyne.KeyEvent) {
 
-	if len(n.data) == 0 {
+	if n.itemTotal == 0 {
 		n.selected = -1
 		n.scrollOffset = 0
 		n.refreshContent()
@@ -125,7 +138,7 @@ func (n *completionList) TypedKey(event *fyne.KeyEvent) {
 
 	switch event.Name {
 	case fyne.KeyDown:
-		if n.selected < len(n.data)-1 && n.selected >= 0 {
+		if n.selected < n.itemTotal-1 && n.selected >= 0 {
 			n.selected++
 		} else {
 			n.selected = 0
@@ -137,7 +150,7 @@ func (n *completionList) TypedKey(event *fyne.KeyEvent) {
 		if n.selected > 0 {
 			n.selected--
 		} else {
-			n.selected = len(n.data) - 1
+			n.selected = n.itemTotal - 1
 		}
 		n.scrollOffset = n.selected
 		n.refreshContent()
@@ -225,18 +238,24 @@ func (n *completionList) IsDragging() bool {
 }
 
 func (n *completionList) prepareForScroll() {
-	ttl := float32(len(n.data))
 
+	limiter := float32(0.3)
+
+	n.itemTotal = len(n.data)
 	n.scaledItemHeight = n.itemHeight
 
-	oh := n.itemHeight * ttl
+	oh := n.itemHeight * float32(n.itemTotal)
 	mx := float32(1000)
 	if oh > mx {
-		n.scaledItemHeight = float32(math.Ceil(float64(mx/ttl + float32(n.itemVisible))))
+		n.scaledItemHeight = float32(math.Ceil(float64(mx/float32(n.itemTotal) + float32(n.itemVisible))))
 	}
 
-	n.scrollLimiter = float64(n.scaledItemHeight * 0.3)
-	n.maxOffset = len(n.data) - n.itemVisible
+	if n.itemTotal > 500 {
+		limiter = 0.1
+	}
+
+	n.scrollLimiter = float64(n.scaledItemHeight * limiter)
+	n.maxOffset = n.itemTotal - n.itemVisible
 }
 
 func (n *completionList) refreshContent() {
@@ -247,7 +266,7 @@ func (n *completionList) refreshContent() {
 		if !ok {
 			continue
 		}
-		if dataIndex >= 0 && dataIndex < len(n.data) {
+		if dataIndex >= 0 && dataIndex < n.itemTotal {
 			item.SetText(n.data[dataIndex])
 			item.SetIndex(dataIndex)
 		}

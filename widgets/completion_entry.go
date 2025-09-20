@@ -208,10 +208,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 }
 
 func (c *CompletionEntry) CancelSearch() {
-	// Cancel any active debounced call
 	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
-
-	// Cancel the active search context
 	if c.searchCancel != nil {
 		c.searchCancel()
 		c.searchCancel = nil
@@ -239,7 +236,7 @@ func (c *CompletionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
-		c.completionList.SetFilteredData(c.options)
+		c.completionList.SetData(c.options)
 		c.ShowCompletion()
 	}
 }
@@ -257,7 +254,7 @@ func (c *CompletionEntry) HideCompletion() {
 	}
 
 	if c.completionList != nil {
-		c.completionList.SetFilteredData([]string{})
+		c.completionList.SetData([]string{})
 	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
@@ -318,7 +315,7 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 	c.options = itemList
 
 	if c.completionList != nil {
-		c.completionList.SetFilteredData(c.options)
+		c.completionList.SetData(c.options)
 	}
 }
 

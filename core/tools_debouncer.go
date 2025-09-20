@@ -18,6 +18,11 @@ func NewDebouncer() *Debouncer {
 	}
 }
 
+func (d *Debouncer) CallOnce(key string, delay time.Duration, fn func()) {
+	d.Cancel(key)
+	d.Call(key, delay, fn)
+}
+
 func (d *Debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.mu.Lock()
 	ch, exists := d.channels[key]
