@@ -9,11 +9,11 @@ import (
 )
 
 type tickerGridLayout struct {
-	MinCellSize  fyne.Size
-	DynCellSize  fyne.Size
-	ColCount     int
-	RowCount     int
-	InnerPadding [4]float32 // top, right, bottom, left
+	minCellSize  fyne.Size
+	dynCellSize  fyne.Size
+	colCount     int
+	rowCount     int
+	innerPadding [4]float32 // top, right, bottom, left
 	cWidth       float32
 	minSize      fyne.Size
 	dirty        bool
@@ -21,17 +21,14 @@ type tickerGridLayout struct {
 
 func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
-	// Apps is not ready yet!
 	if JA.AppLayoutManager == nil || JA.AppLayoutManager.ContainerSize().Width <= 0 || JA.AppLayoutManager.ContainerSize().Height <= 0 {
 		return
 	}
 
-	// No objects to layout
 	if len(objects) == 0 {
 		return
 	}
 
-	// Dont relayout as we got same width
 	if size.Width == g.cWidth {
 		return
 	}
@@ -39,95 +36,83 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.cWidth = size.Width
 	g.dirty = true
 
-	hPad := g.InnerPadding[1] + g.InnerPadding[3] // right + left
-	vPad := g.InnerPadding[0] + g.InnerPadding[2] // top + bottom
+	hPad := g.innerPadding[1] + g.innerPadding[3] // right + left
+	vPad := g.innerPadding[0] + g.innerPadding[2] // top + bottom
 
-	g.ColCount = 1
-	g.RowCount = 0
-	g.DynCellSize = g.MinCellSize
+	g.colCount = 1
+	g.rowCount = 0
+	g.dynCellSize = g.minCellSize
 
-	// Screen is too small for min width
-	if g.MinCellSize.Width > g.cWidth {
-		g.MinCellSize.Width = g.cWidth - hPad
+	if g.minCellSize.Width > g.cWidth {
+		g.minCellSize.Width = g.cWidth - hPad
 	}
 
-	if size.Width > g.MinCellSize.Width {
+	if size.Width > g.minCellSize.Width {
 
-		// Use logics based on the total tickers will only be from 1 to 4 ticker
 		switch len(objects) {
 		case 4:
-			g.ColCount = int(math.Floor(float64(size.Width+hPad) / float64(g.MinCellSize.Width+hPad)))
-			if g.ColCount < 2 {
-				g.ColCount = 2
-			} else if g.ColCount > len(objects) {
-				g.ColCount = len(objects)
+			g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
+			if g.colCount < 2 {
+				g.colCount = 2
+			} else if g.colCount > len(objects) {
+				g.colCount = len(objects)
 			}
 
-			// Force odd column count to be even for better layout
-			if g.ColCount > 2 && g.ColCount%2 != 0 {
-				g.ColCount--
+			if g.colCount > 2 && g.colCount%2 != 0 {
+				g.colCount--
 			}
 
 		default:
-			// Make single row
-			g.ColCount = len(objects)
+			g.colCount = len(objects)
 		}
 
 		pads := float32(0)
-		for i := 0; i < g.ColCount; i++ {
+		for i := 0; i < g.colCount; i++ {
 			pads += hPad
 
-			// Properly count pads, the first in column will not need left padding
 			if i == 0 {
-				pads -= g.InnerPadding[3]
+				pads -= g.innerPadding[3]
 			}
 
-			// Properly count pads, the last in column will not need right padding
-			if i == g.ColCount-1 {
-				pads -= g.InnerPadding[1]
+			if i == g.colCount-1 {
+				pads -= g.innerPadding[1]
 			}
 		}
 
-		emptySpace := size.Width - (float32(g.ColCount) * g.MinCellSize.Width) - pads
+		emptySpace := size.Width - (float32(g.colCount) * g.minCellSize.Width) - pads
 		if emptySpace > 0 {
-			g.DynCellSize.Width += emptySpace / float32(g.ColCount)
+			g.dynCellSize.Width += emptySpace / float32(g.colCount)
 		}
 	}
 
-	// Fix division by zero
-	if g.ColCount == 0 {
-		g.ColCount = 1
+	if g.colCount == 0 {
+		g.colCount = 1
 	}
 
-	// Fix single column overflowing on android phone
-	if g.DynCellSize.Width > g.cWidth {
-		g.DynCellSize.Width = g.cWidth
+	if g.dynCellSize.Width > g.cWidth {
+		g.dynCellSize.Width = g.cWidth
 	}
 
-	i, x, y := 0, g.InnerPadding[3], g.InnerPadding[0]
+	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
 
 	for _, child := range objects {
 		if !child.Visible() {
 			continue
 		}
-
-		// First in column, move to 0 horizontally
-		if i%g.ColCount == 0 {
+		if i%g.colCount == 0 {
 			x = 0
-			g.RowCount++
+			g.rowCount++
 		}
 
 		child.Move(fyne.NewPos(x, y))
-		child.Resize(g.DynCellSize)
+		child.Resize(g.dynCellSize)
 
-		// End of column, prepare to move down the next item
-		if (i+1)%g.ColCount == 0 {
-			y += g.DynCellSize.Height + vPad
+		if (i+1)%g.colCount == 0 {
+			y += g.dynCellSize.Height + vPad
 		}
 
-		// Still in column, just move right horizontally
-		if (i+1)%g.ColCount != 0 {
-			x += g.DynCellSize.Width + hPad
+		if (i+1)%g.colCount != 0 {
+			x += g.dynCellSize.Width + hPad
 		}
 
 		i++
@@ -136,21 +121,15 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
-	// This calculation is not accurate as the Layout one.
-	// Use this only for approx. calculation of width and height
-
-	// App has the same width as last time, just give cached size!
 	if !g.dirty {
 		return g.minSize
 	}
 
 	g.dirty = false
 
-	// Using main container width instead of the cached size.width
 	aWidth := JA.AppLayoutManager.ContainerSize().Width
 
-	// Make the same logic as in Layout
-	c := int(math.Floor(float64(aWidth) / float64(g.DynCellSize.Width)))
+	c := int(math.Floor(float64(aWidth) / float64(g.dynCellSize.Width)))
 
 	switch len(objects) {
 	case 4:
@@ -166,8 +145,8 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	rows := max(r, 1)
 	cols := max(c, 1)
 
-	width := (g.DynCellSize.Width * float32(cols)) + (g.InnerPadding[1] + g.InnerPadding[3])
-	height := (g.DynCellSize.Height * float32(rows)) + (float32(rows) * (g.InnerPadding[0] + g.InnerPadding[2]))
+	width := (g.dynCellSize.Width * float32(cols)) + (g.innerPadding[1] + g.innerPadding[3])
+	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
 
 	g.minSize = fyne.NewSize(width, height)
 

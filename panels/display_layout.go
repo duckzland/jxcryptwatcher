@@ -11,7 +11,7 @@ type panelLayout struct {
 	subtitle   *canvas.Text
 	content    *canvas.Text
 	bottomText *canvas.Text
-	action     *panelActionDisplay
+	action     *panelAction
 }
 
 func (pl *panelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {

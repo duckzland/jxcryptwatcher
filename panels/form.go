@@ -26,15 +26,17 @@ func NewPanelForm(
 	cm := JT.BP.GetOptions()
 	cs := JT.BP.GetMaps().GetSearchMap()
 
-	popupSourceEntryTarget := container.NewStack()
-	popupTargetEntryTarget := container.NewStack()
+	pse := container.NewStack()
+	pte := container.NewStack()
+	pop := []*fyne.Container{pse, pte}
 
 	valueEntry := JW.NewNumericalEntry(true)
-	sourceEntry := JW.NewCompletionEntry(cm, cs, popupSourceEntryTarget)
-	targetEntry := JW.NewCompletionEntry(cm, cs, popupTargetEntryTarget)
+	sourceEntry := JW.NewCompletionEntry(cm, cs, pse)
+	targetEntry := JW.NewCompletionEntry(cm, cs, pte)
 	decimalsEntry := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
+
 	if panelKey != "new" {
 
 		pkt := JT.BP.GetDataByID(uuid)
@@ -150,9 +152,7 @@ func NewPanelForm(
 		widget.NewFormItem("Decimals", decimalsEntry),
 	}
 
-	popupTarget := []*fyne.Container{popupSourceEntryTarget, popupTargetEntryTarget}
-
-	parent := JW.NewDialogForm(title, formItems, nil, nil, popupTarget,
+	parent := JW.NewDialogForm(title, formItems, nil, nil, pop,
 		func(b bool) bool {
 			if b {
 				var npk JT.PanelKeyType

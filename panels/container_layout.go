@@ -1,10 +1,11 @@
 package panels
 
 import (
-	JC "jxwatcher/core"
 	"time"
 
 	"fyne.io/fyne/v2"
+
+	JC "jxwatcher/core"
 )
 
 type panelContainerLayout struct {

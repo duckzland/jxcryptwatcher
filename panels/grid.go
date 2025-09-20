@@ -42,9 +42,9 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 		p = append(p, panel)
 	}
 
-	o := make([]fyne.CanvasObject, len(p))
+	panels := make([]fyne.CanvasObject, len(p))
 	for i := range p {
-		o[i] = p[i]
+		panels[i] = p[i]
 	}
 
 	grid := NewpanelContainer(
@@ -55,7 +55,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 			rowCount:     1,
 			innerPadding: JC.PanelPadding,
 		},
-		o,
+		panels,
 	)
 
 	// Global dummy panel for placeholder

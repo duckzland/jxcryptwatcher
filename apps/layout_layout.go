@@ -24,6 +24,7 @@ func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 
 	const splitThreshold = 1600.0
 	const minTickerWidth = 700.0
+
 	padding := a.padding
 
 	var topHeight fyne.Size

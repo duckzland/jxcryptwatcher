@@ -85,6 +85,7 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 func (h *tickerDisplay) UpdateContent() {
 	pwidth := h.Size().Width
 	pkt := JT.BT.GetData(h.GetTag())
+
 	if pkt == nil {
 		return
 	}

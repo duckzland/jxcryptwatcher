@@ -26,29 +26,34 @@ func NewAppPage(icon *fyne.Resource, content string, onTap func()) *AppPage {
 	}
 
 	p.ExtendBaseWidget(p)
+
 	return p
 }
 
 func (p *AppPage) CreateRenderer() fyne.WidgetRenderer {
 	var objects []fyne.CanvasObject
 
-	content := canvas.NewText(p.content, JC.TextColor)
-	content.Alignment = fyne.TextAlignCenter
-	content.TextSize = 20
-
-	background := canvas.NewRectangle(JC.PanelBG)
-	background.SetMinSize(fyne.NewSize(100, 100))
-	background.CornerRadius = JC.PanelBorderRadius
-
-	objects = append(objects, background)
-
-	if p.icon != nil {
-		objects = append(objects, container.NewWithoutLayout(widget.NewIcon(*p.icon)))
+	layout := &AppPageLayout{
+		background: canvas.NewRectangle(JC.PanelBG),
+		content:    canvas.NewText(p.content, JC.TextColor),
 	}
 
-	objects = append(objects, content)
+	layout.content.Alignment = fyne.TextAlignCenter
+	layout.content.TextSize = 20
 
-	containerContent := container.New(&AppPageLayout{}, objects...)
+	layout.background.SetMinSize(fyne.NewSize(100, 100))
+	layout.background.CornerRadius = JC.PanelBorderRadius
+
+	objects = append(objects, layout.background)
+
+	if p.icon != nil {
+		layout.icon = container.NewWithoutLayout(widget.NewIcon(*p.icon))
+		objects = append(objects, layout.icon)
+	}
+
+	objects = append(objects, layout.content)
+
+	containerContent := container.New(layout, objects...)
 
 	return widget.NewSimpleRenderer(containerContent)
 }

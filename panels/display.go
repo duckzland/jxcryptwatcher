@@ -76,7 +76,7 @@ func NewPanelDisplay(
 	pl.bottomText.Alignment = fyne.TextAlignCenter
 	pl.bottomText.TextSize = JC.PanelBottomTextSize
 
-	pl.action = NewPanelActionBar(
+	pl.action = NewPanelAction(
 		func() {
 			dynpk, _ := str.Get()
 			if onEdit != nil {

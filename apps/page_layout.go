@@ -1,46 +1,47 @@
 package apps
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+)
 
-type AppPageLayout struct{}
+type AppPageLayout struct {
+	background *canvas.Rectangle
+	icon       *fyne.Container
+	content    *canvas.Text
+}
 
 func (p *AppPageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	if len(objects) < 2 {
+
+	if size.Width == 0 && size.Height == 0 {
 		return
 	}
 
-	bg := objects[0]
-	var icon fyne.CanvasObject
-	var content fyne.CanvasObject
-
-	if len(objects) == 2 {
-		content = objects[1]
-	} else {
-		icon = objects[1]
-		content = objects[2]
+	if p.background != nil {
+		p.background.Resize(size)
+		p.background.Move(fyne.NewPos(0, 0))
 	}
 
-	bg.Resize(size)
-	bg.Move(fyne.NewPos(0, 0))
-
-	contentSize := content.MinSize()
+	contentSize := p.content.MinSize()
 	iconSize := fyne.NewSize(64, 64)
+	totalHeight := float32(0)
 
-	var totalHeight float32
-	if icon != nil {
-		totalHeight = iconSize.Height + contentSize.Height
-	} else {
-		totalHeight = contentSize.Height
+	if p.icon != nil {
+		totalHeight += iconSize.Height
+	}
+
+	if p.content != nil {
+		totalHeight += contentSize.Height
 	}
 
 	startY := (size.Height - totalHeight) / 2
 
-	if icon != nil {
-		icon.Move(fyne.NewPos((size.Width-iconSize.Width)/2, startY))
-		icon.Resize(iconSize)
+	if p.icon != nil {
+		p.icon.Move(fyne.NewPos((size.Width-iconSize.Width)/2, startY))
+		p.icon.Resize(iconSize)
 
-		if c, ok := icon.(*fyne.Container); ok && len(c.Objects) > 0 {
-			innerIcon := c.Objects[0]
+		if len(p.icon.Objects) > 0 {
+			innerIcon := p.icon.Objects[0]
 			innerIcon.Resize(iconSize)
 			innerIcon.Move(fyne.NewPos(0, 0))
 		}
@@ -48,24 +49,29 @@ func (p *AppPageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		startY += iconSize.Height
 	}
 
-	// Position content
-	content.Move(fyne.NewPos((size.Width-contentSize.Width)/2, startY))
-	content.Resize(contentSize)
+	if p.content != nil {
+		p.content.Move(fyne.NewPos((size.Width-contentSize.Width)/2, startY))
+		p.content.Resize(contentSize)
+	}
 }
 
 func (p *AppPageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
-	if len(objects) >= 3 {
-		icon := objects[1]
-		content := objects[2]
+	if p.icon != nil {
+		ic := p.icon.MinSize()
+		width += ic.Width
+		height += ic.Height
+	}
 
-		iconSize := icon.MinSize()
-		contentSize := content.MinSize()
+	if p.content != nil {
+		co := p.content.MinSize()
+		if width < co.Width {
+			width = co.Width
+		}
+		height += co.Height
 
-		width = fyne.Max(iconSize.Width, contentSize.Width)
-		height = iconSize.Height + contentSize.Height
 	}
 
 	return fyne.NewSize(width, height)
