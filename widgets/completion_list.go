@@ -16,25 +16,26 @@ import (
 
 type completionList struct {
 	widget.BaseWidget
-	selected      int
-	onChange      func(string)
-	onClose       func()
-	filteredData  []string
-	scrollOffset  int
-	itemHeight    float32
-	contentBox    *fyne.Container
-	scrollContent *canvas.Rectangle
-	scrollBox     *container.Scroll
-	layout        *completionListLayout
-	root          *fyne.Container
-	lastSize      fyne.Size
-	fps           time.Duration
-	position      fyne.Position
-	cursorOffset  fyne.Position
-	dragging      bool
-	done          chan struct{}
-	maxOffsetY    float32
-	itemVisible   int
+	selected         int
+	onChange         func(string)
+	onClose          func()
+	filteredData     []string
+	scrollOffset     int
+	itemHeight       float32
+	contentBox       *fyne.Container
+	scrollContent    *canvas.Rectangle
+	scrollBox        *container.Scroll
+	layout           *completionListLayout
+	root             *fyne.Container
+	lastSize         fyne.Size
+	fps              time.Duration
+	position         fyne.Position
+	cursorOffset     fyne.Position
+	dragging         bool
+	done             chan struct{}
+	maxOffsetY       float32
+	itemVisible      int
+	scaledItemHeight float32
 }
 
 func NewCompletionList(
@@ -77,6 +78,7 @@ func (n *completionList) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (n *completionList) SetFilteredData(items []string) {
+
 	if JC.EqualStringSlices(n.filteredData, items) {
 		return
 	}
@@ -84,12 +86,30 @@ func (n *completionList) SetFilteredData(items []string) {
 	n.filteredData = items
 	n.scrollOffset = 0
 	n.selected = -1
+	n.calculateDynamicItemSize()
 
-	n.scrollContent.SetMinSize(fyne.NewSize(20, n.itemHeight*float32(len(items))))
-	n.scrollBox.ScrollToTop()
+	JC.MainDebouncer.Call("layout_update", 50*time.Millisecond, func() {
+		defer JC.PrintPerfStats("Layout update", time.Now())
+		fyne.Do(func() {
+			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(len(n.filteredData))))
+			n.computeMaxScrollOffset()
+			n.refreshContent()
 
-	n.computeMaxScrollOffset()
-	n.refreshContent()
+			JC.Logln("Total item:", len(n.filteredData), n.scaledItemHeight, n.scaledItemHeight*float32(len(n.filteredData)))
+		})
+	})
+}
+
+func (n *completionList) calculateDynamicItemSize() {
+	ttl := float32(len(n.filteredData))
+
+	n.scaledItemHeight = n.itemHeight
+
+	oh := n.itemHeight * ttl
+	mx := float32(1000)
+	if oh > mx {
+		n.scaledItemHeight = float32(math.Ceil(float64(mx/ttl + float32(n.itemVisible))))
+	}
 }
 
 func (n *completionList) Resize(size fyne.Size) {
@@ -141,9 +161,9 @@ func (n *completionList) TypedKey(event *fyne.KeyEvent) {
 }
 
 func (n *completionList) Scrolled(ev *fyne.ScrollEvent) {
-	delta := int(ev.Scrolled.DY * 3 / n.itemHeight)
+	delta := int(ev.Scrolled.DY * 3 / n.scaledItemHeight)
 	n.scrollOffset -= delta
-	maxOffset := int(n.scrollBox.Content.Size().Height/n.itemHeight) - int(n.scrollBox.Size().Height/n.itemHeight)
+	maxOffset := int(n.scrollBox.Content.Size().Height/n.scaledItemHeight) - int(n.scrollBox.Size().Height/n.scaledItemHeight)
 	if n.scrollOffset < 0 {
 		n.scrollOffset = 0
 	}
@@ -151,7 +171,7 @@ func (n *completionList) Scrolled(ev *fyne.ScrollEvent) {
 		n.scrollOffset = maxOffset
 	}
 
-	n.scrollBox.Offset = fyne.NewPos(0, float32(n.scrollOffset)*n.itemHeight)
+	n.scrollBox.Offset = fyne.NewPos(0, float32(n.scrollOffset)*n.scaledItemHeight)
 
 	if n.scrollBox.OnScrolled != nil {
 		n.scrollBox.OnScrolled(n.scrollBox.Offset)
@@ -184,7 +204,7 @@ func (n *completionList) Dragged(ev *fyne.DragEvent) {
 					targetY := n.position.Y - n.cursorOffset.Y
 					delta := targetY - sourceY
 
-					if math.Abs(float64(delta)) < float64(n.itemHeight*0.6) {
+					if math.Abs(float64(delta)) < float64(n.scaledItemHeight*0.6) {
 						continue
 					}
 
@@ -196,7 +216,7 @@ func (n *completionList) Dragged(ev *fyne.DragEvent) {
 					}
 
 					if direction != 0 {
-						maxDelta := n.itemHeight * float32(n.itemVisible) * 0.25
+						maxDelta := n.scaledItemHeight * float32(n.itemVisible) * 0.25
 						clampedDY := float32(math.Max(-float64(maxDelta), math.Min(float64(ev.Dragged.DY), float64(maxDelta))))
 
 						scrollStep := n.getScrollStepFromDelta(clampedDY * float32(direction))
@@ -240,7 +260,7 @@ func (n *completionList) refreshContent() {
 
 func (n *completionList) getEdgeThreshold() float32 {
 	viewport := n.scrollBox.Size().Height
-	content := float32(len(n.filteredData)) * n.itemHeight
+	content := float32(len(n.filteredData)) * n.scaledItemHeight
 
 	ratio := viewport / content
 	threshold := viewport * (0.2 + ratio*0.3)
@@ -249,16 +269,16 @@ func (n *completionList) getEdgeThreshold() float32 {
 }
 
 func (n *completionList) getScrollStepFromDelta(deltaY float32) float32 {
-	itemDelta := deltaY / n.itemHeight
+	itemDelta := deltaY / n.scaledItemHeight
 
-	maxItems := float32(math.Max(1, float64(n.itemVisible)/6))
+	maxItems := float32(math.Max(1, float64(n.itemVisible)/2))
 	clamped := float32(math.Max(float64(-maxItems), math.Min(float64(itemDelta), float64(maxItems))))
 
-	return clamped * n.itemHeight
+	return clamped * n.scaledItemHeight
 }
 
 func (n *completionList) scrollingContent(offset fyne.Position) {
-	newOffset := int(offset.Y / n.itemHeight)
+	newOffset := int(offset.Y / n.scaledItemHeight)
 	maxOffset := len(n.filteredData) - len(n.contentBox.Objects)
 
 	if newOffset > maxOffset {

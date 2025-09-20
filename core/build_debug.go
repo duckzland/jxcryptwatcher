@@ -7,9 +7,10 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"time"
 )
 
-const MemoryDebug = false
+const MemoryDebug = true
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
@@ -30,6 +31,30 @@ func PrintMemUsage(title string) {
 		Logf(
 			"%s | Alloc = %v MiB TotalAlloc = %v MiB Sys = %v MiB NumGC = %v",
 			title,
+			m.Alloc/1024/1024,
+			m.TotalAlloc/1024/1024,
+			m.Sys/1024/1024,
+			m.NumGC,
+		)
+	}
+}
+
+func PrintExecTime(title string, start time.Time) {
+	if MemoryDebug {
+		elapsed := time.Since(start)
+		Logf("%s | ExecTime = %v", title, elapsed)
+	}
+}
+
+func PrintPerfStats(title string, start time.Time) {
+	if MemoryDebug {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		elapsed := time.Since(start)
+		Logf(
+			"%s | ExecTime = %v | Alloc = %v MiB | TotalAlloc = %v MiB | Sys = %v MiB | NumGC = %v",
+			title,
+			elapsed,
 			m.Alloc/1024/1024,
 			m.TotalAlloc/1024/1024,
 			m.Sys/1024/1024,

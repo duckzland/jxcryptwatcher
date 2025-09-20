@@ -1,7 +1,11 @@
 package widgets
 
 import (
+	"context"
+	"fmt"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -33,6 +37,7 @@ type CompletionEntry struct {
 	uuid             string
 	userValidator    func(string) error
 	skipValidation   bool
+	searchCancel     context.CancelFunc
 }
 
 func NewCompletionEntry(
@@ -98,33 +103,27 @@ func (c *CompletionEntry) GetCurrentInput() string {
 }
 
 func (c *CompletionEntry) SearchSuggestions(s string) {
+	defer JC.PrintPerfStats(fmt.Sprintf("Searching Suggestion: \"%s\"", s), time.Now())
 
 	if s == c.lastInput {
 		return
 	}
-
 	c.lastInput = s
 
 	if c.pause {
-		JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+		c.CancelSearch()
 		return
 	}
 
 	delay := 10 * time.Millisecond
-	if JC.IsMobile {
-		delay = 50 * time.Millisecond
-	}
-
-	if c.popup.Visible() {
+	if JC.IsMobile || c.popup.Visible() {
 		delay = 50 * time.Millisecond
 	}
 
 	minText := 1
 
-	// Break last registered debouncer
-	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+	c.CancelSearch()
 
-	// Bail out early
 	if len(s) < minText || s == "" {
 		fyne.Do(func() {
 			c.HideCompletion()
@@ -132,11 +131,14 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		return
 	}
 
-	JC.MainDebouncer.Call("show_suggestion_"+c.uuid, delay, func() {
+	ctx, cancel := context.WithCancel(context.Background())
+	c.searchCancel = cancel
 
+	JC.MainDebouncer.Call("show_suggestion_"+c.uuid, delay, func() {
 		input := c.GetCurrentInput()
 
 		if len(input) < minText || input == "" {
+			cancel()
 			fyne.Do(func() {
 				c.HideCompletion()
 			})
@@ -144,13 +146,44 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		}
 
 		lowerS := strings.ToLower(input)
+		numWorkers := runtime.NumCPU()
+		chunkSize := (len(c.lowerSuggestions) + numWorkers - 1) / numWorkers
+
+		var wg sync.WaitGroup
+		var mu sync.Mutex
 		results := []string{}
 
-		for i, part := range c.lowerSuggestions {
-			if strings.Contains(part, lowerS) {
-				display := c.suggestions[i]
-				results = append(results, display)
+		for i := 0; i < len(c.lowerSuggestions); i += chunkSize {
+			end := i + chunkSize
+			if end > len(c.lowerSuggestions) {
+				end = len(c.lowerSuggestions)
 			}
+
+			wg.Add(1)
+			go func(start, end int) {
+				defer wg.Done()
+				local := []string{}
+				for j := start; j < end; j++ {
+					if ctx.Err() != nil {
+						return
+					}
+					if strings.Contains(c.lowerSuggestions[j], lowerS) {
+						local = append(local, c.suggestions[j])
+					}
+				}
+				if ctx.Err() != nil {
+					return
+				}
+				mu.Lock()
+				results = append(results, local...)
+				mu.Unlock()
+			}(i, end)
+		}
+
+		wg.Wait()
+
+		if ctx.Err() != nil {
+			return
 		}
 
 		if len(results) == 0 {
@@ -162,7 +195,6 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 
 		results = JC.ReorderByMatch(results, input)
 
-		// Last minute cancel as it is expensive to relayout
 		if input != c.GetCurrentInput() {
 			return
 		}
@@ -173,6 +205,17 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 			c.DynamicResize()
 		})
 	})
+}
+
+func (c *CompletionEntry) CancelSearch() {
+	// Cancel any active debounced call
+	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+
+	// Cancel the active search context
+	if c.searchCancel != nil {
+		c.searchCancel()
+		c.searchCancel = nil
+	}
 }
 
 func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
@@ -402,7 +445,7 @@ func (c *CompletionEntry) popUpPos() fyne.Position {
 }
 
 func (c *CompletionEntry) setTextFromMenu(s string) {
-	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+	c.CancelSearch()
 
 	c.pause = true
 	c.Entry.SetText(s)
