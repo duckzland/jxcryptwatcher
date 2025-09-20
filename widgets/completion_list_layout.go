@@ -23,7 +23,7 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 
 	sWidth := float32(18)
 
-	if len(l.parent.filteredData) <= l.itemVisible {
+	if len(l.parent.data) <= l.itemVisible {
 		sWidth = 0
 	}
 
@@ -32,7 +32,6 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 	l.parent.contentBox.Resize(fyne.NewSize(cWidth, size.Height))
 	l.parent.scrollBox.Resize(fyne.NewSize(sWidth, size.Height))
 	l.parent.scrollBox.Move(fyne.NewPos(cWidth, 0))
-	l.parent.computeMaxScrollOffset()
 
 	if size != l.lastSize {
 		if l.itemVisible < 1 {
@@ -57,6 +56,7 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 	}
 
 	l.lastSize = size
+	l.parent.prepareForScroll()
 	l.parent.refreshContent()
 }
 
