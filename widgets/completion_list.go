@@ -223,10 +223,6 @@ func (n *completionList) prepareForScroll() {
 	oh := n.itemHeight * float32(n.itemTotal)
 	mx := float32(1000)
 
-	if JC.IsMobile {
-		mx = 500
-	}
-
 	if oh > mx {
 		n.scaledItemHeight = float32(math.Ceil(float64(mx/float32(n.itemTotal) + float32(n.itemVisible))))
 	}

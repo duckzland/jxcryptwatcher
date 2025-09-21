@@ -419,10 +419,6 @@ func (c *completionEntry) maxSize() fyne.Size {
 
 	if maxHeight > 300 {
 		maxHeight = 7 * c.itemHeight
-
-		if JC.IsMobile {
-			maxHeight = 7 * c.itemHeight
-		}
 	}
 
 	if listHeight > maxHeight {
