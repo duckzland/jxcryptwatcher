@@ -14,9 +14,9 @@ func FadeInBackground(
 	duration time.Duration,
 	callback func(),
 ) {
-	alphaSteps := []uint8{0, 64, 128, 192, 255}
+	alphaSteps := []uint8{20, 64, 128, 192, 255}
 	if JC.IsMobile {
-		alphaSteps = []uint8{0, 128, 255}
+		alphaSteps = []uint8{20, 128, 255}
 	}
 
 	interval := duration / time.Duration(len(alphaSteps))

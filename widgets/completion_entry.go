@@ -2,7 +2,6 @@ package widgets
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -104,11 +103,11 @@ func (c *completionEntry) GetCurrentInput() string {
 }
 
 func (c *completionEntry) SearchSuggestions(s string) {
-	defer JC.PrintPerfStats(fmt.Sprintf("Searching Suggestion: \"%s\"", s), time.Now())
 
 	if s == c.lastInput {
 		return
 	}
+
 	c.lastInput = s
 
 	if c.pause {
