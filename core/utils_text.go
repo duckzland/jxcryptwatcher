@@ -67,8 +67,7 @@ func TruncateText(str string, maxWidth float32, fontSize float32) string {
 
 func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) string {
 
-	// Estimate average character width (tweak as needed for your font)
-	const charWidthFactor = 0.6 // average width per character in em units
+	const charWidthFactor = 0.6
 
 	ellipsis := "..."
 	ellipsisWidth := float32(len([]rune(ellipsis))) * fontSize * charWidthFactor
@@ -80,7 +79,6 @@ func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) 
 		return str
 	}
 
-	// Estimate how many characters can fit
 	availableWidth := maxWidth - ellipsisWidth
 	maxChars := int(availableWidth / (fontSize * charWidthFactor))
 

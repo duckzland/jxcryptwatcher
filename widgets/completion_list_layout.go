@@ -53,11 +53,12 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 				l.parent.contentBox.Remove(l.parent.contentBox.Objects[i])
 			}
 		}
+
+		l.parent.prepareForScroll()
+		l.parent.refreshContent()
 	}
 
 	l.lastSize = size
-	l.parent.prepareForScroll()
-	l.parent.refreshContent()
 }
 
 func (l *completionListLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {

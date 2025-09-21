@@ -52,7 +52,7 @@ func NewCompletionEntry(
 		suggestions:         options,
 		searchable:          searchOptions,
 		searchableTotal:     len(searchOptions),
-		searchableChunkSize: min((len(searchOptions)+JC.HWTotalCPU-1)/JC.HWTotalCPU, 4),
+		searchableChunkSize: min((len(searchOptions)+JC.HWTotalCPU-1)/JC.HWTotalCPU, 10),
 		popup:               popup,
 		popupPosition:       fyne.NewPos(-1, -1),
 		entryPosition:       fyne.NewPos(-1, -1),
@@ -62,6 +62,7 @@ func NewCompletionEntry(
 
 	c.OnChanged = func(s string) {
 		c.SearchSuggestions(s)
+		JC.MainDebouncer.Cancel("Validating-" + c.uuid)
 		JC.MainDebouncer.Call("Validating-"+c.uuid, 300*time.Millisecond, func() {
 			fyne.Do(func() {
 				if !c.popup.Visible() {
@@ -153,7 +154,7 @@ func (c *completionEntry) SearchSuggestions(s string) {
 		var mu sync.Mutex
 		results := []string{}
 
-		for i := 0; i < len(c.searchable); i += c.searchableChunkSize {
+		for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
 			end := min(i+c.searchableChunkSize, c.searchableTotal)
 
 			wg.Add(1)
@@ -420,7 +421,7 @@ func (c *completionEntry) maxSize() fyne.Size {
 		maxHeight = 7 * c.itemHeight
 
 		if JC.IsMobile {
-			maxHeight = 5 * c.itemHeight
+			maxHeight = 7 * c.itemHeight
 		}
 	}
 

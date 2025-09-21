@@ -22,11 +22,15 @@ type completionText struct {
 
 func NewCompletionText(height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:      canvas.NewText("", JC.TextColor),
-		height:     height,
-		parent:     parent,
-		background: canvas.NewRectangle(JC.Transparent),
+		label:  canvas.NewText("", JC.TextColor),
+		height: height,
+		parent: parent,
 	}
+
+	if !JC.IsMobile {
+		s.background = canvas.NewRectangle(JC.Transparent)
+	}
+
 	s.label.TextSize = 14
 	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
@@ -88,7 +92,7 @@ func (s *completionText) MouseIn(*desktop.MouseEvent) {
 
 	s.hovered = true
 	s.background.FillColor = JC.FormHoverBGHover
-	canvas.Refresh(s)
+	canvas.Refresh(s.label)
 }
 
 func (s *completionText) MouseOut() {

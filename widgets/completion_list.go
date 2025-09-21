@@ -23,6 +23,7 @@ type completionList struct {
 	itemHeight       float32
 	itemTotal        int
 	scaledItemHeight float32
+	scaledHeight     float32
 	onChange         func(string)
 	onClose          func()
 	contentBox       *fyne.Container
@@ -52,6 +53,7 @@ func NewCompletionList(
 		onClose:          onClose,
 		itemHeight:       itemHeight,
 		scaledItemHeight: itemHeight,
+		scaledHeight:     0,
 		itemTotal:        0,
 		lastSize:         fyne.NewSize(0, 0),
 		scrollContent:    canvas.NewRectangle(JC.Transparent),
@@ -101,10 +103,19 @@ func (n *completionList) SetData(items []string) {
 		delay = 50 * time.Millisecond
 	}
 
+	JC.MainDebouncer.Cancel("layout_update_" + n.uuid)
 	JC.MainDebouncer.Call("layout_update_"+n.uuid, delay, func() {
 		fyne.Do(func() {
-			n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledItemHeight*float32(n.itemTotal)))
-			n.scrollBox.ScrollToTop()
+			scaledHeight := n.scaledItemHeight * float32(n.itemTotal)
+			if n.scaledHeight != scaledHeight {
+				n.scaledHeight = scaledHeight
+				n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledHeight))
+			}
+
+			if n.scrollBox.Offset.Y != 0 {
+				n.scrollBox.ScrollToTop()
+			}
+
 			n.refreshContent()
 		})
 	})
