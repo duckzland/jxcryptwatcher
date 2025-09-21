@@ -134,7 +134,7 @@ func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelData
 				continue
 			}
 
-			panel.UpdateContent()
+			panel.updateContent()
 		}
 	}
 }

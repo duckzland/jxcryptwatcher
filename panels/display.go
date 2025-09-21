@@ -124,108 +124,45 @@ func NewPanelDisplay(
 	panel.status = pdt.GetStatus()
 
 	str.AddListener(binding.NewDataListener(func() {
-		pkt := JT.BP.GetDataByID(panel.GetTag())
-		if pkt == nil {
-			return
-		}
-
-		if pkt.IsStatus(JC.STATE_LOADED) {
-			if pkt.DidChange() {
-				switch pkt.IsValueIncrease() {
-				case JC.VALUE_INCREASE:
-					panel.background.FillColor = JC.GreenColor
-					panel.background.Refresh()
-				case JC.VALUE_DECREASE:
-					panel.background.FillColor = JC.RedColor
-					panel.background.Refresh()
-				}
-			} else if pkt.IsOnInitialValue() {
-				panel.background.FillColor = JC.PanelBG
-			} else if panel.status == JC.STATE_ERROR {
-				panel.background.FillColor = JC.PanelBG
-			}
-		}
-
-		panel.UpdateContent()
+		panel.updateContent()
 		JA.StartFlashingText(panel.refContent, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	panel.UpdateContent()
+	panel.updateContent()
 	JA.FadeInBackground(panel.background, 100*time.Millisecond, nil)
 
 	return panel
 }
 
-func (h *panelDisplay) UpdateContent() {
-
-	pwidth := h.Size().Width
-	if pwidth != 0 && pwidth < JC.PanelWidth {
-		h.refTitle.TextSize = JC.PanelTitleSizeSmall
-		h.refSubtitle.TextSize = JC.PanelSubTitleSizeSmall
-		h.refBottomText.TextSize = JC.PanelBottomTextSizeSmall
-		h.refContent.TextSize = JC.PanelContentSizeSmall
-	}
-
-	pkt := JT.BP.GetDataByID(h.GetTag())
-	if pkt == nil {
-		return
-	}
-
-	if !JT.BP.ValidatePanel(pkt.Get()) {
-		pkt.SetStatus(JC.STATE_BAD_CONFIG)
-	}
-
-	h.status = pkt.GetStatus()
-
-	switch pkt.GetStatus() {
-	case JC.STATE_ERROR:
-		h.refTitle.Text = "Error loading data"
-		h.refSubtitle.Hide()
-		h.refBottomText.Hide()
-		h.refContent.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.ErrorColor
-
-	case JC.STATE_FETCHING_NEW:
-		h.refTitle.Text = "Fetching Rates..."
-		h.refSubtitle.Hide()
-		h.refBottomText.Hide()
-		h.refContent.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.PanelBG
-
-	case JC.STATE_LOADING:
-		h.refTitle.Text = "Loading..."
-		h.refSubtitle.Hide()
-		h.refBottomText.Hide()
-		h.refContent.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.PanelBG
-
-	case JC.STATE_BAD_CONFIG:
-		h.refTitle.Text = "Invalid Panel"
-		h.refSubtitle.Hide()
-		h.refBottomText.Hide()
-		h.refContent.Hide()
-		h.background.FillColor = JC.ErrorColor
-		h.EnableClick()
-
-	default:
-
-		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.refTitle.TextSize)
-		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.refSubtitle.TextSize)
-		h.refBottomText.Text = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.refBottomText.TextSize)
-		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.refContent.TextSize)
-
-		h.refSubtitle.Show()
-		h.refBottomText.Show()
-		h.refContent.Show()
-		h.EnableClick()
-	}
-}
-
 func (h *panelDisplay) GetTag() string {
 	return h.tag
+}
+
+func (h *panelDisplay) ShowTarget() {
+	h.child.Show()
+	h.visible = true
+	h.Refresh()
+
+	if ActiveAction != nil {
+		ActiveAction.HideTarget()
+	}
+
+	ActiveAction = h
+}
+
+func (h *panelDisplay) HideTarget() {
+	h.child.Hide()
+	h.visible = false
+	h.Refresh()
+	ActiveAction = nil
+}
+
+func (h *panelDisplay) DisableClick() {
+	h.disabled = true
+}
+
+func (h *panelDisplay) EnableClick() {
+	h.disabled = false
 }
 
 func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
@@ -258,25 +195,6 @@ func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 	}
 }
 
-func (h *panelDisplay) ShowTarget() {
-	h.child.Show()
-	h.visible = true
-	h.Refresh()
-
-	if ActiveAction != nil {
-		ActiveAction.HideTarget()
-	}
-
-	ActiveAction = h
-}
-
-func (h *panelDisplay) HideTarget() {
-	h.child.Hide()
-	h.visible = false
-	h.Refresh()
-	ActiveAction = nil
-}
-
 func (h *panelDisplay) Cursor() desktop.Cursor {
 	if JM.StatusManager.IsDraggable() {
 		return desktop.PointerCursor
@@ -285,15 +203,124 @@ func (h *panelDisplay) Cursor() desktop.Cursor {
 	return desktop.DefaultCursor
 }
 
-func (h *panelDisplay) DisableClick() {
-	h.disabled = true
+func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
+	if JM.StatusManager.IsDraggable() {
+		h.panelDrag(ev)
+	} else {
+		h.container.Dragged(ev)
+	}
 }
 
-func (h *panelDisplay) EnableClick() {
-	h.disabled = false
+func (h *panelDisplay) DragEnd() {
+	if !JM.StatusManager.IsDraggable() {
+		h.dragging = false
+		if h.container != nil {
+			h.container.DragEnd()
+		}
+		return
+	}
+
+	// Call this early to cancel go routine
+	activeDragging = nil
+	h.dragging = false
+
+	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
+		rect.FillColor = JC.Transparent
+		rect.Move(fyne.NewPos(0, -JC.PanelHeight))
+		canvas.Refresh(rect)
+	}
+
+	h.dragOffset = h.Position().Add(h.dragPosition)
+	h.dragOffset.Y -= h.dragScroll - JM.LayoutManager.OffsetY()
+
+	h.snapToNearest()
 }
 
-func (h *panelDisplay) PanelDrag(ev *fyne.DragEvent) {
+func (h *panelDisplay) updateContent() {
+
+	pkt := JT.BP.GetDataByID(h.GetTag())
+	if pkt == nil {
+		return
+	}
+
+	pwidth := h.Size().Width
+	if pwidth != 0 && pwidth < JC.PanelWidth {
+		h.refTitle.TextSize = JC.PanelTitleSizeSmall
+		h.refSubtitle.TextSize = JC.PanelSubTitleSizeSmall
+		h.refBottomText.TextSize = JC.PanelBottomTextSizeSmall
+		h.refContent.TextSize = JC.PanelContentSizeSmall
+	}
+
+	if !JT.BP.ValidatePanel(pkt.Get()) {
+		pkt.SetStatus(JC.STATE_BAD_CONFIG)
+	}
+
+	h.status = pkt.GetStatus()
+
+	switch h.status {
+	case JC.STATE_ERROR:
+		h.refTitle.Text = "Error loading data"
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.EnableClick()
+		h.background.FillColor = JC.ErrorColor
+
+	case JC.STATE_FETCHING_NEW:
+		h.refTitle.Text = "Fetching Rates..."
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.EnableClick()
+		h.background.FillColor = JC.PanelBG
+
+	case JC.STATE_LOADING:
+		h.refTitle.Text = "Loading..."
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.EnableClick()
+		h.background.FillColor = JC.PanelBG
+
+	case JC.STATE_BAD_CONFIG:
+		h.refTitle.Text = "Invalid Panel"
+		h.refSubtitle.Hide()
+		h.refBottomText.Hide()
+		h.refContent.Hide()
+		h.background.FillColor = JC.ErrorColor
+		h.EnableClick()
+
+	case JC.STATE_LOADED:
+		if pkt.DidChange() {
+			switch pkt.IsValueIncrease() {
+			case JC.VALUE_INCREASE:
+				h.background.FillColor = JC.GreenColor
+				// h.background.Refresh()
+			case JC.VALUE_DECREASE:
+				h.background.FillColor = JC.RedColor
+				// h.background.Refresh()
+			}
+		} else if pkt.IsOnInitialValue() {
+			h.background.FillColor = JC.PanelBG
+		} else if h.status == JC.STATE_ERROR {
+			h.background.FillColor = JC.PanelBG
+		}
+
+		h.refTitle.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.refTitle.TextSize)
+		h.refSubtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.refSubtitle.TextSize)
+		h.refBottomText.Text = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.refBottomText.TextSize)
+		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.refContent.TextSize)
+
+		h.refSubtitle.Show()
+		h.refBottomText.Show()
+		h.refContent.Show()
+		h.EnableClick()
+	}
+
+	h.Refresh()
+}
+
+func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 	if activeDragging != nil && activeDragging != h {
 		activeDragging.DragEnd()
 	}
@@ -377,39 +404,6 @@ func (h *panelDisplay) PanelDrag(ev *fyne.DragEvent) {
 			}
 		}()
 	}
-}
-
-func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
-	if JM.StatusManager.IsDraggable() {
-		h.PanelDrag(ev)
-	} else {
-		h.container.Dragged(ev)
-	}
-}
-
-func (h *panelDisplay) DragEnd() {
-	if !JM.StatusManager.IsDraggable() {
-		h.dragging = false
-		if h.container != nil {
-			h.container.DragEnd()
-		}
-		return
-	}
-
-	// Call this early to cancel go routine
-	activeDragging = nil
-	h.dragging = false
-
-	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.FillColor = JC.Transparent
-		rect.Move(fyne.NewPos(0, -JC.PanelHeight))
-		canvas.Refresh(rect)
-	}
-
-	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.LayoutManager.OffsetY()
-
-	h.snapToNearest()
 }
 
 func (h *panelDisplay) snapToNearest() {

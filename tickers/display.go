@@ -19,12 +19,11 @@ import (
 type tickerDisplay struct {
 	widget.BaseWidget
 	tag        string
-	title      string
-	content    fyne.CanvasObject
+	container  fyne.CanvasObject
 	background *canvas.Rectangle
-	refTitle   *canvas.Text
-	refContent *canvas.Text
-	refStatus  *canvas.Text
+	title      *canvas.Text
+	content    *canvas.Text
+	status     *canvas.Text
 }
 
 func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
@@ -55,34 +54,45 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 	str := tdt.GetData()
 	ticker := &tickerDisplay{
 		tag: uuid,
-		content: container.New(
+		container: container.New(
 			tl,
 			tl.background,
 			tl.title,
 			tl.content,
 			tl.status,
 		),
-		title:      tdt.GetTitle(),
 		background: tl.background,
-		refTitle:   tl.title,
-		refContent: tl.content,
-		refStatus:  tl.status,
+		title:      tl.title,
+		content:    tl.content,
+		status:     tl.status,
 	}
 
 	ticker.ExtendBaseWidget(ticker)
 
 	str.AddListener(binding.NewDataListener(func() {
-		ticker.UpdateContent()
-		JA.StartFlashingText(ticker.refContent, 50*time.Millisecond, JC.TextColor, 1)
+		ticker.updateContent()
+		JA.StartFlashingText(ticker.content, 50*time.Millisecond, JC.TextColor, 1)
 	}))
 
-	ticker.UpdateContent()
+	ticker.updateContent()
 	JA.FadeInBackground(ticker.background, 100*time.Millisecond, nil)
 
 	return ticker
 }
 
-func (h *tickerDisplay) UpdateContent() {
+func (h *tickerDisplay) GetTag() string {
+	return h.tag
+}
+
+func (h *tickerDisplay) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(h.container)
+}
+
+func (h *tickerDisplay) Cursor() desktop.Cursor {
+	return desktop.DefaultCursor
+}
+
+func (h *tickerDisplay) updateContent() {
 	pwidth := h.Size().Width
 	pkt := JT.BT.GetData(h.GetTag())
 
@@ -92,25 +102,25 @@ func (h *tickerDisplay) UpdateContent() {
 
 	switch pkt.GetStatus() {
 	case JC.STATE_ERROR:
-		h.refStatus.Text = "Error loading data"
-		h.refStatus.Show()
-		h.refTitle.Hide()
-		h.refContent.Hide()
+		h.status.Text = "Error loading data"
+		h.status.Show()
+		h.title.Hide()
+		h.content.Hide()
 		h.background.FillColor = JC.ErrorColor
 
 	case JC.STATE_LOADING:
-		h.refStatus.Text = "Loading..."
-		h.refStatus.Show()
-		h.refTitle.Hide()
-		h.refContent.Hide()
+		h.status.Text = "Loading..."
+		h.status.Show()
+		h.title.Hide()
+		h.content.Hide()
 		h.background.FillColor = JC.PanelBG
 
 	default:
-		h.refTitle.Text = JC.TruncateText(h.title, pwidth-20, h.refTitle.TextSize)
-		h.refContent.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.refContent.TextSize)
-		h.refStatus.Hide()
-		h.refTitle.Show()
-		h.refContent.Show()
+		h.title.Text = JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.TextSize)
+		h.content.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
+		h.status.Hide()
+		h.title.Show()
+		h.content.Show()
 		h.background.FillColor = JC.TickerBG
 
 		if pkt.IsType("altcoin_index") {
@@ -163,16 +173,4 @@ func (h *tickerDisplay) UpdateContent() {
 			}
 		}
 	}
-}
-
-func (h *tickerDisplay) GetTag() string {
-	return h.tag
-}
-
-func (h *tickerDisplay) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(h.content)
-}
-
-func (h *tickerDisplay) Cursor() desktop.Cursor {
-	return desktop.DefaultCursor
 }

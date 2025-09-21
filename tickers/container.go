@@ -42,7 +42,7 @@ func (c *tickerContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.TickerD
 				continue
 			}
 
-			ticker.UpdateContent()
+			ticker.updateContent()
 		}
 	}
 }
