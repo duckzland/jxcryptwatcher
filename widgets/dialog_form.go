@@ -12,10 +12,16 @@ import (
 	JC "jxwatcher/core"
 )
 
-type DialogForm struct {
+type DialogForm interface {
+	Show()
+	Hide()
+	GetContent() *fyne.Container
+}
+
+type dialogForm struct {
 	layer           *fyne.Container
-	confirm         *ActionButton
-	cancel          *ActionButton
+	confirm         ActionButton
+	cancel          ActionButton
 	items           []*widget.FormItem
 	callback        func(bool) bool
 	form            *widget.Form
@@ -37,9 +43,9 @@ func NewDialogForm(
 	render func(*fyne.Container),
 	destroy func(*fyne.Container),
 	parent fyne.Window,
-) *DialogForm {
+) DialogForm {
 
-	fd := &DialogForm{
+	fd := &dialogForm{
 		items:    items,
 		form:     widget.NewForm(items...),
 		parent:   parent,
@@ -54,7 +60,7 @@ func NewDialogForm(
 		theme.CancelIcon(),
 		"Close Form",
 		"normal",
-		func(*ActionButton) {
+		func(ActionButton) {
 			fd.Hide()
 		},
 		nil,
@@ -66,7 +72,7 @@ func NewDialogForm(
 		theme.ConfirmIcon(),
 		"Save and Close Form",
 		"normal",
-		func(*ActionButton) {
+		func(ActionButton) {
 			fd.hideWithResponse(true)
 		},
 		nil,
@@ -135,15 +141,15 @@ func NewDialogForm(
 	return fd
 }
 
-func (d *DialogForm) Resize(size fyne.Size) {
+func (d *dialogForm) Resize(size fyne.Size) {
 	d.layer.Resize(d.parent.Canvas().Size())
 }
 
-func (d *DialogForm) Show() {
+func (d *dialogForm) Show() {
 	d.layer.Refresh()
 }
 
-func (d *DialogForm) Hide() {
+func (d *dialogForm) Hide() {
 	if d.destroy != nil {
 		d.destroy(d.layer)
 		return
@@ -152,14 +158,18 @@ func (d *DialogForm) Hide() {
 	d.parent.Canvas().Overlays().Remove(d.layer)
 }
 
-func (d *DialogForm) Submit() {
-	if d.confirm.Disabled() {
+func (d *dialogForm) Submit() {
+	if d.confirm.IsDisabled() {
 		return
 	}
 	d.hideWithResponse(true)
 }
 
-func (d *DialogForm) hideWithResponse(resp bool) {
+func (d *dialogForm) GetContent() *fyne.Container {
+	return d.content
+}
+
+func (d *dialogForm) hideWithResponse(resp bool) {
 	err := d.form.Validate()
 	d.setSubmitState(err)
 
@@ -177,7 +187,7 @@ func (d *DialogForm) hideWithResponse(resp bool) {
 	d.Hide()
 }
 
-func (d *DialogForm) setSubmitState(err error) {
+func (d *dialogForm) setSubmitState(err error) {
 	if err != nil {
 		d.confirm.Disable()
 	} else {

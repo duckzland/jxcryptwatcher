@@ -22,7 +22,7 @@ type completionEntry struct {
 	popup               *fyne.Container
 	container           *fyne.Container
 	completionList      *completionList
-	parent              *DialogForm
+	parent              DialogForm
 	pause               bool
 	itemHeight          float32
 	options             []string
@@ -72,7 +72,7 @@ func NewCompletionEntry(
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.HideCompletion, c.itemHeight)
 
-	closeBtn := NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn *ActionButton) {
+	closeBtn := NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
 		c.HideCompletion()
 	}, nil)
 
@@ -314,7 +314,7 @@ func (c *completionEntry) SetOptions(itemList []string) {
 	}
 }
 
-func (c *completionEntry) SetParent(parent *DialogForm) {
+func (c *completionEntry) SetParent(parent DialogForm) {
 	c.parent = parent
 }
 
@@ -381,7 +381,7 @@ func (c *completionEntry) calculatePosition(force bool) bool {
 		return false
 	}
 
-	if c.parent == nil || c.parent.content == nil {
+	if c.parent == nil || c.parent.GetContent() == nil {
 		return false
 	}
 
@@ -390,7 +390,7 @@ func (c *completionEntry) calculatePosition(force bool) bool {
 	}
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
-	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.content)
+	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetContent())
 	px := p.Subtract(x)
 
 	c.popupPosition = px

@@ -35,6 +35,18 @@ func (c *panelContainer) Remove(obj fyne.CanvasObject) {
 	}
 }
 
+func (c *panelContainer) RemoveByID(uuid string) bool {
+	for _, obj := range c.Objects {
+		if panel, ok := obj.(*panelDisplay); ok {
+			if panel.GetTag() == uuid {
+				c.Remove(obj)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (c *panelContainer) ForceRefresh() {
 	c.layout.Reset()
 	c.Refresh()
@@ -114,7 +126,7 @@ func (c *panelContainer) DragEnd() {
 
 func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelDataType) bool) {
 	for _, obj := range c.Objects {
-		if panel, ok := obj.(*PanelDisplay); ok {
+		if panel, ok := obj.(*panelDisplay); ok {
 
 			pdt := JT.BP.GetDataByID(panel.GetTag())
 
@@ -136,7 +148,7 @@ func NewpanelContainer(
 	}
 
 	for _, obj := range c.Objects {
-		if panel, ok := obj.(*PanelDisplay); ok {
+		if panel, ok := obj.(*panelDisplay); ok {
 			panel.container = c
 		}
 	}

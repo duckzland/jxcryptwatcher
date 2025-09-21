@@ -18,10 +18,10 @@ func RegisterActions() {
 
 	// Refresh ticker data
 	JA.ActionManager.Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			JC.FetcherManager.Call("cryptos_map", nil)
 		},
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			if !JA.StatusManager.IsReady() {
 				btn.Disable()
 				return
@@ -67,7 +67,7 @@ func RegisterActions() {
 
 	// Refresh exchange rates
 	JA.ActionManager.Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			// Open the network status temporarily
 			JA.StatusManager.SetNetworkStatus(true)
 
@@ -80,7 +80,7 @@ func RegisterActions() {
 			JC.WorkerManager.Call("update_tickers", JC.CallDebounced)
 
 		},
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			if !JA.StatusManager.IsReady() {
 				btn.Disable()
 				return
@@ -141,10 +141,10 @@ func RegisterActions() {
 
 	// Open settings
 	JA.ActionManager.Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			OpenSettingForm()
 		},
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			if !JA.StatusManager.IsReady() {
 				btn.Disable()
 				return
@@ -190,10 +190,10 @@ func RegisterActions() {
 
 	// Panel drag toggle
 	JA.ActionManager.Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			ToggleDraggable()
 		},
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			if !JA.StatusManager.IsReady() {
 				btn.Disable()
 				return
@@ -238,10 +238,10 @@ func RegisterActions() {
 
 	// Add new panel
 	JA.ActionManager.Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			OpenNewPanelForm()
 		},
-		func(btn *JW.ActionButton) {
+		func(btn JW.ActionButton) {
 			if !JA.StatusManager.IsReady() {
 				btn.Disable()
 				return
@@ -385,14 +385,8 @@ func RegisterWorkers() {
 			return false
 		}
 		latest := messages[len(messages)-1]
-
-		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplay)
-		if !ok {
-			return false
-		}
-
 		fyne.Do(func() {
-			nc.UpdateText(latest)
+			JW.NotificationContainer.UpdateText(latest)
 		})
 
 		ScheduledNotificationReset()

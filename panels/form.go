@@ -21,7 +21,7 @@ func NewPanelForm(
 	onNew func(pdt *JT.PanelDataType),
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
-) *JW.DialogForm {
+) JW.DialogForm {
 
 	cm := JT.BP.GetOptions()
 	cs := JT.BP.GetMaps().GetSearchMap()

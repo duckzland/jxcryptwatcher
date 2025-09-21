@@ -8,14 +8,32 @@ import (
 	tooltip "github.com/dweymouth/fyne-tooltip/widget"
 )
 
-type ActionButton struct {
+type ActionButton interface {
+	fyne.Widget
+	desktop.Hoverable
+	Show()
+	Hide()
+	IsDisabled() bool
+	Disable()
+	Enable()
+	DisallowActions()
+	AllowActions()
+	Error()
+	Progress()
+	Active()
+	Call()
+	Refresh()
+	GetTag() string
+}
+
+type actionButton struct {
 	widget.Button
 	tooltip.ToolTipWidgetExtend
 	tag           string
 	state         string
 	disabled      bool
 	allow_actions bool
-	validate      func(*ActionButton)
+	validate      func(ActionButton)
 }
 
 func NewActionButton(
@@ -24,11 +42,11 @@ func NewActionButton(
 	icon fyne.Resource,
 	tip string,
 	state string,
-	onTapped func(*ActionButton),
-	validate func(*ActionButton),
-) *ActionButton {
+	onTapped func(ActionButton),
+	validate func(ActionButton),
+) ActionButton {
 
-	b := &ActionButton{
+	b := &actionButton{
 		Button: widget.Button{
 			Text:       text,
 			Icon:       icon,
@@ -60,11 +78,11 @@ func NewActionButton(
 	return b
 }
 
-func (b *ActionButton) ExtendBaseWidget(wid fyne.Widget) {
+func (b *actionButton) ExtendBaseWidget(wid fyne.Widget) {
 	b.Button.ExtendBaseWidget(wid)
 }
 
-func (b *ActionButton) MouseIn(e *desktop.MouseEvent) {
+func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -76,7 +94,7 @@ func (b *ActionButton) MouseIn(e *desktop.MouseEvent) {
 	}
 }
 
-func (b *ActionButton) MouseOut() {
+func (b *actionButton) MouseOut() {
 	if !b.allow_actions {
 		b.ToolTipWidgetExtend.MouseOut()
 		return
@@ -89,7 +107,7 @@ func (b *ActionButton) MouseOut() {
 	}
 }
 
-func (b *ActionButton) MouseMoved(e *desktop.MouseEvent) {
+func (b *actionButton) MouseMoved(e *desktop.MouseEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -101,7 +119,7 @@ func (b *ActionButton) MouseMoved(e *desktop.MouseEvent) {
 	}
 }
 
-func (b *ActionButton) Tapped(_ *fyne.PointEvent) {
+func (b *actionButton) Tapped(_ *fyne.PointEvent) {
 	if !b.allow_actions {
 		return
 	}
@@ -112,53 +130,57 @@ func (b *ActionButton) Tapped(_ *fyne.PointEvent) {
 	b.Button.Tapped(nil)
 }
 
-func (b *ActionButton) Cursor() desktop.Cursor {
+func (b *actionButton) Cursor() desktop.Cursor {
 	if !b.disabled && b.allow_actions {
 		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
 }
 
-func (b *ActionButton) DisallowActions() {
+func (b *actionButton) IsDisabled() bool {
+	return b.Disabled()
+}
+
+func (b *actionButton) DisallowActions() {
 	b.changeState("disallow_actions")
 }
 
-func (b *ActionButton) AllowActions() {
+func (b *actionButton) AllowActions() {
 	b.changeState("allow_actions")
 }
 
-func (b *ActionButton) Disable() {
+func (b *actionButton) Disable() {
 	b.changeState("disabled")
 }
 
-func (b *ActionButton) Enable() {
+func (b *actionButton) Enable() {
 	b.changeState("reset")
 }
 
-func (b *ActionButton) Error() {
+func (b *actionButton) Error() {
 	b.changeState("error")
 }
 
-func (b *ActionButton) Progress() {
+func (b *actionButton) Progress() {
 	b.changeState("in_progress")
 }
 
-func (b *ActionButton) Active() {
+func (b *actionButton) Active() {
 	b.changeState("active")
 }
 
-func (b *ActionButton) GetTag() string {
+func (b *actionButton) GetTag() string {
 	return b.tag
 }
 
-func (b *ActionButton) Refresh() {
+func (b *actionButton) Refresh() {
 	if b.validate != nil {
 		b.validate(b)
 	}
 	fyne.Do(b.Button.Refresh)
 }
 
-func (b *ActionButton) Call() {
+func (b *actionButton) Call() {
 	if !b.allow_actions {
 		return
 	}
@@ -166,7 +188,7 @@ func (b *ActionButton) Call() {
 	b.Button.OnTapped()
 }
 
-func (b *ActionButton) setState(state string) {
+func (b *actionButton) setState(state string) {
 
 	if b.state == state {
 		return
@@ -205,7 +227,7 @@ func (b *ActionButton) setState(state string) {
 	b.state = state
 }
 
-func (b *ActionButton) changeState(state string) {
+func (b *actionButton) changeState(state string) {
 
 	if b.state == state {
 		return

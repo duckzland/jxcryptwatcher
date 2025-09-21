@@ -394,7 +394,8 @@ func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
 }
 
 func NewAppLayout() fyne.CanvasObject {
-	JC.NotificationContainer = JW.NewNotificationDisplay()
+
+	JW.NotificationInit()
 
 	manager := &layoutManager{
 		topBar: NewTopBar(),

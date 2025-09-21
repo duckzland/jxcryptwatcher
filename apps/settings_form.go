@@ -17,7 +17,7 @@ func NewSettingsForm(
 	onSave func(),
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
-) *JW.DialogForm {
+) JW.DialogForm {
 
 	delayEntry := JW.NewNumericalEntry(false)
 	dataEndPointEntry := widget.NewEntry()

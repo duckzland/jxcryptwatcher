@@ -17,10 +17,10 @@ import (
 	JT "jxwatcher/types"
 )
 
-var ActiveAction *PanelDisplay = nil
-var activeDragging *PanelDisplay = nil
+var ActiveAction *panelDisplay = nil
+var activeDragging *panelDisplay = nil
 
-type PanelDisplay struct {
+type panelDisplay struct {
 	widget.BaseWidget
 	tag           string
 	content       fyne.CanvasObject
@@ -45,7 +45,7 @@ func NewPanelDisplay(
 	pdt *JT.PanelDataType,
 	onEdit func(pk string, uuid string),
 	onDelete func(uuid string),
-) *PanelDisplay {
+) *panelDisplay {
 
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
@@ -92,7 +92,7 @@ func NewPanelDisplay(
 		},
 	)
 
-	panel := &PanelDisplay{
+	panel := &panelDisplay{
 		tag: uuid,
 		content: container.New(
 			pl,
@@ -156,7 +156,7 @@ func NewPanelDisplay(
 	return panel
 }
 
-func (h *PanelDisplay) UpdateContent() {
+func (h *panelDisplay) UpdateContent() {
 
 	pwidth := h.Size().Width
 	if pwidth != 0 && pwidth < JC.PanelWidth {
@@ -224,15 +224,15 @@ func (h *PanelDisplay) UpdateContent() {
 	}
 }
 
-func (h *PanelDisplay) GetTag() string {
+func (h *panelDisplay) GetTag() string {
 	return h.tag
 }
 
-func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
+func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.content)
 }
 
-func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
+func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 	if JM.StatusManager.IsDraggable() {
 		h.HideTarget()
 		return
@@ -258,7 +258,7 @@ func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
 	}
 }
 
-func (h *PanelDisplay) ShowTarget() {
+func (h *panelDisplay) ShowTarget() {
 	h.child.Show()
 	h.visible = true
 	h.Refresh()
@@ -270,14 +270,14 @@ func (h *PanelDisplay) ShowTarget() {
 	ActiveAction = h
 }
 
-func (h *PanelDisplay) HideTarget() {
+func (h *panelDisplay) HideTarget() {
 	h.child.Hide()
 	h.visible = false
 	h.Refresh()
 	ActiveAction = nil
 }
 
-func (h *PanelDisplay) Cursor() desktop.Cursor {
+func (h *panelDisplay) Cursor() desktop.Cursor {
 	if JM.StatusManager.IsDraggable() {
 		return desktop.PointerCursor
 	}
@@ -285,15 +285,15 @@ func (h *PanelDisplay) Cursor() desktop.Cursor {
 	return desktop.DefaultCursor
 }
 
-func (h *PanelDisplay) DisableClick() {
+func (h *panelDisplay) DisableClick() {
 	h.disabled = true
 }
 
-func (h *PanelDisplay) EnableClick() {
+func (h *panelDisplay) EnableClick() {
 	h.disabled = false
 }
 
-func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
+func (h *panelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	if activeDragging != nil && activeDragging != h {
 		activeDragging.DragEnd()
 	}
@@ -379,7 +379,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 	}
 }
 
-func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
+func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
 	if JM.StatusManager.IsDraggable() {
 		h.PanelDrag(ev)
 	} else {
@@ -387,7 +387,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 	}
 }
 
-func (h *PanelDisplay) DragEnd() {
+func (h *panelDisplay) DragEnd() {
 	if !JM.StatusManager.IsDraggable() {
 		h.dragging = false
 		if h.container != nil {
@@ -412,7 +412,7 @@ func (h *PanelDisplay) DragEnd() {
 	h.snapToNearest()
 }
 
-func (h *PanelDisplay) snapToNearest() {
+func (h *panelDisplay) snapToNearest() {
 
 	// Convert target position to grid index
 	targetIndex := h.findDropTargetIndex()
@@ -434,7 +434,7 @@ func (h *PanelDisplay) snapToNearest() {
 	}()
 }
 
-func (h *PanelDisplay) findDropTargetIndex() int {
+func (h *panelDisplay) findDropTargetIndex() int {
 
 	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", h.dragOffset.X, h.dragOffset.Y))
 
@@ -466,7 +466,7 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 	return -1
 }
 
-func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
+func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	panels := Grid.Objects
 	var result []fyne.CanvasObject
 	for _, obj := range panels {
@@ -486,11 +486,11 @@ func (h *PanelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	return result
 }
 
-func (h *PanelDisplay) syncPanelData() bool {
+func (h *panelDisplay) syncPanelData() bool {
 	nd := []*JT.PanelDataType{}
 
 	for _, obj := range Grid.Objects {
-		if panel, ok := obj.(*PanelDisplay); ok {
+		if panel, ok := obj.(*panelDisplay); ok {
 			uuid := panel.GetTag()
 			pdt := JT.BP.GetDataByID(uuid)
 			if pdt != nil {

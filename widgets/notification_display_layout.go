@@ -7,7 +7,7 @@ import (
 
 type notificationDisplayLayout struct {
 	text      *canvas.Text
-	container *NotificationDisplay
+	container *notificationDisplay
 }
 
 func (r *notificationDisplayLayout) Layout(size fyne.Size) {

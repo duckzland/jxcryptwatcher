@@ -66,8 +66,6 @@ var MainDebouncer = NewDebouncer()
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
 
-var NotificationContainer fyne.CanvasObject
-
 var Tickers *fyne.Container
 
 var AnimDispatcher = NewDispatcher(100, 4, 16*time.Millisecond)

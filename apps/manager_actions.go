@@ -13,22 +13,22 @@ var ActionManager *actionManager = &actionManager{}
 
 type actionManager struct {
 	mu      sync.RWMutex
-	buttons []*JW.ActionButton
+	buttons []JW.ActionButton
 }
 
 func (a *actionManager) Init() {
 	a.mu.Lock()
-	a.buttons = []*JW.ActionButton{}
+	a.buttons = []JW.ActionButton{}
 	a.mu.Unlock()
 }
 
-func (a *actionManager) Add(btn *JW.ActionButton) {
+func (a *actionManager) Add(btn JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = append(a.buttons, btn)
 	a.mu.Unlock()
 }
 
-func (a *actionManager) Get(tag string) *JW.ActionButton {
+func (a *actionManager) Get(tag string) JW.ActionButton {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -49,9 +49,9 @@ func (a *actionManager) Call(tag string) bool {
 	return true
 }
 
-func (a *actionManager) Remove(btn *JW.ActionButton) {
+func (a *actionManager) Remove(btn JW.ActionButton) {
 	a.mu.Lock()
-	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.ActionButton) bool {
+	a.buttons = slices.DeleteFunc(a.buttons, func(b JW.ActionButton) bool {
 		return b == btn
 	})
 	a.mu.Unlock()

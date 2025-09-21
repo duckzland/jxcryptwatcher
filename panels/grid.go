@@ -17,7 +17,7 @@ type panelDropZone struct {
 	left   float32
 	bottom float32
 	right  float32
-	panel  *PanelDisplay
+	panel  *panelDisplay
 }
 
 func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
@@ -25,7 +25,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 
 	// Get the list of panel data
 	list := JT.BP.GetData()
-	p := []*PanelDisplay{}
+	p := []*panelDisplay{}
 
 	for _, pot := range list {
 		// Retrieve and initialize panel data
@@ -36,7 +36,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 		}
 
 		// Create the panel
-		panel := createPanel(pkt).(*PanelDisplay)
+		panel := createPanel(pkt).(*panelDisplay)
 		panel.Resize(fyne.NewSize(JC.PanelWidth, JC.PanelHeight))
 
 		p = append(p, panel)

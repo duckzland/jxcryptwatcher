@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
+	JW "jxwatcher/widgets"
 )
 
 func NewTopBar() *fyne.Container {
@@ -20,7 +21,7 @@ func NewTopBar() *fyne.Container {
 		},
 		container.NewStack(
 			topBg,
-			JC.NotificationContainer,
+			JW.NotificationContainer,
 		),
 		ActionManager.Get("refresh_cryptos"),
 		ActionManager.Get("refresh_rates"),

@@ -17,11 +17,11 @@ func NewPanelAction(
 
 	pa := &panelAction{
 		editBtn: JW.NewActionButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal",
-			func(*JW.ActionButton) {
+			func(JW.ActionButton) {
 				if onEdit != nil {
 					onEdit()
 				}
-			}, func(btn *JW.ActionButton) {
+			}, func(btn JW.ActionButton) {
 				if JA.StatusManager.IsOverlayShown() {
 					btn.DisallowActions()
 					return
@@ -35,11 +35,11 @@ func NewPanelAction(
 				btn.Enable()
 			}),
 		deleteBtn: JW.NewActionButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
-			func(*JW.ActionButton) {
+			func(JW.ActionButton) {
 				if onDelete != nil {
 					onDelete()
 				}
-			}, func(btn *JW.ActionButton) {
+			}, func(btn JW.ActionButton) {
 				if JA.StatusManager.IsOverlayShown() {
 					btn.DisallowActions()
 					return
@@ -61,8 +61,8 @@ func NewPanelAction(
 
 type panelAction struct {
 	widget.BaseWidget
-	editBtn   *JW.ActionButton
-	deleteBtn *JW.ActionButton
+	editBtn   JW.ActionButton
+	deleteBtn JW.ActionButton
 	container *fyne.Container
 }
 

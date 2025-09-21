@@ -10,18 +10,24 @@ import (
 	JC "jxwatcher/core"
 )
 
-type NotificationDisplay struct {
+var NotificationContainer *notificationDisplay
+
+type notificationDisplay struct {
 	widget.BaseWidget
 	text    *canvas.Text
 	padding float32
 }
 
-func NewNotificationDisplay() *NotificationDisplay {
+func NotificationInit() {
+	NotificationContainer = NewNotificationDisplay()
+}
+
+func NewNotificationDisplay() *notificationDisplay {
 	t := canvas.NewText("", JC.TextColor)
 	t.Alignment = fyne.TextAlignCenter
 	t.TextSize = theme.TextSize()
 
-	w := &NotificationDisplay{
+	w := &notificationDisplay{
 		text:    t,
 		padding: 10,
 	}
@@ -29,7 +35,7 @@ func NewNotificationDisplay() *NotificationDisplay {
 	return w
 }
 
-func (w *NotificationDisplay) UpdateText(msg string) {
+func (w *notificationDisplay) UpdateText(msg string) {
 	maxWidth := w.text.Size().Width
 	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize)
 	w.text.Color = JC.TextColor
@@ -37,7 +43,7 @@ func (w *NotificationDisplay) UpdateText(msg string) {
 	w.Refresh()
 }
 
-func (w *NotificationDisplay) ClearText() {
+func (w *notificationDisplay) ClearText() {
 	JA.StartFadingText(w.text, func() {
 		w.text.Text = ""
 		w.text.Color = JC.TextColor
@@ -46,11 +52,11 @@ func (w *NotificationDisplay) ClearText() {
 	}, nil)
 }
 
-func (w *NotificationDisplay) GetText() string {
+func (w *notificationDisplay) GetText() string {
 	return w.text.Text
 }
 
-func (w *NotificationDisplay) CreateRenderer() fyne.WidgetRenderer {
+func (w *notificationDisplay) CreateRenderer() fyne.WidgetRenderer {
 	return &notificationDisplayLayout{
 		text:      w.text,
 		container: w,

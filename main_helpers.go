@@ -366,28 +366,20 @@ func ValidateRatesCache() bool {
 
 func RemovePanel(uuid string) {
 
-	for _, obj := range JP.Grid.Objects {
-		if panel, ok := obj.(*JP.PanelDisplay); ok {
-			if panel.GetTag() == uuid {
+	if JP.Grid.RemoveByID(uuid) {
+		JC.Logf("Removing panel %s", uuid)
 
-				JC.Logf("Removing panel %s", uuid)
+		if JT.BP.Remove(uuid) {
+			JP.Grid.ForceRefresh()
 
-				JP.Grid.Remove(obj)
+			// Give time for grid to relayout first!
+			JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
+				JA.LayoutManager.RefreshLayout()
 
-				if JT.BP.Remove(uuid) {
-					JP.Grid.ForceRefresh()
-
-					// Give time for grid to relayout first!
-					JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
-						JA.LayoutManager.RefreshLayout()
-
-						if JT.SavePanels() {
-							JC.Notify("Panel removed successfully.")
-						}
-					})
+				if JT.SavePanels() {
+					JC.Notify("Panel removed successfully.")
 				}
-
-			}
+			})
 		}
 	}
 
@@ -590,13 +582,9 @@ func ToggleDraggable() {
 
 func ScheduledNotificationReset() {
 	JC.MainDebouncer.Call("notification_clear", 6000*time.Millisecond, func() {
-		nc, ok := JC.NotificationContainer.(*JW.NotificationDisplay)
-		if !ok {
-			return
-		}
 
 		// Break loop once notification is empty
-		if nc.GetText() == "" {
+		if JW.NotificationContainer.GetText() == "" {
 			return
 		}
 
@@ -605,7 +593,7 @@ func ScheduledNotificationReset() {
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
 			fyne.Do(func() {
-				nc.ClearText()
+				JW.NotificationContainer.ClearText()
 			})
 		} else {
 			ScheduledNotificationReset()
