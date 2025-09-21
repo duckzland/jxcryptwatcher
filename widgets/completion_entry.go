@@ -62,8 +62,8 @@ func NewCompletionEntry(
 
 	c.OnChanged = func(s string) {
 		c.SearchSuggestions(s)
-		JC.MainDebouncer.Cancel("Validating-" + c.uuid)
-		JC.MainDebouncer.Call("Validating-"+c.uuid, 300*time.Millisecond, func() {
+		JC.MainDebouncer.Cancel("validating-" + c.uuid)
+		JC.MainDebouncer.Call("validating-"+c.uuid, 300*time.Millisecond, func() {
 			fyne.Do(func() {
 				if !c.popup.Visible() {
 					c.skipValidation = false
@@ -120,7 +120,7 @@ func (c *completionEntry) SearchSuggestions(s string) {
 
 	delay := 10 * time.Millisecond
 	if JC.IsMobile || c.popup.Visible() {
-		delay = 50 * time.Millisecond
+		delay = 40 * time.Millisecond
 	}
 
 	minText := 1
@@ -270,8 +270,8 @@ func (c *completionEntry) Resize(size fyne.Size) {
 		fyne.Do(func() {
 			if c.popup != nil && c.popup.Visible() {
 				c.popupPosition = fyne.NewPos(-1, -1)
-				c.popup.Resize(c.maxSize())
 				c.popup.Move(c.popUpPos())
+				c.DynamicResize()
 			}
 		})
 	})

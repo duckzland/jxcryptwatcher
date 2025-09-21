@@ -131,7 +131,7 @@ func (a *statusManager) AppReady() *statusManager {
 	return a
 }
 
-func (a *statusManager) PauseApp() *statusManager {
+func (a *statusManager) Pause() *statusManager {
 	a.mu.Lock()
 	a.paused = true
 	a.lastChange = time.Now()
@@ -141,7 +141,7 @@ func (a *statusManager) PauseApp() *statusManager {
 	return a
 }
 
-func (a *statusManager) ContinueApp() *statusManager {
+func (a *statusManager) Resume() *statusManager {
 	a.mu.Lock()
 	a.paused = false
 	a.lastChange = time.Now()

@@ -623,7 +623,7 @@ func RegisterLifecycle() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.WorkerManager.ResumeAll()
-				JA.StatusManager.ContinueApp()
+				JA.StatusManager.Resume()
 			}
 
 			if !JA.StatusManager.IsReady() {
@@ -646,7 +646,7 @@ func RegisterLifecycle() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
-				JA.StatusManager.PauseApp()
+				JA.StatusManager.Pause()
 				JC.WorkerManager.PauseAll()
 			}
 

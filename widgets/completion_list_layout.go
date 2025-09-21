@@ -28,10 +28,21 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 	}
 
 	cWidth := size.Width - sWidth
+	cpSize := l.parent.contentBox.Size()
+	slSize := l.parent.scrollBox.Size()
+	slPos := l.parent.scrollBox.Position()
 
-	l.parent.contentBox.Resize(fyne.NewSize(cWidth, size.Height))
-	l.parent.scrollBox.Resize(fyne.NewSize(sWidth, size.Height))
-	l.parent.scrollBox.Move(fyne.NewPos(cWidth, 0))
+	if cpSize.Width != cWidth || cpSize.Height != size.Height {
+		l.parent.contentBox.Resize(fyne.NewSize(cWidth, size.Height))
+	}
+
+	if slSize.Width != sWidth || slSize.Height != size.Height {
+		l.parent.scrollBox.Resize(fyne.NewSize(sWidth, size.Height))
+	}
+
+	if slPos.X != cWidth {
+		l.parent.scrollBox.Move(fyne.NewPos(cWidth, 0))
+	}
 
 	if size != l.lastSize {
 		if l.itemVisible < 1 {

@@ -473,10 +473,20 @@ func OpenNewPanelForm() {
 		},
 		func(layer *fyne.Container) {
 			JA.LayoutManager.SetOverlay(layer)
+
+			if JC.IsMobile {
+				JA.StatusManager.Pause()
+				JC.AnimDispatcher.Pause()
+			}
 		},
 		func(layer *fyne.Container) {
 			JA.LayoutManager.RemoveOverlay(layer)
 			JA.StatusManager.SetOverlayShownStatus(false)
+
+			if JC.IsMobile {
+				JA.StatusManager.Resume()
+				JC.AnimDispatcher.Resume()
+			}
 		},
 	)
 
@@ -501,10 +511,20 @@ func OpenPanelEditForm(pk string, uuid string) {
 		nil,
 		func(layer *fyne.Container) {
 			JA.LayoutManager.SetOverlay(layer)
+
+			if JC.IsMobile {
+				JA.StatusManager.Pause()
+				JC.AnimDispatcher.Pause()
+			}
 		},
 		func(layer *fyne.Container) {
 			JA.LayoutManager.RemoveOverlay(layer)
 			JA.StatusManager.SetOverlayShownStatus(false)
+
+			if JC.IsMobile {
+				JA.StatusManager.Resume()
+				JC.AnimDispatcher.Resume()
+			}
 		})
 
 	if d != nil {
@@ -585,6 +605,10 @@ func ScheduledNotificationReset() {
 
 		// Break loop once notification is empty
 		if JW.NotificationContainer.GetText() == "" {
+			return
+		}
+
+		if JA.StatusManager.IsPaused() {
 			return
 		}
 

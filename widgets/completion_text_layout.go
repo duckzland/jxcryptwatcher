@@ -26,7 +26,11 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 
 	textHeight := r.text.TextSize
 	yOffset := ((r.height - textHeight) / 2) - 4
-	r.text.Move(fyne.NewPos(8, float32(yOffset)))
+	newPos := fyne.NewPos(8, float32(yOffset))
+
+	if r.text.Position() != newPos {
+		r.text.Move(newPos)
+	}
 
 	text := ""
 	if JC.IsMobile {
@@ -37,8 +41,17 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 
 	r.text.Text = text
 
-	r.separator.Position1 = fyne.NewPos(0, r.height-1)
-	r.separator.Position2 = fyne.NewPos(size.Width, r.height-1)
+	posY := r.height - 1
+	pos1 := fyne.NewPos(0, posY)
+	pos2 := fyne.NewPos(size.Width, posY)
+
+	if r.separator.Position1 != pos1 {
+		r.separator.Position1 = pos1
+	}
+
+	if r.separator.Position2 != pos2 {
+		r.separator.Position2 = pos2
+	}
 }
 
 func (r *completionTextLayout) MinSize() fyne.Size {
