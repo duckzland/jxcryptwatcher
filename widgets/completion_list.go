@@ -136,39 +136,6 @@ func (n *completionList) OnSelected(index int) {
 	}
 }
 
-func (n *completionList) TypedKey(event *fyne.KeyEvent) {
-
-	if n.itemTotal == 0 {
-		n.selected = -1
-		n.scrollOffset = 0
-		n.refreshContent()
-		return
-	}
-
-	switch event.Name {
-	case fyne.KeyDown:
-		if n.selected < n.itemTotal-1 && n.selected >= 0 {
-			n.selected++
-		} else {
-			n.selected = 0
-		}
-		n.scrollOffset = n.selected
-		n.refreshContent()
-
-	case fyne.KeyUp:
-		if n.selected > 0 {
-			n.selected--
-		} else {
-			n.selected = n.itemTotal - 1
-		}
-		n.scrollOffset = n.selected
-		n.refreshContent()
-
-	case fyne.KeyEscape:
-		n.onClose()
-	}
-}
-
 func (n *completionList) Scrolled(ev *fyne.ScrollEvent) {
 
 	delta := int(ev.Scrolled.DY * 3 / n.scaledItemHeight)
@@ -303,6 +270,9 @@ func (n *completionList) scrollingContent(offset fyne.Position) {
 }
 
 func (n *completionList) Tapped(_ *fyne.PointEvent) {
+}
+
+func (n *completionList) TypedKey(event *fyne.KeyEvent) {
 }
 
 func (n *completionList) TypedRune(r rune) {
