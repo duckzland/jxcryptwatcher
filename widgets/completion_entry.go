@@ -20,23 +20,24 @@ var ActiveEntry *completionEntry = nil
 
 type completionEntry struct {
 	widget.Entry
-	popup           *fyne.Container
-	container       *fyne.Container
-	completionList  *completionList
-	parent          *DialogForm
-	pause           bool
-	itemHeight      float32
-	options         []string
-	suggestions     []string
-	searchable      []string
-	totalSearchable int
-	popupPosition   fyne.Position
-	canvas          fyne.Canvas
-	lastInput       string
-	uuid            string
-	userValidator   func(string) error
-	skipValidation  bool
-	searchCancel    context.CancelFunc
+	popup               *fyne.Container
+	container           *fyne.Container
+	completionList      *completionList
+	parent              *DialogForm
+	pause               bool
+	itemHeight          float32
+	options             []string
+	suggestions         []string
+	searchable          []string
+	searchableTotal     int
+	searchableChunkSize int
+	searchCancel        context.CancelFunc
+	popupPosition       fyne.Position
+	canvas              fyne.Canvas
+	lastInput           string
+	uuid                string
+	userValidator       func(string) error
+	skipValidation      bool
 }
 
 func NewCompletionEntry(
@@ -46,14 +47,15 @@ func NewCompletionEntry(
 ) *completionEntry {
 
 	c := &completionEntry{
-		uuid:            JC.CreateUUID(),
-		options:         options,
-		suggestions:     options,
-		searchable:      searchOptions,
-		totalSearchable: len(searchOptions),
-		popup:           popup,
-		popupPosition:   fyne.NewPos(-1, -1),
-		itemHeight:      40,
+		uuid:                JC.CreateUUID(),
+		options:             options,
+		suggestions:         options,
+		searchable:          searchOptions,
+		searchableTotal:     len(searchOptions),
+		searchableChunkSize: min((len(searchOptions)+JC.HWTotalCPU-1)/JC.HWTotalCPU, 4),
+		popup:               popup,
+		popupPosition:       fyne.NewPos(-1, -1),
+		itemHeight:          40,
 	}
 	c.ExtendBaseWidget(c)
 
@@ -145,18 +147,13 @@ func (c *completionEntry) SearchSuggestions(s string) {
 		}
 
 		lowerS := strings.ToLower(input)
-		numWorkers := JC.HWTotalCPU
-		chunkSize := min((c.totalSearchable+numWorkers-1)/numWorkers, 4)
 
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		results := []string{}
 
-		for i := 0; i < len(c.searchable); i += chunkSize {
-			end := i + chunkSize
-			if end > len(c.searchable) {
-				end = len(c.searchable)
-			}
+		for i := 0; i < len(c.searchable); i += c.searchableChunkSize {
+			end := min(i+c.searchableChunkSize, c.searchableTotal)
 
 			wg.Add(1)
 			go func(start, end int) {
@@ -192,11 +189,11 @@ func (c *completionEntry) SearchSuggestions(s string) {
 			return
 		}
 
-		results = JC.ReorderByMatch(results, input)
-
 		if input != c.GetCurrentInput() {
 			return
 		}
+
+		results = JC.ReorderSearchable(results)
 
 		fyne.Do(func() {
 			c.SetOptions(results)

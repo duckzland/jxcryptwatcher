@@ -94,3 +94,15 @@ func ExtractLeadingNumber(s string) int {
 	num, _ := strconv.Atoi(match)
 	return num
 }
+
+func SearchableExtractNumber(s string) int {
+	parts := strings.SplitN(s, "|", 2)
+	if len(parts) < 1 || parts[0] == "" {
+		return -1
+	}
+	num, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return -1
+	}
+	return num
+}
