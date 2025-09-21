@@ -9,26 +9,26 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-var ActionManager *appActions = &appActions{}
+var ActionManager *actionManager = &actionManager{}
 
-type appActions struct {
+type actionManager struct {
 	mu      sync.RWMutex
 	buttons []*JW.ActionButton
 }
 
-func (a *appActions) Init() {
+func (a *actionManager) Init() {
 	a.mu.Lock()
 	a.buttons = []*JW.ActionButton{}
 	a.mu.Unlock()
 }
 
-func (a *appActions) Add(btn *JW.ActionButton) {
+func (a *actionManager) Add(btn *JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = append(a.buttons, btn)
 	a.mu.Unlock()
 }
 
-func (a *appActions) Get(tag string) *JW.ActionButton {
+func (a *actionManager) Get(tag string) *JW.ActionButton {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -40,7 +40,7 @@ func (a *appActions) Get(tag string) *JW.ActionButton {
 	return nil
 }
 
-func (a *appActions) Call(tag string) bool {
+func (a *actionManager) Call(tag string) bool {
 	btn := a.Get(tag)
 	if btn == nil {
 		return false
@@ -49,7 +49,7 @@ func (a *appActions) Call(tag string) bool {
 	return true
 }
 
-func (a *appActions) Remove(btn *JW.ActionButton) {
+func (a *actionManager) Remove(btn *JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.ActionButton) bool {
 		return b == btn
@@ -57,7 +57,7 @@ func (a *appActions) Remove(btn *JW.ActionButton) {
 	a.mu.Unlock()
 }
 
-func (a *appActions) Refresh() {
+func (a *actionManager) Refresh() {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -68,7 +68,7 @@ func (a *appActions) Refresh() {
 	})
 }
 
-func (a *appActions) Disable() {
+func (a *actionManager) Disable() {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
