@@ -65,6 +65,32 @@ func TruncateText(str string, maxWidth float32, fontSize float32) string {
 	return ""
 }
 
+func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) string {
+
+	// Estimate average character width (tweak as needed for your font)
+	const charWidthFactor = 0.6 // average width per character in em units
+
+	ellipsis := "..."
+	ellipsisWidth := float32(len([]rune(ellipsis))) * fontSize * charWidthFactor
+
+	runes := []rune(str)
+	totalWidth := float32(len(runes)) * fontSize * charWidthFactor
+
+	if totalWidth <= maxWidth {
+		return str
+	}
+
+	// Estimate how many characters can fit
+	availableWidth := maxWidth - ellipsisWidth
+	maxChars := int(availableWidth / (fontSize * charWidthFactor))
+
+	if maxChars <= 0 {
+		return ""
+	}
+
+	return string(runes[:maxChars]) + ellipsis
+}
+
 func FormatShortCurrency(value string) string {
 	num, err := strconv.ParseFloat(strings.Replace(value, "$", "", 1), 64)
 	if err != nil {

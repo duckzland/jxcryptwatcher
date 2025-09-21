@@ -16,6 +16,7 @@ type DialogForm interface {
 	Show()
 	Hide()
 	GetContent() *fyne.Container
+	GetForm() *widget.Form
 }
 
 type dialogForm struct {
@@ -167,6 +168,10 @@ func (d *dialogForm) Submit() {
 
 func (d *dialogForm) GetContent() *fyne.Container {
 	return d.content
+}
+
+func (d *dialogForm) GetForm() *widget.Form {
+	return d.form
 }
 
 func (d *dialogForm) hideWithResponse(resp bool) {

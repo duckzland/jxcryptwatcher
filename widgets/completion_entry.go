@@ -32,6 +32,7 @@ type completionEntry struct {
 	searchableChunkSize int
 	searchCancel        context.CancelFunc
 	popupPosition       fyne.Position
+	entryPosition       fyne.Position
 	canvas              fyne.Canvas
 	lastInput           string
 	uuid                string
@@ -54,6 +55,7 @@ func NewCompletionEntry(
 		searchableChunkSize: min((len(searchOptions)+JC.HWTotalCPU-1)/JC.HWTotalCPU, 4),
 		popup:               popup,
 		popupPosition:       fyne.NewPos(-1, -1),
+		entryPosition:       fyne.NewPos(-1, -1),
 		itemHeight:          40,
 	}
 	c.ExtendBaseWidget(c)
@@ -391,8 +393,10 @@ func (c *completionEntry) calculatePosition(force bool) bool {
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
 	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetContent())
+	z := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetForm())
 	px := p.Subtract(x)
 
+	c.entryPosition = z
 	c.popupPosition = px
 
 	return true
@@ -408,18 +412,28 @@ func (c *completionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
+	size := c.Size()
 	listHeight := float32(len(c.options)) * c.itemHeight
 	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height
 
 	if maxHeight > 300 {
 		maxHeight = 7 * c.itemHeight
+
+		if JC.IsMobile {
+			maxHeight = 5 * c.itemHeight
+		}
 	}
 
 	if listHeight > maxHeight {
 		listHeight = maxHeight
 	}
 
-	return fyne.NewSize(c.Size().Width, listHeight)
+	width := size.Width
+	if size.Width < 300 {
+		width = (c.popupPosition.X - c.entryPosition.X) + width - 20
+	}
+
+	return fyne.NewSize(width, listHeight)
 }
 
 func (c *completionEntry) popUpPos() fyne.Position {
@@ -427,9 +441,14 @@ func (c *completionEntry) popUpPos() fyne.Position {
 		return fyne.NewPos(0, 0)
 	}
 
+	size := c.Size()
 	entryPos := c.popupPosition
-	entryPos.Y += c.Size().Height
+	entryPos.Y += size.Height
 	entryPos.Y += 2
+
+	if size.Width < 300 {
+		entryPos.X = c.entryPosition.X + 20
+	}
 
 	return entryPos
 
