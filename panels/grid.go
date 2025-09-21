@@ -7,12 +7,12 @@ import (
 	JT "jxwatcher/types"
 )
 
-var DragDropZones []*PanelDropZone
+var dragDropZones []*panelDropZone
 var Grid *panelContainer = &panelContainer{}
 
 type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
 
-type PanelDropZone struct {
+type panelDropZone struct {
 	top    float32
 	left   float32
 	bottom float32
@@ -59,7 +59,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 	)
 
 	// Global dummy panel for placeholder
-	DragDropZones = []*PanelDropZone{}
+	dragDropZones = []*panelDropZone{}
 
 	JC.PrintMemUsage("End building panels")
 

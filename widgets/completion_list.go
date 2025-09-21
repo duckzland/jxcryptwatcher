@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/google/uuid"
 
 	JC "jxwatcher/core"
 )
@@ -47,6 +46,7 @@ func NewCompletionList(
 	itemHeight float32,
 ) *completionList {
 	n := &completionList{
+		uuid:             JC.CreateUUID(),
 		selected:         -1,
 		onChange:         onChange,
 		onClose:          onClose,
@@ -62,9 +62,6 @@ func NewCompletionList(
 		scrollOffset:     0,
 		dragging:         false,
 	}
-
-	id := uuid.New()
-	n.uuid = id.String()
 
 	n.scrollBox = container.NewVScroll(n.scrollContent)
 	n.scrollBox.OnScrolled = n.scrollingContent

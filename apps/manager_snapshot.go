@@ -7,7 +7,7 @@ import (
 	JT "jxwatcher/types"
 )
 
-var AppSnapshot *snapshotManager = &snapshotManager{}
+var SnapshotManager *snapshotManager = &snapshotManager{}
 
 type snapshotManager struct{}
 

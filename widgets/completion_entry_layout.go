@@ -2,11 +2,11 @@ package widgets
 
 import "fyne.io/fyne/v2"
 
-type CompletionListEntryLayout struct {
+type completionListEntryLayout struct {
 	cSize fyne.Size
 }
 
-func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (l *completionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if size.Width == 0 && size.Height == 0 {
 		return
 	}
@@ -34,7 +34,7 @@ func (l *CompletionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyn
 	listEntry.Move(fyne.NewPos(0, 0))
 }
 
-func (l *CompletionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (l *completionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	if len(objects) < 2 {
 		return fyne.NewSize(0, 0)
 	}

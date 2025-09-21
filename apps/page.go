@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-type appPage struct {
+type staticPage struct {
 	widget.BaseWidget
 	OnTapped func()
 	hovered  bool
@@ -18,8 +18,8 @@ type appPage struct {
 	content  string
 }
 
-func NewAppPage(icon *fyne.Resource, content string, onTap func()) *appPage {
-	p := &appPage{
+func NewAppPage(icon *fyne.Resource, content string, onTap func()) *staticPage {
+	p := &staticPage{
 		icon:     icon,
 		content:  content,
 		OnTapped: onTap,
@@ -30,10 +30,10 @@ func NewAppPage(icon *fyne.Resource, content string, onTap func()) *appPage {
 	return p
 }
 
-func (p *appPage) CreateRenderer() fyne.WidgetRenderer {
+func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 	var objects []fyne.CanvasObject
 
-	layout := &appPageLayout{
+	layout := &pageLayout{
 		background: canvas.NewRectangle(JC.PanelBG),
 		content:    canvas.NewText(p.content, JC.TextColor),
 	}
@@ -56,27 +56,27 @@ func (p *appPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.New(layout, objects...))
 }
 
-func (p *appPage) Tapped(_ *fyne.PointEvent) {
+func (p *staticPage) Tapped(_ *fyne.PointEvent) {
 	if p.OnTapped != nil {
 		p.OnTapped()
 	}
 }
 
-func (p *appPage) TappedSecondary(_ *fyne.PointEvent) {}
+func (p *staticPage) TappedSecondary(_ *fyne.PointEvent) {}
 
-func (p *appPage) MouseIn(_ *desktop.MouseEvent) {
+func (p *staticPage) MouseIn(_ *desktop.MouseEvent) {
 	p.hovered = true
 	p.Refresh()
 }
 
-func (p *appPage) MouseOut() {
+func (p *staticPage) MouseOut() {
 	p.hovered = false
 	p.Refresh()
 }
 
-func (p *appPage) MouseMoved(_ *desktop.MouseEvent) {}
+func (p *staticPage) MouseMoved(_ *desktop.MouseEvent) {}
 
-func (p *appPage) Cursor() desktop.Cursor {
+func (p *staticPage) Cursor() desktop.Cursor {
 	if p.OnTapped != nil {
 		return desktop.PointerCursor
 	}

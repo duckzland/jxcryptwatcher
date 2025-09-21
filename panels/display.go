@@ -51,7 +51,7 @@ func NewPanelDisplay(
 	pdt.SetID(uuid)
 	str := pdt.GetData()
 
-	pl := &panelLayout{
+	pl := &panelDisplayLayout{
 		title:      canvas.NewText("", JC.TextColor),
 		subtitle:   canvas.NewText("", JC.TextColor),
 		content:    canvas.NewText("", JC.TextColor),
@@ -233,7 +233,7 @@ func (h *PanelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *PanelDisplay) Tapped(event *fyne.PointEvent) {
-	if JM.AppStatus.IsDraggable() {
+	if JM.StatusManager.IsDraggable() {
 		h.HideTarget()
 		return
 	}
@@ -278,7 +278,7 @@ func (h *PanelDisplay) HideTarget() {
 }
 
 func (h *PanelDisplay) Cursor() desktop.Cursor {
-	if JM.AppStatus.IsDraggable() {
+	if JM.StatusManager.IsDraggable() {
 		return desktop.PointerCursor
 	}
 
@@ -309,7 +309,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 
 		activeDragging = h
 		h.dragging = true
-		h.dragScroll = JM.AppLayout.OffsetY()
+		h.dragScroll = JM.LayoutManager.OffsetY()
 
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
 
@@ -346,8 +346,8 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := JM.AppLayout.ContentTopY() - edgeThreshold
-				edgeBottomY := JM.AppLayout.ContentBottomY() - edgeThreshold
+				edgeTopY := JM.LayoutManager.ContentTopY() - edgeThreshold
+				edgeBottomY := JM.LayoutManager.ContentBottomY() - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
@@ -370,9 +370,9 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 
 				// Scroll when placeholder is half out of viewport
 				if posY < edgeTopY {
-					JM.AppLayout.ScrollBy(-scrollStep)
+					JM.LayoutManager.ScrollBy(-scrollStep)
 				} else if posY > edgeBottomY {
-					JM.AppLayout.ScrollBy(scrollStep)
+					JM.LayoutManager.ScrollBy(scrollStep)
 				}
 			}
 		}()
@@ -380,7 +380,7 @@ func (h *PanelDisplay) PanelDrag(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
-	if JM.AppStatus.IsDraggable() {
+	if JM.StatusManager.IsDraggable() {
 		h.PanelDrag(ev)
 	} else {
 		h.container.Dragged(ev)
@@ -388,7 +388,7 @@ func (h *PanelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *PanelDisplay) DragEnd() {
-	if !JM.AppStatus.IsDraggable() {
+	if !JM.StatusManager.IsDraggable() {
 		h.dragging = false
 		if h.container != nil {
 			h.container.DragEnd()
@@ -407,7 +407,7 @@ func (h *PanelDisplay) DragEnd() {
 	}
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.AppLayout.OffsetY()
+	h.dragOffset.Y -= h.dragScroll - JM.LayoutManager.OffsetY()
 
 	h.snapToNearest()
 }
@@ -438,7 +438,7 @@ func (h *PanelDisplay) findDropTargetIndex() int {
 
 	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", h.dragOffset.X, h.dragOffset.Y))
 
-	for i, zone := range DragDropZones {
+	for i, zone := range dragDropZones {
 
 		JC.Logln(fmt.Sprintf(
 			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",

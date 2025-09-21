@@ -23,7 +23,7 @@ type panelGridLayout struct {
 func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.AppLayout == nil || JA.AppLayout.ContainerSize().Width <= 0 || JA.AppLayout.ContainerSize().Height <= 0 {
+	if JA.LayoutManager == nil || JA.LayoutManager.ContainerSize().Width <= 0 || JA.LayoutManager.ContainerSize().Height <= 0 {
 		return
 	}
 
@@ -41,20 +41,20 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.colCount = 1
 	g.rowCount = 0
 	g.dynCellSize = g.minCellSize
-	DragDropZones = []*PanelDropZone{}
+	dragDropZones = []*panelDropZone{}
 
 	sw := size.Width
 
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
 	th := (g.dynCellSize.Height * float32(mr)) + (float32(mr) * (g.innerPadding[0] + g.innerPadding[2]))
-	if th > JA.AppLayout.Height() {
+	if th > JA.LayoutManager.Height() {
 		sw -= 18
 	}
 
 	// Screen is too small for min width
-	if g.minCellSize.Width > JA.AppLayout.Width() {
-		g.minCellSize.Width = JA.AppLayout.Width() - hPad
+	if g.minCellSize.Width > JA.LayoutManager.Width() {
+		g.minCellSize.Width = JA.LayoutManager.Width() - hPad
 	}
 
 	if sw > g.minCellSize.Width {
@@ -87,10 +87,10 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	// Fix single column overflowing on android phone
-	if g.dynCellSize.Width > JA.AppLayout.Width() {
-		g.dynCellSize.Width = JA.AppLayout.Width()
+	if g.dynCellSize.Width > JA.LayoutManager.Width() {
+		g.dynCellSize.Width = JA.LayoutManager.Width()
 
-		if th > JA.AppLayout.Height() {
+		if th > JA.LayoutManager.Height() {
 			g.dynCellSize.Width -= 18
 		}
 	}
@@ -112,7 +112,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			g.rowCount++
 		}
 
-		dz := PanelDropZone{
+		dz := panelDropZone{
 			left:   x,
 			right:  x + g.dynCellSize.Width,
 			top:    y,
@@ -120,7 +120,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			panel:  child.(*PanelDisplay),
 		}
 
-		DragDropZones = append(DragDropZones, &dz)
+		dragDropZones = append(dragDropZones, &dz)
 
 		child.Move(fyne.NewPos(x, y))
 		child.Resize(g.dynCellSize)

@@ -22,10 +22,10 @@ func NewTopBar() *fyne.Container {
 			topBg,
 			JC.NotificationContainer,
 		),
-		AppActions.GetButton("refresh_cryptos"),
-		AppActions.GetButton("refresh_rates"),
-		AppActions.GetButton("open_settings"),
-		AppActions.GetButton("toggle_drag"),
-		AppActions.GetButton("add_panel"),
+		ActionManager.Get("refresh_cryptos"),
+		ActionManager.Get("refresh_rates"),
+		ActionManager.Get("open_settings"),
+		ActionManager.Get("toggle_drag"),
+		ActionManager.Get("add_panel"),
 	)
 }

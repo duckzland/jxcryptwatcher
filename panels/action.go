@@ -22,12 +22,12 @@ func NewPanelAction(
 					onEdit()
 				}
 			}, func(btn *JW.ActionButton) {
-				if JA.AppStatus.IsOverlayShown() {
+				if JA.StatusManager.IsOverlayShown() {
 					btn.DisallowActions()
 					return
 				}
 
-				if JA.AppStatus.IsDraggable() {
+				if JA.StatusManager.IsDraggable() {
 					btn.Hide()
 					return
 				}
@@ -40,12 +40,12 @@ func NewPanelAction(
 					onDelete()
 				}
 			}, func(btn *JW.ActionButton) {
-				if JA.AppStatus.IsOverlayShown() {
+				if JA.StatusManager.IsOverlayShown() {
 					btn.DisallowActions()
 					return
 				}
 
-				if JA.AppStatus.IsDraggable() {
+				if JA.StatusManager.IsDraggable() {
 					btn.Hide()
 					return
 				}
@@ -72,12 +72,12 @@ func (pa *panelAction) CreateRenderer() fyne.WidgetRenderer {
 
 func (pa *panelAction) Show() {
 	pa.container.Show()
-	JA.AppActions.AddButton(pa.deleteBtn)
-	JA.AppActions.AddButton(pa.editBtn)
+	JA.ActionManager.Add(pa.deleteBtn)
+	JA.ActionManager.Add(pa.editBtn)
 }
 
 func (pa *panelAction) Hide() {
 	pa.container.Hide()
-	JA.AppActions.RemoveButton(pa.deleteBtn)
-	JA.AppActions.RemoveButton(pa.editBtn)
+	JA.ActionManager.Remove(pa.deleteBtn)
+	JA.ActionManager.Remove(pa.editBtn)
 }

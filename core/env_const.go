@@ -1,6 +1,8 @@
 package core
 
-import "time"
+import (
+	"time"
+)
 
 const EPSILON = 1e-9
 const NETWORKING_SUCCESS = 0

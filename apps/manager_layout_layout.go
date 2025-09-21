@@ -8,8 +8,9 @@ import (
 	JC "jxwatcher/core"
 )
 
-type AppMainLayout struct {
+type mainLayout struct {
 	padding     float32
+	parent      *layoutManager
 	topBar      *fyne.Container
 	tickers     *fyne.Container
 	overlay     *fyne.Container
@@ -17,7 +18,7 @@ type AppMainLayout struct {
 	placeholder *canvas.Rectangle
 }
 
-func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
+func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	if size.Width <= 0 || size.Height <= 0 || a.topBar == nil || a.content == nil {
 		return
 	}
@@ -83,12 +84,14 @@ func (a *AppMainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	JC.MainLayoutContentWidth = size.Width - 2*padding
 	JC.MainLayoutContentHeight = contentHeight
 
-	AppLayout.SetMaxOffset(-1)
-	AppLayout.SetContentTopY(contentY)
-	AppLayout.SetContentBottomY(contentY + contentHeight)
+	if a.parent != nil {
+		a.parent.SetMaxOffset(-1)
+		a.parent.SetContentTopY(contentY)
+		a.parent.SetContentBottomY(contentY + contentHeight)
+	}
 }
 
-func (a *AppMainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
+func (a *mainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
 	var top fyne.Size
 	if a.topBar != nil {
 		top = a.topBar.MinSize()

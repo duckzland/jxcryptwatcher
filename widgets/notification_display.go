@@ -39,7 +39,6 @@ func (w *NotificationDisplay) UpdateText(msg string) {
 
 func (w *NotificationDisplay) ClearText() {
 	JA.StartFadingText(w.text, func() {
-		// Clear the text after fade completes
 		w.text.Text = ""
 		w.text.Color = JC.TextColor
 		w.text.Refresh()

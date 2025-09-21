@@ -9,7 +9,7 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-var AppActions *appActions = &appActions{}
+var ActionManager *appActions = &appActions{}
 
 type appActions struct {
 	mu      sync.RWMutex
@@ -22,13 +22,13 @@ func (a *appActions) Init() {
 	a.mu.Unlock()
 }
 
-func (a *appActions) AddButton(btn *JW.ActionButton) {
+func (a *appActions) Add(btn *JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = append(a.buttons, btn)
 	a.mu.Unlock()
 }
 
-func (a *appActions) GetButton(tag string) *JW.ActionButton {
+func (a *appActions) Get(tag string) *JW.ActionButton {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -40,8 +40,8 @@ func (a *appActions) GetButton(tag string) *JW.ActionButton {
 	return nil
 }
 
-func (a *appActions) CallButton(tag string) bool {
-	btn := a.GetButton(tag)
+func (a *appActions) Call(tag string) bool {
+	btn := a.Get(tag)
 	if btn == nil {
 		return false
 	}
@@ -49,7 +49,7 @@ func (a *appActions) CallButton(tag string) bool {
 	return true
 }
 
-func (a *appActions) RemoveButton(btn *JW.ActionButton) {
+func (a *appActions) Remove(btn *JW.ActionButton) {
 	a.mu.Lock()
 	a.buttons = slices.DeleteFunc(a.buttons, func(b *JW.ActionButton) bool {
 		return b == btn

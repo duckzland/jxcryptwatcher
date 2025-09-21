@@ -2,6 +2,7 @@ package core
 
 import (
 	"image/color"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -9,6 +10,7 @@ import (
 
 var App fyne.App
 var Window fyne.Window
+var HWTotalCPU = runtime.NumCPU()
 
 var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
 var TextColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}

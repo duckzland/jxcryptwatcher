@@ -3,7 +3,6 @@ package widgets
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -13,44 +12,50 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/google/uuid"
 
 	JC "jxwatcher/core"
 )
 
-var ActiveEntry *CompletionEntry = nil
+var ActiveEntry *completionEntry = nil
 
-type CompletionEntry struct {
+type completionEntry struct {
 	widget.Entry
-	popup            *fyne.Container
-	container        *fyne.Container
-	completionList   *completionList
-	parent           *DialogForm
-	pause            bool
-	itemHeight       float32
-	options          []string
-	suggestions      []string
-	lowerSuggestions []string
-	popupPosition    fyne.Position
-	canvas           fyne.Canvas
-	lastInput        string
-	uuid             string
-	userValidator    func(string) error
-	skipValidation   bool
-	searchCancel     context.CancelFunc
+	popup           *fyne.Container
+	container       *fyne.Container
+	completionList  *completionList
+	parent          *DialogForm
+	pause           bool
+	itemHeight      float32
+	options         []string
+	suggestions     []string
+	searchable      []string
+	totalSearchable int
+	popupPosition   fyne.Position
+	canvas          fyne.Canvas
+	lastInput       string
+	uuid            string
+	userValidator   func(string) error
+	skipValidation  bool
+	searchCancel    context.CancelFunc
 }
 
 func NewCompletionEntry(
 	options []string,
 	searchOptions []string,
 	popup *fyne.Container,
-) *CompletionEntry {
+) *completionEntry {
 
-	c := &CompletionEntry{suggestions: options, lowerSuggestions: searchOptions, popup: popup}
+	c := &completionEntry{
+		uuid:            JC.CreateUUID(),
+		options:         options,
+		suggestions:     options,
+		searchable:      searchOptions,
+		totalSearchable: len(searchOptions),
+		popup:           popup,
+		popupPosition:   fyne.NewPos(-1, -1),
+		itemHeight:      40,
+	}
 	c.ExtendBaseWidget(c)
-
-	id := uuid.New()
-	c.uuid = id.String()
 
 	c.OnChanged = func(s string) {
 		c.SearchSuggestions(s)
@@ -63,14 +68,6 @@ func NewCompletionEntry(
 			})
 		})
 	}
-
-	c.popupPosition = fyne.NewPos(-1, -1)
-
-	c.itemHeight = 40
-
-	c.options = options
-
-	c.suggestions = options
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.HideCompletion, c.itemHeight)
 
@@ -87,7 +84,7 @@ func NewCompletionEntry(
 	c.container = container.NewStack(
 		bg,
 		container.New(
-			&CompletionListEntryLayout{},
+			&completionListEntryLayout{},
 			c.completionList,
 			closeBtn,
 		),
@@ -100,11 +97,11 @@ func NewCompletionEntry(
 	return c
 }
 
-func (c *CompletionEntry) GetCurrentInput() string {
+func (c *completionEntry) GetCurrentInput() string {
 	return c.lastInput
 }
 
-func (c *CompletionEntry) SearchSuggestions(s string) {
+func (c *completionEntry) SearchSuggestions(s string) {
 	defer JC.PrintPerfStats(fmt.Sprintf("Searching Suggestion: \"%s\"", s), time.Now())
 
 	if s == c.lastInput {
@@ -148,17 +145,17 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 		}
 
 		lowerS := strings.ToLower(input)
-		numWorkers := runtime.NumCPU()
-		chunkSize := (len(c.lowerSuggestions) + numWorkers - 1) / numWorkers
+		numWorkers := JC.HWTotalCPU
+		chunkSize := min((c.totalSearchable+numWorkers-1)/numWorkers, 4)
 
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		results := []string{}
 
-		for i := 0; i < len(c.lowerSuggestions); i += chunkSize {
+		for i := 0; i < len(c.searchable); i += chunkSize {
 			end := i + chunkSize
-			if end > len(c.lowerSuggestions) {
-				end = len(c.lowerSuggestions)
+			if end > len(c.searchable) {
+				end = len(c.searchable)
 			}
 
 			wg.Add(1)
@@ -169,7 +166,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 					if ctx.Err() != nil {
 						return
 					}
-					if strings.Contains(c.lowerSuggestions[j], lowerS) {
+					if strings.Contains(c.searchable[j], lowerS) {
 						local = append(local, c.suggestions[j])
 					}
 				}
@@ -209,7 +206,7 @@ func (c *CompletionEntry) SearchSuggestions(s string) {
 	})
 }
 
-func (c *CompletionEntry) CancelSearch() {
+func (c *completionEntry) CancelSearch() {
 	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
 	if c.searchCancel != nil {
 		c.searchCancel()
@@ -217,17 +214,17 @@ func (c *CompletionEntry) CancelSearch() {
 	}
 }
 
-func (c *CompletionEntry) TypedKey(event *fyne.KeyEvent) {
+func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 	c.skipValidation = true
 	JC.MainDebouncer.Cancel("validating-" + c.uuid)
 }
 
-func (c *CompletionEntry) FocusLost() {
+func (c *completionEntry) FocusLost() {
 	c.Entry.FocusLost()
 }
 
-func (c *CompletionEntry) FocusGained() {
+func (c *completionEntry) FocusGained() {
 
 	c.SetValidationError(nil)
 
@@ -243,11 +240,11 @@ func (c *CompletionEntry) FocusGained() {
 	}
 }
 
-func (c *CompletionEntry) SetDefaultValue(s string) {
+func (c *completionEntry) SetDefaultValue(s string) {
 	c.Text = s
 }
 
-func (c *CompletionEntry) HideCompletion() {
+func (c *completionEntry) HideCompletion() {
 
 	c.skipValidation = false
 
@@ -262,11 +259,11 @@ func (c *CompletionEntry) HideCompletion() {
 	c.popupPosition = fyne.NewPos(-1, -1)
 }
 
-func (c *CompletionEntry) Refresh() {
+func (c *completionEntry) Refresh() {
 	c.Entry.Refresh()
 }
 
-func (c *CompletionEntry) Resize(size fyne.Size) {
+func (c *completionEntry) Resize(size fyne.Size) {
 
 	c.Entry.Resize(size)
 
@@ -282,7 +279,7 @@ func (c *CompletionEntry) Resize(size fyne.Size) {
 
 }
 
-func (c *CompletionEntry) SetValidator(fn func(string) error) {
+func (c *completionEntry) SetValidator(fn func(string) error) {
 	c.Validator = func(s string) error {
 		if c.skipValidation {
 			c.SetValidationError(nil)
@@ -293,7 +290,7 @@ func (c *CompletionEntry) SetValidator(fn func(string) error) {
 	}
 }
 
-func (c *CompletionEntry) Validate() error {
+func (c *completionEntry) Validate() error {
 	// This is important to prevent user trying to click save when skipvalidation is active!
 	c.skipValidation = false
 	err := c.Validator(c.Entry.Text)
@@ -302,7 +299,7 @@ func (c *CompletionEntry) Validate() error {
 	return err
 }
 
-func (c *CompletionEntry) DynamicResize() {
+func (c *completionEntry) DynamicResize() {
 	mx := c.maxSize()
 	ox := c.popup.Size()
 
@@ -312,7 +309,7 @@ func (c *CompletionEntry) DynamicResize() {
 	}
 }
 
-func (c *CompletionEntry) SetOptions(itemList []string) {
+func (c *completionEntry) SetOptions(itemList []string) {
 
 	c.options = itemList
 
@@ -321,11 +318,11 @@ func (c *CompletionEntry) SetOptions(itemList []string) {
 	}
 }
 
-func (c *CompletionEntry) SetParent(parent *DialogForm) {
+func (c *completionEntry) SetParent(parent *DialogForm) {
 	c.parent = parent
 }
 
-func (c *CompletionEntry) ShowCompletion() {
+func (c *completionEntry) ShowCompletion() {
 
 	c.skipValidation = true
 
@@ -345,7 +342,6 @@ func (c *CompletionEntry) ShowCompletion() {
 	// Always reset position cache!
 	c.calculatePosition(true)
 
-	// c.completionList.UnselectAll()
 	c.completionList.selected = -1
 
 	mx := c.maxSize()
@@ -379,7 +375,7 @@ func (c *CompletionEntry) ShowCompletion() {
 	ActiveEntry = c
 }
 
-func (c *CompletionEntry) calculatePosition(force bool) bool {
+func (c *completionEntry) calculatePosition(force bool) bool {
 
 	if c.canvas == nil {
 		c.canvas = fyne.CurrentApp().Driver().CanvasForObject(c)
@@ -406,7 +402,7 @@ func (c *CompletionEntry) calculatePosition(force bool) bool {
 	return true
 }
 
-func (c *CompletionEntry) maxSize() fyne.Size {
+func (c *completionEntry) maxSize() fyne.Size {
 
 	if !c.calculatePosition(false) {
 		return fyne.NewSize(0, 0)
@@ -430,7 +426,7 @@ func (c *CompletionEntry) maxSize() fyne.Size {
 	return fyne.NewSize(c.Size().Width, listHeight)
 }
 
-func (c *CompletionEntry) popUpPos() fyne.Position {
+func (c *completionEntry) popUpPos() fyne.Position {
 	if !c.calculatePosition(false) {
 		return fyne.NewPos(0, 0)
 	}
@@ -443,7 +439,7 @@ func (c *CompletionEntry) popUpPos() fyne.Position {
 
 }
 
-func (c *CompletionEntry) setTextFromMenu(s string) {
+func (c *completionEntry) setTextFromMenu(s string) {
 	c.CancelSearch()
 
 	c.pause = true

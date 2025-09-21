@@ -5,7 +5,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 )
 
-type panelLayout struct {
+type panelDisplayLayout struct {
 	background *canvas.Rectangle
 	title      *canvas.Text
 	subtitle   *canvas.Text
@@ -14,7 +14,7 @@ type panelLayout struct {
 	action     *panelAction
 }
 
-func (pl *panelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	if size.Width <= 0 && size.Height <= 0 {
 		return
@@ -58,7 +58,7 @@ func (pl *panelLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	pl.action.Resize(actionSize)
 }
 
-func (pl *panelLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	width := float32(0)
 	height := float32(0)
 
