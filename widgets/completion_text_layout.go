@@ -21,7 +21,9 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	}
 
 	if !JC.IsMobile {
-		r.background.Resize(size)
+		if r.background.Size() != size {
+			r.background.Resize(size)
+		}
 	}
 
 	textHeight := r.text.TextSize

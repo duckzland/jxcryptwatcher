@@ -71,7 +71,6 @@ func (p *pageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 			width = co.Width
 		}
 		height += co.Height
-
 	}
 
 	return fyne.NewSize(width, height)
