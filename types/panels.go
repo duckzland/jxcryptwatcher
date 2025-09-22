@@ -14,9 +14,9 @@ import (
 
 var panelsMu sync.RWMutex
 
-type PanelsType []PanelType
+type panelsType []panelType
 
-func (p *PanelsType) LoadFile() *PanelsType {
+func (p *panelsType) LoadFile() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -43,7 +43,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	}
 
 	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
-		p = &PanelsType{}
+		p = &panelsType{}
 		JC.Logln(fmt.Errorf("Failed to decode panels.json: %w", err))
 		JC.Notify("Unable to load panels data from file.")
 	} else {
@@ -53,7 +53,7 @@ func (p *PanelsType) LoadFile() *PanelsType {
 	return p
 }
 
-func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
+func (p *panelsType) SaveFile(maps *panelsMapType) bool {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
@@ -62,7 +62,7 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 	copy(data, maps.GetData())
 	maps.mu.RUnlock()
 
-	np := []PanelType{}
+	np := []panelType{}
 	for _, pot := range data {
 		pdt := maps.GetDataByID(pot.GetID())
 		if pdt == nil {
@@ -70,7 +70,7 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 		}
 		pk := pdt.UsePanelKey()
 
-		panel := PanelType{
+		panel := panelType{
 			Source:       pk.GetSourceCoinInt(),
 			Target:       pk.GetTargetCoinInt(),
 			Value:        pk.GetSourceValueFloat(),
@@ -91,7 +91,7 @@ func (p *PanelsType) SaveFile(maps *PanelsMapType) bool {
 	return JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), string(jsonData))
 }
 
-func (p *PanelsType) CreateFile() *PanelsType {
+func (p *panelsType) CreateFile() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -99,7 +99,7 @@ func (p *PanelsType) CreateFile() *PanelsType {
 	return p
 }
 
-func (p *PanelsType) CheckFile() *PanelsType {
+func (p *panelsType) CheckFile() *panelsType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
 		p.CreateFile()
@@ -112,14 +112,14 @@ func (p *PanelsType) CheckFile() *PanelsType {
 	return p
 }
 
-func (p *PanelsType) ConvertToMap(maps *PanelsMapType) {
+func (p *panelsType) ConvertToMap(maps *panelsMapType) {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
 	for i := range *p {
 		pp := &(*p)[i]
 
-		pko := PanelKeyType{}
+		pko := panelKeyType{}
 		pko.GenerateKeyFromPanel(*pp, -1)
 
 		pp.SourceSymbol = maps.GetSymbolById(pko.GetSourceCoinString())
@@ -137,7 +137,7 @@ func PanelsInit() {
 	BP.SetMaps(maps)
 
 	panelsMu.Lock()
-	Panels := PanelsType{}
+	Panels := panelsType{}
 	panelsMu.Unlock()
 
 	Panels.CheckFile().LoadFile().ConvertToMap(&BP)
@@ -145,7 +145,7 @@ func PanelsInit() {
 
 func SavePanels() bool {
 	panelsMu.RLock()
-	Panels := PanelsType{}
+	Panels := panelsType{}
 	panelsMu.RUnlock()
 
 	return Panels.SaveFile(&BP)

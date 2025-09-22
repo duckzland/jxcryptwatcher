@@ -9,25 +9,25 @@ import (
 	JC "jxwatcher/core"
 )
 
-type FearGreedFetcher struct {
-	Data *FearGreedHistoricalData `json:"data"`
+type fearGreedFetcher struct {
+	Data *fearGreedHistoricalData `json:"data"`
 }
 
-type FearGreedHistoricalData struct {
-	HistoricalValues FearGreedHistoricalValues `json:"historicalValues"`
+type fearGreedHistoricalData struct {
+	HistoricalValues fearGreedHistoricalValues `json:"historicalValues"`
 }
 
-type FearGreedHistoricalValues struct {
-	Now FearGreedSnapshot `json:"now"`
+type fearGreedHistoricalValues struct {
+	Now fearGreedSnapshot `json:"now"`
 }
 
-type FearGreedSnapshot struct {
+type fearGreedSnapshot struct {
 	Score        int64     `json:"score"`
 	TimestampRaw string    `json:"timestamp"`
 	LastUpdate   time.Time `json:"-"`
 }
 
-func (er *FearGreedFetcher) GetRate() int64 {
+func (er *fearGreedFetcher) GetRate() int64 {
 
 	return JC.GetRequest(
 		Config.FearGreedEndpoint,
@@ -38,7 +38,7 @@ func (er *FearGreedFetcher) GetRate() int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(cc any) int64 {
-			dec, ok := cc.(*FearGreedFetcher)
+			dec, ok := cc.(*fearGreedFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
@@ -65,4 +65,8 @@ func (er *FearGreedFetcher) GetRate() int64 {
 
 			return JC.NETWORKING_SUCCESS
 		})
+}
+
+func NewFearGreedFetcher() *fearGreedFetcher {
+	return &fearGreedFetcher{}
 }

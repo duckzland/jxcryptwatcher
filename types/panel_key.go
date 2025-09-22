@@ -12,35 +12,35 @@ import (
 	JC "jxwatcher/core"
 )
 
-type PanelKeyType struct {
+type panelKeyType struct {
 	value string
 }
 
-func (p *PanelKeyType) Set(value string) {
+func (p *panelKeyType) Set(value string) {
 	p.value = value
 }
 
-func (p *PanelKeyType) UpdateValue(rate float64) string {
+func (p *panelKeyType) UpdateValue(rate float64) string {
 	pkk := strings.Split(p.value, "|")
 	p.value = fmt.Sprintf("%s|%.20f", pkk[0], rate)
 	return p.value
 }
 
-func (p *PanelKeyType) RefreshKey() string {
+func (p *panelKeyType) RefreshKey() string {
 	return p.GenerateKeyFromPanel(p.GetPanel(), p.GetValueFloat())
 }
 
-func (p *PanelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float64) string {
+func (p *panelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float64) string {
 	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%.20f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 	return p.value
 }
 
-func (p *PanelKeyType) GenerateKeyFromPanel(panel PanelType, rate float64) string {
+func (p *panelKeyType) GenerateKeyFromPanel(panel panelType, rate float64) string {
 	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%.20f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
 	return p.value
 }
 
-func (p *PanelKeyType) Validate() bool {
+func (p *panelKeyType) Validate() bool {
 	pkv := strings.Split(p.value, "|")
 	if len(pkv) != 2 {
 		return false
@@ -54,12 +54,12 @@ func (p *PanelKeyType) Validate() bool {
 	return true
 }
 
-func (p *PanelKeyType) GetRawValue() string {
+func (p *panelKeyType) GetRawValue() string {
 	return p.value
 }
 
-func (p *PanelKeyType) GetPanel() PanelType {
-	return PanelType{
+func (p *panelKeyType) GetPanel() panelType {
+	return panelType{
 		Source:       p.GetSourceCoinInt(),
 		Target:       p.GetTargetCoinInt(),
 		Decimals:     p.GetDecimalsInt(),
@@ -69,7 +69,7 @@ func (p *PanelKeyType) GetPanel() PanelType {
 	}
 }
 
-func (p *PanelKeyType) GetValueFloat() float64 {
+func (p *panelKeyType) GetValueFloat() float64 {
 
 	value, err := strconv.ParseFloat(p.GetValueString(), 64)
 	if err == nil {
@@ -79,7 +79,7 @@ func (p *PanelKeyType) GetValueFloat() float64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetReverseValueFloat() float64 {
+func (p *panelKeyType) GetReverseValueFloat() float64 {
 
 	value, err := strconv.ParseFloat(p.GetValueString(), 64)
 	if err == nil {
@@ -89,7 +89,7 @@ func (p *PanelKeyType) GetReverseValueFloat() float64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetValueString() string {
+func (p *panelKeyType) GetValueString() string {
 
 	pkv := strings.Split(p.value, "|")
 	if len(pkv) > 1 {
@@ -99,7 +99,7 @@ func (p *PanelKeyType) GetValueString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetReverseValueString() string {
+func (p *panelKeyType) GetReverseValueString() string {
 
 	pkv := p.GetReverseValueFloat()
 	frac := JC.NumDecPlaces(pkv)
@@ -110,7 +110,7 @@ func (p *PanelKeyType) GetReverseValueString() string {
 	return strconv.FormatFloat(pkv, 'f', frac, 64)
 }
 
-func (p *PanelKeyType) GetValueFormattedString() string {
+func (p *panelKeyType) GetValueFormattedString() string {
 
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
@@ -127,7 +127,7 @@ func (p *PanelKeyType) GetValueFormattedString() string {
 
 }
 
-func (p *PanelKeyType) GetReverseValueFormattedString() string {
+func (p *panelKeyType) GetReverseValueFormattedString() string {
 
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
@@ -144,7 +144,7 @@ func (p *PanelKeyType) GetReverseValueFormattedString() string {
 
 }
 
-func (p *PanelKeyType) GetCalculatedValueFormattedString() string {
+func (p *panelKeyType) GetCalculatedValueFormattedString() string {
 
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
@@ -161,7 +161,7 @@ func (p *PanelKeyType) GetCalculatedValueFormattedString() string {
 
 }
 
-func (p *PanelKeyType) GetSourceCoinInt() int64 {
+func (p *panelKeyType) GetSourceCoinInt() int64 {
 
 	source, err := strconv.ParseInt(p.GetSourceCoinString(), 10, 64)
 	if err == nil {
@@ -171,7 +171,7 @@ func (p *PanelKeyType) GetSourceCoinInt() int64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetSourceCoinString() string {
+func (p *panelKeyType) GetSourceCoinString() string {
 
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
@@ -183,7 +183,7 @@ func (p *PanelKeyType) GetSourceCoinString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetTargetCoinInt() int64 {
+func (p *panelKeyType) GetTargetCoinInt() int64 {
 
 	target, err := strconv.ParseInt(p.GetTargetCoinString(), 10, 64)
 	if err == nil {
@@ -193,7 +193,7 @@ func (p *PanelKeyType) GetTargetCoinInt() int64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetTargetCoinString() string {
+func (p *panelKeyType) GetTargetCoinString() string {
 
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
@@ -205,7 +205,7 @@ func (p *PanelKeyType) GetTargetCoinString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetSourceValueFloat() float64 {
+func (p *panelKeyType) GetSourceValueFloat() float64 {
 
 	value, err := strconv.ParseFloat(p.GetSourceValueString(), 64)
 	if err == nil {
@@ -215,7 +215,7 @@ func (p *PanelKeyType) GetSourceValueFloat() float64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetSourceValueString() string {
+func (p *panelKeyType) GetSourceValueString() string {
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
 
@@ -226,7 +226,7 @@ func (p *PanelKeyType) GetSourceValueString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetSourceValueFormattedString() string {
+func (p *panelKeyType) GetSourceValueFormattedString() string {
 	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
 	dec := int(p.GetDecimalsInt())
@@ -243,7 +243,7 @@ func (p *PanelKeyType) GetSourceValueFormattedString() string {
 
 }
 
-func (p *PanelKeyType) GetSourceSymbolString() string {
+func (p *panelKeyType) GetSourceSymbolString() string {
 
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
@@ -255,7 +255,7 @@ func (p *PanelKeyType) GetSourceSymbolString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetTargetSymbolString() string {
+func (p *panelKeyType) GetTargetSymbolString() string {
 
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
@@ -267,7 +267,7 @@ func (p *PanelKeyType) GetTargetSymbolString() string {
 	return ""
 }
 
-func (p *PanelKeyType) GetDecimalsInt() int64 {
+func (p *panelKeyType) GetDecimalsInt() int64 {
 	decimals, err := strconv.ParseInt(p.GetDecimalsString(), 10, 64)
 	if err == nil {
 		return decimals
@@ -276,7 +276,7 @@ func (p *PanelKeyType) GetDecimalsInt() int64 {
 	return 0
 }
 
-func (p *PanelKeyType) GetDecimalsString() string {
+func (p *panelKeyType) GetDecimalsString() string {
 
 	pkm := strings.Split(p.value, "|")
 	pkv := strings.Split(pkm[0], "-")
@@ -286,4 +286,8 @@ func (p *PanelKeyType) GetDecimalsString() string {
 	}
 
 	return ""
+}
+
+func NewPanelKey() *panelKeyType {
+	return &panelKeyType{}
 }

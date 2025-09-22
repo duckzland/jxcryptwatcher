@@ -19,7 +19,7 @@ func (sm *snapshotManager) LoadPanels() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var caches []JT.PanelDataCache
+	caches := JT.NewPanelDataCache()
 	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
 		return JC.NO_SNAPSHOT
 	}
@@ -56,7 +56,7 @@ func (sm *snapshotManager) LoadCryptos() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	cm := &JT.CryptosMapType{}
+	cm := JT.NewCryptosMap()
 	cm.Hydrate(cache.Data)
 	JT.BP.SetMaps(cm)
 	JT.BP.GetOptions()
@@ -70,7 +70,7 @@ func (sm *snapshotManager) LoadTickers() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var caches []JT.TickerDataCache
+	caches := JT.NewTickerDataCache()
 	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
 		return JC.NO_SNAPSHOT
 	}
@@ -100,12 +100,12 @@ func (sm *snapshotManager) LoadExchangeData() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var snapshot JT.ExchangeDataCacheSnapshot
+	snapshot := JT.NewExchangeDataCacheSnapshot()
 	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
 		return JC.NO_SNAPSHOT
 	}
 
-	JT.ExchangeCache.Hydrate(snapshot)
+	JT.ExchangeCache.Hydrate(*snapshot)
 	return JC.HAVE_SNAPSHOT
 }
 
@@ -115,12 +115,12 @@ func (sm *snapshotManager) LoadTickerData() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var snapshot JT.TickerDataCacheSnapshot
+	snapshot := JT.NewTickerDataCacheSnapshot()
 	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
 		return JC.NO_SNAPSHOT
 	}
 
-	JT.TickerCache.Hydrate(snapshot)
+	JT.TickerCache.Hydrate(*snapshot)
 	return JC.HAVE_SNAPSHOT
 }
 

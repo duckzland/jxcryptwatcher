@@ -7,10 +7,10 @@ import (
 	JC "jxwatcher/core"
 )
 
-var Config ConfigType
+var Config configType
 var configMu sync.RWMutex
 
-type ConfigType struct {
+type configType struct {
 	DataEndpoint      string `json:"data_endpoint"`
 	ExchangeEndpoint  string `json:"exchange_endpoint"`
 	AltSeasonEndpoint string `json:"altseason_endpoint"`
@@ -21,7 +21,7 @@ type ConfigType struct {
 	Version           string `json:"version"`
 }
 
-func (c *ConfigType) LoadFile() *ConfigType {
+func (c *configType) LoadFile() *configType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
@@ -41,7 +41,7 @@ func (c *ConfigType) LoadFile() *ConfigType {
 	return c
 }
 
-func (c *ConfigType) updateDefault() *ConfigType {
+func (c *configType) updateDefault() *configType {
 	if c.Version == "" || c.Version == "1.2.0" {
 		JC.Logln("Updating old config")
 		c.Version = "1.2.6"
@@ -64,20 +64,20 @@ func (c *ConfigType) updateDefault() *ConfigType {
 	return c
 }
 
-func (c *ConfigType) SaveFile() *ConfigType {
+func (c *configType) SaveFile() *configType {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	JC.SaveFile("config.json", Config)
 	return c
 }
 
-func (c *ConfigType) CheckFile() *ConfigType {
+func (c *configType) CheckFile() *configType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
 	exists, _ := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"config.json"}))
 	if !exists {
-		data := ConfigType{
+		data := configType{
 			DataEndpoint:      "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json",
 			ExchangeEndpoint:  "https://api.coinmarketcap.com/data-api/v3/tools/price-conversion",
 			AltSeasonEndpoint: "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart",
@@ -101,37 +101,37 @@ func (c *ConfigType) CheckFile() *ConfigType {
 	return c
 }
 
-func (c *ConfigType) IsValid() bool {
+func (c *configType) IsValid() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.DataEndpoint != "" && c.ExchangeEndpoint != ""
 }
 
-func (c *ConfigType) IsValidTickers() bool {
+func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.CanDoCMC100() || c.CanDoFearGreed() || c.CanDoMarketCap() || c.CanDoAltSeason()
 }
 
-func (c *ConfigType) CanDoCMC100() bool {
+func (c *configType) CanDoCMC100() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.CMC100Endpoint != ""
 }
 
-func (c *ConfigType) CanDoMarketCap() bool {
+func (c *configType) CanDoMarketCap() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.MarketCapEndpoint != ""
 }
 
-func (c *ConfigType) CanDoFearGreed() bool {
+func (c *configType) CanDoFearGreed() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.FearGreedEndpoint != ""
 }
 
-func (c *ConfigType) CanDoAltSeason() bool {
+func (c *configType) CanDoAltSeason() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.AltSeasonEndpoint != ""
@@ -139,7 +139,7 @@ func (c *ConfigType) CanDoAltSeason() bool {
 
 func ConfigInit() {
 	configMu.Lock()
-	Config = ConfigType{}
+	Config = configType{}
 	configMu.Unlock()
 
 	Config.CheckFile().LoadFile()

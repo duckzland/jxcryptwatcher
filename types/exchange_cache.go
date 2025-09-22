@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-var ExchangeCache ExchangeDataCacheType = ExchangeDataCacheType{}
+var ExchangeCache exchangeDataCacheType = exchangeDataCacheType{}
 var CMCUpdateThreshold = 1 * time.Minute
 
-type ExchangeDataCacheSnapshot struct {
-	Data        []ExchangeDataType `json:"data"`
+type exchangeDataCacheSnapshot struct {
+	Data        []exchangeDataType `json:"data"`
 	Timestamp   time.Time          `json:"timestamp"`
 	LastUpdated time.Time          `json:"last_updated"`
 }
 
-type ExchangeDataCacheType struct {
+type exchangeDataCacheType struct {
 	data        sync.Map
 	timestamp   time.Time
 	lastUpdated *time.Time
@@ -23,7 +23,7 @@ type ExchangeDataCacheType struct {
 }
 
 // Initialization
-func (ec *ExchangeDataCacheType) Init() *ExchangeDataCacheType {
+func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	ec.data = sync.Map{}
 	ec.SetTimestamp(time.Now())
 	ec.SetLastUpdated(nil)
@@ -31,40 +31,40 @@ func (ec *ExchangeDataCacheType) Init() *ExchangeDataCacheType {
 }
 
 // Getters and Setters
-func (ec *ExchangeDataCacheType) GetTimestamp() time.Time {
+func (ec *exchangeDataCacheType) GetTimestamp() time.Time {
 	ec.metaLock.RLock()
 	defer ec.metaLock.RUnlock()
 	return ec.timestamp
 }
 
-func (ec *ExchangeDataCacheType) SetTimestamp(t time.Time) {
+func (ec *exchangeDataCacheType) SetTimestamp(t time.Time) {
 	ec.metaLock.Lock()
 	ec.timestamp = t
 	ec.metaLock.Unlock()
 }
 
-func (ec *ExchangeDataCacheType) GetLastUpdated() *time.Time {
+func (ec *exchangeDataCacheType) GetLastUpdated() *time.Time {
 	ec.metaLock.RLock()
 	defer ec.metaLock.RUnlock()
 	return ec.lastUpdated
 }
 
-func (ec *ExchangeDataCacheType) SetLastUpdated(t *time.Time) {
+func (ec *exchangeDataCacheType) SetLastUpdated(t *time.Time) {
 	ec.metaLock.Lock()
 	ec.lastUpdated = t
 	ec.metaLock.Unlock()
 }
 
 // Core operations
-func (ec *ExchangeDataCacheType) Get(ck string) *ExchangeDataType {
+func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 	if val, ok := ec.data.Load(ck); ok {
-		ex := val.(ExchangeDataType)
+		ex := val.(exchangeDataType)
 		return &ex
 	}
 	return nil
 }
 
-func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCacheType {
+func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCacheType {
 	ck := ec.CreateKeyFromExchangeData(ex)
 	ec.data.Store(ck, *ex)
 	ec.SetTimestamp(time.Now())
@@ -72,19 +72,19 @@ func (ec *ExchangeDataCacheType) Insert(ex *ExchangeDataType) *ExchangeDataCache
 	return ec
 }
 
-func (ec *ExchangeDataCacheType) Remove(ck string) *ExchangeDataCacheType {
+func (ec *exchangeDataCacheType) Remove(ck string) *exchangeDataCacheType {
 	ec.data.Delete(ck)
 	ec.SetTimestamp(time.Now())
 	return ec
 }
 
-func (ec *ExchangeDataCacheType) SoftReset() *ExchangeDataCacheType {
+func (ec *exchangeDataCacheType) SoftReset() *exchangeDataCacheType {
 	ec.SetTimestamp(time.Now())
 	ec.SetLastUpdated(nil)
 	return ec
 }
 
-func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
+func (ec *exchangeDataCacheType) Reset() *exchangeDataCacheType {
 	ec.data = sync.Map{}
 	ec.SetTimestamp(time.Now())
 	ec.SetLastUpdated(nil)
@@ -92,12 +92,12 @@ func (ec *ExchangeDataCacheType) Reset() *ExchangeDataCacheType {
 }
 
 // Status checks
-func (ec *ExchangeDataCacheType) Has(ck string) bool {
+func (ec *exchangeDataCacheType) Has(ck string) bool {
 	d, ok := ec.data.Load(ck)
 	return ok && d != nil
 }
 
-func (ec *ExchangeDataCacheType) HasData() bool {
+func (ec *exchangeDataCacheType) HasData() bool {
 	isEmpty := true
 	ec.data.Range(func(_, _ interface{}) bool {
 		isEmpty = false
@@ -106,11 +106,11 @@ func (ec *ExchangeDataCacheType) HasData() bool {
 	return !isEmpty
 }
 
-func (ec *ExchangeDataCacheType) IsEmpty() bool {
+func (ec *exchangeDataCacheType) IsEmpty() bool {
 	return !ec.HasData()
 }
 
-func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
+func (ec *exchangeDataCacheType) ShouldRefresh() bool {
 	last := ec.GetLastUpdated()
 	if last == nil {
 		return true
@@ -119,12 +119,12 @@ func (ec *ExchangeDataCacheType) ShouldRefresh() bool {
 }
 
 // Serialization
-func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
-	var result []ExchangeDataType
+func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
+	var result []exchangeDataType
 	cutoff := time.Now().Add(-24 * time.Hour)
 
 	ec.data.Range(func(_, value any) bool {
-		if ex, ok := value.(ExchangeDataType); ok {
+		if ex, ok := value.(exchangeDataType); ok {
 			if ex.Timestamp.After(cutoff) {
 				result = append(result, ex)
 			}
@@ -139,14 +139,14 @@ func (ec *ExchangeDataCacheType) Serialize() ExchangeDataCacheSnapshot {
 		lastUpdated = *last
 	}
 
-	return ExchangeDataCacheSnapshot{
+	return exchangeDataCacheSnapshot{
 		Data:        result,
 		Timestamp:   timestamp,
 		LastUpdated: lastUpdated,
 	}
 }
 
-func (ec *ExchangeDataCacheType) Hydrate(snapshot ExchangeDataCacheSnapshot) {
+func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 	ec.data = sync.Map{}
 	cutoff := time.Now().Add(-24 * time.Hour)
 
@@ -162,14 +162,18 @@ func (ec *ExchangeDataCacheType) Hydrate(snapshot ExchangeDataCacheSnapshot) {
 }
 
 // Key generation
-func (ec *ExchangeDataCacheType) CreateKeyFromExchangeData(ex *ExchangeDataType) string {
+func (ec *exchangeDataCacheType) CreateKeyFromExchangeData(ex *exchangeDataType) string {
 	return ec.CreateKeyFromInt(ex.SourceId, ex.TargetId)
 }
 
-func (ec *ExchangeDataCacheType) CreateKeyFromString(sid, tid string) string {
+func (ec *exchangeDataCacheType) CreateKeyFromString(sid, tid string) string {
 	return fmt.Sprintf("%s-%s", sid, tid)
 }
 
-func (ec *ExchangeDataCacheType) CreateKeyFromInt(sid, tid int64) string {
+func (ec *exchangeDataCacheType) CreateKeyFromInt(sid, tid int64) string {
 	return fmt.Sprintf("%d-%d", sid, tid)
+}
+
+func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
+	return &exchangeDataCacheSnapshot{}
 }

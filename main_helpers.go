@@ -302,7 +302,7 @@ func ProcessFetchingCryptosComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JT.CryptosInit()
+		JT.CryptosLoaderInit()
 		JA.StatusManager.DetectData()
 
 		if !JA.StatusManager.ValidCryptos() {

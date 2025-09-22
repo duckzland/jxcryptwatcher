@@ -13,14 +13,14 @@ import (
 	JC "jxwatcher/core"
 )
 
-var Cryptos CryptosType
+var CryptosLoader cryptosLoaderType
 var cryptosMu sync.RWMutex
 
-type CryptosType struct {
-	Values []CryptoType `json:"values"`
+type cryptosLoaderType struct {
+	Values []cryptoType `json:"values"`
 }
 
-func (c *CryptosType) LoadFile() *CryptosType {
+func (c *cryptosLoaderType) LoadFile() *cryptosLoaderType {
 	JC.PrintMemUsage("Start loading cryptos.json")
 
 	content, ok := JC.LoadFile("cryptos.json")
@@ -41,7 +41,7 @@ func (c *CryptosType) LoadFile() *CryptosType {
 	return c
 }
 
-func (c *CryptosType) CreateFile() *CryptosType {
+func (c *cryptosLoaderType) CreateFile() *cryptosLoaderType {
 	status := c.GetCryptos()
 	switch status {
 	case JC.NETWORKING_FAILED_CREATE_FILE:
@@ -53,14 +53,14 @@ func (c *CryptosType) CreateFile() *CryptosType {
 	return c
 }
 
-func (c *CryptosType) CheckFile() *CryptosType {
+func (c *cryptosLoaderType) CheckFile() *cryptosLoaderType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 
 	if !exists {
 		if c.CreateFile() == nil {
 			JC.Logln("Failed to create cryptos.json with default values")
 			JC.Notify("Failed to create cryptos data file")
-			c = &CryptosType{}
+			c = &cryptosLoaderType{}
 			return c
 		} else {
 			JC.Logln("Created cryptos.json with default values")
@@ -74,10 +74,10 @@ func (c *CryptosType) CheckFile() *CryptosType {
 	return c
 }
 
-func (c *CryptosType) ConvertToMap() *CryptosMapType {
+func (c *cryptosLoaderType) ConvertToMap() *cryptosMapType {
 	JC.PrintMemUsage("Start populating cryptos")
 
-	CM := &CryptosMapType{}
+	CM := &cryptosMapType{}
 	CM.Init()
 
 	if c == nil || len(c.Values) == 0 {
@@ -95,7 +95,7 @@ func (c *CryptosType) ConvertToMap() *CryptosMapType {
 	return CM
 }
 
-func (c *CryptosType) GetCryptos() int64 {
+func (c *cryptosLoaderType) GetCryptos() int64 {
 	JC.PrintMemUsage("Start fetching cryptos data")
 	JC.Notify("Requesting latest cryptos data from exchange...")
 
@@ -167,12 +167,12 @@ func (c *CryptosType) GetCryptos() int64 {
 	return JC.NETWORKING_SUCCESS
 }
 
-func CryptosInit() {
+func CryptosLoaderInit() {
 	cryptosMu.Lock()
-	Cryptos = CryptosType{}
+	CryptosLoader = cryptosLoaderType{}
 	cryptosMu.Unlock()
 
-	CM := Cryptos.CheckFile().LoadFile().ConvertToMap()
+	CM := CryptosLoader.CheckFile().LoadFile().ConvertToMap()
 	CM.ClearMapCache()
 
 	BP.SetMaps(CM)

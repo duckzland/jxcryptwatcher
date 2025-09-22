@@ -62,7 +62,7 @@ func main() {
 		JT.ConfigInit()
 
 		if JA.SnapshotManager.LoadCryptos() == JC.NO_SNAPSHOT {
-			JT.CryptosInit()
+			JT.CryptosLoaderInit()
 		}
 
 		if JA.SnapshotManager.LoadPanels() == JC.NO_SNAPSHOT {

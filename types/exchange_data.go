@@ -2,7 +2,7 @@ package types
 
 import "time"
 
-type ExchangeDataType struct {
+type exchangeDataType struct {
 	SourceSymbol string
 	SourceId     int64
 	SourceAmount float64

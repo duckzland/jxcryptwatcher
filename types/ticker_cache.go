@@ -5,21 +5,21 @@ import (
 	"time"
 )
 
-var TickerCache TickerDataCacheType = TickerDataCacheType{}
+var TickerCache tickerDataCacheType = tickerDataCacheType{}
 var TickerUpdateThreshold = 2 * time.Minute
 
-type TickerDataCacheSnapshot struct {
-	Data        []TickerDataCacheEntry `json:"data"`
+type tickerDataCacheSnapshot struct {
+	Data        []tickerDataCacheEntry `json:"data"`
 	Timestamp   time.Time              `json:"timestamp"`
 	LastUpdated time.Time              `json:"last_updated"`
 }
 
-type TickerDataCacheEntry struct {
+type tickerDataCacheEntry struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
-type TickerDataCacheType struct {
+type tickerDataCacheType struct {
 	data        sync.Map
 	timestamp   time.Time
 	lastUpdated *time.Time
@@ -27,32 +27,32 @@ type TickerDataCacheType struct {
 }
 
 // Getters and Setters
-func (tc *TickerDataCacheType) GetTimestamp() time.Time {
+func (tc *tickerDataCacheType) GetTimestamp() time.Time {
 	tc.metaLock.RLock()
 	defer tc.metaLock.RUnlock()
 	return tc.timestamp
 }
 
-func (tc *TickerDataCacheType) SetTimestamp(t time.Time) {
+func (tc *tickerDataCacheType) SetTimestamp(t time.Time) {
 	tc.metaLock.Lock()
 	tc.timestamp = t
 	tc.metaLock.Unlock()
 }
 
-func (tc *TickerDataCacheType) GetLastUpdated() *time.Time {
+func (tc *tickerDataCacheType) GetLastUpdated() *time.Time {
 	tc.metaLock.RLock()
 	defer tc.metaLock.RUnlock()
 	return tc.lastUpdated
 }
 
-func (tc *TickerDataCacheType) SetLastUpdated(t *time.Time) {
+func (tc *tickerDataCacheType) SetLastUpdated(t *time.Time) {
 	tc.metaLock.Lock()
 	tc.lastUpdated = t
 	tc.metaLock.Unlock()
 }
 
 // Initialization
-func (tc *TickerDataCacheType) Init() *TickerDataCacheType {
+func (tc *tickerDataCacheType) Init() *tickerDataCacheType {
 	tc.data = sync.Map{}
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(nil)
@@ -60,7 +60,7 @@ func (tc *TickerDataCacheType) Init() *TickerDataCacheType {
 }
 
 // Core operations
-func (tc *TickerDataCacheType) Get(key string) string {
+func (tc *tickerDataCacheType) Get(key string) string {
 	if val, ok := tc.data.Load(key); ok {
 		if strVal, ok := val.(string); ok {
 			return strVal
@@ -69,26 +69,26 @@ func (tc *TickerDataCacheType) Get(key string) string {
 	return ""
 }
 
-func (tc *TickerDataCacheType) Insert(key, value string, timestamp time.Time) *TickerDataCacheType {
+func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *tickerDataCacheType {
 	tc.data.Store(key, value)
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(&timestamp)
 	return tc
 }
 
-func (tc *TickerDataCacheType) Remove(key string) *TickerDataCacheType {
+func (tc *tickerDataCacheType) Remove(key string) *tickerDataCacheType {
 	tc.data.Delete(key)
 	tc.SetTimestamp(time.Now())
 	return tc
 }
 
-func (tc *TickerDataCacheType) SoftReset() *TickerDataCacheType {
+func (tc *tickerDataCacheType) SoftReset() *tickerDataCacheType {
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(nil)
 	return tc
 }
 
-func (tc *TickerDataCacheType) Reset() *TickerDataCacheType {
+func (tc *tickerDataCacheType) Reset() *tickerDataCacheType {
 	tc.data = sync.Map{}
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(nil)
@@ -96,12 +96,12 @@ func (tc *TickerDataCacheType) Reset() *TickerDataCacheType {
 }
 
 // Status checks
-func (tc *TickerDataCacheType) Has(key string) bool {
+func (tc *tickerDataCacheType) Has(key string) bool {
 	d, ok := tc.data.Load(key)
 	return ok && d != nil
 }
 
-func (tc *TickerDataCacheType) HasData() bool {
+func (tc *tickerDataCacheType) HasData() bool {
 	isEmpty := true
 	tc.data.Range(func(_, _ interface{}) bool {
 		isEmpty = false
@@ -110,11 +110,11 @@ func (tc *TickerDataCacheType) HasData() bool {
 	return !isEmpty
 }
 
-func (tc *TickerDataCacheType) IsEmpty() bool {
+func (tc *tickerDataCacheType) IsEmpty() bool {
 	return !tc.HasData()
 }
 
-func (tc *TickerDataCacheType) ShouldRefresh() bool {
+func (tc *tickerDataCacheType) ShouldRefresh() bool {
 	last := tc.GetLastUpdated()
 	if last == nil {
 		return true
@@ -124,14 +124,14 @@ func (tc *TickerDataCacheType) ShouldRefresh() bool {
 }
 
 // Serialization
-func (tc *TickerDataCacheType) Serialize() TickerDataCacheSnapshot {
-	var entries []TickerDataCacheEntry
+func (tc *tickerDataCacheType) Serialize() tickerDataCacheSnapshot {
+	var entries []tickerDataCacheEntry
 
 	tc.data.Range(func(key, value any) bool {
 		k, ok1 := key.(string)
 		v, ok2 := value.(string)
 		if ok1 && ok2 {
-			entries = append(entries, TickerDataCacheEntry{
+			entries = append(entries, tickerDataCacheEntry{
 				Key:   k,
 				Value: v,
 			})
@@ -146,18 +146,22 @@ func (tc *TickerDataCacheType) Serialize() TickerDataCacheSnapshot {
 		lastUpdated = *last
 	}
 
-	return TickerDataCacheSnapshot{
+	return tickerDataCacheSnapshot{
 		Data:        entries,
 		Timestamp:   timestamp,
 		LastUpdated: lastUpdated,
 	}
 }
 
-func (tc *TickerDataCacheType) Hydrate(snapshot TickerDataCacheSnapshot) {
+func (tc *tickerDataCacheType) Hydrate(snapshot tickerDataCacheSnapshot) {
 	tc.data = sync.Map{}
 	for _, entry := range snapshot.Data {
 		tc.data.Store(entry.Key, entry.Value)
 	}
 	tc.SetTimestamp(snapshot.Timestamp)
 	tc.SetLastUpdated(&snapshot.LastUpdated)
+}
+
+func NewTickerDataCacheSnapshot() *tickerDataCacheSnapshot {
+	return &tickerDataCacheSnapshot{}
 }

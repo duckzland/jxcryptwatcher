@@ -155,7 +155,7 @@ func NewPanelForm(
 	parent := JW.NewDialogForm(title, formItems, nil, nil, pop,
 		func(b bool) bool {
 			if b {
-				var npk JT.PanelKeyType
+				npk := JT.NewPanelKey()
 				var ns *JT.PanelDataType
 
 				sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
@@ -195,7 +195,7 @@ func NewPanelForm(
 					}
 
 					pkt := ns.UsePanelKey()
-					nkt := JT.PanelKeyType{}
+					nkt := JT.NewPanelKey()
 					nkt.Set(newKey)
 
 					// Coin change, need to refresh data and invalidate the rates

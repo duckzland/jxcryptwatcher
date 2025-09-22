@@ -9,25 +9,25 @@ import (
 	JC "jxwatcher/core"
 )
 
-type CMC100Fetcher struct {
-	Data *CMC100SummaryData `json:"data"`
+type cmc100Fetcher struct {
+	Data *cmc100SummaryData `json:"data"`
 }
 
-type CMC100SummaryData struct {
-	SummaryData CMC100SummaryDataFields `json:"summaryData"`
+type cmc100SummaryData struct {
+	SummaryData cmc100SummaryDataFields `json:"summaryData"`
 }
 
-type CMC100SummaryDataFields struct {
+type cmc100SummaryDataFields struct {
 	NextUpdate   string                   `json:"nextUpdateTimestamp"`
-	CurrentValue CMC100CurrentValueFields `json:"currentValue"`
+	CurrentValue cmc100CurrentValueFields `json:"currentValue"`
 }
 
-type CMC100CurrentValueFields struct {
+type cmc100CurrentValueFields struct {
 	Value         float64 `json:"value"`
 	PercentChange float64 `json:"percentChange"`
 }
 
-func (er *CMC100Fetcher) GetRate() int64 {
+func (er *cmc100Fetcher) GetRate() int64 {
 
 	return JC.GetRequest(
 		Config.CMC100Endpoint,
@@ -38,7 +38,7 @@ func (er *CMC100Fetcher) GetRate() int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(cc any) int64 {
-			dec, ok := cc.(*CMC100Fetcher)
+			dec, ok := cc.(*cmc100Fetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
@@ -63,4 +63,8 @@ func (er *CMC100Fetcher) GetRate() int64 {
 
 			return JC.NETWORKING_SUCCESS
 		})
+}
+
+func NewCMC100Fetcher() *cmc100Fetcher {
+	return &cmc100Fetcher{}
 }

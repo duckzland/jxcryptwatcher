@@ -7,7 +7,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-type CryptoType struct {
+type cryptoType struct {
 	Id       int64
 	Name     string
 	Symbol   string
@@ -15,7 +15,7 @@ type CryptoType struct {
 	IsActive int64
 }
 
-func (cp *CryptoType) UnmarshalJSON(data []byte) error {
+func (cp *cryptoType) UnmarshalJSON(data []byte) error {
 	var v []interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
@@ -43,7 +43,7 @@ func (cp *CryptoType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (cp *CryptoType) validate(v []interface{}) bool {
+func (cp *cryptoType) validate(v []interface{}) bool {
 	if len(v) < 6 {
 		JC.Logln("Invalid crypto data length, expected at least 6 fields")
 		return false
@@ -82,6 +82,6 @@ func (cp *CryptoType) validate(v []interface{}) bool {
 	return true
 }
 
-func (cp *CryptoType) CreateKey() string {
+func (cp *cryptoType) CreateKey() string {
 	return fmt.Sprintf("%d|%s - %s", cp.Id, cp.Symbol, cp.Name)
 }

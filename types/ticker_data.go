@@ -12,7 +12,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-type TickerDataCache struct {
+type tickerDataCache struct {
 	Type   string
 	Title  string
 	Format string
@@ -221,7 +221,7 @@ func (p *TickerDataType) Update() bool {
 		}
 	}
 
-	nso := PanelKeyType{value: npk}
+	nso := panelKeyType{value: npk}
 	nst := p.status
 
 	switch p.status {
@@ -280,7 +280,7 @@ func (p *TickerDataType) DidChange() bool {
 	return false
 }
 
-func (p *TickerDataType) Serialize() TickerDataCache {
+func (p *TickerDataType) Serialize() tickerDataCache {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -292,7 +292,7 @@ func (p *TickerDataType) Serialize() TickerDataCache {
 		}
 	}
 
-	return TickerDataCache{
+	return tickerDataCache{
 		Type:   p.category,
 		Title:  p.title,
 		Format: p.format,
@@ -300,4 +300,8 @@ func (p *TickerDataType) Serialize() TickerDataCache {
 		Key:    key,
 		OldKey: p.oldKey,
 	}
+}
+
+func NewTickerDataCache() []tickerDataCache {
+	return []tickerDataCache{}
 }

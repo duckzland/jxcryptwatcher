@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 )
 
-type PanelDataCache struct {
+type panelDataCache struct {
 	Status int
 	Key    string
 	OldKey string
@@ -22,7 +22,7 @@ type PanelDataType struct {
 	oldKey string
 	id     string
 	status int
-	parent *PanelsMapType
+	parent *panelsMapType
 }
 
 func (p *PanelDataType) Init() {
@@ -44,13 +44,13 @@ func (p *PanelDataType) Set(val string) {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) Insert(panel PanelType, rate float64) {
+func (p *PanelDataType) Insert(panel panelType, rate float64) {
 	p.mu.Lock()
 	old, err := p.data.Get()
 	if err == nil {
 		p.oldKey = old
 	}
-	pkt := &PanelKeyType{}
+	pkt := &panelKeyType{}
 	p.data.Set(pkt.GenerateKeyFromPanel(panel, rate))
 	p.mu.Unlock()
 }
@@ -114,13 +114,13 @@ func (p *PanelDataType) SetOldKey(val string) {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) GetParent() *PanelsMapType {
+func (p *PanelDataType) GetParent() *panelsMapType {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.parent
 }
 
-func (p *PanelDataType) SetParent(val *PanelsMapType) {
+func (p *PanelDataType) SetParent(val *panelsMapType) {
 	p.mu.Lock()
 	p.parent = val
 	p.mu.Unlock()
@@ -171,7 +171,7 @@ func (p *PanelDataType) GetOldValueString() string {
 	p.mu.RLock()
 	old := p.oldKey
 	p.mu.RUnlock()
-	pko := PanelKeyType{value: old}
+	pko := panelKeyType{value: old}
 	return pko.GetValueString()
 }
 
@@ -182,8 +182,8 @@ func (p *PanelDataType) RefreshData() {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) UsePanelKey() *PanelKeyType {
-	return &PanelKeyType{value: p.Get()}
+func (p *PanelDataType) UsePanelKey() *panelKeyType {
+	return &panelKeyType{value: p.Get()}
 }
 
 func (p *PanelDataType) Update(pk string) bool {
@@ -196,12 +196,12 @@ func (p *PanelDataType) Update(pk string) bool {
 	if ExchangeCache.Has(ck) {
 		Data := ExchangeCache.Get(ck)
 		if Data != nil {
-			pko := PanelKeyType{value: npk}
+			pko := panelKeyType{value: npk}
 			npk = pko.UpdateValue(Data.TargetAmount)
 		}
 	}
 
-	nso := PanelKeyType{value: npk}
+	nso := panelKeyType{value: npk}
 	nst := p.GetStatus()
 
 	switch nst {
@@ -266,7 +266,7 @@ func (p *PanelDataType) DidChange() bool {
 	old := p.oldKey
 	status := p.status
 	p.mu.RUnlock()
-	opt := &PanelKeyType{old}
+	opt := &panelKeyType{old}
 	return old != p.Get() && opt.GetValueFloat() != -1 && status == JC.STATE_LOADED
 }
 
@@ -275,7 +275,7 @@ func (p *PanelDataType) IsOnInitialValue() bool {
 	old := p.oldKey
 	status := p.status
 	p.mu.RUnlock()
-	opt := &PanelKeyType{old}
+	opt := &panelKeyType{old}
 	return opt.GetValueFloat() == -1 && status == JC.STATE_LOADED
 }
 
@@ -315,7 +315,7 @@ func (p *PanelDataType) RefreshKey(key string) string {
 		return key
 	}
 
-	pkt := &PanelKeyType{value: key}
+	pkt := &panelKeyType{value: key}
 	source := pkt.GetSourceCoinString()
 	target := pkt.GetTargetCoinString()
 	value := pkt.GetSourceValueString()
@@ -337,11 +337,15 @@ func (p *PanelDataType) RefreshKey(key string) string {
 	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 }
 
-func (p *PanelDataType) Serialize() PanelDataCache {
+func (p *PanelDataType) Serialize() panelDataCache {
 
-	return PanelDataCache{
+	return panelDataCache{
 		Status: p.GetStatus(),
 		Key:    p.RefreshKey(p.Get()),
 		OldKey: p.RefreshKey(p.GetOldKey()),
 	}
+}
+
+func NewPanelDataCache() []panelDataCache {
+	return []panelDataCache{}
 }

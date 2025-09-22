@@ -9,25 +9,25 @@ import (
 	JC "jxwatcher/core"
 )
 
-type AltSeasonFetcher struct {
-	Data *AltSeasonHistoricalData `json:"data"`
+type altSeasonFetcher struct {
+	Data *altSeasonHistoricalData `json:"data"`
 }
 
-type AltSeasonHistoricalData struct {
-	HistoricalValues AltSeasonHistoricalValues `json:"historicalValues"`
+type altSeasonHistoricalData struct {
+	HistoricalValues altSeasonHistoricalValues `json:"historicalValues"`
 }
 
-type AltSeasonHistoricalValues struct {
-	Now AltSeasonSnapshot `json:"now"`
+type altSeasonHistoricalValues struct {
+	Now altSeasonSnapshot `json:"now"`
 }
 
-type AltSeasonSnapshot struct {
+type altSeasonSnapshot struct {
 	AltcoinIndex string    `json:"altcoinIndex"`
 	TimestampRaw string    `json:"timestamp"`
 	LastUpdate   time.Time `json:"-"`
 }
 
-func (er *AltSeasonFetcher) GetRate() int64 {
+func (er *altSeasonFetcher) GetRate() int64 {
 
 	return JC.GetRequest(
 		Config.AltSeasonEndpoint,
@@ -38,7 +38,7 @@ func (er *AltSeasonFetcher) GetRate() int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(cc any) int64 {
-			dec, ok := cc.(*AltSeasonFetcher)
+			dec, ok := cc.(*altSeasonFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
@@ -59,4 +59,8 @@ func (er *AltSeasonFetcher) GetRate() int64 {
 
 			return JC.NETWORKING_SUCCESS
 		})
+}
+
+func NewAltSeasonFetcher() *altSeasonFetcher {
+	return &altSeasonFetcher{}
 }

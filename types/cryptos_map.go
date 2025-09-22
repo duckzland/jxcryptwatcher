@@ -13,14 +13,14 @@ type CryptosMapCache struct {
 	Maps []string
 }
 
-type CryptosMapType struct {
+type cryptosMapType struct {
 	data       sync.Map
 	maps       []string
 	searchMaps []string
 	mapsLock   sync.RWMutex
 }
 
-func (cm *CryptosMapType) Init() {
+func (cm *cryptosMapType) Init() {
 	cm.data = sync.Map{}
 	cm.mapsLock.Lock()
 	cm.maps = []string{}
@@ -28,11 +28,11 @@ func (cm *CryptosMapType) Init() {
 	cm.mapsLock.Unlock()
 }
 
-func (cm *CryptosMapType) Insert(id string, display string) {
+func (cm *cryptosMapType) Insert(id string, display string) {
 	cm.data.Store(id, display)
 }
 
-func (cm *CryptosMapType) Hydrate(data map[string]string) {
+func (cm *cryptosMapType) Hydrate(data map[string]string) {
 	cm.Init()
 	for id, display := range data {
 		cm.Insert(id, display)
@@ -40,7 +40,7 @@ func (cm *CryptosMapType) Hydrate(data map[string]string) {
 	_ = cm.GetOptions()
 }
 
-func (cm *CryptosMapType) Serialize() CryptosMapCache {
+func (cm *cryptosMapType) Serialize() CryptosMapCache {
 	cache := CryptosMapCache{
 		Data: make(map[string]string),
 	}
@@ -61,7 +61,7 @@ func (cm *CryptosMapType) Serialize() CryptosMapCache {
 	return cache
 }
 
-func (cm *CryptosMapType) GetOptions() []string {
+func (cm *cryptosMapType) GetOptions() []string {
 	JC.PrintMemUsage("Start generating available crypto options")
 
 	cm.mapsLock.RLock()
@@ -92,7 +92,7 @@ func (cm *CryptosMapType) GetOptions() []string {
 	return options
 }
 
-func (cm *CryptosMapType) GetSearchMap() []string {
+func (cm *cryptosMapType) GetSearchMap() []string {
 	JC.PrintMemUsage("Start retrieving lowercase crypto search map")
 
 	cm.mapsLock.RLock()
@@ -115,26 +115,26 @@ func (cm *CryptosMapType) GetSearchMap() []string {
 	return cached
 }
 
-func (cm *CryptosMapType) SetMaps(m []string) {
+func (cm *cryptosMapType) SetMaps(m []string) {
 	cm.mapsLock.Lock()
 	cm.maps = m
 	cm.mapsLock.Unlock()
 }
 
-func (cm *CryptosMapType) ClearMapCache() {
+func (cm *cryptosMapType) ClearMapCache() {
 	cm.mapsLock.Lock()
 	cm.maps = []string{}
 	cm.mapsLock.Unlock()
 }
 
-func (cm *CryptosMapType) GetDisplayById(id string) string {
+func (cm *cryptosMapType) GetDisplayById(id string) string {
 	if val, ok := cm.data.Load(id); ok {
 		return val.(string)
 	}
 	return ""
 }
 
-func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
+func (cm *cryptosMapType) GetIdByDisplay(tk string) string {
 	if JC.IsNumeric(tk) {
 		return tk
 	}
@@ -148,7 +148,7 @@ func (cm *CryptosMapType) GetIdByDisplay(tk string) string {
 	return ""
 }
 
-func (cm *CryptosMapType) GetSymbolById(id string) string {
+func (cm *cryptosMapType) GetSymbolById(id string) string {
 	if val, ok := cm.data.Load(id); ok {
 		parts := strings.Split(val.(string), "|")
 		if len(parts) == 2 {
@@ -161,7 +161,7 @@ func (cm *CryptosMapType) GetSymbolById(id string) string {
 	return ""
 }
 
-func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
+func (cm *cryptosMapType) GetSymbolByDisplay(tk string) string {
 	parts := strings.Split(tk, "|")
 	if len(parts) == 2 {
 		subs := strings.Split(parts[1], " - ")
@@ -172,7 +172,7 @@ func (cm *CryptosMapType) GetSymbolByDisplay(tk string) string {
 	return ""
 }
 
-func (cm *CryptosMapType) IsEmpty() bool {
+func (cm *cryptosMapType) IsEmpty() bool {
 	empty := true
 	cm.data.Range(func(_, _ any) bool {
 		empty = false
@@ -181,7 +181,11 @@ func (cm *CryptosMapType) IsEmpty() bool {
 	return empty
 }
 
-func (cm *CryptosMapType) ValidateId(id int64) bool {
+func (cm *cryptosMapType) ValidateId(id int64) bool {
 	_, ok := cm.data.Load(strconv.FormatInt(id, 10))
 	return ok
+}
+
+func NewCryptosMap() *cryptosMapType {
+	return &cryptosMapType{}
 }

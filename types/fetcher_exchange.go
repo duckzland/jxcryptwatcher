@@ -12,7 +12,7 @@ import (
 )
 
 type ExchangeResults struct {
-	Rates []ExchangeDataType
+	Rates []exchangeDataType
 }
 
 func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
@@ -40,7 +40,7 @@ func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 			continue
 		}
 
-		ex := ExchangeDataType{}
+		ex := exchangeDataType{}
 
 		// CMC Json data is weird the the id is in string while cryptoId is in int64 (but golang cast this as float64)
 		ex.SourceSymbol = sc.(map[string]any)["symbol"].(string)

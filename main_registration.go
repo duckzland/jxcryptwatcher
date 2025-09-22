@@ -414,12 +414,11 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("cryptos_map", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			c := JT.CryptosType{}
-			code := c.GetCryptos()
+			code := JT.CryptosLoader.GetCryptos()
 
 			return JC.FetchResult{
 				Code: code,
-				Data: c,
+				Data: JT.CryptosLoader,
 			}, nil
 		},
 	}, 0, func(result JC.FetchResult) {
@@ -459,7 +458,7 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("cmc100", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.CMC100Fetcher{}
+			ft := JT.NewCMC100Fetcher()
 			code := ft.GetRate()
 
 			return JC.FetchResult{Code: code}, nil
@@ -488,7 +487,7 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("feargreed", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.FearGreedFetcher{}
+			ft := JT.NewFearGreedFetcher()
 			code := ft.GetRate()
 
 			return JC.FetchResult{Code: code}, nil
@@ -517,7 +516,7 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("market_cap", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.MarketCapFetcher{}
+			ft := JT.NewMarketCapFetcher()
 			code := ft.GetRate()
 
 			return JC.FetchResult{Code: code}, nil
@@ -546,7 +545,7 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("altcoin_index", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.AltSeasonFetcher{}
+			ft := JT.NewAltSeasonFetcher()
 			code := ft.GetRate()
 
 			return JC.FetchResult{Code: code}, nil

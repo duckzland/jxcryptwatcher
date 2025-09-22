@@ -6,20 +6,20 @@ import (
 	JC "jxwatcher/core"
 )
 
-var BT TickersMapType
+var BT tickersMapType
 
-type TickersMapType struct {
+type tickersMapType struct {
 	mu   sync.RWMutex
 	data []*TickerDataType
 }
 
-func (pc *TickersMapType) Init() {
+func (pc *tickersMapType) Init() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 	pc.data = []*TickerDataType{}
 }
 
-func (pc *TickersMapType) Set(data []*TickerDataType) {
+func (pc *tickersMapType) Set(data []*TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -30,7 +30,7 @@ func (pc *TickersMapType) Set(data []*TickerDataType) {
 	pc.data = data
 }
 
-func (pc *TickersMapType) Add(ticker *TickerDataType) {
+func (pc *tickersMapType) Add(ticker *TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -44,7 +44,7 @@ func (pc *TickersMapType) Add(ticker *TickerDataType) {
 	pc.data = append(pc.data, ticker)
 }
 
-func (pc *TickersMapType) Update(uuid string) bool {
+func (pc *tickersMapType) Update(uuid string) bool {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -55,7 +55,7 @@ func (pc *TickersMapType) Update(uuid string) bool {
 	return false
 }
 
-func (pc *TickersMapType) Get() []*TickerDataType {
+func (pc *tickersMapType) Get() []*TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
@@ -64,13 +64,13 @@ func (pc *TickersMapType) Get() []*TickerDataType {
 	return dataCopy
 }
 
-func (pc *TickersMapType) GetData(uuid string) *TickerDataType {
+func (pc *tickersMapType) GetData(uuid string) *TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return pc.getDataUnsafe(uuid)
 }
 
-func (pc *TickersMapType) getDataUnsafe(uuid string) *TickerDataType {
+func (pc *tickersMapType) getDataUnsafe(uuid string) *TickerDataType {
 	for _, tdt := range pc.data {
 		if tdt.IsID(uuid) {
 			return tdt
@@ -79,7 +79,7 @@ func (pc *TickersMapType) getDataUnsafe(uuid string) *TickerDataType {
 	return nil
 }
 
-func (pc *TickersMapType) GetDataByType(tickerType string) []*TickerDataType {
+func (pc *tickersMapType) GetDataByType(tickerType string) []*TickerDataType {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
@@ -92,13 +92,13 @@ func (pc *TickersMapType) GetDataByType(tickerType string) []*TickerDataType {
 	return nd
 }
 
-func (pc *TickersMapType) IsEmpty() bool {
+func (pc *tickersMapType) IsEmpty() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return len(pc.data) == 0
 }
 
-func (pc *TickersMapType) Reset() {
+func (pc *tickersMapType) Reset() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -108,7 +108,7 @@ func (pc *TickersMapType) Reset() {
 	}
 }
 
-func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *TickerDataType) bool) {
+func (pc *tickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *TickerDataType) bool) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -120,17 +120,17 @@ func (pc *TickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 	}
 }
 
-func (pc *TickersMapType) Hydrate(data []*TickerDataType) {
+func (pc *tickersMapType) Hydrate(data []*TickerDataType) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 	pc.data = data
 }
 
-func (pc *TickersMapType) Serialize() []TickerDataCache {
+func (pc *tickersMapType) Serialize() []tickerDataCache {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	var out []TickerDataCache
+	var out []tickerDataCache
 	for _, t := range pc.data {
 		if t.IsStatus(JC.STATE_LOADED) {
 			out = append(out, t.Serialize())

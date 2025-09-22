@@ -9,30 +9,30 @@ import (
 	JC "jxwatcher/core"
 )
 
-type MarketCapFetcher struct {
-	Data   *MarketCapHistoricalData  `json:"data"`
-	Status MarketCapHistoricalStatus `json:"status"`
+type marketCapFetcher struct {
+	Data   *marketCapHistoricalData  `json:"data"`
+	Status marketCapHistoricalStatus `json:"status"`
 }
 
-type MarketCapHistoricalData struct {
-	HistoricalValues     MarketCapHistoricalValues `json:"historicalValues"`
+type marketCapHistoricalData struct {
+	HistoricalValues     marketCapHistoricalValues `json:"historicalValues"`
 	ThirtyDaysPercentage float64                   `json:"thirtyDaysPercentage"`
 }
 
-type MarketCapHistoricalStatus struct {
+type marketCapHistoricalStatus struct {
 	LastUpdate time.Time `json:"timestamp"`
 }
 
-type MarketCapHistoricalValues struct {
-	Now       MarketCapSnapshot `json:"now"`
-	Yesterday MarketCapSnapshot `json:"yesterday"`
+type marketCapHistoricalValues struct {
+	Now       marketCapSnapshot `json:"now"`
+	Yesterday marketCapSnapshot `json:"yesterday"`
 }
 
-type MarketCapSnapshot struct {
+type marketCapSnapshot struct {
 	MarketCap float64 `json:"marketCap"`
 }
 
-func (er *MarketCapFetcher) GetRate() int64 {
+func (er *marketCapFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		Config.MarketCapEndpoint,
 		er,
@@ -41,7 +41,7 @@ func (er *MarketCapFetcher) GetRate() int64 {
 			url.Add("range", "30d")
 		},
 		func(cc any) int64 {
-			dec, ok := cc.(*MarketCapFetcher)
+			dec, ok := cc.(*marketCapFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
@@ -66,4 +66,8 @@ func (er *MarketCapFetcher) GetRate() int64 {
 			return JC.NETWORKING_SUCCESS
 		})
 
+}
+
+func NewMarketCapFetcher() *marketCapFetcher {
+	return &marketCapFetcher{}
 }
