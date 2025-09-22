@@ -33,8 +33,14 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 
 	l.cWidth = size.Width
 
-	l.background.Resize(size)
-	l.background.Move(fyne.NewPos(0, 0))
+	if l.background.Size() != size {
+		l.background.Resize(size)
+	}
+
+	if l.background.Position() != fyne.NewPos(0, 0) {
+		l.background.Move(fyne.NewPos(0, 0))
+	}
+
 	l.background.Show()
 
 	var dialogWidth float32
@@ -56,8 +62,15 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 		posY = 0
 	}
 
-	l.dialogBox.Resize(fyne.NewSize(dialogWidth, dialogHeight))
-	l.dialogBox.Move(fyne.NewPos(posX, posY))
+	dialogSize := fyne.NewSize(dialogWidth, dialogHeight)
+	dialogPos := fyne.NewPos(posX, posY)
+
+	if l.dialogBox.Size() != dialogSize {
+		l.dialogBox.Resize(dialogSize)
+	}
+	if l.dialogBox.Position() != dialogPos {
+		l.dialogBox.Move(dialogPos)
+	}
 }
 
 func (l *dialogOverlaysLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
