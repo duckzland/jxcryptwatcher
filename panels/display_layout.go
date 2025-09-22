@@ -17,19 +17,19 @@ type panelDisplayLayout struct {
 }
 
 func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
 	if size.Width <= 0 && size.Height <= 0 {
-		return
-	}
-
-	if len(objects) < 5 {
 		return
 	}
 
 	spacer := float32(-2)
 
-	pl.background.Resize(size)
-	pl.background.Move(fyne.NewPos(0, 0))
+	if pl.background.Size() != size {
+		pl.background.Resize(size)
+	}
+
+	if pl.background.Position() != fyne.NewPos(0, 0) {
+		pl.background.Move(fyne.NewPos(0, 0))
+	}
 
 	centerItems := []fyne.CanvasObject{}
 	for _, obj := range []fyne.CanvasObject{pl.title, pl.content, pl.subtitle, pl.bottomText} {
@@ -39,8 +39,11 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	}
 
 	var totalHeight float32
-	for _, obj := range centerItems {
-		totalHeight += obj.MinSize().Height
+	sizes := make([]fyne.Size, len(centerItems))
+	for i, obj := range centerItems {
+		s := obj.MinSize()
+		sizes[i] = s
+		totalHeight += s.Height
 	}
 
 	totalHeight += spacer * float32(len(centerItems)-1)
@@ -48,16 +51,31 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	startY := (size.Height - totalHeight) / 2
 	currentY := startY
 
-	for _, obj := range centerItems {
-		objSize := obj.MinSize()
-		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
-		obj.Resize(objSize)
+	for i, obj := range centerItems {
+		objSize := sizes[i]
+		pos := fyne.NewPos((size.Width-objSize.Width)/2, currentY)
+
+		if obj.Position() != pos {
+			obj.Move(pos)
+		}
+
+		if obj.Size() != objSize {
+			obj.Resize(objSize)
+		}
+
 		currentY += objSize.Height + spacer
 	}
 
 	actionSize := pl.action.MinSize()
-	pl.action.Move(fyne.NewPos(size.Width-actionSize.Width, 0))
-	pl.action.Resize(actionSize)
+	actionPos := fyne.NewPos(size.Width-actionSize.Width, 0)
+
+	if pl.action.Position() != actionPos {
+		pl.action.Move(actionPos)
+	}
+
+	if pl.action.Size() != actionSize {
+		pl.action.Resize(actionSize)
+	}
 }
 
 func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {

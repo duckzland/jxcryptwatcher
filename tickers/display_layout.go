@@ -15,15 +15,19 @@ type tickerLayout struct {
 }
 
 func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
 	if size.Width == 0 && size.Height == 0 {
 		return
 	}
 
 	spacer := float32(-2)
 
-	tl.background.Resize(size)
-	tl.background.Move(fyne.NewPos(0, 0))
+	if tl.background.Size() != size {
+		tl.background.Resize(size)
+	}
+
+	if tl.background.Position() != fyne.NewPos(0, 0) {
+		tl.background.Move(fyne.NewPos(0, 0))
+	}
 
 	centerItems := []fyne.CanvasObject{}
 	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
@@ -33,18 +37,30 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	var totalHeight float32
-	for _, obj := range centerItems {
-		totalHeight += obj.MinSize().Height
+	sizes := make([]fyne.Size, len(centerItems))
+	for i, obj := range centerItems {
+		s := obj.MinSize()
+		sizes[i] = s
+		totalHeight += s.Height
 	}
+
 	totalHeight += spacer * float32(len(centerItems)-1)
 
 	startY := (size.Height - totalHeight) / 2
 	currentY := startY
 
-	for _, obj := range centerItems {
-		objSize := obj.MinSize()
-		obj.Move(fyne.NewPos((size.Width-objSize.Width)/2, currentY))
-		obj.Resize(objSize)
+	for i, obj := range centerItems {
+		objSize := sizes[i]
+		pos := fyne.NewPos((size.Width-objSize.Width)/2, currentY)
+
+		if obj.Position() != pos {
+			obj.Move(pos)
+		}
+
+		if obj.Size() != objSize {
+			obj.Resize(objSize)
+		}
+
 		currentY += objSize.Height + spacer
 	}
 }
