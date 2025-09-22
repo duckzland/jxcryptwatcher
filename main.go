@@ -34,6 +34,8 @@ func main() {
 
 	JA.SnapshotManager.Init()
 
+	RegisterCache()
+
 	RegisterActions()
 
 	RegisterFetchers()

@@ -31,7 +31,7 @@ func NewCompletionText(height float32, parent *completionList) *completionText {
 		s.background = canvas.NewRectangle(JC.Transparent)
 	}
 
-	s.label.TextSize = 14
+	s.label.TextSize = JC.CompletionTextSize
 	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
 	return s

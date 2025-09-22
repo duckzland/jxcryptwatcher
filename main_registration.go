@@ -683,3 +683,51 @@ func RegisterDispatcher() {
 		JC.AnimDispatcher = JC.NewDispatcher(10000, 10, 1*time.Millisecond)
 	}
 }
+
+func RegisterCache() {
+	// Prepopulating character sizes
+	sizes := []float32{
+		JC.PanelTitleSize,
+		JC.PanelSubTitleSize,
+		JC.PanelBottomTextSize,
+		JC.PanelContentSize,
+		JC.PanelTitleSizeSmall,
+		JC.PanelSubTitleSizeSmall,
+		JC.PanelBottomTextSizeSmall,
+		JC.PanelContentSizeSmall,
+		JC.TickerTitleSize,
+		JC.TickerContentSize,
+		JC.NotificationTextSize,
+		JC.CompletionTextSize,
+	}
+
+	for _, size := range sizes {
+		// Normal
+		styleBits := 0
+		key := int(size)*10 + styleBits
+		if _, exists := JC.CharWidthCache[key]; !exists {
+			JC.CharWidthCache[key] = fyne.MeasureText("a", size, fyne.TextStyle{}).Width
+		}
+
+		// Bold
+		styleBits = 1
+		key = int(size)*10 + styleBits
+		if _, exists := JC.CharWidthCache[key]; !exists {
+			JC.CharWidthCache[key] = fyne.MeasureText("a", size, fyne.TextStyle{Bold: true}).Width
+		}
+
+		// Italic
+		styleBits = 2
+		key = int(size)*10 + styleBits
+		if _, exists := JC.CharWidthCache[key]; !exists {
+			JC.CharWidthCache[key] = fyne.MeasureText("a", size, fyne.TextStyle{Italic: true}).Width
+		}
+
+		// Monospace
+		styleBits = 4
+		key = int(size)*10 + styleBits
+		if _, exists := JC.CharWidthCache[key]; !exists {
+			JC.CharWidthCache[key] = fyne.MeasureText("a", size, fyne.TextStyle{Monospace: true}).Width
+		}
+	}
+}

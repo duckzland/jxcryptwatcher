@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/theme"
 )
 
 var App fyne.App
@@ -58,6 +59,10 @@ var TickerHeight float32 = 50
 var TickerTitleSize float32 = 11
 var TickerContentSize float32 = 20
 
+var NotificationTextSize float32 = theme.TextSize()
+
+var CompletionTextSize float32 = 14
+
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayTimestamp = time.Now()
 
@@ -69,3 +74,5 @@ var MainLayoutContentHeight float32
 var Tickers *fyne.Container
 
 var AnimDispatcher = NewDispatcher(100, 4, 16*time.Millisecond)
+
+var CharWidthCache = make(map[int]float32)

@@ -38,7 +38,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	if JC.IsMobile {
 		text = JC.TruncateTextWithEstimation(r.text.Text, size.Width, r.text.TextSize)
 	} else {
-		text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize)
+		text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
 	}
 
 	r.text.Text = text

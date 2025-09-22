@@ -79,7 +79,7 @@ func (h *tickerDisplay) Cursor() desktop.Cursor {
 }
 
 func (h *tickerDisplay) updateContent() {
-	pwidth := h.Size().Width
+
 	pkt := JT.BT.GetData(h.GetTag())
 
 	if pkt == nil {
@@ -105,8 +105,8 @@ func (h *tickerDisplay) updateContent() {
 
 	default:
 
-		title = JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.GetText().TextSize)
-		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize)
+		title = pkt.GetTitle()
+		content = pkt.FormatContent()
 
 		if h.content.GetText().Text != content {
 			isNewContent = true

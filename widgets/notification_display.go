@@ -3,7 +3,6 @@ package widgets
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/animations"
@@ -25,7 +24,7 @@ func NotificationInit() {
 func NewNotificationDisplay() *notificationDisplay {
 	t := canvas.NewText("", JC.TextColor)
 	t.Alignment = fyne.TextAlignCenter
-	t.TextSize = theme.TextSize()
+	t.TextSize = JC.NotificationTextSize
 
 	w := &notificationDisplay{
 		text:    t,
@@ -37,7 +36,7 @@ func NewNotificationDisplay() *notificationDisplay {
 
 func (w *notificationDisplay) UpdateText(msg string) {
 	maxWidth := w.text.Size().Width
-	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize)
+	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize, w.text.TextStyle)
 	w.text.Color = JC.TextColor
 	w.text.Refresh()
 	w.Refresh()

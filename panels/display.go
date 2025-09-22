@@ -273,10 +273,10 @@ func (h *panelDisplay) updateContent() {
 			background = JC.PanelBG
 		}
 
-		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize)
-		subtitle = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.GetText().TextSize)
-		bottomText = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.GetText().TextSize)
-		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize)
+		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize, h.title.GetText().TextStyle)
+		subtitle = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.GetText().TextSize, h.subtitle.GetText().TextStyle)
+		bottomText = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.GetText().TextSize, h.bottomText.GetText().TextStyle)
+		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize, h.content.GetText().TextStyle)
 	}
 
 	h.EnableClick()

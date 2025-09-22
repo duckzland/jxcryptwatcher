@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 )
 
@@ -39,30 +40,50 @@ func SetAlpha(c color.Color, alpha float32) color.Color {
 	}
 }
 
-func TruncateText(str string, maxWidth float32, fontSize float32) string {
-	// Measure full text width with custom font size
-	full := canvas.NewText(str, TextColor)
-	full.TextSize = fontSize
-	size := full.MinSize()
-
-	if size.Width <= maxWidth {
+func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.TextStyle) string {
+	sc := len(str)
+	if str == "" || sc < 6 {
 		return str
 	}
 
-	// Truncate and add ellipsis
-	runes := []rune(str)
-	ellipsis := "..."
-	for i := len(runes); i > 0; i-- {
-		trial := string(runes[:i]) + ellipsis
-		tmp := canvas.NewText(trial, TextColor)
-		tmp.TextSize = fontSize
-
-		if tmp.MinSize().Width <= maxWidth {
-			return trial
-		}
+	styleBits := 0
+	if style.Bold {
+		styleBits |= 1 << 0
 	}
 
-	return ""
+	if style.Italic {
+		styleBits |= 1 << 1
+	}
+
+	if style.Monospace {
+		styleBits |= 1 << 2
+	}
+
+	key := int(fontSize)*10 + styleBits
+	charWidth, ok := CharWidthCache[key]
+	if !ok {
+		return str
+	}
+
+	estimatedWidth := float32(sc) * charWidth
+	if estimatedWidth <= maxWidth {
+		return str
+	}
+
+	ellipsisWidth := 3 * charWidth
+	availableWidth := maxWidth - ellipsisWidth
+	maxChars := int(availableWidth / charWidth)
+
+	if maxChars <= 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.Grow(maxChars + 3)
+	b.WriteString(str[:maxChars])
+	b.WriteString("...")
+
+	return b.String()
 }
 
 func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) string {
