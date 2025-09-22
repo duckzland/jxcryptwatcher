@@ -46,8 +46,6 @@ func main() {
 
 	RegisterDispatcher()
 
-	JC.Notify("Application is starting...")
-
 	JC.Window.SetContent(JA.NewAppLayout())
 
 	JC.Window.Resize(fyne.NewSize(920, 600))
@@ -55,6 +53,8 @@ func main() {
 	if JC.IsMobile {
 		JC.Window.SetFixedSize(true)
 	}
+
+	JC.Notify("Application is starting...")
 
 	// Prevent locking when initialized at first install
 	JC.MainDebouncer.Call("initializing", 1*time.Millisecond, func() {

@@ -59,6 +59,8 @@ func NewPanelDisplay(
 		bottomText: NewPanelText("", JC.TextColor, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
+	pl.background.CornerRadius = JC.PanelBorderRadius
+
 	pl.action = NewPanelAction(
 		func() {
 			dynpk, _ := str.Get()

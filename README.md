@@ -1,13 +1,13 @@
 
 ---
 
-# 🪙 JXCryptWatcher
+# JXCryptWatcher
 
 A desktop GUI application for displaying real-time cryptocurrency price tickers using data retrieved from [CoinMarketCap](https://coinmarketcap.com/). Built with [Fyne](https://fyne.io/) — a cross-platform GUI toolkit for Go.
 
 ---
 
-## 🚀 Features
+## Features
 
 - Live crypto price updates
 - Configurable panels
@@ -16,7 +16,7 @@ A desktop GUI application for displaying real-time cryptocurrency price tickers 
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### 1. Install Fyne dependencies
 
@@ -66,7 +66,7 @@ This will:
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 The app requires three configuration files for normal operation:
 
@@ -89,7 +89,7 @@ These files are automatically generated on first launch and saved to:
 > 
 > Please adjust the paths accordingly based on your operating system and user environment.
 
-### 📁 Example Configurations
+### Example Configurations
 
 You can find sample configuration files in the `examples/` directory:
 
@@ -98,7 +98,7 @@ examples/config_example.json
 examples/panels_example.json
 ```
 
-### 🔄 Refreshing Crypto Data
+### Refreshing Crypto Data
 
 The `cryptos.json` file is auto-generated using data from CoinMarketCap.  
 To refresh the list of available cryptocurrencies, simply delete the file:
@@ -112,7 +112,7 @@ It will be re-created on the next app launch.
 Or you can use the Reload button at top of the app to reset and refetch the file.
 ---
 
-## 🧩 Notes
+## Notes
 
 - Internet connection is required to fetch live data from CoinMarketCap.
 - CoinMarketCap enforces rate limits on API requests. To avoid exceeding these limits, please configure a minimum delay of 60 seconds between each API call. Being considerate with request frequency helps ensure stable access and prevents temporary bans.

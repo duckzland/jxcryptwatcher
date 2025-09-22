@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/theme"
 )
 
 var App fyne.App
@@ -59,7 +58,7 @@ var TickerHeight float32 = 50
 var TickerTitleSize float32 = 11
 var TickerContentSize float32 = 20
 
-var NotificationTextSize float32 = theme.TextSize()
+var NotificationTextSize float32 = 14
 
 var CompletionTextSize float32 = 14
 
