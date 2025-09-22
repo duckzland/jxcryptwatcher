@@ -251,6 +251,8 @@ func (h *panelDisplay) updateContent() {
 		pkt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
+	shouldRefresh := h.status != pkt.GetStatus()
+	bgState := h.background.FillColor
 	h.status = pkt.GetStatus()
 
 	switch h.status {
@@ -296,23 +298,62 @@ func (h *panelDisplay) updateContent() {
 				h.background.FillColor = JC.RedColor
 			}
 
+			JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
+
 		} else if pkt.IsOnInitialValue() {
 			h.background.FillColor = JC.PanelBG
 		}
 
-		h.title.Text = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.TextSize)
-		h.subtitle.Text = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.TextSize)
-		h.bottomText.Text = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.TextSize)
-		h.content.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
+		title := JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.TextSize)
+		subtitle := JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.TextSize)
+		bottomText := JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.TextSize)
+		content := JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
 
-		h.subtitle.Show()
-		h.bottomText.Show()
-		h.content.Show()
+		if h.title.Text != title {
+			h.title.Text = title
+			shouldRefresh = true
+		}
+
+		if h.subtitle.Text != subtitle {
+			h.subtitle.Text = subtitle
+			shouldRefresh = true
+		}
+
+		if h.bottomText.Text != bottomText {
+			h.bottomText.Text = bottomText
+			shouldRefresh = true
+		}
+
+		if h.content.Text != content {
+			h.content.Text = content
+			shouldRefresh = true
+		}
+
+		if !h.subtitle.Visible() {
+			h.subtitle.Show()
+			shouldRefresh = true
+		}
+
+		if !h.bottomText.Visible() {
+			h.bottomText.Show()
+			shouldRefresh = true
+		}
+
+		if !h.content.Visible() {
+			h.content.Show()
+			shouldRefresh = true
+		}
+
 		h.EnableClick()
 	}
 
-	JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
-	h.Refresh()
+	if h.background.FillColor != bgState {
+		shouldRefresh = true
+	}
+
+	if shouldRefresh {
+		h.Refresh()
+	}
 }
 
 func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
