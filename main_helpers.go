@@ -260,12 +260,12 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetConfigStatus(true)
 
 		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
+			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
 
 			fyne.Do(func() {
-				JX.Grid.UpdateTickersContent(func(pdt *JT.TickerDataType) bool {
+				JX.Grid.UpdateTickersContent(func(pdt JT.TickerData) bool {
 					return true
 				})
 			})
@@ -279,12 +279,12 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetConfigStatus(false)
 
 		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.TickerDataType) bool {
+			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
 
 			fyne.Do(func() {
-				JX.Grid.UpdateTickersContent(func(pdt *JT.TickerDataType) bool {
+				JX.Grid.UpdateTickersContent(func(pdt JT.TickerData) bool {
 					return true
 				})
 			})

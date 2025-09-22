@@ -75,9 +75,9 @@ func (sm *snapshotManager) LoadTickers() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var restored []*JT.TickerDataType
+	var restored []JT.TickerData
 	for _, c := range caches {
-		t := &JT.TickerDataType{}
+		t := JT.NewTickerData()
 		t.Init()
 		t.Set(c.Key)
 		t.SetType(c.Type)

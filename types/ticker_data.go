@@ -21,7 +21,42 @@ type tickerDataCache struct {
 	OldKey string
 }
 
-type TickerDataType struct {
+type TickerData interface {
+	Init()
+	Set(rate string)
+	Insert(rate string)
+	Get() string
+	GetData() binding.String
+	HasData() bool
+
+	GetType() string
+	SetType(val string)
+	GetTitle() string
+	SetTitle(val string)
+	GetFormat() string
+	SetFormat(val string)
+	GetStatus() int
+	SetStatus(val int)
+	GetID() string
+	SetID(val string)
+	GetOldKey() string
+	SetOldKey(val string)
+
+	IsType(val string) bool
+	IsTitle(val string) bool
+	IsFormat(val string) bool
+	IsStatus(val int) bool
+	IsID(val string) bool
+	IsOldKey(val string) bool
+	IsKey(val string) bool
+
+	Update() bool
+	FormatContent() string
+	DidChange() bool
+	Serialize() tickerDataCache
+}
+
+type tickerDataType struct {
 	mu       sync.RWMutex
 	data     binding.String
 	oldKey   string
@@ -32,7 +67,7 @@ type TickerDataType struct {
 	status   int
 }
 
-func (p *TickerDataType) Init() {
+func (p *tickerDataType) Init() {
 	p.mu.Lock()
 	p.data = binding.NewString()
 	p.id = ""
@@ -41,7 +76,7 @@ func (p *TickerDataType) Init() {
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) Set(rate string) {
+func (p *tickerDataType) Set(rate string) {
 	p.mu.Lock()
 	old, err := p.data.Get()
 	if err == nil {
@@ -51,11 +86,11 @@ func (p *TickerDataType) Set(rate string) {
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) Insert(rate string) {
+func (p *tickerDataType) Insert(rate string) {
 	p.Set(rate)
 }
 
-func (p *TickerDataType) Get() string {
+func (p *tickerDataType) Get() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
@@ -68,127 +103,127 @@ func (p *TickerDataType) Get() string {
 	return val
 }
 
-func (p *TickerDataType) GetData() binding.String {
+func (p *tickerDataType) GetData() binding.String {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.data
 }
 
-func (p *TickerDataType) HasData() bool {
+func (p *tickerDataType) HasData() bool {
 	raw := p.Get()
 	val, err := strconv.ParseFloat(raw, 64)
 	return err == nil && val >= 0
 }
 
-func (p *TickerDataType) GetType() string {
+func (p *tickerDataType) GetType() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.category
 }
 
-func (p *TickerDataType) SetType(val string) {
+func (p *tickerDataType) SetType(val string) {
 	p.mu.Lock()
 	p.category = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) GetTitle() string {
+func (p *tickerDataType) GetTitle() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.title
 }
 
-func (p *TickerDataType) SetTitle(val string) {
+func (p *tickerDataType) SetTitle(val string) {
 	p.mu.Lock()
 	p.title = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) GetFormat() string {
+func (p *tickerDataType) GetFormat() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.format
 }
 
-func (p *TickerDataType) SetFormat(val string) {
+func (p *tickerDataType) SetFormat(val string) {
 	p.mu.Lock()
 	p.format = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) GetStatus() int {
+func (p *tickerDataType) GetStatus() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.status
 }
 
-func (p *TickerDataType) SetStatus(val int) {
+func (p *tickerDataType) SetStatus(val int) {
 	p.mu.Lock()
 	p.status = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) GetID() string {
+func (p *tickerDataType) GetID() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.id
 }
 
-func (p *TickerDataType) SetID(val string) {
+func (p *tickerDataType) SetID(val string) {
 	p.mu.Lock()
 	p.id = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) GetOldKey() string {
+func (p *tickerDataType) GetOldKey() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.oldKey
 }
 
-func (p *TickerDataType) SetOldKey(val string) {
+func (p *tickerDataType) SetOldKey(val string) {
 	p.mu.Lock()
 	p.oldKey = val
 	p.mu.Unlock()
 }
 
-func (p *TickerDataType) IsType(val string) bool {
+func (p *tickerDataType) IsType(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.category == val
 }
 
-func (p *TickerDataType) IsTitle(val string) bool {
+func (p *tickerDataType) IsTitle(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.title == val
 }
 
-func (p *TickerDataType) IsFormat(val string) bool {
+func (p *tickerDataType) IsFormat(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.format == val
 }
 
-func (p *TickerDataType) IsStatus(val int) bool {
+func (p *tickerDataType) IsStatus(val int) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.status == val
 }
 
-func (p *TickerDataType) IsID(val string) bool {
+func (p *tickerDataType) IsID(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.id == val
 }
 
-func (p *TickerDataType) IsOldKey(val string) bool {
+func (p *tickerDataType) IsOldKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.oldKey == val
 }
 
-func (p *TickerDataType) IsKey(val string) bool {
+func (p *tickerDataType) IsKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
@@ -201,7 +236,7 @@ func (p *TickerDataType) IsKey(val string) bool {
 	return current == val
 }
 
-func (p *TickerDataType) Update() bool {
+func (p *tickerDataType) Update() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -241,7 +276,7 @@ func (p *TickerDataType) Update() bool {
 	return true
 }
 
-func (p *TickerDataType) FormatContent() string {
+func (p *tickerDataType) FormatContent() string {
 	raw := p.Get()
 	val, err := strconv.ParseFloat(raw, 64)
 	if err != nil {
@@ -264,7 +299,7 @@ func (p *TickerDataType) FormatContent() string {
 	}
 }
 
-func (p *TickerDataType) DidChange() bool {
+func (p *tickerDataType) DidChange() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -280,7 +315,7 @@ func (p *TickerDataType) DidChange() bool {
 	return false
 }
 
-func (p *TickerDataType) Serialize() tickerDataCache {
+func (p *tickerDataType) Serialize() tickerDataCache {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -304,4 +339,8 @@ func (p *TickerDataType) Serialize() tickerDataCache {
 
 func NewTickerDataCache() []tickerDataCache {
 	return []tickerDataCache{}
+}
+
+func NewTickerData() *tickerDataType {
+	return &tickerDataType{}
 }

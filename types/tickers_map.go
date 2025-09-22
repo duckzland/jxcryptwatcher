@@ -10,16 +10,16 @@ var BT tickersMapType
 
 type tickersMapType struct {
 	mu   sync.RWMutex
-	data []*TickerDataType
+	data []TickerData
 }
 
 func (pc *tickersMapType) Init() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-	pc.data = []*TickerDataType{}
+	pc.data = []TickerData{}
 }
 
-func (pc *tickersMapType) Set(data []*TickerDataType) {
+func (pc *tickersMapType) Set(data []TickerData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -30,12 +30,12 @@ func (pc *tickersMapType) Set(data []*TickerDataType) {
 	pc.data = data
 }
 
-func (pc *tickersMapType) Add(ticker *TickerDataType) {
+func (pc *tickersMapType) Add(ticker TickerData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
 	if pc.data == nil {
-		pc.data = []*TickerDataType{}
+		pc.data = []TickerData{}
 	}
 
 	ticker.Init()
@@ -55,22 +55,22 @@ func (pc *tickersMapType) Update(uuid string) bool {
 	return false
 }
 
-func (pc *tickersMapType) Get() []*TickerDataType {
+func (pc *tickersMapType) Get() []TickerData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	dataCopy := make([]*TickerDataType, len(pc.data))
+	dataCopy := make([]TickerData, len(pc.data))
 	copy(dataCopy, pc.data)
 	return dataCopy
 }
 
-func (pc *tickersMapType) GetData(uuid string) *TickerDataType {
+func (pc *tickersMapType) GetData(uuid string) TickerData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return pc.getDataUnsafe(uuid)
 }
 
-func (pc *tickersMapType) getDataUnsafe(uuid string) *TickerDataType {
+func (pc *tickersMapType) getDataUnsafe(uuid string) TickerData {
 	for _, tdt := range pc.data {
 		if tdt.IsID(uuid) {
 			return tdt
@@ -79,11 +79,11 @@ func (pc *tickersMapType) getDataUnsafe(uuid string) *TickerDataType {
 	return nil
 }
 
-func (pc *tickersMapType) GetDataByType(tickerType string) []*TickerDataType {
+func (pc *tickersMapType) GetDataByType(tickerType string) []TickerData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	var nd []*TickerDataType
+	var nd []TickerData
 	for _, tdt := range pc.data {
 		if tdt.IsType(tickerType) {
 			nd = append(nd, tdt)
@@ -108,7 +108,7 @@ func (pc *tickersMapType) Reset() {
 	}
 }
 
-func (pc *tickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *TickerDataType) bool) {
+func (pc *tickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt TickerData) bool) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -120,7 +120,7 @@ func (pc *tickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Tic
 	}
 }
 
-func (pc *tickersMapType) Hydrate(data []*TickerDataType) {
+func (pc *tickersMapType) Hydrate(data []TickerData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 	pc.data = data
@@ -143,7 +143,7 @@ func TickersInit() {
 	BT.Init()
 
 	if Config.CanDoMarketCap() {
-		tdt := &TickerDataType{}
+		tdt := NewTickerData()
 		tdt.SetTitle("Market Cap")
 		tdt.SetType("market_cap")
 		tdt.SetFormat("shortcurrency")
@@ -151,7 +151,7 @@ func TickersInit() {
 	}
 
 	if Config.CanDoCMC100() {
-		tdt := &TickerDataType{}
+		tdt := NewTickerData()
 		tdt.SetTitle("CMC100")
 		tdt.SetType("cmc100")
 		tdt.SetFormat("currency")
@@ -159,7 +159,7 @@ func TickersInit() {
 	}
 
 	if Config.CanDoAltSeason() {
-		tdt := &TickerDataType{}
+		tdt := NewTickerData()
 		tdt.SetTitle("Altcoin Index")
 		tdt.SetType("altcoin_index")
 		tdt.SetFormat("percentage")
@@ -167,7 +167,7 @@ func TickersInit() {
 	}
 
 	if Config.CanDoFearGreed() {
-		tdt := &TickerDataType{}
+		tdt := NewTickerData()
 		tdt.SetTitle("Fear & Greed")
 		tdt.SetType("feargreed")
 		tdt.SetFormat("percentage")

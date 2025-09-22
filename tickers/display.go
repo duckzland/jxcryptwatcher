@@ -27,7 +27,7 @@ type tickerDisplay struct {
 	state      int
 }
 
-func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
+func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 	uuid := JC.CreateUUID()
 	tdt.SetID(uuid)
 

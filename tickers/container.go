@@ -32,7 +32,7 @@ func (c *tickerContainer) CreateRenderer() fyne.WidgetRenderer {
 	}
 }
 
-func (c *tickerContainer) UpdateTickersContent(shouldUpdate func(pdt *JT.TickerDataType) bool) {
+func (c *tickerContainer) UpdateTickersContent(shouldUpdate func(pdt JT.TickerData) bool) {
 	for _, obj := range c.Objects {
 		if ticker, ok := obj.(*tickerDisplay); ok {
 
