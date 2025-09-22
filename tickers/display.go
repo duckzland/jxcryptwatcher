@@ -147,8 +147,6 @@ func (h *tickerDisplay) updateContent() {
 			shouldRefresh = true
 		}
 
-		h.background.FillColor = JC.TickerBG
-
 		if pkt.IsType("altcoin_index") {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
