@@ -124,7 +124,7 @@ func (c *panelContainer) DragEnd() {
 	}
 }
 
-func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelDataType) bool) {
+func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt JT.PanelData) bool) {
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*panelDisplay); ok {
 

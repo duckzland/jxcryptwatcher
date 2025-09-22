@@ -10,15 +10,15 @@ var BP panelsMapType = panelsMapType{}
 
 type panelsMapType struct {
 	mu   sync.RWMutex
-	data []*PanelDataType
+	data []PanelData
 	maps *cryptosMapType
 }
 
 func (pc *panelsMapType) Init() {
-	pc.SetData([]*PanelDataType{})
+	pc.SetData([]PanelData{})
 }
 
-func (pc *panelsMapType) SetData(data []*PanelDataType) {
+func (pc *panelsMapType) SetData(data []PanelData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -31,11 +31,11 @@ func (pc *panelsMapType) SetData(data []*PanelDataType) {
 	pc.data = data
 }
 
-func (pc *panelsMapType) GetData() []*PanelDataType {
+func (pc *panelsMapType) GetData() []PanelData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
-	dataCopy := make([]*PanelDataType, len(pc.data))
+	dataCopy := make([]PanelData, len(pc.data))
 	copy(dataCopy, pc.data)
 	return dataCopy
 }
@@ -71,15 +71,15 @@ func (pc *panelsMapType) Remove(uuid string) bool {
 	return true
 }
 
-func (pc *panelsMapType) Append(pk string) *PanelDataType {
+func (pc *panelsMapType) Append(pk string) PanelData {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
 	if pc.data == nil {
-		pc.data = []*PanelDataType{}
+		pc.data = []PanelData{}
 	}
 
-	ref := &PanelDataType{}
+	ref := &panelDataType{}
 	ref.Init()
 	ref.Update(pk)
 	ref.SetParent(pc)
@@ -118,7 +118,7 @@ func (pc *panelsMapType) Move(uuid string, newIndex int) bool {
 	return true
 }
 
-func (pc *panelsMapType) Update(pk string, index int) *PanelDataType {
+func (pc *panelsMapType) Update(pk string, index int) PanelData {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -171,7 +171,7 @@ func (pc *panelsMapType) GetIndex(uuid string) int {
 	return -1
 }
 
-func (pc *panelsMapType) GetDataByID(uuid string) *PanelDataType {
+func (pc *panelsMapType) GetDataByID(uuid string) PanelData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
@@ -184,7 +184,7 @@ func (pc *panelsMapType) GetDataByID(uuid string) *PanelDataType {
 	return nil
 }
 
-func (pc *panelsMapType) GetDataByIndex(index int) *PanelDataType {
+func (pc *panelsMapType) GetDataByIndex(index int) PanelData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
@@ -206,7 +206,7 @@ func (pc *panelsMapType) TotalData() int {
 	return len(pc.data)
 }
 
-func (pc *panelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *PanelDataType) bool) {
+func (pc *panelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt PanelData) bool) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
@@ -218,7 +218,7 @@ func (pc *panelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt *Pane
 	}
 }
 
-func (pc *panelsMapType) Hydrate(data []*PanelDataType) {
+func (pc *panelsMapType) Hydrate(data []PanelData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 

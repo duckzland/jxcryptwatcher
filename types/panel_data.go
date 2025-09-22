@@ -16,7 +16,43 @@ type panelDataCache struct {
 	OldKey string
 }
 
-type PanelDataType struct {
+type PanelData interface {
+	Init()
+	Set(val string)
+	Insert(panel panelType, rate float64)
+	Get() string
+	GetData() binding.String
+	GetStatus() int
+	SetStatus(val int)
+	GetID() string
+	SetID(val string)
+	GetOldKey() string
+	SetOldKey(val string)
+	GetParent() *panelsMapType
+	SetParent(val *panelsMapType)
+	IsStatus(val int) bool
+	IsID(val string) bool
+	IsKey(val string) bool
+	IsOldKey(val string) bool
+	HasParent() bool
+	GetValueString() string
+	GetOldValueString() string
+	RefreshData()
+	UsePanelKey() *panelKeyType
+	Update(pk string) bool
+	FormatTitle() string
+	FormatSubtitle() string
+	FormatBottomText() string
+	FormatContent() string
+	DidChange() bool
+	IsOnInitialValue() bool
+	IsValueIncrease() int
+	IsEqualContentString(pk string) bool
+	RefreshKey(key string) string
+	Serialize() panelDataCache
+}
+
+type panelDataType struct {
 	mu     sync.RWMutex
 	data   binding.String
 	oldKey string
@@ -25,7 +61,7 @@ type PanelDataType struct {
 	parent *panelsMapType
 }
 
-func (p *PanelDataType) Init() {
+func (p *panelDataType) Init() {
 	p.mu.Lock()
 	p.data = binding.NewString()
 	p.id = ""
@@ -34,7 +70,7 @@ func (p *PanelDataType) Init() {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) Set(val string) {
+func (p *panelDataType) Set(val string) {
 	p.mu.Lock()
 	old, err := p.data.Get()
 	if err == nil {
@@ -44,7 +80,7 @@ func (p *PanelDataType) Set(val string) {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) Insert(panel panelType, rate float64) {
+func (p *panelDataType) Insert(panel panelType, rate float64) {
 	p.mu.Lock()
 	old, err := p.data.Get()
 	if err == nil {
@@ -55,7 +91,7 @@ func (p *PanelDataType) Insert(panel panelType, rate float64) {
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) Get() string {
+func (p *panelDataType) Get() string {
 	p.mu.RLock()
 	val := ""
 	if p.data != nil {
@@ -68,77 +104,77 @@ func (p *PanelDataType) Get() string {
 	return val
 }
 
-func (p *PanelDataType) GetData() binding.String {
+func (p *panelDataType) GetData() binding.String {
 	p.mu.RLock()
 	d := p.data
 	p.mu.RUnlock()
 	return d
 }
 
-func (p *PanelDataType) GetStatus() int {
+func (p *panelDataType) GetStatus() int {
 	p.mu.RLock()
 	v := p.status
 	p.mu.RUnlock()
 	return v
 }
 
-func (p *PanelDataType) SetStatus(val int) {
+func (p *panelDataType) SetStatus(val int) {
 	p.mu.Lock()
 	p.status = val
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) GetID() string {
+func (p *panelDataType) GetID() string {
 	p.mu.RLock()
 	v := p.id
 	p.mu.RUnlock()
 	return v
 }
 
-func (p *PanelDataType) SetID(val string) {
+func (p *panelDataType) SetID(val string) {
 	p.mu.Lock()
 	p.id = val
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) GetOldKey() string {
+func (p *panelDataType) GetOldKey() string {
 	p.mu.RLock()
 	v := p.oldKey
 	p.mu.RUnlock()
 	return v
 }
 
-func (p *PanelDataType) SetOldKey(val string) {
+func (p *panelDataType) SetOldKey(val string) {
 	p.mu.Lock()
 	p.oldKey = val
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) GetParent() *panelsMapType {
+func (p *panelDataType) GetParent() *panelsMapType {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.parent
 }
 
-func (p *PanelDataType) SetParent(val *panelsMapType) {
+func (p *panelDataType) SetParent(val *panelsMapType) {
 	p.mu.Lock()
 	p.parent = val
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) IsStatus(val int) bool {
+func (p *panelDataType) IsStatus(val int) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.status == val
 }
 
-func (p *PanelDataType) IsID(val string) bool {
+func (p *panelDataType) IsID(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.id == val
 }
 
-func (p *PanelDataType) IsKey(val string) bool {
+func (p *panelDataType) IsKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
@@ -151,23 +187,23 @@ func (p *PanelDataType) IsKey(val string) bool {
 	return current == val
 }
 
-func (p *PanelDataType) IsOldKey(val string) bool {
+func (p *panelDataType) IsOldKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.oldKey == val
 }
 
-func (p *PanelDataType) HasParent() bool {
+func (p *panelDataType) HasParent() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.parent != nil
 }
 
-func (p *PanelDataType) GetValueString() string {
+func (p *panelDataType) GetValueString() string {
 	return p.UsePanelKey().GetValueString()
 }
 
-func (p *PanelDataType) GetOldValueString() string {
+func (p *panelDataType) GetOldValueString() string {
 	p.mu.RLock()
 	old := p.oldKey
 	p.mu.RUnlock()
@@ -175,18 +211,18 @@ func (p *PanelDataType) GetOldValueString() string {
 	return pko.GetValueString()
 }
 
-func (p *PanelDataType) RefreshData() {
+func (p *panelDataType) RefreshData() {
 	npk := p.UsePanelKey().UpdateValue(-3)
 	p.mu.Lock()
 	p.data.Set(npk)
 	p.mu.Unlock()
 }
 
-func (p *PanelDataType) UsePanelKey() *panelKeyType {
+func (p *panelDataType) UsePanelKey() *panelKeyType {
 	return &panelKeyType{value: p.Get()}
 }
 
-func (p *PanelDataType) Update(pk string) bool {
+func (p *panelDataType) Update(pk string) bool {
 	opk := p.Get()
 	npk := pk
 	pks := p.UsePanelKey()
@@ -222,7 +258,7 @@ func (p *PanelDataType) Update(pk string) bool {
 	return true
 }
 
-func (p *PanelDataType) FormatTitle() string {
+func (p *panelDataType) FormatTitle() string {
 	pk := p.UsePanelKey()
 	frac := int(JC.NumDecPlaces(pk.GetSourceValueFloat()))
 	if frac < 3 {
@@ -235,7 +271,7 @@ func (p *PanelDataType) FormatTitle() string {
 	)
 }
 
-func (p *PanelDataType) FormatSubtitle() string {
+func (p *panelDataType) FormatSubtitle() string {
 	pk := p.UsePanelKey()
 	return fmt.Sprintf("1 %s = %s %s",
 		pk.GetSourceSymbolString(),
@@ -244,7 +280,7 @@ func (p *PanelDataType) FormatSubtitle() string {
 	)
 }
 
-func (p *PanelDataType) FormatBottomText() string {
+func (p *panelDataType) FormatBottomText() string {
 	pk := p.UsePanelKey()
 	return fmt.Sprintf("1 %s = %s %s",
 		pk.GetTargetSymbolString(),
@@ -253,7 +289,7 @@ func (p *PanelDataType) FormatBottomText() string {
 	)
 }
 
-func (p *PanelDataType) FormatContent() string {
+func (p *panelDataType) FormatContent() string {
 	pk := p.UsePanelKey()
 	return fmt.Sprintf("%s %s",
 		pk.GetCalculatedValueFormattedString(),
@@ -261,7 +297,7 @@ func (p *PanelDataType) FormatContent() string {
 	)
 }
 
-func (p *PanelDataType) DidChange() bool {
+func (p *panelDataType) DidChange() bool {
 	p.mu.RLock()
 	old := p.oldKey
 	status := p.status
@@ -270,7 +306,7 @@ func (p *PanelDataType) DidChange() bool {
 	return old != p.Get() && opt.GetValueFloat() != -1 && status == JC.STATE_LOADED
 }
 
-func (p *PanelDataType) IsOnInitialValue() bool {
+func (p *panelDataType) IsOnInitialValue() bool {
 	p.mu.RLock()
 	old := p.oldKey
 	status := p.status
@@ -279,7 +315,7 @@ func (p *PanelDataType) IsOnInitialValue() bool {
 	return opt.GetValueFloat() == -1 && status == JC.STATE_LOADED
 }
 
-func (p *PanelDataType) IsValueIncrease() int {
+func (p *panelDataType) IsValueIncrease() int {
 	b := p.GetValueString()
 	a := p.GetOldValueString()
 
@@ -305,11 +341,11 @@ func (p *PanelDataType) IsValueIncrease() int {
 	return JC.VALUE_NO_CHANGE
 }
 
-func (p *PanelDataType) IsEqualContentString(pk string) bool {
+func (p *panelDataType) IsEqualContentString(pk string) bool {
 	return p.IsKey(pk)
 }
 
-func (p *PanelDataType) RefreshKey(key string) string {
+func (p *panelDataType) RefreshKey(key string) string {
 
 	if !p.parent.ValidateKey(key) {
 		return key
@@ -337,7 +373,7 @@ func (p *PanelDataType) RefreshKey(key string) string {
 	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 }
 
-func (p *PanelDataType) Serialize() panelDataCache {
+func (p *panelDataType) Serialize() panelDataCache {
 
 	return panelDataCache{
 		Status: p.GetStatus(),
@@ -348,4 +384,8 @@ func (p *PanelDataType) Serialize() panelDataCache {
 
 func NewPanelDataCache() []panelDataCache {
 	return []panelDataCache{}
+}
+
+func NewPanelData() *panelDataType {
+	return &panelDataType{}
 }

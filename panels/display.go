@@ -42,7 +42,7 @@ type panelDisplay struct {
 }
 
 func NewPanelDisplay(
-	pdt *JT.PanelDataType,
+	pdt JT.PanelData,
 	onEdit func(pk string, uuid string),
 	onDelete func(uuid string),
 ) *panelDisplay {
@@ -463,7 +463,7 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 }
 
 func (h *panelDisplay) syncPanelData() bool {
-	nd := []*JT.PanelDataType{}
+	nd := []JT.PanelData{}
 
 	for _, obj := range Grid.Objects {
 		if panel, ok := obj.(*panelDisplay); ok {

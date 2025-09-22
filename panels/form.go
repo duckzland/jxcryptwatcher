@@ -17,8 +17,8 @@ import (
 func NewPanelForm(
 	panelKey string,
 	uuid string,
-	onSave func(pdt *JT.PanelDataType),
-	onNew func(pdt *JT.PanelDataType),
+	onSave func(pdt JT.PanelData),
+	onNew func(pdt JT.PanelData),
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
 ) JW.DialogForm {
@@ -156,7 +156,7 @@ func NewPanelForm(
 		func(b bool) bool {
 			if b {
 				npk := JT.NewPanelKey()
-				var ns *JT.PanelDataType
+				var ns JT.PanelData
 
 				sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
 				tid := JT.BP.GetIdByDisplay(targetEntry.Text)

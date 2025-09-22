@@ -208,12 +208,12 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.StatusManager.SetNetworkStatus(false)
 
 		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
+			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
 
 			fyne.Do(func() {
-				JP.Grid.UpdatePanelsContent(func(pdt *JT.PanelDataType) bool {
+				JP.Grid.UpdatePanelsContent(func(pdt JT.PanelData) bool {
 					return true
 				})
 			})
@@ -226,12 +226,12 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.StatusManager.SetConfigStatus(false)
 
 		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt *JT.PanelDataType) bool {
+			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
 
 			fyne.Do(func() {
-				JP.Grid.UpdatePanelsContent(func(pdt *JT.PanelDataType) bool {
+				JP.Grid.UpdatePanelsContent(func(pdt JT.PanelData) bool {
 					return true
 				})
 			})
@@ -386,7 +386,7 @@ func RemovePanel(uuid string) {
 	JA.StatusManager.DetectData()
 }
 
-func SavePanelForm(pdt *JT.PanelDataType) {
+func SavePanelForm(pdt JT.PanelData) {
 
 	JC.Notify("Saving panel settings...")
 
@@ -460,10 +460,10 @@ func OpenNewPanelForm() {
 	d := JP.NewPanelForm(
 		"new",
 		"",
-		func(npdt *JT.PanelDataType) {
+		func(npdt JT.PanelData) {
 			SavePanelForm(npdt)
 		},
-		func(npdt *JT.PanelDataType) {
+		func(npdt JT.PanelData) {
 
 			JP.Grid.Add(CreatePanel(npdt))
 			JP.Grid.ForceRefresh()
@@ -505,7 +505,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 	JA.StatusManager.SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(pk, uuid,
-		func(npdt *JT.PanelDataType) {
+		func(npdt JT.PanelData) {
 			SavePanelForm(npdt)
 		},
 		nil,
@@ -625,6 +625,6 @@ func ScheduledNotificationReset() {
 	})
 }
 
-func CreatePanel(pkt *JT.PanelDataType) fyne.CanvasObject {
+func CreatePanel(pkt JT.PanelData) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
 }

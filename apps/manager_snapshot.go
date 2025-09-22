@@ -24,9 +24,9 @@ func (sm *snapshotManager) LoadPanels() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var restored []*JT.PanelDataType
+	var restored []JT.PanelData
 	for _, c := range caches {
-		p := &JT.PanelDataType{}
+		p := JT.NewPanelData()
 
 		if !p.GetParent().ValidateKey(c.Key) {
 			continue

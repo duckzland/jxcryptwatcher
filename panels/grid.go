@@ -10,7 +10,7 @@ import (
 var dragDropZones []*panelDropZone
 var Grid *panelContainer = &panelContainer{}
 
-type CreatePanelFunc func(*JT.PanelDataType) fyne.CanvasObject
+type CreatePanelFunc func(JT.PanelData) fyne.CanvasObject
 
 type panelDropZone struct {
 	top    float32

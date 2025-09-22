@@ -58,7 +58,7 @@ func (p *panelsType) SaveFile(maps *panelsMapType) bool {
 	defer panelsMu.RUnlock()
 
 	maps.mu.RLock()
-	data := make([]*PanelDataType, len(maps.GetData()))
+	data := make([]PanelData, len(maps.GetData()))
 	copy(data, maps.GetData())
 	maps.mu.RUnlock()
 
