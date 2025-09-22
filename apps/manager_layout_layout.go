@@ -57,9 +57,9 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		topBarSize := fyne.NewSize(topBarWidth, topHeight.Height)
 		topBarPos := fyne.NewPos(tickerWidth+2*padding, topBarY)
 
-		// if a.topBar.Size() != topBarSize {
-		a.topBar.Resize(topBarSize)
-		// }
+		if a.topBar.Size() != topBarSize {
+			a.topBar.Resize(topBarSize)
+		}
 
 		if a.topBar.Position() != topBarPos {
 			a.topBar.Move(topBarPos)
@@ -71,9 +71,9 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		topBarSize := fyne.NewSize(size.Width-2*padding, topHeight.Height)
 		topBarPos := fyne.NewPos(padding, padding)
 
-		// if a.topBar.Size() != topBarSize {
-		a.topBar.Resize(topBarSize)
-		// }
+		if a.topBar.Size() != topBarSize {
+			a.topBar.Resize(topBarSize)
+		}
 
 		if a.topBar.Position() != topBarPos {
 			a.topBar.Move(topBarPos)
