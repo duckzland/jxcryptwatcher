@@ -98,6 +98,7 @@ func (h *tickerDisplay) updateContent() {
 	}
 
 	shouldRefresh := h.state != pkt.GetStatus()
+	startBG := h.background.FillColor
 	h.state = pkt.GetStatus()
 
 	switch h.state {
@@ -145,8 +146,6 @@ func (h *tickerDisplay) updateContent() {
 			h.content.Show()
 			shouldRefresh = true
 		}
-
-		startBG := h.background.FillColor
 
 		h.background.FillColor = JC.TickerBG
 
@@ -199,10 +198,10 @@ func (h *tickerDisplay) updateContent() {
 				h.background.FillColor = JC.RedColor
 			}
 		}
+	}
 
-		if h.background.FillColor != startBG {
-			shouldRefresh = true
-		}
+	if h.background.FillColor != startBG {
+		shouldRefresh = true
 	}
 
 	if shouldRefresh {

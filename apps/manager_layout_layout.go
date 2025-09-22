@@ -39,41 +39,41 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		}
 
 		topBarWidth := size.Width - tickerWidth - 3*padding
-		topHeight := fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height)
+		topHeight := fyne.NewSize(topBarWidth, fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height))
 
-		ntPos := fyne.NewPos(padding, 0)
-		if a.tickers.Position() != ntPos {
-			a.tickers.Move(ntPos)
+		tickerSize := fyne.NewSize(tickerWidth, topHeight.Height)
+		tickerPos := fyne.NewPos(padding, 0)
+
+		if a.tickers.Size() != tickerSize {
+			a.tickers.Resize(tickerSize)
 		}
 
-		ntSize := fyne.NewSize(tickerWidth, topHeight)
-		if a.tickers.Size() != ntSize {
-			a.tickers.Resize(ntSize)
+		if a.tickers.Position() != tickerPos {
+			a.tickers.Move(tickerPos)
 		}
 
 		topBarHeight := a.topBar.MinSize().Height
-		topBarY := (topHeight - topBarHeight) / 2
+		topBarY := (topHeight.Height - topBarHeight) / 2
+		topBarSize := fyne.NewSize(topBarWidth, topHeight.Height)
+		topBarPos := fyne.NewPos(tickerWidth+2*padding, topBarY)
 
-		tpPos := fyne.NewPos(tickerWidth+2*padding, topBarY)
-		if a.topBar.Position() != tpPos {
-			a.topBar.Move(tpPos)
+		// if a.topBar.Size() != topBarSize {
+		a.topBar.Resize(topBarSize)
+		// }
+
+		if a.topBar.Position() != topBarPos {
+			a.topBar.Move(topBarPos)
 		}
 
-		tpSize := fyne.NewSize(topBarWidth, topHeight)
-		if a.topBar.Size() != tpSize {
-			a.topBar.Resize(tpSize)
-		}
-
-		contentY = topHeight
+		contentY = topHeight.Height
 	} else {
-
 		topHeight = a.topBar.MinSize()
 		topBarSize := fyne.NewSize(size.Width-2*padding, topHeight.Height)
 		topBarPos := fyne.NewPos(padding, padding)
 
-		if a.topBar.Size() != topBarSize {
-			a.topBar.Resize(topBarSize)
-		}
+		// if a.topBar.Size() != topBarSize {
+		a.topBar.Resize(topBarSize)
+		// }
 
 		if a.topBar.Position() != topBarPos {
 			a.topBar.Move(topBarPos)
@@ -83,38 +83,34 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 
 		if a.tickers != nil && len(a.tickers.Objects) > 0 {
 			tickerHeight = a.tickers.MinSize()
+			tickerSize := fyne.NewSize(size.Width-2*padding, tickerHeight.Height)
+			tickerPos := fyne.NewPos(padding, contentY)
 
-			ntPos := fyne.NewPos(padding, contentY)
-			if a.tickers.Position() != ntPos {
-				a.tickers.Move(ntPos)
+			if a.tickers.Size() != tickerSize {
+				a.tickers.Resize(tickerSize)
 			}
 
-			ntSize := fyne.NewSize(size.Width-2*padding, tickerHeight.Height)
-			if a.tickers.Size() != ntSize {
-				a.tickers.Resize(ntSize)
+			if a.tickers.Position() != tickerPos {
+				a.tickers.Move(tickerPos)
 			}
-
 			contentY += tickerHeight.Height
 		}
 	}
 
-	contentHeight := size.Height - contentY - padding
-
-	ctPos := fyne.NewPos(padding, contentY)
-	if a.content.Position() != ctPos {
-		a.content.Move(ctPos)
+	contentSize := fyne.NewSize(size.Width-2*padding, size.Height-contentY-padding)
+	contentPos := fyne.NewPos(padding, contentY)
+	if a.content.Size() != contentSize {
+		a.content.Resize(contentSize)
 	}
 
-	ctSize := fyne.NewSize(size.Width-2*padding, contentHeight)
-	if a.content.Size() != ctSize {
-		a.content.Resize(ctSize)
+	if a.content.Position() != contentPos {
+		a.content.Move(contentPos)
 	}
 
 	if a.placeholder != nil {
-		pPos := fyne.NewPos(0, -JC.PanelHeight)
-
-		if a.placeholder.Position() != pPos {
-			a.placeholder.Move(pPos)
+		placeholderPos := fyne.NewPos(0, -JC.PanelHeight)
+		if a.placeholder.Position() != placeholderPos {
+			a.placeholder.Move(placeholderPos)
 		}
 	}
 
@@ -124,13 +120,13 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		}
 	}
 
-	JC.MainLayoutContentWidth = size.Width - 2*padding
-	JC.MainLayoutContentHeight = contentHeight
+	JC.MainLayoutContentWidth = contentSize.Width
+	JC.MainLayoutContentHeight = contentSize.Height
 
 	if a.parent != nil {
 		a.parent.SetMaxOffset(-1)
 		a.parent.SetContentTopY(contentY)
-		a.parent.SetContentBottomY(contentY + contentHeight)
+		a.parent.SetContentBottomY(contentY + contentSize.Height)
 	}
 }
 
