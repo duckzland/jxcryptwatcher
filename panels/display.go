@@ -252,6 +252,7 @@ func (h *panelDisplay) updateContent() {
 	}
 
 	shouldRefresh := h.status != pkt.GetStatus()
+	bgState := h.background.FillColor
 	h.status = pkt.GetStatus()
 
 	switch h.status {
@@ -298,7 +299,6 @@ func (h *panelDisplay) updateContent() {
 			}
 
 			JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
-			shouldRefresh = true
 
 		} else if pkt.IsOnInitialValue() {
 			h.background.FillColor = JC.PanelBG
@@ -345,6 +345,10 @@ func (h *panelDisplay) updateContent() {
 		}
 
 		h.EnableClick()
+	}
+
+	if h.background.FillColor != bgState {
+		shouldRefresh = true
 	}
 
 	if shouldRefresh {
