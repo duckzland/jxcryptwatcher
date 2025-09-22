@@ -29,10 +29,10 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	l.cWidth = size.Width
 	l.cHeight = size.Height
 
-	// Background
 	if l.background.Size() != size {
 		l.background.Resize(size)
 	}
+
 	if l.background.Position() != fyne.NewPos(0, 0) {
 		l.background.Move(fyne.NewPos(0, 0))
 	}
@@ -45,12 +45,15 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	titleSize := l.title.MinSize()
 	titleTargetSize := fyne.NewSize(w, titleSize.Height)
 	titleTargetPos := fyne.NewPos(x, y)
+
 	if l.title.Size() != titleTargetSize {
 		l.title.Resize(titleTargetSize)
 	}
+
 	if l.title.Position() != titleTargetPos {
 		l.title.Move(titleTargetPos)
 	}
+
 	y += titleSize.Height + l.padding
 
 	// Top content
@@ -58,12 +61,15 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		topSize := top.MinSize()
 		targetSize := fyne.NewSize(w, topSize.Height)
 		targetPos := fyne.NewPos(x, y)
+
 		if top.Size() != targetSize {
 			top.Resize(targetSize)
 		}
+
 		if top.Position() != targetPos {
 			top.Move(targetPos)
 		}
+
 		y += topSize.Height + l.padding
 	}
 
@@ -71,12 +77,15 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	formSize := l.form.MinSize()
 	formTargetSize := fyne.NewSize(w, formSize.Height)
 	formTargetPos := fyne.NewPos(x, y)
+
 	if l.form.Size() != formTargetSize {
 		l.form.Resize(formTargetSize)
 	}
+
 	if l.form.Position() != formTargetPos {
 		l.form.Move(formTargetPos)
 	}
+
 	y += formSize.Height + l.padding
 
 	// Bottom content
@@ -84,12 +93,15 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		bottomSize := bottom.MinSize()
 		targetSize := fyne.NewSize(w, bottomSize.Height)
 		targetPos := fyne.NewPos(x, y)
+
 		if bottom.Size() != targetSize {
 			bottom.Resize(targetSize)
 		}
+
 		if bottom.Position() != targetPos {
 			bottom.Move(targetPos)
 		}
+
 		y += bottomSize.Height + l.padding
 	}
 
@@ -97,12 +109,15 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	buttonSize := l.buttons.MinSize()
 	buttonX := x + (w-buttonSize.Width)/2
 	buttonTargetPos := fyne.NewPos(buttonX, y)
+
 	if l.buttons.Size() != buttonSize {
 		l.buttons.Resize(buttonSize)
 	}
+
 	if l.buttons.Position() != buttonTargetPos {
 		l.buttons.Move(buttonTargetPos)
 	}
+
 	y += buttonSize.Height + l.padding
 }
 

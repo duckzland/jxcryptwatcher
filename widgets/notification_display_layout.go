@@ -12,14 +12,19 @@ type notificationDisplayLayout struct {
 
 func (r *notificationDisplayLayout) Layout(size fyne.Size) {
 	p := r.container.padding
-	r.text.Move(fyne.NewPos(p, 0))
-	r.text.Resize(fyne.NewSize(size.Width-2*p, size.Height))
+	pos := fyne.NewPos(p, 0)
+	if r.text.Position() != pos {
+		r.text.Move(fyne.NewPos(p, 0))
+	}
+
+	pz := fyne.NewSize(size.Width-2*p, size.Height)
+	if r.text.Size() != pz {
+		r.text.Resize(pz)
+	}
 }
 
 func (r *notificationDisplayLayout) MinSize() fyne.Size {
-	min := r.text.MinSize()
-	p := r.container.padding
-	return fyne.NewSize(min.Width+2*p, min.Height)
+	return fyne.NewSize(200, 20)
 }
 
 func (r *notificationDisplayLayout) Refresh() {

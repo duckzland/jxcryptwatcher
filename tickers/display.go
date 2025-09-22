@@ -24,6 +24,7 @@ type tickerDisplay struct {
 	title      *canvas.Text
 	content    *canvas.Text
 	status     *canvas.Text
+	state      int
 }
 
 func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
@@ -96,7 +97,10 @@ func (h *tickerDisplay) updateContent() {
 		return
 	}
 
-	switch pkt.GetStatus() {
+	shouldRefresh := h.state != pkt.GetStatus()
+	h.state = pkt.GetStatus()
+
+	switch h.state {
 	case JC.STATE_ERROR:
 		h.status.Text = "Error loading data"
 		h.status.Show()
@@ -112,11 +116,38 @@ func (h *tickerDisplay) updateContent() {
 		h.background.FillColor = JC.PanelBG
 
 	default:
-		h.title.Text = JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.TextSize)
-		h.content.Text = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
-		h.status.Hide()
-		h.title.Show()
-		h.content.Show()
+
+		title := JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.TextSize)
+		content := JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
+
+		if h.title.Text != title {
+			h.title.Text = title
+			shouldRefresh = true
+		}
+
+		if h.content.Text != content {
+			h.content.Text = content
+			shouldRefresh = true
+			JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
+		}
+
+		if h.status.Visible() {
+			h.status.Hide()
+			shouldRefresh = true
+		}
+
+		if !h.title.Visible() {
+			h.title.Show()
+			shouldRefresh = true
+		}
+
+		if !h.content.Visible() {
+			h.content.Show()
+			shouldRefresh = true
+		}
+
+		startBG := h.background.FillColor
+
 		h.background.FillColor = JC.TickerBG
 
 		if pkt.IsType("altcoin_index") {
@@ -168,8 +199,13 @@ func (h *tickerDisplay) updateContent() {
 				h.background.FillColor = JC.RedColor
 			}
 		}
+
+		if h.background.FillColor != startBG {
+			shouldRefresh = true
+		}
 	}
 
-	JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
-	h.Refresh()
+	if shouldRefresh {
+		h.Refresh()
+	}
 }
