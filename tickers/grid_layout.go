@@ -104,8 +104,14 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			g.rowCount++
 		}
 
-		child.Move(fyne.NewPos(x, y))
-		child.Resize(g.dynCellSize)
+		pos := fyne.NewPos(x, y)
+		if child.Position() != pos {
+			child.Move(pos)
+		}
+
+		if child.Size() != g.dynCellSize {
+			child.Resize(g.dynCellSize)
+		}
 
 		if (i+1)%g.colCount == 0 {
 			y += g.dynCellSize.Height + vPad

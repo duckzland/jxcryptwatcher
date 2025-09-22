@@ -128,12 +128,10 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 		if child.Position() != pos {
 			child.Move(pos)
-			JC.Logln("Grid layout moving child")
 		}
 
 		if child.Size() != g.dynCellSize {
 			child.Resize(g.dynCellSize)
-			JC.Logln("Grid layout resizing child")
 		}
 
 		// End of column, prepare to move down the next item
