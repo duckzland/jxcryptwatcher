@@ -149,7 +149,7 @@ func NewpanelContainer(
 
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*panelDisplay); ok {
-			panel.container = c
+			panel.parent = c
 		}
 	}
 

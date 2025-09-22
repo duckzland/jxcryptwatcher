@@ -48,7 +48,6 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 	tl.content.TextStyle = fyne.TextStyle{Bold: true}
 	tl.content.TextSize = JC.TickerContentSize
 
-	tl.background.SetMinSize(fyne.NewSize(100, 100))
 	tl.background.CornerRadius = JC.TickerBorderRadius
 
 	str := tdt.GetData()
@@ -69,10 +68,7 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 
 	ticker.ExtendBaseWidget(ticker)
 
-	str.AddListener(binding.NewDataListener(func() {
-		ticker.updateContent()
-		JA.StartFlashingText(ticker.content, 50*time.Millisecond, JC.TextColor, 1)
-	}))
+	str.AddListener(binding.NewDataListener(ticker.updateContent))
 
 	ticker.updateContent()
 	JA.FadeInBackground(ticker.background, 100*time.Millisecond, nil)
@@ -173,4 +169,7 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 	}
+
+	JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
+	h.Refresh()
 }
