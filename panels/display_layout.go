@@ -1,6 +1,8 @@
 package panels
 
 import (
+	JC "jxwatcher/core"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 )
@@ -59,18 +61,5 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 }
 
 func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	width := float32(0)
-	height := float32(0)
-
-	for _, obj := range objects[1:5] {
-		if obj.Visible() && obj.MinSize().Height > 0 {
-			size := obj.MinSize()
-			if size.Width > width {
-				width = size.Width
-			}
-			height += size.Height
-		}
-	}
-
-	return fyne.NewSize(width, height)
+	return fyne.NewSize(JC.PanelWidth, JC.PanelHeight)
 }
