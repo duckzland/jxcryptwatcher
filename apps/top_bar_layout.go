@@ -12,9 +12,11 @@ type topBarLayout struct {
 }
 
 func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-
 	// Apps is not ready yet!
-	if LayoutManager == nil || LayoutManager.ContainerSize().Width <= 0 || LayoutManager.ContainerSize().Height <= 0 {
+	if LayoutManager == nil ||
+		LayoutManager.ContainerSize().Width <= 0 ||
+		LayoutManager.ContainerSize().Height <= 0 ||
+		size.Width <= 0 || size.Height <= 0 {
 		return
 	}
 
@@ -31,19 +33,15 @@ func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	s.dirty = true
 	s.rows = 1
 
-	// First object fills the rest of the space
 	remaining := s.cWidth - (s.fixedWidth+s.spacer)*float32(count-1)
 
 	if remaining < 500 {
-
 		s.rows = 2
 
-		// Layout objects
 		curPos := float32(0)
 		y := float32(0)
 		for i, obj := range objects {
-			var w float32
-			w = s.fixedWidth
+			w := s.fixedWidth
 			y = 0
 
 			switch i {
@@ -51,21 +49,24 @@ func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 				w = s.cWidth
 				y = s.fixedWidth + s.spacer
 				curPos = 0
-
 			case 1:
 				curPos += remaining/2 + s.spacer
-
 			default:
 				curPos += w + s.spacer
 			}
 
-			obj.Resize(fyne.NewSize(w, s.fixedWidth))
-			obj.Move(fyne.NewPos(curPos, y))
+			size := fyne.NewSize(w, s.fixedWidth)
+			pos := fyne.NewPos(curPos, y)
+
+			if obj.Size() != size {
+				obj.Resize(size)
+			}
+
+			if obj.Position() != pos {
+				obj.Move(pos)
+			}
 		}
-
 	} else {
-
-		// Layout objects
 		curPos := float32(0)
 		for i, obj := range objects {
 			var w float32
@@ -75,8 +76,16 @@ func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 				w = s.fixedWidth
 			}
 
-			obj.Resize(fyne.NewSize(w, s.fixedWidth))
-			obj.Move(fyne.NewPos(curPos, 0))
+			size := fyne.NewSize(w, s.fixedWidth)
+			pos := fyne.NewPos(curPos, 0)
+
+			if obj.Size() != size {
+				obj.Resize(size)
+			}
+
+			if obj.Position() != pos {
+				obj.Move(pos)
+			}
 
 			curPos += w + s.spacer
 		}
