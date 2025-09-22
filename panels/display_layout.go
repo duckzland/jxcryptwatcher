@@ -9,10 +9,10 @@ import (
 
 type panelDisplayLayout struct {
 	background *canvas.Rectangle
-	title      *canvas.Text
-	subtitle   *canvas.Text
-	content    *canvas.Text
-	bottomText *canvas.Text
+	title      *panelText
+	content    *panelText
+	subtitle   *panelText
+	bottomText *panelText
 	action     *panelAction
 }
 

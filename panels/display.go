@@ -35,10 +35,10 @@ type panelDisplay struct {
 	dragging     bool
 	background   *canvas.Rectangle
 	action       fyne.CanvasObject
-	title        *canvas.Text
-	content      *canvas.Text
-	subtitle     *canvas.Text
-	bottomText   *canvas.Text
+	title        *panelText
+	content      *panelText
+	subtitle     *panelText
+	bottomText   *panelText
 }
 
 func NewPanelDisplay(
@@ -52,28 +52,12 @@ func NewPanelDisplay(
 	str := pdt.GetData()
 
 	pl := &panelDisplayLayout{
-		title:      canvas.NewText("", JC.TextColor),
-		subtitle:   canvas.NewText("", JC.TextColor),
-		content:    canvas.NewText("", JC.TextColor),
+		title:      NewPanelText("", JC.TextColor, JC.PanelTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		subtitle:   NewPanelText("", JC.TextColor, JC.PanelSubTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		content:    NewPanelText("", JC.TextColor, JC.PanelContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		background: canvas.NewRectangle(JC.PanelBG),
-		bottomText: canvas.NewText("", JC.TextColor),
+		bottomText: NewPanelText("", JC.TextColor, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
-
-	pl.title.Alignment = fyne.TextAlignCenter
-	pl.title.TextStyle = fyne.TextStyle{Bold: true}
-	pl.title.TextSize = JC.PanelTitleSize
-
-	pl.subtitle.Alignment = fyne.TextAlignCenter
-	pl.subtitle.TextSize = JC.PanelSubTitleSize
-
-	pl.content.Alignment = fyne.TextAlignCenter
-	pl.content.TextStyle = fyne.TextStyle{Bold: true}
-	pl.content.TextSize = JC.PanelContentSize
-
-	pl.background.CornerRadius = JC.PanelBorderRadius
-
-	pl.bottomText.Alignment = fyne.TextAlignCenter
-	pl.bottomText.TextSize = JC.PanelBottomTextSize
 
 	pl.action = NewPanelAction(
 		func() {
@@ -241,117 +225,77 @@ func (h *panelDisplay) updateContent() {
 
 	pwidth := h.Size().Width
 	if pwidth != 0 && pwidth < JC.PanelWidth {
-		h.title.TextSize = JC.PanelTitleSizeSmall
-		h.subtitle.TextSize = JC.PanelSubTitleSizeSmall
-		h.bottomText.TextSize = JC.PanelBottomTextSizeSmall
-		h.content.TextSize = JC.PanelContentSizeSmall
+		h.title.SetTextSize(JC.PanelTitleSizeSmall)
+		h.subtitle.SetTextSize(JC.PanelSubTitleSizeSmall)
+		h.bottomText.SetTextSize(JC.PanelBottomTextSizeSmall)
+		h.content.SetTextSize(JC.PanelContentSizeSmall)
 	}
 
 	if !JT.BP.ValidatePanel(pkt.Get()) {
 		pkt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
-	shouldRefresh := h.status != pkt.GetStatus()
-	bgState := h.background.FillColor
+	title := ""
+	subtitle := ""
+	bottomText := ""
+	content := ""
+	background := JC.PanelBG
+	status := h.status
+
 	h.status = pkt.GetStatus()
 
 	switch h.status {
 	case JC.STATE_ERROR:
-		h.title.Text = "Error loading data"
-		h.subtitle.Hide()
-		h.bottomText.Hide()
-		h.content.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.ErrorColor
+		title = "Error loading data"
+		background = JC.ErrorColor
 
 	case JC.STATE_FETCHING_NEW:
-		h.title.Text = "Fetching Rates..."
-		h.subtitle.Hide()
-		h.bottomText.Hide()
-		h.content.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.PanelBG
+		title = "Fetching Rates..."
 
 	case JC.STATE_LOADING:
-		h.title.Text = "Loading..."
-		h.subtitle.Hide()
-		h.bottomText.Hide()
-		h.content.Hide()
-		h.EnableClick()
-		h.background.FillColor = JC.PanelBG
+		title = "Loading..."
 
 	case JC.STATE_BAD_CONFIG:
-		h.title.Text = "Invalid Panel"
-		h.subtitle.Hide()
-		h.bottomText.Hide()
-		h.content.Hide()
-		h.background.FillColor = JC.ErrorColor
-		h.EnableClick()
+		title = "Invalid Panel"
+		background = JC.ErrorColor
 
 	case JC.STATE_LOADED:
 		if pkt.DidChange() {
 			switch pkt.IsValueIncrease() {
 			case JC.VALUE_INCREASE:
-				h.background.FillColor = JC.GreenColor
+				background = JC.GreenColor
 
 			case JC.VALUE_DECREASE:
-				h.background.FillColor = JC.RedColor
+				background = JC.RedColor
 			}
 
-			JA.StartFlashingText(h.content, 50*time.Millisecond, JC.TextColor, 1)
-
 		} else if pkt.IsOnInitialValue() {
-			h.background.FillColor = JC.PanelBG
+			background = JC.PanelBG
 		}
 
-		title := JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.TextSize)
-		subtitle := JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.TextSize)
-		bottomText := JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.TextSize)
-		content := JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
-
-		if h.title.Text != title {
-			h.title.Text = title
-			shouldRefresh = true
-		}
-
-		if h.subtitle.Text != subtitle {
-			h.subtitle.Text = subtitle
-			shouldRefresh = true
-		}
-
-		if h.bottomText.Text != bottomText {
-			h.bottomText.Text = bottomText
-			shouldRefresh = true
-		}
-
-		if h.content.Text != content {
-			h.content.Text = content
-			shouldRefresh = true
-		}
-
-		if !h.subtitle.Visible() {
-			h.subtitle.Show()
-			shouldRefresh = true
-		}
-
-		if !h.bottomText.Visible() {
-			h.bottomText.Show()
-			shouldRefresh = true
-		}
-
-		if !h.content.Visible() {
-			h.content.Show()
-			shouldRefresh = true
-		}
-
-		h.EnableClick()
+		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize)
+		subtitle = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.GetText().TextSize)
+		bottomText = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.GetText().TextSize)
+		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize)
 	}
 
-	if h.background.FillColor != bgState {
-		shouldRefresh = true
+	h.EnableClick()
+
+	h.title.SetText(title)
+	h.subtitle.SetText(subtitle)
+	h.bottomText.SetText(bottomText)
+	h.content.SetText(content)
+
+	if pkt.DidChange() {
+		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.TextColor, 1)
 	}
 
-	if shouldRefresh {
+	if h.background.FillColor != background {
+		h.background.FillColor = background
+		canvas.Refresh(h.background)
+	}
+
+	if h.status != status {
 		h.Refresh()
 	}
 }
