@@ -138,6 +138,7 @@ func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt *JT.PanelData
 		}
 	}
 }
+
 func NewpanelContainer(
 	layout *panelGridLayout,
 	Objects []fyne.CanvasObject,

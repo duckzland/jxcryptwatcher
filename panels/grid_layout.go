@@ -98,7 +98,9 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
 
 	if JA.DragPlaceholder != nil {
-		JA.DragPlaceholder.Resize(g.dynCellSize)
+		if JA.DragPlaceholder.Size() != g.dynCellSize {
+			JA.DragPlaceholder.Resize(g.dynCellSize)
+		}
 	}
 
 	for _, child := range objects {
@@ -122,8 +124,17 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 		dragDropZones = append(dragDropZones, &dz)
 
-		child.Move(fyne.NewPos(x, y))
-		child.Resize(g.dynCellSize)
+		pos := fyne.NewPos(x, y)
+
+		if child.Position() != pos {
+			child.Move(pos)
+			JC.Logln("Grid layout moving child")
+		}
+
+		if child.Size() != g.dynCellSize {
+			child.Resize(g.dynCellSize)
+			JC.Logln("Grid layout resizing child")
+		}
 
 		// End of column, prepare to move down the next item
 		if (i+1)%g.colCount == 0 {
