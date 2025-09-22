@@ -9,9 +9,9 @@ import (
 
 type tickerLayout struct {
 	background *canvas.Rectangle
-	title      *canvas.Text
-	content    *canvas.Text
-	status     *canvas.Text
+	title      *tickerText
+	content    *tickerText
+	status     *tickerText
 }
 
 func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -19,7 +19,7 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	spacer := float32(-2)
+	spacer := float32(-4)
 
 	if tl.background.Size() != size {
 		tl.background.Resize(size)
@@ -31,7 +31,8 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	centerItems := []fyne.CanvasObject{}
 	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
-		if obj.Visible() && obj.MinSize().Height > 0 {
+		sz := obj.MinSize()
+		if obj.Visible() && (sz.Height > 0 && sz.Width > 0) {
 			centerItems = append(centerItems, obj)
 		}
 	}

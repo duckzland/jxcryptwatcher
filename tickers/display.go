@@ -21,9 +21,9 @@ type tickerDisplay struct {
 	tag        string
 	container  fyne.CanvasObject
 	background *canvas.Rectangle
-	title      *canvas.Text
-	content    *canvas.Text
-	status     *canvas.Text
+	title      *tickerText
+	content    *tickerText
+	status     *tickerText
 	state      int
 }
 
@@ -33,21 +33,10 @@ func NewtickerDisplay(tdt *JT.TickerDataType) *tickerDisplay {
 
 	tl := &tickerLayout{
 		background: canvas.NewRectangle(JC.TickerBG),
-		title:      canvas.NewText("", JC.TextColor),
-		content:    canvas.NewText("", JC.TextColor),
-		status:     canvas.NewText("", JC.TextColor),
+		title:      NewTickerText("", JC.TextColor, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		status:     NewTickerText("", JC.TextColor, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		content:    NewTickerText("", JC.TextColor, JC.TickerContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 	}
-
-	tl.title.Alignment = fyne.TextAlignCenter
-	tl.title.TextSize = JC.TickerTitleSize
-
-	tl.status.Alignment = fyne.TextAlignCenter
-	tl.status.TextStyle = fyne.TextStyle{Bold: true}
-	tl.status.TextSize = JC.TickerTitleSize
-
-	tl.content.Alignment = fyne.TextAlignCenter
-	tl.content.TextStyle = fyne.TextStyle{Bold: true}
-	tl.content.TextSize = JC.TickerContentSize
 
 	tl.background.CornerRadius = JC.TickerBorderRadius
 
@@ -97,67 +86,43 @@ func (h *tickerDisplay) updateContent() {
 		return
 	}
 
-	shouldRefresh := h.state != pkt.GetStatus()
-	startBG := h.background.FillColor
+	title := ""
+	status := ""
+	content := ""
+	state := h.state
+	background := JC.PanelBG
+	isNewContent := false
 	h.state = pkt.GetStatus()
 
 	switch h.state {
 	case JC.STATE_ERROR:
-		h.status.Text = "Error loading data"
-		h.status.Show()
-		h.title.Hide()
-		h.content.Hide()
-		h.background.FillColor = JC.ErrorColor
+		status = "Error loading data"
+		background = JC.ErrorColor
 
 	case JC.STATE_LOADING:
-		h.status.Text = "Loading..."
-		h.status.Show()
-		h.title.Hide()
-		h.content.Hide()
-		h.background.FillColor = JC.PanelBG
+		status = "Loading..."
+		background = JC.PanelBG
 
 	default:
 
-		title := JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.TextSize)
-		content := JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
+		title = JC.TruncateText(pkt.GetTitle(), pwidth-20, h.title.GetText().TextSize)
+		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize)
 
-		if h.title.Text != title {
-			h.title.Text = title
-			shouldRefresh = true
-		}
-
-		if h.content.Text != content {
-			h.content.Text = content
-			shouldRefresh = true
-			JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.TextSize)
-		}
-
-		if h.status.Visible() {
-			h.status.Hide()
-			shouldRefresh = true
-		}
-
-		if !h.title.Visible() {
-			h.title.Show()
-			shouldRefresh = true
-		}
-
-		if !h.content.Visible() {
-			h.content.Show()
-			shouldRefresh = true
+		if h.content.GetText().Text != content {
+			isNewContent = true
 		}
 
 		if pkt.IsType("altcoin_index") {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case percentage >= 75:
-				h.background.FillColor = JC.BlueColor
+				background = JC.BlueColor
 			case percentage >= 50:
-				h.background.FillColor = JC.LightPurpleColor
+				background = JC.LightPurpleColor
 			case percentage >= 25:
-				h.background.FillColor = JC.LightOrangeColor
+				background = JC.LightOrangeColor
 			default:
-				h.background.FillColor = JC.OrangeColor
+				background = JC.OrangeColor
 			}
 		}
 
@@ -165,15 +130,15 @@ func (h *tickerDisplay) updateContent() {
 			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case index >= 75:
-				h.background.FillColor = JC.GreenColor
+				background = JC.GreenColor
 			case index >= 55:
-				h.background.FillColor = JC.TealGreenColor
+				background = JC.TealGreenColor
 			case index >= 45:
-				h.background.FillColor = JC.YellowColor
+				background = JC.YellowColor
 			case index >= 25:
-				h.background.FillColor = JC.OrangeColor
+				background = JC.OrangeColor
 			default:
-				h.background.FillColor = JC.RedColor
+				background = JC.RedColor
 			}
 		}
 
@@ -181,9 +146,9 @@ func (h *tickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("market_cap_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index > 0 {
-				h.background.FillColor = JC.GreenColor
+				background = JC.GreenColor
 			} else if index < 0 {
-				h.background.FillColor = JC.RedColor
+				background = JC.RedColor
 			}
 		}
 
@@ -191,18 +156,27 @@ func (h *tickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index >= 0 {
-				h.background.FillColor = JC.GreenColor
+				background = JC.GreenColor
 			} else if index < 0 {
-				h.background.FillColor = JC.RedColor
+				background = JC.RedColor
 			}
 		}
 	}
 
-	if h.background.FillColor != startBG {
-		shouldRefresh = true
+	h.title.SetText(title)
+	h.status.SetText(status)
+	h.content.SetText(content)
+
+	if isNewContent {
+		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.TextColor, 1)
 	}
 
-	if shouldRefresh {
+	if h.background.FillColor != background {
+		h.background.FillColor = background
+		canvas.Refresh(h.background)
+	}
+
+	if h.state != state {
 		h.Refresh()
 	}
 }

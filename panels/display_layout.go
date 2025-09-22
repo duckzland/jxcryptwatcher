@@ -33,7 +33,8 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 
 	centerItems := []fyne.CanvasObject{}
 	for _, obj := range []fyne.CanvasObject{pl.title, pl.content, pl.subtitle, pl.bottomText} {
-		if obj.Visible() && obj.MinSize().Height > 0 {
+		sz := obj.MinSize()
+		if obj.Visible() && (sz.Height > 0 && sz.Width > 0) {
 			centerItems = append(centerItems, obj)
 		}
 	}
