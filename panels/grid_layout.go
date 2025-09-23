@@ -183,7 +183,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	// Battling scrollbar, when we have scrollbar give space for it
 	if height > JC.MainLayoutContentHeight {
-		width -= 16
+		width -= 18
 	}
 
 	g.minSize = fyne.NewSize(width, height)

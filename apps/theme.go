@@ -135,8 +135,14 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNamePadding:
 		return 4
 	case theme.SizeNameScrollBar:
+		if JC.IsMobile {
+			return 4
+		}
 		return 12
 	case theme.SizeNameScrollBarSmall:
+		if JC.IsMobile {
+			return 4
+		}
 		return 12
 	case theme.SizeNameText:
 		return 14

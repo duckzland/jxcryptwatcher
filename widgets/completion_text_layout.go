@@ -34,14 +34,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 		r.text.Move(newPos)
 	}
 
-	text := ""
-	if JC.IsMobile {
-		text = JC.TruncateTextWithEstimation(r.text.Text, size.Width, r.text.TextSize)
-	} else {
-		text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
-	}
-
-	r.text.Text = text
+	r.text.Text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
 
 	posY := r.height - 1
 	pos1 := fyne.NewPos(0, posY)

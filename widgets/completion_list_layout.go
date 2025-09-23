@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	JC "jxwatcher/core"
 	"math"
 
 	"fyne.io/fyne/v2"
@@ -22,6 +23,10 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 	l.itemVisible = int(math.Floor(float64(size.Height / l.itemHeight)))
 
 	sWidth := float32(18)
+
+	if JC.IsMobile {
+		sWidth = 10
+	}
 
 	if len(l.parent.data) <= l.itemVisible {
 		sWidth = 0
