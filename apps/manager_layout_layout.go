@@ -120,10 +120,8 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		}
 	}
 
-	JC.MainLayoutContentWidth = contentSize.Width
-	JC.MainLayoutContentHeight = contentSize.Height
-
 	if a.parent != nil {
+		a.parent.SetContentSize(contentSize.Width, contentSize.Height)
 		a.parent.SetMaxOffset(-1)
 		a.parent.SetContentTopY(contentY)
 		a.parent.SetContentBottomY(contentY + contentSize.Height)

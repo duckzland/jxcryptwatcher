@@ -35,6 +35,8 @@ type layoutManager struct {
 	contentBottomY    float32
 	state             int
 	lastDisplayUpdate time.Time
+	contentWidth      float32
+	contentHeight     float32
 }
 
 func (m *layoutManager) TopBar() fyne.CanvasObject {
@@ -404,6 +406,25 @@ func (lm *layoutManager) GetLastDisplayUpdate() time.Time {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
 	return lm.lastDisplayUpdate
+}
+
+func (lm *layoutManager) SetContentSize(width, height float32) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	lm.contentWidth = width
+	lm.contentHeight = height
+}
+
+func (lm *layoutManager) GetContentWidth() float32 {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	return lm.contentWidth
+}
+
+func (lm *layoutManager) GetContentHeight() float32 {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	return lm.contentHeight
 }
 
 func NewAppLayout() fyne.CanvasObject {

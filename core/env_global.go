@@ -9,9 +9,6 @@ import (
 var App fyne.App
 var Window fyne.Window
 
-var MainLayoutContentWidth float32
-var MainLayoutContentHeight float32
-
 var Tickers *fyne.Container
 
 var ThemeColor func(name fyne.ThemeColorName) color.Color

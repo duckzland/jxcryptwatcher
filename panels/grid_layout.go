@@ -2,7 +2,6 @@ package panels
 
 import (
 	JA "jxwatcher/apps"
-	JC "jxwatcher/core"
 	"math"
 
 	"fyne.io/fyne/v2"
@@ -182,7 +181,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
 
 	// Battling scrollbar, when we have scrollbar give space for it
-	if height > JC.MainLayoutContentHeight {
+	if height > JA.LayoutManager.GetContentHeight() {
 		width -= 18
 	}
 
