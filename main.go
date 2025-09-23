@@ -86,7 +86,7 @@ func main() {
 
 		fyne.Do(func() {
 
-			JX.Grid = JX.NewTickerGrid()
+			JX.RegisterTickerGrid()
 			JP.Grid = JP.NewPanelGrid(CreatePanel)
 
 			JA.StatusManager.InitData()

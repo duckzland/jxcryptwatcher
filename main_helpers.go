@@ -265,7 +265,7 @@ func ProcessUpdateTickerComplete(status int) {
 			})
 
 			fyne.Do(func() {
-				JX.Grid.UpdateTickersContent(func(pdt JT.TickerData) bool {
+				JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
 					return true
 				})
 			})
@@ -284,7 +284,7 @@ func ProcessUpdateTickerComplete(status int) {
 			})
 
 			fyne.Do(func() {
-				JX.Grid.UpdateTickersContent(func(pdt JT.TickerData) bool {
+				JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
 					return true
 				})
 			})
@@ -556,7 +556,7 @@ func OpenSettingForm() {
 							JT.TickersInit()
 
 							fyne.Do(func() {
-								JX.Grid = JX.NewTickerGrid()
+								JX.RegisterTickerGrid()
 							})
 						}
 

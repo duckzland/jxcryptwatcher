@@ -9,9 +9,9 @@ import (
 	JT "jxwatcher/types"
 )
 
-var Grid *tickerContainer = &tickerContainer{}
+var tickerGrid *tickerContainer = &tickerContainer{}
 
-func NewTickerGrid() *tickerContainer {
+func RegisterTickerGrid() {
 	JC.PrintMemUsage("Start building tickers")
 
 	list := JT.BT.Get()
@@ -29,7 +29,7 @@ func NewTickerGrid() *tickerContainer {
 		tickers[i] = p[i]
 	}
 
-	grid := NewTickerContainer(
+	tickerGrid := NewTickerContainer(
 		&tickerGridLayout{
 			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
 			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
@@ -45,9 +45,11 @@ func NewTickerGrid() *tickerContainer {
 		tickers,
 	)
 
-	JA.LayoutManager.RegisterTickers(container.NewStack(grid))
+	JA.LayoutManager.RegisterTickers(container.NewStack(tickerGrid))
 
 	JC.PrintMemUsage("End building tickers")
+}
 
-	return grid
+func UseTickerGrid() *tickerContainer {
+	return tickerGrid
 }
