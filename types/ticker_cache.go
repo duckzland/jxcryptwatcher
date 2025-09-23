@@ -1,11 +1,12 @@
 package types
 
 import (
+	JC "jxwatcher/core"
 	"sync"
 	"time"
 )
 
-var tickerCacheStorage *tickerDataCacheType = &tickerDataCacheType{}
+var tickerCacheStorage *tickerDataCacheType = nil
 var tickerUpdateThreshold = 2 * time.Minute
 
 type tickerDataCacheSnapshot struct {
@@ -164,6 +165,16 @@ func (tc *tickerDataCacheType) Hydrate(snapshot tickerDataCacheSnapshot) {
 
 func NewTickerDataCacheSnapshot() *tickerDataCacheSnapshot {
 	return &tickerDataCacheSnapshot{}
+}
+
+func RegisterTickerCache() *tickerDataCacheType {
+	if tickerCacheStorage == nil {
+		JC.InitOnce(func() {
+			tickerCacheStorage = &tickerDataCacheType{}
+		})
+	}
+
+	return tickerCacheStorage
 }
 
 func UseTickerCache() *tickerDataCacheType {

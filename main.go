@@ -27,13 +27,13 @@ func main() {
 		JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 	})
 
-	JT.UseExchangeCache().Init()
+	JT.RegisterExchangeCache().Init()
 
-	JT.UseTickerCache().Init()
+	JT.RegisterTickerCache().Init()
 
-	JA.UseActionManager().Init()
+	JA.RegisterActionManager().Init()
 
-	JA.StatusManager.Init()
+	JA.RegisterStatusManager().Init()
 
 	JA.SnapshotManager.Init()
 
@@ -89,14 +89,14 @@ func main() {
 			JX.RegisterTickerGrid()
 			JP.RegisterPanelGrid(CreatePanel)
 
-			JA.StatusManager.InitData()
+			JA.UseStatusManager().InitData()
 			JA.UseLayoutManager().SetPage(JP.UsePanelGrid())
 			JP.UsePanelGrid().Refresh()
 			JA.UseLayoutManager().Refresh()
 
-			JC.Logln("App is ready: ", JA.StatusManager.IsReady())
+			JC.Logln("App is ready: ", JA.UseStatusManager().IsReady())
 
-			if !JA.StatusManager.HasError() {
+			if !JA.UseStatusManager().HasError() {
 
 				// Force Refresh
 				JT.UseExchangeCache().SoftReset()

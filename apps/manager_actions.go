@@ -6,10 +6,11 @@ import (
 
 	"fyne.io/fyne/v2"
 
+	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 )
 
-var actionManagerStorage *actionManager = &actionManager{}
+var actionManagerStorage *actionManager = nil
 
 type actionManager struct {
 	mu      sync.RWMutex
@@ -77,6 +78,15 @@ func (a *actionManager) Disable() {
 			btn.Disable()
 		}
 	})
+}
+
+func RegisterActionManager() *actionManager {
+	if actionManagerStorage == nil {
+		JC.InitOnce(func() {
+			actionManagerStorage = &actionManager{}
+		})
+	}
+	return actionManagerStorage
 }
 
 func UseActionManager() *actionManager {

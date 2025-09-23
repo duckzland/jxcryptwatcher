@@ -154,7 +154,7 @@ func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
-	if JM.StatusManager.IsDraggable() {
+	if JM.UseStatusManager().IsDraggable() {
 		h.HideTarget()
 		return
 	}
@@ -180,7 +180,7 @@ func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 }
 
 func (h *panelDisplay) Cursor() desktop.Cursor {
-	if JM.StatusManager.IsDraggable() {
+	if JM.UseStatusManager().IsDraggable() {
 		return desktop.PointerCursor
 	}
 
@@ -188,7 +188,7 @@ func (h *panelDisplay) Cursor() desktop.Cursor {
 }
 
 func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
-	if JM.StatusManager.IsDraggable() {
+	if JM.UseStatusManager().IsDraggable() {
 		h.panelDrag(ev)
 	} else {
 		h.parent.Dragged(ev)
@@ -196,7 +196,7 @@ func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *panelDisplay) DragEnd() {
-	if !JM.StatusManager.IsDraggable() {
+	if !JM.UseStatusManager().IsDraggable() {
 		h.dragging = false
 		if h.parent != nil {
 			h.parent.DragEnd()

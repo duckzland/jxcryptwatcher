@@ -318,30 +318,30 @@ func (m *layoutManager) Refresh() {
 	scroll := m.scroll
 	m.mu.Unlock()
 
-	if content == nil || !StatusManager.IsReady() {
+	if content == nil || !UseStatusManager().IsReady() {
 		m.mu.Lock()
 		scroll.Content = m.loading
 		m.state = -1
 		m.mu.Unlock()
-	} else if !StatusManager.ValidConfig() {
+	} else if !UseStatusManager().ValidConfig() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
 		m.state = -2
 		m.mu.Unlock()
-	} else if !StatusManager.ValidCryptos() {
+	} else if !UseStatusManager().ValidCryptos() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
 		m.state = -3
 		m.mu.Unlock()
-	} else if !StatusManager.ValidPanels() {
+	} else if !UseStatusManager().ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionAddPanel
 		m.state = 0
 		m.mu.Unlock()
-	} else if !StatusManager.HasError() {
+	} else if !UseStatusManager().HasError() {
 		m.mu.Lock()
 		scroll.Content = *content
-		m.state = StatusManager.panels_count
+		m.state = UseStatusManager().panels_count
 		m.mu.Unlock()
 	} else {
 		m.mu.Lock()
@@ -358,8 +358,8 @@ func (m *layoutManager) Refresh() {
 		m.RefreshLayout()
 	}
 
-	if StatusManager.IsReady() {
-		if !StatusManager.ValidCryptos() {
+	if UseStatusManager().IsReady() {
+		if !UseStatusManager().ValidCryptos() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
@@ -369,17 +369,17 @@ func (m *layoutManager) Refresh() {
 		populated := m.tickersPopulated
 		m.mu.RUnlock()
 
-		if tickers != nil && tickers != populated && StatusManager.ValidTickers() {
+		if tickers != nil && tickers != populated && UseStatusManager().ValidTickers() {
 			m.SetTickers(m.tickersPopulated)
 			return
 		}
 
-		if tickers != nil && tickers == populated && !StatusManager.ValidTickers() {
+		if tickers != nil && tickers == populated && !UseStatusManager().ValidTickers() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
 
-		if tickers == nil && StatusManager.ValidTickers() {
+		if tickers == nil && UseStatusManager().ValidTickers() {
 			m.SetTickers(populated)
 			return
 		}
@@ -447,7 +447,9 @@ func NewAppLayout() fyne.CanvasObject {
 		topBar: NewTopBar(),
 	}
 
-	layoutManagerStorage = manager
+	JC.InitOnce(func() {
+		layoutManagerStorage = manager
+	})
 
 	manager.loading = NewAppPage(nil, "Loading...", nil)
 	manager.error = NewAppPage(nil, "Failed to start application...", nil)

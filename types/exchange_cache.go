@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	JC "jxwatcher/core"
 )
 
 const exchangeCacheUpdateThreshold = 1 * time.Minute
 
-var exchangeCache exchangeDataCacheType = exchangeDataCacheType{}
+var exchangeCacheStorage *exchangeDataCacheType = nil
 
 type exchangeDataCacheSnapshot struct {
 	Data        []exchangeDataType `json:"data"`
@@ -179,6 +181,15 @@ func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
 	return &exchangeDataCacheSnapshot{}
 }
 
+func RegisterExchangeCache() *exchangeDataCacheType {
+	if exchangeCacheStorage == nil {
+		JC.InitOnce(func() {
+			exchangeCacheStorage = &exchangeDataCacheType{}
+		})
+	}
+	return exchangeCacheStorage
+}
+
 func UseExchangeCache() *exchangeDataCacheType {
-	return &exchangeCache
+	return exchangeCacheStorage
 }

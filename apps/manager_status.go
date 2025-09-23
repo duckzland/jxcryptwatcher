@@ -8,7 +8,7 @@ import (
 	JT "jxwatcher/types"
 )
 
-var StatusManager = &statusManager{}
+var statusManagerStorage *statusManager = nil
 
 type statusManager struct {
 	mu               sync.RWMutex
@@ -440,4 +440,17 @@ func (a *statusManager) Refresh() *statusManager {
 	}
 
 	return a
+}
+
+func RegisterStatusManager() *statusManager {
+	if statusManagerStorage == nil {
+		JC.InitOnce(func() {
+			statusManagerStorage = &statusManager{}
+		})
+	}
+	return statusManagerStorage
+}
+
+func UseStatusManager() *statusManager {
+	return statusManagerStorage
 }

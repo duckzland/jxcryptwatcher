@@ -60,7 +60,7 @@ func (c *panelContainer) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
-	if JM.StatusManager.IsDraggable() {
+	if JM.UseStatusManager().IsDraggable() {
 		return
 	}
 

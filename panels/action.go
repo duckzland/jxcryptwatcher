@@ -22,12 +22,12 @@ func NewPanelAction(
 					onEdit()
 				}
 			}, func(btn JW.ActionButton) {
-				if JA.StatusManager.IsOverlayShown() {
+				if JA.UseStatusManager().IsOverlayShown() {
 					btn.DisallowActions()
 					return
 				}
 
-				if JA.StatusManager.IsDraggable() {
+				if JA.UseStatusManager().IsDraggable() {
 					btn.Hide()
 					return
 				}
@@ -40,12 +40,12 @@ func NewPanelAction(
 					onDelete()
 				}
 			}, func(btn JW.ActionButton) {
-				if JA.StatusManager.IsOverlayShown() {
+				if JA.UseStatusManager().IsOverlayShown() {
 					btn.DisallowActions()
 					return
 				}
 
-				if JA.StatusManager.IsDraggable() {
+				if JA.UseStatusManager().IsDraggable() {
 					btn.Hide()
 					return
 				}
