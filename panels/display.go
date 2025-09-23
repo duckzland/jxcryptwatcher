@@ -52,13 +52,13 @@ func NewPanelDisplay(
 	pdt.SetID(uuid)
 	str := pdt.GetData()
 
-	tc := JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)
+	tc := JC.ThemeColor(theme.ColorNameForeground)
 
 	pl := &panelDisplayLayout{
 		title:      NewPanelText("", tc, JC.PanelTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		subtitle:   NewPanelText("", tc, JC.PanelSubTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 		content:    NewPanelText("", tc, JC.PanelContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		background: canvas.NewRectangle(JC.PanelBG),
+		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG)),
 		bottomText: NewPanelText("", tc, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
@@ -210,7 +210,7 @@ func (h *panelDisplay) DragEnd() {
 	h.dragging = false
 
 	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.FillColor = JC.Transparent
+		rect.FillColor = JC.ThemeColor(JC.ColorNameTransparent)
 		rect.Move(fyne.NewPos(0, -JC.PanelHeight))
 		canvas.Refresh(rect)
 	}
@@ -244,7 +244,7 @@ func (h *panelDisplay) updateContent() {
 	subtitle := ""
 	bottomText := ""
 	content := ""
-	background := JC.PanelBG
+	background := JC.ThemeColor(JC.ColorNamePanelBG)
 	status := h.status
 
 	h.status = pkt.GetStatus()
@@ -252,7 +252,7 @@ func (h *panelDisplay) updateContent() {
 	switch h.status {
 	case JC.STATE_ERROR:
 		title = "Error loading data"
-		background = JC.ErrorColor
+		background = JC.ThemeColor(JC.ColorNameError)
 
 	case JC.STATE_FETCHING_NEW:
 		title = "Fetching Rates..."
@@ -262,20 +262,20 @@ func (h *panelDisplay) updateContent() {
 
 	case JC.STATE_BAD_CONFIG:
 		title = "Invalid Panel"
-		background = JC.ErrorColor
+		background = JC.ThemeColor(JC.ColorNameError)
 
 	case JC.STATE_LOADED:
 		if pkt.DidChange() {
 			switch pkt.IsValueIncrease() {
 			case JC.VALUE_INCREASE:
-				background = JC.GreenColor
+				background = JC.ThemeColor(JC.ColorNameGreen)
 
 			case JC.VALUE_DECREASE:
-				background = JC.RedColor
+				background = JC.ThemeColor(JC.ColorNameRed)
 			}
 
 		} else if pkt.IsOnInitialValue() {
-			background = JC.PanelBG
+			background = JC.ThemeColor(JC.ColorNamePanelBG)
 		}
 
 		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize, h.title.GetText().TextStyle)
@@ -331,7 +331,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 		// Try to show placeholder as soon as possible
 		if p.X == rect.Position().X || p.Y == rect.Position().Y {
 			rect, _ := JM.DragPlaceholder.(*canvas.Rectangle)
-			rect.FillColor = JC.PanelPlaceholderBG
+			rect.FillColor = JC.ThemeColor(JC.ColorNamePanelPlaceholder)
 			canvas.Refresh(rect)
 		}
 
@@ -345,7 +345,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				return
 			}
 
-			shown := rect.FillColor == JC.PanelPlaceholderBG
+			shown := rect.FillColor == JC.ThemeColor(JC.ColorNamePanelPlaceholder)
 			posX := rect.Position().X
 			posY := rect.Position().Y
 			placeholderSize := rect.Size()
@@ -364,7 +364,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
 					fyne.Do(func() {
-						rect.FillColor = JC.PanelPlaceholderBG
+						rect.FillColor = JC.ThemeColor(JC.ColorNamePanelPlaceholder)
 						canvas.Refresh(rect)
 						shown = true
 					})

@@ -9,8 +9,6 @@ import (
 	JC "jxwatcher/core"
 )
 
-var AppTheme *appTheme
-
 type appTheme struct{}
 
 func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
@@ -24,7 +22,7 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameDisabled:
 		return color.NRGBA{R: 0x39, G: 0x39, B: 0x3a, A: 0xff}
 	case theme.ColorNameError:
-		return JC.ErrorColor
+		return color.RGBA{R: 198, G: 40, B: 40, A: 255}
 	case theme.ColorNameFocus:
 		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
 	case theme.ColorNameForeground:
@@ -40,7 +38,7 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameHeaderBackground:
 		return color.NRGBA{R: 0x1b, G: 0x1b, B: 0x1b, A: 0xff}
 	case theme.ColorNameHover:
-		return color.RGBA{R: 30, G: 30, B: 30, A: 255}
+		return color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0f}
 	case theme.ColorNameHyperlink:
 		return color.NRGBA{R: 0x00, G: 0x6c, B: 0xff, A: 0xff}
 	case theme.ColorNameInputBackground:
@@ -58,26 +56,66 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNamePrimary:
 		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
 	case theme.ColorNameScrollBar:
-		return JC.PanelBG
+		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
 	case theme.ColorNameScrollBarBackground:
-		return JC.Transparent
+		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 	case theme.ColorNameSelection:
 		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
 	case theme.ColorNameSeparator:
 		return color.Gray{Y: 64}
 	case theme.ColorNameShadow:
-		return JC.Transparent
+		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 	case theme.ColorNameSuccess:
 		return color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0xff}
 	case theme.ColorNameWarning:
 		return color.NRGBA{R: 0xff, G: 0x98, B: 0x00, A: 0xff}
+
+	case JC.ColorNamePanelBG:
+		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
+	case JC.ColorNamePanelPlaceholder:
+		return color.RGBA{R: 20, G: 22, B: 30, A: 200}
+	case JC.ColorNameTickerBG:
+		return color.RGBA{R: 17, G: 119, B: 170, A: 255}
+	case JC.ColorNameRed:
+		return color.RGBA{R: 133, G: 36, B: 36, A: 255}
+	case JC.ColorNameGreen:
+		return color.RGBA{R: 22, G: 106, B: 69, A: 255}
+	case JC.ColorNameBlue:
+		return color.RGBA{R: 60, G: 120, B: 220, A: 255}
+	case JC.ColorNameLightBlue:
+		return color.RGBA{R: 100, G: 160, B: 230, A: 255}
+	case JC.ColorNameLightPurple:
+		return color.RGBA{R: 160, G: 140, B: 200, A: 255}
+	case JC.ColorNameLightOrange:
+		return color.RGBA{R: 240, G: 160, B: 100, A: 255}
+	case JC.ColorNameOrange:
+		return color.RGBA{R: 195, G: 102, B: 51, A: 255}
+	case JC.ColorNameYellow:
+		return color.RGBA{R: 192, G: 168, B: 64, A: 255}
+	case JC.ColorNameTeal:
+		return color.RGBA{R: 40, G: 170, B: 140, A: 255}
+	case JC.ColorNameTransparent:
+		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
+
 	default:
 		return color.RGBA{R: 13, G: 20, B: 33, A: 255}
 	}
 }
 
 func (t *appTheme) Font(style fyne.TextStyle) fyne.Resource {
-	return theme.DefaultTextFont()
+	if style.Monospace {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Monospace: true})
+	}
+	if style.Bold && style.Italic {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true, Italic: true})
+	}
+	if style.Bold {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true})
+	}
+	if style.Italic {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Italic: true})
+	}
+	return theme.DefaultTheme().Font(fyne.TextStyle{})
 }
 
 func (t *appTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
@@ -130,5 +168,10 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 }
 
 func NewTheme() fyne.Theme {
-	return &appTheme{}
+	at := &appTheme{}
+	JC.ThemeColor = func(name fyne.ThemeColorName) color.Color {
+		return at.Color(name, theme.VariantDark)
+	}
+
+	return at
 }

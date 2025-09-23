@@ -32,10 +32,10 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 	uuid := JC.CreateUUID()
 	tdt.SetID(uuid)
 
-	tc := JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)
+	tc := JC.ThemeColor(theme.ColorNameForeground)
 
 	tl := &tickerLayout{
-		background: canvas.NewRectangle(JC.TickerBG),
+		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTickerBG)),
 		title:      NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 		status:     NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		content:    NewTickerText("", tc, JC.TickerContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
@@ -93,18 +93,18 @@ func (h *tickerDisplay) updateContent() {
 	status := ""
 	content := ""
 	state := h.state
-	background := JC.PanelBG
+	background := JC.ThemeColor(JC.ColorNameTickerBG)
 	isNewContent := false
 	h.state = pkt.GetStatus()
 
 	switch h.state {
 	case JC.STATE_ERROR:
 		status = "Error loading data"
-		background = JC.ErrorColor
+		background = JC.ThemeColor(JC.ColorNameError)
 
 	case JC.STATE_LOADING:
 		status = "Loading..."
-		background = JC.PanelBG
+		background = JC.ThemeColor(JC.ColorNameTickerBG)
 
 	default:
 
@@ -119,13 +119,13 @@ func (h *tickerDisplay) updateContent() {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case percentage >= 75:
-				background = JC.BlueColor
+				background = JC.ThemeColor(JC.ColorNameBlue)
 			case percentage >= 50:
-				background = JC.LightPurpleColor
+				background = JC.ThemeColor(JC.ColorNameLightPurple)
 			case percentage >= 25:
-				background = JC.LightOrangeColor
+				background = JC.ThemeColor(JC.ColorNameLightOrange)
 			default:
-				background = JC.OrangeColor
+				background = JC.ThemeColor(JC.ColorNameOrange)
 			}
 		}
 
@@ -133,15 +133,15 @@ func (h *tickerDisplay) updateContent() {
 			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case index >= 75:
-				background = JC.GreenColor
+				background = JC.ThemeColor(JC.ColorNameGreen)
 			case index >= 55:
-				background = JC.TealGreenColor
+				background = JC.ThemeColor(JC.ColorNameTeal)
 			case index >= 45:
-				background = JC.YellowColor
+				background = JC.ThemeColor(JC.ColorNameYellow)
 			case index >= 25:
-				background = JC.OrangeColor
+				background = JC.ThemeColor(JC.ColorNameOrange)
 			default:
-				background = JC.RedColor
+				background = JC.ThemeColor(JC.ColorNameRed)
 			}
 		}
 
@@ -149,9 +149,9 @@ func (h *tickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("market_cap_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index > 0 {
-				background = JC.GreenColor
+				background = JC.ThemeColor(JC.ColorNameGreen)
 			} else if index < 0 {
-				background = JC.RedColor
+				background = JC.ThemeColor(JC.ColorNameRed)
 			}
 		}
 
@@ -159,9 +159,9 @@ func (h *tickerDisplay) updateContent() {
 			raw := JT.TickerCache.Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index >= 0 {
-				background = JC.GreenColor
+				background = JC.ThemeColor(JC.ColorNameGreen)
 			} else if index < 0 {
-				background = JC.RedColor
+				background = JC.ThemeColor(JC.ColorNameRed)
 			}
 		}
 	}

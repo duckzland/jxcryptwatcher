@@ -23,19 +23,21 @@ type completionText struct {
 	background *canvas.Rectangle
 	bgcolor    color.Color
 	sepcolor   color.Color
+	traColor   color.Color
 }
 
 func NewCompletionText(height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:    canvas.NewText("", JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)),
+		label:    canvas.NewText("", JC.ThemeColor(theme.ColorNameForeground)),
 		height:   height,
 		parent:   parent,
-		bgcolor:  JC.MainTheme.Color(theme.ColorNameHover, theme.VariantDark),
-		sepcolor: JC.MainTheme.Color(theme.ColorNameSeparator, theme.VariantDark),
+		bgcolor:  JC.ThemeColor(theme.ColorNameHover),
+		sepcolor: JC.ThemeColor(theme.ColorNameSeparator),
+		traColor: JC.ThemeColor(JC.ColorNameTransparent),
 	}
 
 	if !JC.IsMobile {
-		s.background = canvas.NewRectangle(JC.Transparent)
+		s.background = canvas.NewRectangle(s.traColor)
 	}
 
 	s.label.TextSize = JC.CompletionTextSize
@@ -113,7 +115,7 @@ func (s *completionText) MouseOut() {
 	}
 
 	s.hovered = false
-	s.background.FillColor = JC.Transparent
+	s.background.FillColor = s.traColor
 	canvas.Refresh(s)
 }
 

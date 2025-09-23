@@ -11,7 +11,7 @@ import (
 
 func NewTopBar() *fyne.Container {
 
-	topBg := canvas.NewRectangle(JC.PanelBG)
+	topBg := canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG))
 	topBg.CornerRadius = 4
 
 	return container.New(

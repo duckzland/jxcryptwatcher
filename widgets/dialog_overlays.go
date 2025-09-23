@@ -20,7 +20,7 @@ type dialogOverlays struct {
 func NewDialogOverlays() *dialogOverlays {
 	wrapper := &dialogOverlays{}
 	wrapper.ExtendBaseWidget(wrapper)
-	wrapper.bgcolor = JC.MainTheme.Color(theme.ColorNameOverlayBackground, theme.VariantDark)
+	wrapper.bgcolor = JC.ThemeColor(theme.ColorNameOverlayBackground)
 
 	return wrapper
 }

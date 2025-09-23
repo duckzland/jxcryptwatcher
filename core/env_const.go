@@ -2,6 +2,8 @@ package core
 
 import (
 	"time"
+
+	"fyne.io/fyne/v2"
 )
 
 const EPSILON = 1e-9
@@ -33,3 +35,18 @@ const STATUS_SUCCESS = 0
 const STATUS_NETWORK_ERROR = 1
 const STATUS_CONFIG_ERROR = 2
 const STATUS_BAD_DATA_RECEIVED = 3
+
+const ColorNameError fyne.ThemeColorName = "error"
+const ColorNameTransparent fyne.ThemeColorName = "transparent"
+const ColorNameRed fyne.ThemeColorName = "red"
+const ColorNameGreen fyne.ThemeColorName = "green"
+const ColorNameBlue fyne.ThemeColorName = "blue"
+const ColorNameLightBlue fyne.ThemeColorName = "lightBlue"
+const ColorNameLightPurple fyne.ThemeColorName = "lightPurple"
+const ColorNameLightOrange fyne.ThemeColorName = "lightOrange"
+const ColorNameOrange fyne.ThemeColorName = "orange"
+const ColorNameYellow fyne.ThemeColorName = "yellow"
+const ColorNameTeal fyne.ThemeColorName = "teal"
+const ColorNamePanelBG fyne.ThemeColorName = "panelBG"
+const ColorNamePanelPlaceholder fyne.ThemeColorName = "panelPlaceholder"
+const ColorNameTickerBG fyne.ThemeColorName = "tickerBG"

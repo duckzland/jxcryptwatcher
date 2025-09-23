@@ -35,8 +35,8 @@ func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 	var objects []fyne.CanvasObject
 
 	layout := &pageLayout{
-		background: canvas.NewRectangle(JC.PanelBG),
-		content:    canvas.NewText(p.content, JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)),
+		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG)),
+		content:    canvas.NewText(p.content, JC.ThemeColor(theme.ColorNameForeground)),
 	}
 
 	layout.content.Alignment = fyne.TextAlignCenter
