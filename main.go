@@ -35,7 +35,7 @@ func main() {
 
 	JA.RegisterStatusManager().Init()
 
-	JA.SnapshotManager.Init()
+	JA.RegisterSnapshotManager().Init()
 
 	RegisterCache()
 
@@ -64,23 +64,23 @@ func main() {
 
 		JT.ConfigInit()
 
-		if JA.SnapshotManager.LoadCryptos() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshotManager().LoadCryptos() == JC.NO_SNAPSHOT {
 			JT.CryptosLoaderInit()
 		}
 
-		if JA.SnapshotManager.LoadPanels() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshotManager().LoadPanels() == JC.NO_SNAPSHOT {
 			JT.PanelsInit()
 		}
 
-		if JA.SnapshotManager.LoadTickers() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshotManager().LoadTickers() == JC.NO_SNAPSHOT {
 			JT.TickersInit()
 		}
 
-		if JA.SnapshotManager.LoadExchangeData() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshotManager().LoadExchangeData() == JC.NO_SNAPSHOT {
 			JT.UseExchangeCache().Reset()
 		}
 
-		if JA.SnapshotManager.LoadTickerData() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshotManager().LoadTickerData() == JC.NO_SNAPSHOT {
 			JT.UseTickerCache().Reset()
 		}
 

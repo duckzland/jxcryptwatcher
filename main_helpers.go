@@ -71,7 +71,7 @@ func UpdateRates() bool {
 
 	JC.Notify("Fetching the latest exchange rates...")
 
-	JC.FetcherManager.GroupPayloadCall("rates", payloads,
+	JC.UseFetcher().GroupPayloadCall("rates", payloads,
 		func(shouldProceed bool) {
 			if shouldProceed {
 				JA.UseStatusManager().StartFetchingRates()
@@ -142,7 +142,7 @@ func UpdateTickers() bool {
 
 	JC.Notify("Fetching the latest ticker data...")
 
-	JC.FetcherManager.GroupCall(keys, payloads,
+	JC.UseFetcher().GroupCall(keys, payloads,
 		func(totalJob int) {
 			if totalJob > 0 {
 				JA.UseStatusManager().StartFetchingTickers()
@@ -416,7 +416,7 @@ func SavePanelForm(pdt JT.PanelData) {
 
 				payloads := []any{sid + "|" + tid}
 
-				JC.FetcherManager.GroupPayloadCall("rates", payloads,
+				JC.UseFetcher().GroupPayloadCall("rates", payloads,
 					func(shouldProceed bool) {
 					},
 					func(results []JC.FetchResult) {

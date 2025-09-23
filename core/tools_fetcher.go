@@ -25,7 +25,7 @@ type FetchRequest struct {
 	Payload any
 }
 
-type Fetcher struct {
+type fetcher struct {
 	fetchers         map[string]FetcherInterface
 	delay            map[string]time.Duration
 	lastActivity     map[string]*time.Time
@@ -37,7 +37,7 @@ type Fetcher struct {
 	mu               sync.Mutex
 }
 
-var FetcherManager = &Fetcher{
+var fetcherManager = &fetcher{
 	fetchers:         make(map[string]FetcherInterface),
 	delay:            make(map[string]time.Duration),
 	lastActivity:     make(map[string]*time.Time),
@@ -48,7 +48,7 @@ var FetcherManager = &Fetcher{
 	activeWorkers:    make(map[string]context.CancelFunc),
 }
 
-func (m *Fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
+func (m *fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
 	if !verboseFetcherDebugMessage {
 		return
 	}
@@ -63,7 +63,7 @@ func (m *Fetcher) logGrouped(tag string, lines []string, interval time.Duration)
 	}
 }
 
-func (m *Fetcher) Register(key string, fetcher FetcherInterface, delaySeconds int64, callback func(FetchResult), conditions func() bool) {
+func (m *fetcher) Register(key string, fetcher FetcherInterface, delaySeconds int64, callback func(FetchResult), conditions func() bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (m *Fetcher) Register(key string, fetcher FetcherInterface, delaySeconds in
 
 }
 
-func (m *Fetcher) Call(key string, payload any) {
+func (m *fetcher) Call(key string, payload any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -110,7 +110,7 @@ func (m *Fetcher) Call(key string, payload any) {
 
 }
 
-func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, preprocess func(totalJob int), callback func(map[string]FetchResult)) {
+func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess func(totalJob int), callback func(map[string]FetchResult)) {
 	var wg sync.WaitGroup
 	results := make(map[string]FetchResult)
 	mu := sync.Mutex{}
@@ -163,7 +163,7 @@ func (m *Fetcher) GroupCall(keys []string, payloads map[string]any, preprocess f
 	}()
 }
 
-func (m *Fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(shouldProceed bool), callback func([]FetchResult)) {
+func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(shouldProceed bool), callback func([]FetchResult)) {
 	if cond, ok := m.conditions[key]; ok && cond != nil {
 		if !cond() {
 			if preprocess != nil {
@@ -239,4 +239,8 @@ func (gf *GenericFetcher) Fetch(ctx context.Context, _ any, callback func(FetchR
 		result.Err = err
 	}
 	callback(result)
+}
+
+func UseFetcher() *fetcher {
+	return fetcherManager
 }

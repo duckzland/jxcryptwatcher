@@ -20,7 +20,7 @@ func RegisterActions() {
 	// Refresh ticker data
 	JA.UseActionManager().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
-			JC.FetcherManager.Call("cryptos_map", nil)
+			JC.UseFetcher().Call("cryptos_map", nil)
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatusManager().IsReady() {
@@ -413,7 +413,7 @@ func RegisterFetchers() {
 
 	var delay int64 = 100
 
-	JC.FetcherManager.Register("cryptos_map", &JC.GenericFetcher{
+	JC.UseFetcher().Register("cryptos_map", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			code := JT.UseCryptosLoader().GetCryptos()
 
@@ -457,7 +457,7 @@ func RegisterFetchers() {
 		return true
 	})
 
-	JC.FetcherManager.Register("cmc100", &JC.GenericFetcher{
+	JC.UseFetcher().Register("cmc100", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.NewCMC100Fetcher()
 			code := ft.GetRate()
@@ -486,7 +486,7 @@ func RegisterFetchers() {
 		return true
 	})
 
-	JC.FetcherManager.Register("feargreed", &JC.GenericFetcher{
+	JC.UseFetcher().Register("feargreed", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.NewFearGreedFetcher()
 			code := ft.GetRate()
@@ -515,7 +515,7 @@ func RegisterFetchers() {
 		return true
 	})
 
-	JC.FetcherManager.Register("market_cap", &JC.GenericFetcher{
+	JC.UseFetcher().Register("market_cap", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.NewMarketCapFetcher()
 			code := ft.GetRate()
@@ -544,7 +544,7 @@ func RegisterFetchers() {
 		return true
 	})
 
-	JC.FetcherManager.Register("altcoin_index", &JC.GenericFetcher{
+	JC.UseFetcher().Register("altcoin_index", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
 			ft := JT.NewAltSeasonFetcher()
 			code := ft.GetRate()
@@ -573,7 +573,7 @@ func RegisterFetchers() {
 		return true
 	})
 
-	JC.FetcherManager.Register("rates", &JC.DynamicPayloadFetcher{
+	JC.UseFetcher().Register("rates", &JC.DynamicPayloadFetcher{
 		Handler: func(ctx context.Context, payload any) (JC.FetchResult, error) {
 			rk, ok := payload.(string)
 
@@ -656,7 +656,7 @@ func RegisterLifecycle() {
 			}
 
 			if !snapshotSaved && JC.IsMobile {
-				JA.SnapshotManager.Save()
+				JA.UseSnapshotManager().Save()
 				snapshotSaved = true
 			}
 		})
@@ -669,7 +669,7 @@ func RegisterLifecycle() {
 			}
 
 			if !snapshotSaved {
-				JA.SnapshotManager.Save()
+				JA.UseSnapshotManager().Save()
 				snapshotSaved = true
 			}
 		})

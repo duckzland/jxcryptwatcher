@@ -7,7 +7,7 @@ import (
 	JT "jxwatcher/types"
 )
 
-var SnapshotManager *snapshotManager = &snapshotManager{}
+var snapshotManagerStorage *snapshotManager = nil
 
 type snapshotManager struct{}
 
@@ -130,4 +130,17 @@ func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
 	JC.SaveFile("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
+}
+
+func RegisterSnapshotManager() *snapshotManager {
+	if snapshotManagerStorage == nil {
+		JC.InitOnce(func() {
+			snapshotManagerStorage = &snapshotManager{}
+		})
+	}
+	return snapshotManagerStorage
+}
+
+func UseSnapshotManager() *snapshotManager {
+	return snapshotManagerStorage
 }
