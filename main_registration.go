@@ -387,7 +387,7 @@ func RegisterWorkers() {
 		}
 		latest := messages[len(messages)-1]
 		fyne.Do(func() {
-			JW.NotificationContainer.UpdateText(latest)
+			JW.UseNotification().UpdateText(latest)
 		})
 
 		ScheduledNotificationReset()

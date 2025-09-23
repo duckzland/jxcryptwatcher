@@ -12,7 +12,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var NotificationContainer *notificationDisplay
+var notificationContainer *notificationDisplay
 
 type notificationDisplay struct {
 	widget.BaseWidget
@@ -22,7 +22,7 @@ type notificationDisplay struct {
 }
 
 func NotificationInit() {
-	NotificationContainer = NewNotificationDisplay()
+	notificationContainer = NewNotificationDisplay()
 }
 
 func NewNotificationDisplay() *notificationDisplay {
@@ -69,4 +69,8 @@ func (w *notificationDisplay) CreateRenderer() fyne.WidgetRenderer {
 		text:      w.text,
 		container: w,
 	}
+}
+
+func UseNotification() *notificationDisplay {
+	return notificationContainer
 }

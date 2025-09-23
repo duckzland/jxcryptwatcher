@@ -604,7 +604,7 @@ func ScheduledNotificationReset() {
 	JC.UseDebouncer().Call("notification_clear", 6000*time.Millisecond, func() {
 
 		// Break loop once notification is empty
-		if JW.NotificationContainer.GetText() == "" {
+		if JW.UseNotification().GetText() == "" {
 			return
 		}
 
@@ -617,7 +617,7 @@ func ScheduledNotificationReset() {
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
 			fyne.Do(func() {
-				JW.NotificationContainer.ClearText()
+				JW.UseNotification().ClearText()
 			})
 		} else {
 			ScheduledNotificationReset()

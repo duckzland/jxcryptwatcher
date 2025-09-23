@@ -15,7 +15,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var ActiveEntry *completionEntry = nil
+var activeEntry *completionEntry = nil
 
 type completionEntry struct {
 	widget.Entry
@@ -229,8 +229,8 @@ func (c *completionEntry) FocusGained() {
 
 	c.Entry.FocusGained()
 
-	if ActiveEntry != nil && ActiveEntry != c {
-		ActiveEntry.HideCompletion()
+	if activeEntry != nil && activeEntry != c {
+		activeEntry.HideCompletion()
 	}
 
 	if len(c.Text) > 0 {
@@ -371,7 +371,7 @@ func (c *completionEntry) ShowCompletion() {
 
 	c.popup.Show()
 
-	ActiveEntry = c
+	activeEntry = c
 }
 
 func (c *completionEntry) calculatePosition(force bool) bool {

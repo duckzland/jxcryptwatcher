@@ -21,7 +21,7 @@ func NewTopBar() *fyne.Container {
 		},
 		container.NewStack(
 			topBg,
-			JW.NotificationContainer,
+			JW.UseNotification(),
 		),
 		ActionManager.Get("refresh_cryptos"),
 		ActionManager.Get("refresh_rates"),
