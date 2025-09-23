@@ -21,8 +21,8 @@ func InitLogger() {
 
 	if PProfDebug {
 		go func() {
-			Logln("Starting pprof server on :6060")
-			if err := http.ListenAndServe("192.168.0.25:6060", nil); err != nil {
+			Logln("Starting pprof server on localhost:6060")
+			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
 				Logf("pprof server failed: %v", err)
 			}
 		}()
