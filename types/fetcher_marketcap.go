@@ -34,7 +34,7 @@ type marketCapSnapshot struct {
 
 func (er *marketCapFetcher) GetRate() int64 {
 	return JC.GetRequest(
-		Config.MarketCapEndpoint,
+		UseConfig().MarketCapEndpoint,
 		er,
 		func(url url.Values, req *http.Request) {
 			url.Add("convertId", "2781")

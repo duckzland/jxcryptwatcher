@@ -316,7 +316,7 @@ func RegisterWorkers() {
 	JC.UseWorker().Register("update_rates", func() {
 		UpdateRates()
 	}, func() int64 {
-		return max(JT.Config.Delay*1000, 30000)
+		return max(JT.UseConfig().Delay*1000, 30000)
 	}, 1000, func() bool {
 
 		if !JA.StatusManager.IsReady() {
@@ -355,7 +355,7 @@ func RegisterWorkers() {
 	JC.UseWorker().Register("update_tickers", func() {
 		UpdateTickers()
 	}, func() int64 {
-		return max(JT.Config.Delay*1000, 30000)
+		return max(JT.UseConfig().Delay*1000, 30000)
 	}, 5000, func() bool {
 
 		if !JA.StatusManager.IsReady() {
@@ -368,7 +368,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.Config.IsValidTickers() {
+		if !JT.UseConfig().IsValidTickers() {
 			JC.Logln("Unable to refresh tickers: Invalid ticker configuration")
 			return false
 		}
@@ -478,7 +478,7 @@ func RegisterFetchers() {
 			return false
 		}
 
-		if !JT.Config.CanDoCMC100() {
+		if !JT.UseConfig().CanDoCMC100() {
 			JC.Logln("Unable to fetch CMC100: Invalid config")
 			return false
 		}
@@ -507,7 +507,7 @@ func RegisterFetchers() {
 			return false
 		}
 
-		if !JT.Config.CanDoFearGreed() {
+		if !JT.UseConfig().CanDoFearGreed() {
 			JC.Logln("Unable to fetch fear greed: Invalid config")
 			return false
 		}
@@ -536,7 +536,7 @@ func RegisterFetchers() {
 			return false
 		}
 
-		if !JT.Config.CanDoMarketCap() {
+		if !JT.UseConfig().CanDoMarketCap() {
 			JC.Logln("Unable to fetch marketcap: Invalid config")
 			return false
 		}
@@ -565,7 +565,7 @@ func RegisterFetchers() {
 			return false
 		}
 
-		if !JT.Config.CanDoAltSeason() {
+		if !JT.UseConfig().CanDoAltSeason() {
 			JC.Logln("Unable to fetch altcoin index: Invalid config")
 			return false
 		}

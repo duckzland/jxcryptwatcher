@@ -7,7 +7,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var Config configType
+var configStorage *configType = &configType{}
 var configMu sync.RWMutex
 
 type configType struct {
@@ -67,7 +67,7 @@ func (c *configType) updateDefault() *configType {
 func (c *configType) SaveFile() *configType {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	JC.SaveFile("config.json", Config)
+	JC.SaveFile("config.json", configStorage)
 	return c
 }
 
@@ -90,11 +90,11 @@ func (c *configType) CheckFile() *configType {
 
 		if !JC.SaveFile("config.json", data) {
 			JC.Logln("Failed to create config.json with default values")
-			Config = data
-			return &Config
+			configStorage = &data
+			return configStorage
 		} else {
 			JC.Logln("Created config.json with default values")
-			Config = data
+			configStorage = &data
 		}
 	}
 
@@ -139,8 +139,12 @@ func (c *configType) CanDoAltSeason() bool {
 
 func ConfigInit() {
 	configMu.Lock()
-	Config = configType{}
+	configStorage = &configType{}
 	configMu.Unlock()
 
-	Config.CheckFile().LoadFile()
+	UseConfig().CheckFile().LoadFile()
+}
+
+func UseConfig() *configType {
+	return configStorage
 }

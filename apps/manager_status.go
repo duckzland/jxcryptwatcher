@@ -335,10 +335,10 @@ func (a *statusManager) SetNetworkStatus(status bool) *statusManager {
 func (a *statusManager) InitData() *statusManager {
 	ready := JT.UsePanelMaps().HasMaps()
 	noPanels := JT.UsePanelMaps().IsEmpty()
-	badConfig := !JT.Config.IsValid()
+	badConfig := !JT.UseConfig().IsValid()
 	badCryptos := !JT.UsePanelMaps().HasMaps() || JT.UsePanelMaps().GetMaps().IsEmpty()
 	panelsCount := JT.UsePanelMaps().TotalData()
-	badTickers := !JT.Config.IsValidTickers()
+	badTickers := !JT.UseConfig().IsValidTickers()
 
 	a.mu.Lock()
 	a.ready = ready
@@ -356,10 +356,10 @@ func (a *statusManager) InitData() *statusManager {
 func (a *statusManager) DetectData() *statusManager {
 	newReady := JT.UsePanelMaps().HasMaps()
 	newNoPanels := JT.UsePanelMaps().IsEmpty()
-	newBadConfig := !JT.Config.IsValid()
+	newBadConfig := !JT.UseConfig().IsValid()
 	newBadCryptos := !JT.UsePanelMaps().HasMaps() || JT.UsePanelMaps().GetMaps().IsEmpty()
 	newPanelsCount := JT.UsePanelMaps().TotalData()
-	newBadTickers := !JT.Config.IsValidTickers()
+	newBadTickers := !JT.UseConfig().IsValidTickers()
 
 	a.mu.Lock()
 	changed := a.ready != newReady ||

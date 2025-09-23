@@ -30,7 +30,7 @@ type altSeasonSnapshot struct {
 func (er *altSeasonFetcher) GetRate() int64 {
 
 	return JC.GetRequest(
-		Config.AltSeasonEndpoint,
+		UseConfig().AltSeasonEndpoint,
 		er,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())

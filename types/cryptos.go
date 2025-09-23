@@ -99,7 +99,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 	JC.PrintMemUsage("Start fetching cryptos data")
 	JC.Notify("Requesting latest cryptos data from exchange...")
 
-	parsedURL, err := url.Parse(Config.DataEndpoint)
+	parsedURL, err := url.Parse(UseConfig().DataEndpoint)
 	if err != nil {
 		JC.Logln("Invalid URL:", err)
 		return JC.NETWORKING_URL_ERROR

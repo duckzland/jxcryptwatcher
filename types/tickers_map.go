@@ -142,7 +142,7 @@ func (pc *tickersMapType) Serialize() []tickerDataCache {
 func TickersInit() {
 	UseTickerMaps().Init()
 
-	if Config.CanDoMarketCap() {
+	if UseConfig().CanDoMarketCap() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Market Cap")
 		tdt.SetType("market_cap")
@@ -150,7 +150,7 @@ func TickersInit() {
 		UseTickerMaps().Add(tdt)
 	}
 
-	if Config.CanDoCMC100() {
+	if UseConfig().CanDoCMC100() {
 		tdt := NewTickerData()
 		tdt.SetTitle("CMC100")
 		tdt.SetType("cmc100")
@@ -158,7 +158,7 @@ func TickersInit() {
 		UseTickerMaps().Add(tdt)
 	}
 
-	if Config.CanDoAltSeason() {
+	if UseConfig().CanDoAltSeason() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Altcoin Index")
 		tdt.SetType("altcoin_index")
@@ -166,7 +166,7 @@ func TickersInit() {
 		UseTickerMaps().Add(tdt)
 	}
 
-	if Config.CanDoFearGreed() {
+	if UseConfig().CanDoFearGreed() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Fear & Greed")
 		tdt.SetType("feargreed")

@@ -28,13 +28,13 @@ func NewSettingsForm(
 	marketCapEndpointEntry := widget.NewEntry()
 
 	// Prefill with config data
-	delayEntry.SetDefaultValue(strconv.FormatInt(JT.Config.Delay, 10))
-	dataEndPointEntry.SetText(JT.Config.DataEndpoint)
-	exchangeEndPointEntry.SetText(JT.Config.ExchangeEndpoint)
-	altSeasonsEndpointEntry.SetText(JT.Config.AltSeasonEndpoint)
-	fearGreedEndpointEntry.SetText(JT.Config.FearGreedEndpoint)
-	CMC100EndpointEntry.SetText(JT.Config.CMC100Endpoint)
-	marketCapEndpointEntry.SetText(JT.Config.MarketCapEndpoint)
+	delayEntry.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
+	dataEndPointEntry.SetText(JT.UseConfig().DataEndpoint)
+	exchangeEndPointEntry.SetText(JT.UseConfig().ExchangeEndpoint)
+	altSeasonsEndpointEntry.SetText(JT.UseConfig().AltSeasonEndpoint)
+	fearGreedEndpointEntry.SetText(JT.UseConfig().FearGreedEndpoint)
+	CMC100EndpointEntry.SetText(JT.UseConfig().CMC100Endpoint)
+	marketCapEndpointEntry.SetText(JT.UseConfig().MarketCapEndpoint)
 
 	delayEntry.Validator = func(s string) error {
 		if len(s) == 0 {
@@ -132,14 +132,14 @@ func NewSettingsForm(
 
 				delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
 
-				JT.Config.DataEndpoint = dataEndPointEntry.Text
-				JT.Config.ExchangeEndpoint = exchangeEndPointEntry.Text
-				JT.Config.AltSeasonEndpoint = altSeasonsEndpointEntry.Text
-				JT.Config.FearGreedEndpoint = fearGreedEndpointEntry.Text
-				JT.Config.CMC100Endpoint = CMC100EndpointEntry.Text
-				JT.Config.MarketCapEndpoint = marketCapEndpointEntry.Text
+				JT.UseConfig().DataEndpoint = dataEndPointEntry.Text
+				JT.UseConfig().ExchangeEndpoint = exchangeEndPointEntry.Text
+				JT.UseConfig().AltSeasonEndpoint = altSeasonsEndpointEntry.Text
+				JT.UseConfig().FearGreedEndpoint = fearGreedEndpointEntry.Text
+				JT.UseConfig().CMC100Endpoint = CMC100EndpointEntry.Text
+				JT.UseConfig().MarketCapEndpoint = marketCapEndpointEntry.Text
 
-				JT.Config.Delay = delay
+				JT.UseConfig().Delay = delay
 
 				if onSave != nil {
 					onSave()

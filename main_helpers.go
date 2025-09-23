@@ -117,19 +117,19 @@ func UpdateTickers() bool {
 	keys := []string{}
 	payloads := map[string]any{}
 
-	if JT.Config.CanDoCMC100() {
+	if JT.UseConfig().CanDoCMC100() {
 		keys = append(keys, "cmc100")
 		payloads["cmc100"] = nil
 	}
-	if JT.Config.CanDoFearGreed() {
+	if JT.UseConfig().CanDoFearGreed() {
 		keys = append(keys, "feargreed")
 		payloads["feargreed"] = nil
 	}
-	if JT.Config.CanDoMarketCap() {
+	if JT.UseConfig().CanDoMarketCap() {
 		keys = append(keys, "market_cap")
 		payloads["market_cap"] = nil
 	}
-	if JT.Config.CanDoAltSeason() {
+	if JT.UseConfig().CanDoAltSeason() {
 		keys = append(keys, "altcoin_index")
 		payloads["altcoin_index"] = nil
 	}
@@ -546,11 +546,11 @@ func OpenSettingForm() {
 			JC.Notify("Saving configuration...")
 
 			go func() {
-				if JT.Config.SaveFile() != nil {
+				if JT.UseConfig().SaveFile() != nil {
 					JC.Notify("Configuration saved successfully.")
 					JA.StatusManager.DetectData()
 
-					if JT.Config.IsValidTickers() {
+					if JT.UseConfig().IsValidTickers() {
 						if JT.UseTickerMaps().IsEmpty() {
 							JC.Logln("Rebuilding tickers due to empty ticker list")
 							JT.TickersInit()

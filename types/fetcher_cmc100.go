@@ -30,7 +30,7 @@ type cmc100CurrentValueFields struct {
 func (er *cmc100Fetcher) GetRate() int64 {
 
 	return JC.GetRequest(
-		Config.CMC100Endpoint,
+		UseConfig().CMC100Endpoint,
 		er,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())

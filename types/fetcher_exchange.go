@@ -194,7 +194,7 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 	}
 
 	return JC.GetRequest(
-		Config.ExchangeEndpoint,
+		UseConfig().ExchangeEndpoint,
 		er,
 		func(url url.Values, req *http.Request) {
 			url.Add("amount", "1")

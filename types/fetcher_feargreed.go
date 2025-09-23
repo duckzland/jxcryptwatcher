@@ -30,7 +30,7 @@ type fearGreedSnapshot struct {
 func (er *fearGreedFetcher) GetRate() int64 {
 
 	return JC.GetRequest(
-		Config.FearGreedEndpoint,
+		UseConfig().FearGreedEndpoint,
 		er,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())
