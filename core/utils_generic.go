@@ -3,6 +3,7 @@ package core
 import (
 	"runtime"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -116,4 +117,13 @@ func EqualIntSlices(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+func InitOnce(callback func()) {
+	var initOnce sync.Once
+	initOnce.Do(func() {
+		if callback != nil {
+			callback()
+		}
+	})
 }

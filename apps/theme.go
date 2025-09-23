@@ -2,7 +2,6 @@ package apps
 
 import (
 	"image/color"
-	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
@@ -236,10 +235,9 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 }
 
 var activeTheme = &appTheme{}
-var setOnce sync.Once
 
 func NewTheme() fyne.Theme {
-	setOnce.Do(func() {
+	JC.InitOnce(func() {
 		JC.ThemeColor = func(name fyne.ThemeColorName) color.Color {
 			return activeTheme.Color(name, theme.VariantDark)
 		}

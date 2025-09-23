@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
@@ -44,7 +45,7 @@ func NewTickerGrid() *tickerContainer {
 		tickers,
 	)
 
-	JC.Tickers = container.NewStack(grid)
+	JA.LayoutManager.SetTickers(container.NewStack(grid))
 
 	JC.PrintMemUsage("End building tickers")
 

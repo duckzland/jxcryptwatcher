@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,16 +14,18 @@ import (
 	JT "jxwatcher/types"
 )
 
+var initOnce sync.Once
+
 func main() {
 	JC.InitLogger()
 
 	JC.Logln("App is booting...")
 
-	JC.App = app.NewWithID(JC.AppID)
-
-	JC.App.Settings().SetTheme(JA.NewTheme())
-
-	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
+	JC.InitOnce(func() {
+		JC.App = app.NewWithID(JC.AppID)
+		JC.App.Settings().SetTheme(JA.NewTheme())
+		JC.Window = JC.App.NewWindow("JXCrypto Watcher")
+	})
 
 	JT.UseExchangeCache().Init()
 
@@ -88,7 +91,6 @@ func main() {
 
 			JA.StatusManager.InitData()
 			JA.LayoutManager.SetPage(JP.Grid)
-			JA.LayoutManager.SetTickers(JC.Tickers)
 			JP.Grid.Refresh()
 			JA.LayoutManager.Refresh()
 
