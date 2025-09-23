@@ -88,8 +88,8 @@ func (sm *snapshotManager) LoadTickers() int {
 		restored = append(restored, t)
 	}
 
-	JT.BT.Init()
-	JT.BT.Hydrate(restored)
+	JT.UseTickerMaps().Init()
+	JT.UseTickerMaps().Hydrate(restored)
 
 	return JC.HAVE_SNAPSHOT
 }
@@ -127,7 +127,7 @@ func (sm *snapshotManager) LoadTickerData() int {
 func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-panels.json", JT.UsePanelMaps().Serialize())
 	JC.SaveFile("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
-	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
+	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
 	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
 }

@@ -154,7 +154,7 @@ func UpdateTickers() bool {
 
 			for key, result := range results {
 				ns := DetectHTTPResponse(result.Code)
-				tktt := JT.BT.GetDataByType(key)
+				tktt := JT.UseTickerMaps().GetDataByType(key)
 
 				for _, tkt := range tktt {
 					switch ns {
@@ -260,7 +260,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetConfigStatus(true)
 
 		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
+			JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
 
@@ -279,7 +279,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetConfigStatus(false)
 
 		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
+			JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
 
@@ -551,7 +551,7 @@ func OpenSettingForm() {
 					JA.StatusManager.DetectData()
 
 					if JT.Config.IsValidTickers() {
-						if JT.BT.IsEmpty() {
+						if JT.UseTickerMaps().IsEmpty() {
 							JC.Logln("Rebuilding tickers due to empty ticker list")
 							JT.TickersInit()
 

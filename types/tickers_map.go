@@ -6,7 +6,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var BT tickersMapType
+var tickerMapsStorage *tickersMapType = &tickersMapType{}
 
 type tickersMapType struct {
 	mu   sync.RWMutex
@@ -140,14 +140,14 @@ func (pc *tickersMapType) Serialize() []tickerDataCache {
 }
 
 func TickersInit() {
-	BT.Init()
+	UseTickerMaps().Init()
 
 	if Config.CanDoMarketCap() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Market Cap")
 		tdt.SetType("market_cap")
 		tdt.SetFormat("shortcurrency")
-		BT.Add(tdt)
+		UseTickerMaps().Add(tdt)
 	}
 
 	if Config.CanDoCMC100() {
@@ -155,7 +155,7 @@ func TickersInit() {
 		tdt.SetTitle("CMC100")
 		tdt.SetType("cmc100")
 		tdt.SetFormat("currency")
-		BT.Add(tdt)
+		UseTickerMaps().Add(tdt)
 	}
 
 	if Config.CanDoAltSeason() {
@@ -163,7 +163,7 @@ func TickersInit() {
 		tdt.SetTitle("Altcoin Index")
 		tdt.SetType("altcoin_index")
 		tdt.SetFormat("percentage")
-		BT.Add(tdt)
+		UseTickerMaps().Add(tdt)
 	}
 
 	if Config.CanDoFearGreed() {
@@ -171,6 +171,10 @@ func TickersInit() {
 		tdt.SetTitle("Fear & Greed")
 		tdt.SetType("feargreed")
 		tdt.SetFormat("percentage")
-		BT.Add(tdt)
+		UseTickerMaps().Add(tdt)
 	}
+}
+
+func UseTickerMaps() *tickersMapType {
+	return tickerMapsStorage
 }
