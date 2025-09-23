@@ -31,7 +31,7 @@ func main() {
 
 	JT.UseTickerCache().Init()
 
-	JA.ActionManager.Init()
+	JA.UseActionManager().Init()
 
 	JA.StatusManager.Init()
 

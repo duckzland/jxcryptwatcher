@@ -454,17 +454,17 @@ func NewAppLayout() fyne.CanvasObject {
 
 	contentIcon := theme.ContentAddIcon()
 	manager.actionAddPanel = NewAppPage(&contentIcon, "Add Panel", func() {
-		ActionManager.Call("add_panel")
+		UseActionManager().Call("add_panel")
 	})
 
 	settingIcon := theme.SettingsIcon()
 	manager.actionFixSetting = NewAppPage(&settingIcon, "Open Settings", func() {
-		ActionManager.Call("open_settings")
+		UseActionManager().Call("open_settings")
 	})
 
 	restoreIcon := theme.ViewRestoreIcon()
 	manager.actionGetCryptos = NewAppPage(&restoreIcon, "Fetch Crypto Data", func() {
-		ActionManager.Call("refresh_cryptos")
+		UseActionManager().Call("refresh_cryptos")
 	})
 
 	manager.scroll = container.NewVScroll(nil)

@@ -9,7 +9,7 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-var ActionManager *actionManager = &actionManager{}
+var actionManagerStorage *actionManager = &actionManager{}
 
 type actionManager struct {
 	mu      sync.RWMutex
@@ -77,4 +77,8 @@ func (a *actionManager) Disable() {
 			btn.Disable()
 		}
 	})
+}
+
+func UseActionManager() *actionManager {
+	return actionManagerStorage
 }

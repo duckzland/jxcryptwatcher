@@ -431,7 +431,7 @@ func (a *statusManager) Refresh() *statusManager {
 
 	if shouldUpdate {
 		LayoutManager.Refresh()
-		ActionManager.Refresh()
+		UseActionManager().Refresh()
 	}
 
 	if !a.IsReady() || a.HasError() {

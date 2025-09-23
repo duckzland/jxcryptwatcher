@@ -21,28 +21,6 @@ type notificationDisplay struct {
 	txtcolor color.Color
 }
 
-func NotificationInit() {
-	notificationContainer = NewNotificationDisplay()
-}
-
-func NewNotificationDisplay() *notificationDisplay {
-	c := JC.ThemeColor(theme.ColorNameForeground)
-
-	t := canvas.NewText("", c)
-	t.Alignment = fyne.TextAlignCenter
-	t.TextSize = JC.ThemeSize(JC.SizeNotificationText)
-
-	w := &notificationDisplay{
-		text:     t,
-		padding:  10,
-		txtcolor: c,
-	}
-
-	w.ExtendBaseWidget(w)
-
-	return w
-}
-
 func (w *notificationDisplay) UpdateText(msg string) {
 	maxWidth := w.text.Size().Width
 	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize, w.text.TextStyle)
@@ -73,4 +51,26 @@ func (w *notificationDisplay) CreateRenderer() fyne.WidgetRenderer {
 
 func UseNotification() *notificationDisplay {
 	return notificationContainer
+}
+
+func NotificationInit() {
+	notificationContainer = NewNotificationDisplay()
+}
+
+func NewNotificationDisplay() *notificationDisplay {
+	c := JC.ThemeColor(theme.ColorNameForeground)
+
+	t := canvas.NewText("", c)
+	t.Alignment = fyne.TextAlignCenter
+	t.TextSize = JC.ThemeSize(JC.SizeNotificationText)
+
+	w := &notificationDisplay{
+		text:     t,
+		padding:  10,
+		txtcolor: c,
+	}
+
+	w.ExtendBaseWidget(w)
+
+	return w
 }

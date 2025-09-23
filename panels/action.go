@@ -72,12 +72,12 @@ func (pa *panelAction) CreateRenderer() fyne.WidgetRenderer {
 
 func (pa *panelAction) Show() {
 	pa.container.Show()
-	JA.ActionManager.Add(pa.deleteBtn)
-	JA.ActionManager.Add(pa.editBtn)
+	JA.UseActionManager().Add(pa.deleteBtn)
+	JA.UseActionManager().Add(pa.editBtn)
 }
 
 func (pa *panelAction) Hide() {
 	pa.container.Hide()
-	JA.ActionManager.Remove(pa.deleteBtn)
-	JA.ActionManager.Remove(pa.editBtn)
+	JA.UseActionManager().Remove(pa.deleteBtn)
+	JA.UseActionManager().Remove(pa.editBtn)
 }

@@ -18,7 +18,7 @@ import (
 func RegisterActions() {
 
 	// Refresh ticker data
-	JA.ActionManager.Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
+	JA.UseActionManager().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
 			JC.FetcherManager.Call("cryptos_map", nil)
 		},
@@ -67,7 +67,7 @@ func RegisterActions() {
 		}))
 
 	// Refresh exchange rates
-	JA.ActionManager.Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
+	JA.UseActionManager().Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn JW.ActionButton) {
 			// Open the network status temporarily
 			JA.StatusManager.SetNetworkStatus(true)
@@ -141,7 +141,7 @@ func RegisterActions() {
 		}))
 
 	// Open settings
-	JA.ActionManager.Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
+	JA.UseActionManager().Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn JW.ActionButton) {
 			OpenSettingForm()
 		},
@@ -190,7 +190,7 @@ func RegisterActions() {
 		}))
 
 	// Panel drag toggle
-	JA.ActionManager.Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
+	JA.UseActionManager().Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn JW.ActionButton) {
 			ToggleDraggable()
 		},
@@ -238,7 +238,7 @@ func RegisterActions() {
 		}))
 
 	// Add new panel
-	JA.ActionManager.Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
+	JA.UseActionManager().Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn JW.ActionButton) {
 			OpenNewPanelForm()
 		},
