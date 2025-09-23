@@ -8,7 +8,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-type CryptosMapCache struct {
+type cryptosMapCache struct {
 	Data map[string]string
 	Maps []string
 }
@@ -40,8 +40,8 @@ func (cm *cryptosMapType) Hydrate(data map[string]string) {
 	_ = cm.GetOptions()
 }
 
-func (cm *cryptosMapType) Serialize() CryptosMapCache {
-	cache := CryptosMapCache{
+func (cm *cryptosMapType) Serialize() cryptosMapCache {
+	cache := cryptosMapCache{
 		Data: make(map[string]string),
 	}
 
@@ -188,4 +188,8 @@ func (cm *cryptosMapType) ValidateId(id int64) bool {
 
 func NewCryptosMap() *cryptosMapType {
 	return &cryptosMapType{}
+}
+
+func NewCryptosMapCache() *cryptosMapCache {
+	return &cryptosMapCache{}
 }

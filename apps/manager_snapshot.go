@@ -51,7 +51,7 @@ func (sm *snapshotManager) LoadCryptos() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	var cache JT.CryptosMapCache
+	cache := JT.NewCryptosMapCache()
 	if err := json.Unmarshal([]byte(raw), &cache); err != nil {
 		return JC.NO_SNAPSHOT
 	}
