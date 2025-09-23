@@ -5,28 +5,74 @@ import (
 	"time"
 )
 
-type Dispatcher struct {
-	queue        chan func()
-	sem          chan struct{}
-	delayBetween time.Duration
+var coreDispatcher = &dispatcher{}
 
-	mu     sync.Mutex
-	cond   *sync.Cond
-	paused bool
+type dispatcher struct {
+	queue         chan func()
+	sem           chan struct{}
+	mu            sync.Mutex
+	cond          *sync.Cond
+	paused        bool
+	started       bool
+	bufferSize    int
+	maxConcurrent int
+	delayBetween  time.Duration
+	preQueue      []func()
 }
 
-func NewDispatcher(bufferSize int, maxConcurrent int, delayBetween time.Duration) *Dispatcher {
-	d := &Dispatcher{
-		queue:        make(chan func(), bufferSize),
-		sem:          make(chan struct{}, maxConcurrent),
-		delayBetween: delayBetween,
+func (d *dispatcher) Init() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.queue != nil {
+		return
 	}
+
+	if d.bufferSize == 0 {
+		d.bufferSize = 1000
+	}
+	if d.maxConcurrent == 0 {
+		d.maxConcurrent = 4
+	}
+	if d.delayBetween == 0 {
+		d.delayBetween = 16 * time.Millisecond
+	}
+
+	d.paused = false
+	d.queue = make(chan func(), d.bufferSize)
+	d.sem = make(chan struct{}, d.maxConcurrent)
 	d.cond = sync.NewCond(&d.mu)
-	go d.run()
-	return d
+
+	for _, fn := range d.preQueue {
+		d.queue <- fn
+	}
+	d.preQueue = nil
 }
 
-func (d *Dispatcher) run() {
+func (d *dispatcher) Start() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.started || d.queue == nil {
+		return
+	}
+	d.started = true
+	go d.run()
+}
+
+func (d *dispatcher) Submit(fn func()) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.queue == nil {
+		d.preQueue = append(d.preQueue, fn)
+		return
+	}
+
+	d.queue <- fn
+}
+
+func (d *dispatcher) run() {
 	for fn := range d.queue {
 		d.sem <- struct{}{}
 
@@ -49,19 +95,37 @@ func (d *Dispatcher) run() {
 	}
 }
 
-func (d *Dispatcher) Submit(fn func()) {
-	d.queue <- fn
-}
-
-func (d *Dispatcher) Pause() {
+func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
 	d.mu.Unlock()
 }
 
-func (d *Dispatcher) Resume() {
+func (d *dispatcher) Resume() {
 	d.mu.Lock()
 	d.paused = false
 	d.mu.Unlock()
 	d.cond.Broadcast()
+}
+
+func (d *dispatcher) SetBufferSize(size int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.bufferSize = size
+}
+
+func (d *dispatcher) SetMaxConcurrent(n int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.maxConcurrent = n
+}
+
+func (d *dispatcher) SetDelayBetween(delay time.Duration) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.delayBetween = delay
+}
+
+func UseDispatcher() *dispatcher {
+	return coreDispatcher
 }

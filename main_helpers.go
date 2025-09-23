@@ -476,7 +476,7 @@ func OpenNewPanelForm() {
 
 			if JC.IsMobile {
 				JA.StatusManager.Pause()
-				JC.AnimDispatcher.Pause()
+				JC.UseDispatcher().Pause()
 			}
 		},
 		func(layer *fyne.Container) {
@@ -485,7 +485,7 @@ func OpenNewPanelForm() {
 
 			if JC.IsMobile {
 				JA.StatusManager.Resume()
-				JC.AnimDispatcher.Resume()
+				JC.UseDispatcher().Resume()
 			}
 		},
 	)
@@ -514,7 +514,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 			if JC.IsMobile {
 				JA.StatusManager.Pause()
-				JC.AnimDispatcher.Pause()
+				JC.UseDispatcher().Pause()
 			}
 		},
 		func(layer *fyne.Container) {
@@ -523,7 +523,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 			if JC.IsMobile {
 				JA.StatusManager.Resume()
-				JC.AnimDispatcher.Resume()
+				JC.UseDispatcher().Resume()
 			}
 		})
 

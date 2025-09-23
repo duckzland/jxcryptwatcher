@@ -33,7 +33,7 @@ func StartFadingText(
 		for _, alpha := range *fadeAlphas {
 			<-ticker.C
 
-			JC.AnimDispatcher.Submit(func() {
+			JC.UseDispatcher().Submit(func() {
 				fyne.Do(func() {
 					JC.SetTextAlpha(text, alpha)
 					text.Refresh()
@@ -42,7 +42,7 @@ func StartFadingText(
 		}
 
 		if callback != nil {
-			JC.AnimDispatcher.Submit(func() {
+			JC.UseDispatcher().Submit(func() {
 				fyne.Do(callback)
 			})
 		}

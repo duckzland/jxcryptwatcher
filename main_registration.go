@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 
 	JA "jxwatcher/apps"
+	"jxwatcher/core"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
@@ -676,11 +677,20 @@ func RegisterLifecycle() {
 }
 
 func RegisterDispatcher() {
+	d := core.UseDispatcher()
+	d.Init()
+	d.SetBufferSize(10000)
+
 	if JC.IsMobile {
-		JC.AnimDispatcher = JC.NewDispatcher(10000, 1, 48*time.Millisecond)
+		d.SetMaxConcurrent(1)
+		d.SetDelayBetween(48 * time.Millisecond)
+
 	} else {
-		JC.AnimDispatcher = JC.NewDispatcher(10000, 10, 1*time.Millisecond)
+		d.SetMaxConcurrent(10)
+		d.SetDelayBetween(1 * time.Millisecond)
 	}
+
+	d.Start()
 }
 
 func RegisterCache() {

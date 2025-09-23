@@ -28,7 +28,7 @@ func FadeOutBackground(
 		for _, alpha := range alphaSteps {
 			<-ticker.C
 
-			JC.AnimDispatcher.Submit(func() {
+			JC.UseDispatcher().Submit(func() {
 				fyne.Do(func() {
 					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 					rect.Refresh()
@@ -37,7 +37,7 @@ func FadeOutBackground(
 		}
 
 		if callback != nil {
-			JC.AnimDispatcher.Submit(func() {
+			JC.UseDispatcher().Submit(func() {
 				fyne.Do(callback)
 			})
 		}
