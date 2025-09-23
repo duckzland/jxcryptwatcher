@@ -23,6 +23,7 @@ type layoutManager struct {
 	topBar            *fyne.Container
 	content           *fyne.CanvasObject
 	tickers           *fyne.Container
+	tickersPopulated  *fyne.Container
 	scroll            *container.Scroll
 	container         *fyne.Container
 	actionAddPanel    *staticPage
@@ -195,6 +196,16 @@ func (m *layoutManager) SetPage(container fyne.CanvasObject) {
 	m.mu.Unlock()
 }
 
+func (m *layoutManager) RegisterTickers(container *fyne.Container) {
+	if container == nil {
+		return
+	}
+
+	m.mu.Lock()
+	m.tickersPopulated = container
+	m.mu.Unlock()
+}
+
 func (m *layoutManager) SetTickers(container *fyne.Container) {
 	if container == nil {
 		return
@@ -355,20 +366,21 @@ func (m *layoutManager) Refresh() {
 
 		m.mu.RLock()
 		tickers := m.tickers
+		populated := m.tickersPopulated
 		m.mu.RUnlock()
 
-		if tickers != nil && tickers != JC.Tickers && StatusManager.ValidTickers() {
-			m.SetTickers(JC.Tickers)
+		if tickers != nil && tickers != populated && StatusManager.ValidTickers() {
+			m.SetTickers(m.tickersPopulated)
 			return
 		}
 
-		if tickers != nil && tickers == JC.Tickers && !StatusManager.ValidTickers() {
+		if tickers != nil && tickers == populated && !StatusManager.ValidTickers() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
 
 		if tickers == nil && StatusManager.ValidTickers() {
-			m.SetTickers(JC.Tickers)
+			m.SetTickers(populated)
 			return
 		}
 	}
