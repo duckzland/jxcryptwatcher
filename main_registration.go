@@ -415,11 +415,11 @@ func RegisterFetchers() {
 
 	JC.FetcherManager.Register("cryptos_map", &JC.GenericFetcher{
 		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			code := JT.CryptosLoader.GetCryptos()
+			code := JT.UseCryptosLoader().GetCryptos()
 
 			return JC.FetchResult{
 				Code: code,
-				Data: JT.CryptosLoader,
+				Data: JT.UseCryptosLoader(),
 			}, nil
 		},
 	}, 0, func(result JC.FetchResult) {

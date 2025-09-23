@@ -13,7 +13,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var CryptosLoader cryptosLoaderType
+var cryptosLoaderStorage *cryptosLoaderType
 var cryptosMu sync.RWMutex
 
 type cryptosLoaderType struct {
@@ -169,12 +169,16 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 
 func CryptosLoaderInit() {
 	cryptosMu.Lock()
-	CryptosLoader = cryptosLoaderType{}
+	cryptosLoaderStorage = &cryptosLoaderType{}
 	cryptosMu.Unlock()
 
-	CM := CryptosLoader.CheckFile().LoadFile().ConvertToMap()
+	CM := cryptosLoaderStorage.CheckFile().LoadFile().ConvertToMap()
 	CM.ClearMapCache()
 
 	UsePanelMaps().SetMaps(CM)
 	UsePanelMaps().GetOptions()
+}
+
+func UseCryptosLoader() *cryptosLoaderType {
+	return cryptosLoaderStorage
 }
