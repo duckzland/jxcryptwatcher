@@ -103,9 +103,7 @@ func (d *debouncer) Cancel(key string) {
 
 func RegisterDebouncer() *debouncer {
 	if coreDebouncer == nil {
-		InitOnce(func() {
-			coreDebouncer = &debouncer{}
-		})
+		coreDebouncer = &debouncer{}
 	}
 	return coreDebouncer
 }

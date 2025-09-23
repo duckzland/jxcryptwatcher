@@ -237,15 +237,17 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 var activeTheme = &appTheme{}
 
 func NewTheme() fyne.Theme {
-	JC.InitOnce(func() {
+	if JC.ThemeColor == nil {
 		JC.ThemeColor = func(name fyne.ThemeColorName) color.Color {
 			return activeTheme.Color(name, theme.VariantDark)
 		}
+	}
 
+	if JC.ThemeSize == nil {
 		JC.ThemeSize = func(name fyne.ThemeSizeName) float32 {
 			return activeTheme.Size(name)
 		}
-	})
+	}
 
 	return activeTheme
 }

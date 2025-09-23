@@ -56,9 +56,7 @@ func (c *cwCache) Has(key int) bool {
 
 func RegisterCharWidthCache() *cwCache {
 	if charWidthCache == nil {
-		InitOnce(func() {
-			charWidthCache = &cwCache{}
-		})
+		charWidthCache = &cwCache{}
 	}
 	return charWidthCache
 }

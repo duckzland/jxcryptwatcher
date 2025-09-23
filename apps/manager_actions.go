@@ -6,7 +6,6 @@ import (
 
 	"fyne.io/fyne/v2"
 
-	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 )
 
@@ -82,9 +81,7 @@ func (a *actionManager) Disable() {
 
 func RegisterActionManager() *actionManager {
 	if actionManagerStorage == nil {
-		JC.InitOnce(func() {
-			actionManagerStorage = &actionManager{}
-		})
+		actionManagerStorage = &actionManager{}
 	}
 	return actionManagerStorage
 }

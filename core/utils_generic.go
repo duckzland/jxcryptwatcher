@@ -117,11 +117,3 @@ func EqualIntSlices(a, b []int) bool {
 	}
 	return true
 }
-
-func InitOnce(callback func()) {
-	syncInitOnce.Do(func() {
-		if callback != nil {
-			callback()
-		}
-	})
-}

@@ -128,9 +128,7 @@ func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 
 func RegisterDispatcher() *dispatcher {
 	if coreDispatcher == nil {
-		InitOnce(func() {
-			coreDispatcher = &dispatcher{}
-		})
+		coreDispatcher = &dispatcher{}
 	}
 	return coreDispatcher
 }

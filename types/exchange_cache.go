@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	JC "jxwatcher/core"
 )
 
 const exchangeCacheUpdateThreshold = 1 * time.Minute
@@ -183,9 +181,7 @@ func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
 
 func RegisterExchangeCache() *exchangeDataCacheType {
 	if exchangeCacheStorage == nil {
-		JC.InitOnce(func() {
-			exchangeCacheStorage = &exchangeDataCacheType{}
-		})
+		exchangeCacheStorage = &exchangeDataCacheType{}
 	}
 	return exchangeCacheStorage
 }

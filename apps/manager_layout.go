@@ -561,9 +561,7 @@ func NewAppLayout() fyne.CanvasObject {
 
 func RegisteLayoutManager() *layoutManager {
 	if layoutManagerStorage == nil {
-		JC.InitOnce(func() {
-			layoutManagerStorage = &layoutManager{}
-		})
+		layoutManagerStorage = &layoutManager{}
 	}
 	return layoutManagerStorage
 }

@@ -8,12 +8,25 @@ import (
 	"os"
 	"runtime"
 	"time"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 const MemoryDebug = false
+const PProfDebug = true
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
+
+	if PProfDebug {
+		go func() {
+			Logln("Starting pprof server on :6060")
+			if err := http.ListenAndServe("192.168.0.25:6060", nil); err != nil {
+				Logf("pprof server failed: %v", err)
+			}
+		}()
+	}
 }
 
 func Logln(v ...any) {

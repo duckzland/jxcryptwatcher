@@ -1,7 +1,6 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"sync"
 	"time"
 )
@@ -169,9 +168,7 @@ func NewTickerDataCacheSnapshot() *tickerDataCacheSnapshot {
 
 func RegisterTickerCache() *tickerDataCacheType {
 	if tickerCacheStorage == nil {
-		JC.InitOnce(func() {
-			tickerCacheStorage = &tickerDataCacheType{}
-		})
+		tickerCacheStorage = &tickerDataCacheType{}
 	}
 
 	return tickerCacheStorage

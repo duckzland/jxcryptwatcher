@@ -21,11 +21,11 @@ func main() {
 
 	JC.Logln("App is booting...")
 
-	JC.InitOnce(func() {
-		JC.App = app.NewWithID(JC.AppID)
-		JC.App.Settings().SetTheme(JA.NewTheme())
-		JC.Window = JC.App.NewWindow("JXCrypto Watcher")
-	})
+	JC.App = app.NewWithID(JC.AppID)
+	JC.App.Settings().SetTheme(JA.NewTheme())
+	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
+
+	JC.Logln("App is booting...2")
 
 	JC.RegisterWorkerManager().Init()
 

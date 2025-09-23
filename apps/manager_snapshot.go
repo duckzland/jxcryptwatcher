@@ -134,9 +134,7 @@ func (sm *snapshotManager) Save() {
 
 func RegisterSnapshotManager() *snapshotManager {
 	if snapshotManagerStorage == nil {
-		JC.InitOnce(func() {
-			snapshotManagerStorage = &snapshotManager{}
-		})
+		snapshotManagerStorage = &snapshotManager{}
 	}
 	return snapshotManagerStorage
 }

@@ -358,9 +358,7 @@ drain:
 
 func RegisterWorkerManager() *worker {
 	if workerManager == nil {
-		InitOnce(func() {
-			workerManager = &worker{}
-		})
+		workerManager = &worker{}
 	}
 	return workerManager
 }

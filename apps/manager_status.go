@@ -444,9 +444,7 @@ func (a *statusManager) Refresh() *statusManager {
 
 func RegisterStatusManager() *statusManager {
 	if statusManagerStorage == nil {
-		JC.InitOnce(func() {
-			statusManagerStorage = &statusManager{}
-		})
+		statusManagerStorage = &statusManager{}
 	}
 	return statusManagerStorage
 }

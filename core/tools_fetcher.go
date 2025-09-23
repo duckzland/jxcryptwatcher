@@ -286,9 +286,7 @@ func NewGenericFetcher(handler func(ctx context.Context) (FetchResultInterface, 
 
 func RegisterFetcherManager() *fetcher {
 	if fetcherManager == nil {
-		InitOnce(func() {
-			fetcherManager = &fetcher{}
-		})
+		fetcherManager = &fetcher{}
 	}
 	return fetcherManager
 }
