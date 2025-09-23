@@ -37,7 +37,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 
 		// Create the panel
 		panel := createPanel(pkt).(*panelDisplay)
-		panel.Resize(fyne.NewSize(JC.PanelWidth, JC.PanelHeight))
+		panel.Resize(fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)))
 
 		p = append(p, panel)
 	}
@@ -49,11 +49,16 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 
 	grid := NewpanelContainer(
 		&panelGridLayout{
-			minCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-			dynCellSize:  fyne.NewSize(JC.PanelWidth, JC.PanelHeight),
-			colCount:     1,
-			rowCount:     1,
-			innerPadding: JC.PanelPadding,
+			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
+			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
+			colCount:    1,
+			rowCount:    1,
+			innerPadding: [4]float32{
+				JC.ThemeSize(JC.SizePaddingPanelTop),
+				JC.ThemeSize(JC.SizePaddingPanelRight),
+				JC.ThemeSize(JC.SizePaddingPanelBottom),
+				JC.ThemeSize(JC.SizePaddingPanelLeft),
+			},
 		},
 		panels,
 	)

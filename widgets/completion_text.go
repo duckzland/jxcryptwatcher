@@ -40,7 +40,7 @@ func NewCompletionText(height float32, parent *completionList) *completionText {
 		s.background = canvas.NewRectangle(s.traColor)
 	}
 
-	s.label.TextSize = JC.CompletionTextSize
+	s.label.TextSize = JC.ThemeSize(JC.SizeCompletionText)
 	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
 	return s

@@ -162,6 +162,67 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 14
 	case theme.SizeNameWindowTitleBarHeight:
 		return 26
+
+	// Injected custom sizes with JC. prefix
+	case JC.SizePanelBorderRadius:
+		return 6
+	case JC.SizePanelTitle:
+		return 16
+	case JC.SizePanelSubTitle:
+		return 16
+	case JC.SizePanelBottomText:
+		return 12
+	case JC.SizePanelContent:
+		return 28
+	case JC.SizePanelTitleSmall:
+		return 13
+	case JC.SizePanelSubTitleSmall:
+		return 13
+	case JC.SizePanelBottomTextSmall:
+		return 10
+	case JC.SizePanelContentSmall:
+		return 22
+	case JC.SizePanelWidth:
+		return 320
+	case JC.SizePanelHeight:
+		return 110
+	case JC.SizeActionBtnWidth:
+		return 40
+	case JC.SizeActionBtnGap:
+		return 6
+	case JC.SizeTickerBorderRadius:
+		return 6
+	case JC.SizeTickerWidth:
+		return 120
+	case JC.SizeTickerHeight:
+		return 50
+	case JC.SizeTickerTitle:
+		return 11
+	case JC.SizeTickerContent:
+		return 20
+	case JC.SizeNotificationText:
+		return 14
+	case JC.SizeCompletionText:
+		return 14
+
+	case JC.SizePaddingPanelLeft:
+		return 8
+	case JC.SizePaddingPanelTop:
+		return 8
+	case JC.SizePaddingPanelRight:
+		return 8
+	case JC.SizePaddingPanelBottom:
+		return 8
+
+	case JC.SizePaddingTickerLeft:
+		return 8
+	case JC.SizePaddingTickerTop:
+		return 8
+	case JC.SizePaddingTickerRight:
+		return 8
+	case JC.SizePaddingTickerBottom:
+		return 8
+
 	default:
 		return 0
 	}
@@ -171,6 +232,10 @@ func NewTheme() fyne.Theme {
 	at := &appTheme{}
 	JC.ThemeColor = func(name fyne.ThemeColorName) color.Color {
 		return at.Color(name, theme.VariantDark)
+	}
+
+	JC.ThemeSize = func(name fyne.ThemeSizeName) float32 {
+		return at.Size(name)
 	}
 
 	return at

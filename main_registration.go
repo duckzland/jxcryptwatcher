@@ -686,18 +686,18 @@ func RegisterDispatcher() {
 func RegisterCache() {
 	// Prepopulating character sizes
 	sizes := []float32{
-		JC.PanelTitleSize,
-		JC.PanelSubTitleSize,
-		JC.PanelBottomTextSize,
-		JC.PanelContentSize,
-		JC.PanelTitleSizeSmall,
-		JC.PanelSubTitleSizeSmall,
-		JC.PanelBottomTextSizeSmall,
-		JC.PanelContentSizeSmall,
-		JC.TickerTitleSize,
-		JC.TickerContentSize,
-		JC.NotificationTextSize,
-		JC.CompletionTextSize,
+		JC.ThemeSize(JC.SizePanelTitle),
+		JC.ThemeSize(JC.SizePanelSubTitle),
+		JC.ThemeSize(JC.SizePanelBottomText),
+		JC.ThemeSize(JC.SizePanelContent),
+		JC.ThemeSize(JC.SizePanelTitleSmall),
+		JC.ThemeSize(JC.SizePanelSubTitleSmall),
+		JC.ThemeSize(JC.SizePanelBottomTextSmall),
+		JC.ThemeSize(JC.SizePanelContentSmall),
+		JC.ThemeSize(JC.SizeTickerTitle),
+		JC.ThemeSize(JC.SizeTickerContent),
+		JC.ThemeSize(JC.SizeNotificationText),
+		JC.ThemeSize(JC.SizeCompletionText),
 	}
 
 	for _, size := range sizes {

@@ -83,7 +83,7 @@ func NewCompletionEntry(
 	closeBtn.Move(fyne.NewPos(0, 0))
 
 	bg := canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground))
-	bg.CornerRadius = JC.PanelBorderRadius
+	bg.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
 
 	c.container = container.NewStack(
 		bg,

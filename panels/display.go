@@ -55,14 +55,14 @@ func NewPanelDisplay(
 	tc := JC.ThemeColor(theme.ColorNameForeground)
 
 	pl := &panelDisplayLayout{
-		title:      NewPanelText("", tc, JC.PanelTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		subtitle:   NewPanelText("", tc, JC.PanelSubTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		content:    NewPanelText("", tc, JC.PanelContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		title:      NewPanelText("", tc, JC.ThemeSize(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		subtitle:   NewPanelText("", tc, JC.ThemeSize(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		content:    NewPanelText("", tc, JC.ThemeSize(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG)),
-		bottomText: NewPanelText("", tc, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		bottomText: NewPanelText("", tc, JC.ThemeSize(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
-	pl.background.CornerRadius = JC.PanelBorderRadius
+	pl.background.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
 
 	pl.action = NewPanelAction(
 		func() {
@@ -211,7 +211,7 @@ func (h *panelDisplay) DragEnd() {
 
 	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
 		rect.FillColor = JC.ThemeColor(JC.ColorNameTransparent)
-		rect.Move(fyne.NewPos(0, -JC.PanelHeight))
+		rect.Move(fyne.NewPos(0, -JC.ThemeSize(JC.SizePanelHeight)))
 		canvas.Refresh(rect)
 	}
 
@@ -229,11 +229,11 @@ func (h *panelDisplay) updateContent() {
 	}
 
 	pwidth := h.Size().Width
-	if pwidth != 0 && pwidth < JC.PanelWidth {
-		h.title.SetTextSize(JC.PanelTitleSizeSmall)
-		h.subtitle.SetTextSize(JC.PanelSubTitleSizeSmall)
-		h.bottomText.SetTextSize(JC.PanelBottomTextSizeSmall)
-		h.content.SetTextSize(JC.PanelContentSizeSmall)
+	if pwidth != 0 && pwidth < JC.ThemeSize(JC.SizePanelWidth) {
+		h.title.SetTextSize(JC.ThemeSize(JC.SizePanelTitleSmall))
+		h.subtitle.SetTextSize(JC.ThemeSize(JC.SizePanelSubTitleSmall))
+		h.bottomText.SetTextSize(JC.ThemeSize(JC.SizePanelBottomTextSmall))
+		h.content.SetTextSize(JC.ThemeSize(JC.SizePanelContentSmall))
 	}
 
 	if !JT.BP.ValidatePanel(pkt.Get()) {

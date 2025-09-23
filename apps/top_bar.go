@@ -16,8 +16,8 @@ func NewTopBar() *fyne.Container {
 
 	return container.New(
 		&topBarLayout{
-			fixedWidth: JC.ActionBtnWidth,
-			spacer:     JC.ActionBtnGap,
+			fixedWidth: JC.ThemeSize(JC.SizeActionBtnWidth),
+			spacer:     JC.ThemeSize(JC.SizeActionBtnGap),
 		},
 		container.NewStack(
 			topBg,

@@ -43,7 +43,7 @@ func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 	layout.content.TextSize = 20
 
 	layout.background.SetMinSize(fyne.NewSize(100, 100))
-	layout.background.CornerRadius = JC.PanelBorderRadius
+	layout.background.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
 
 	objects = append(objects, layout.background)
 

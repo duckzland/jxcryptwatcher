@@ -80,5 +80,5 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 }
 
 func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(JC.PanelWidth, JC.PanelHeight)
+	return fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight))
 }

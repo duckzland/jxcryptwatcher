@@ -36,12 +36,12 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 
 	tl := &tickerLayout{
 		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTickerBG)),
-		title:      NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		status:     NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		content:    NewTickerText("", tc, JC.TickerContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		title:      NewTickerText("", tc, JC.ThemeSize(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		status:     NewTickerText("", tc, JC.ThemeSize(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		content:    NewTickerText("", tc, JC.ThemeSize(JC.SizeTickerContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 	}
 
-	tl.background.CornerRadius = JC.TickerBorderRadius
+	tl.background.CornerRadius = JC.ThemeSize(JC.SizeTickerBorderRadius)
 
 	str := tdt.GetData()
 	ticker := &tickerDisplay{

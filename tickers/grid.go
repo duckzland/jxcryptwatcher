@@ -18,7 +18,7 @@ func NewTickerGrid() *tickerContainer {
 
 	for _, pot := range list {
 		ticker := NewtickerDisplay(pot)
-		ticker.Resize(fyne.NewSize(JC.TickerWidth, JC.TickerHeight))
+		ticker.Resize(fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)))
 
 		p = append(p, ticker)
 	}
@@ -30,11 +30,16 @@ func NewTickerGrid() *tickerContainer {
 
 	grid := NewTickerContainer(
 		&tickerGridLayout{
-			minCellSize:  fyne.NewSize(JC.TickerWidth, JC.TickerHeight),
-			dynCellSize:  fyne.NewSize(JC.TickerWidth, JC.TickerHeight),
-			colCount:     1,
-			rowCount:     1,
-			innerPadding: JC.PanelPadding,
+			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
+			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
+			colCount:    1,
+			rowCount:    1,
+			innerPadding: [4]float32{
+				JC.ThemeSize(JC.SizePaddingPanelTop),
+				JC.ThemeSize(JC.SizePaddingPanelRight),
+				JC.ThemeSize(JC.SizePaddingPanelBottom),
+				JC.ThemeSize(JC.SizePaddingPanelLeft),
+			},
 		},
 		tickers,
 	)

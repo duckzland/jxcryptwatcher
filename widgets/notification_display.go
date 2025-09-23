@@ -30,7 +30,7 @@ func NewNotificationDisplay() *notificationDisplay {
 
 	t := canvas.NewText("", c)
 	t.Alignment = fyne.TextAlignCenter
-	t.TextSize = JC.NotificationTextSize
+	t.TextSize = JC.ThemeSize(JC.SizeNotificationText)
 
 	w := &notificationDisplay{
 		text:     t,
