@@ -15,7 +15,7 @@ type panelText struct {
 	label *canvas.Text
 }
 
-func NewPanelText(text string, color color.RGBA, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
+func NewPanelText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
 	s := &panelText{
 		label: canvas.NewText(text, color),
 	}

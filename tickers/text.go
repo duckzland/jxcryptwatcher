@@ -15,7 +15,7 @@ type tickerText struct {
 	label *canvas.Text
 }
 
-func NewTickerText(text string, color color.RGBA, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *tickerText {
+func NewTickerText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *tickerText {
 	s := &tickerText{
 		label: canvas.NewText(text, color),
 	}

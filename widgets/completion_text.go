@@ -1,9 +1,12 @@
 package widgets
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -18,13 +21,17 @@ type completionText struct {
 	height     float32
 	hovered    bool
 	background *canvas.Rectangle
+	bgcolor    color.Color
+	sepcolor   color.Color
 }
 
 func NewCompletionText(height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:  canvas.NewText("", JC.TextColor),
-		height: height,
-		parent: parent,
+		label:    canvas.NewText("", JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)),
+		height:   height,
+		parent:   parent,
+		bgcolor:  JC.MainTheme.Color(theme.ColorNameHover, theme.VariantDark),
+		sepcolor: JC.MainTheme.Color(theme.ColorNameSeparator, theme.VariantDark),
 	}
 
 	if !JC.IsMobile {
@@ -38,7 +45,7 @@ func NewCompletionText(height float32, parent *completionList) *completionText {
 }
 
 func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
-	separator := canvas.NewLine(JC.FormSeparatorColor)
+	separator := canvas.NewLine(s.sepcolor)
 	separator.StrokeWidth = 1
 
 	return &completionTextLayout{
@@ -91,7 +98,7 @@ func (s *completionText) MouseIn(*desktop.MouseEvent) {
 	}
 
 	s.hovered = true
-	s.background.FillColor = JC.FormHoverBGHover
+	s.background.FillColor = s.bgcolor
 	canvas.Refresh(s.label)
 }
 

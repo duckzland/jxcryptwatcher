@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -35,7 +36,7 @@ func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 
 	layout := &pageLayout{
 		background: canvas.NewRectangle(JC.PanelBG),
-		content:    canvas.NewText(p.content, JC.TextColor),
+		content:    canvas.NewText(p.content, JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)),
 	}
 
 	layout.content.Alignment = fyne.TextAlignCenter

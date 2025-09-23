@@ -12,8 +12,6 @@ var App fyne.App
 var Window fyne.Window
 var HWTotalCPU = runtime.NumCPU()
 
-var AppBG color.RGBA = color.RGBA{R: 13, G: 20, B: 33, A: 255}
-var TextColor color.RGBA = color.RGBA{R: 255, G: 255, B: 255, A: 255}
 var ErrorColor color.RGBA = color.RGBA{R: 198, G: 40, B: 40, A: 255}
 var Transparent color.RGBA = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 var RedColor = color.RGBA{R: 133, G: 36, B: 36, A: 255}
@@ -25,11 +23,6 @@ var LightOrangeColor = color.RGBA{R: 240, G: 160, B: 100, A: 255}
 var OrangeColor = color.RGBA{R: 195, G: 102, B: 51, A: 255}
 var YellowColor = color.RGBA{R: 192, G: 168, B: 64, A: 255}
 var TealGreenColor = color.RGBA{R: 40, G: 170, B: 140, A: 255}
-
-var FormHoverBGHover = color.RGBA{R: 30, G: 30, B: 30, A: 255}
-var FormSeparatorColor = color.Gray{Y: 64}
-
-var OverlayBG = color.NRGBA{R: 0, G: 0, B: 0, A: 128}
 
 var PanelBG color.RGBA = color.RGBA{R: 50, G: 53, B: 70, A: 255}
 var PanelPlaceholderBG color.RGBA = color.RGBA{R: 20, G: 22, B: 30, A: 200}
@@ -67,6 +60,7 @@ var UpdateDisplayTimestamp = time.Now()
 
 var MainDebouncer = NewDebouncer()
 
+var MainTheme fyne.Theme
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
 

@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/animations"
@@ -51,12 +52,14 @@ func NewPanelDisplay(
 	pdt.SetID(uuid)
 	str := pdt.GetData()
 
+	tc := JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)
+
 	pl := &panelDisplayLayout{
-		title:      NewPanelText("", JC.TextColor, JC.PanelTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		subtitle:   NewPanelText("", JC.TextColor, JC.PanelSubTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		content:    NewPanelText("", JC.TextColor, JC.PanelContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		title:      NewPanelText("", tc, JC.PanelTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		subtitle:   NewPanelText("", tc, JC.PanelSubTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		content:    NewPanelText("", tc, JC.PanelContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		background: canvas.NewRectangle(JC.PanelBG),
-		bottomText: NewPanelText("", JC.TextColor, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		bottomText: NewPanelText("", tc, JC.PanelBottomTextSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
 	pl.background.CornerRadius = JC.PanelBorderRadius
@@ -289,7 +292,7 @@ func (h *panelDisplay) updateContent() {
 	h.content.SetText(content)
 
 	if pkt.DidChange() {
-		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.TextColor, 1)
+		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
 	}
 
 	if h.background.FillColor != background {

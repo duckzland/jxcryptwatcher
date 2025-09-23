@@ -1,9 +1,12 @@
 package widgets
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JC "jxwatcher/core"
@@ -11,17 +14,19 @@ import (
 
 type dialogOverlays struct {
 	widget.BaseWidget
+	bgcolor color.Color
 }
 
 func NewDialogOverlays() *dialogOverlays {
 	wrapper := &dialogOverlays{}
 	wrapper.ExtendBaseWidget(wrapper)
+	wrapper.bgcolor = JC.MainTheme.Color(theme.ColorNameOverlayBackground, theme.VariantDark)
 
 	return wrapper
 }
 
 func (h *dialogOverlays) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(canvas.NewRectangle(JC.OverlayBG))
+	return widget.NewSimpleRenderer(canvas.NewRectangle(h.bgcolor))
 }
 
 func (h *dialogOverlays) Tapped(e *fyne.PointEvent) {

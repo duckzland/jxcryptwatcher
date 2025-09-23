@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/animations"
@@ -31,11 +32,13 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 	uuid := JC.CreateUUID()
 	tdt.SetID(uuid)
 
+	tc := JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)
+
 	tl := &tickerLayout{
 		background: canvas.NewRectangle(JC.TickerBG),
-		title:      NewTickerText("", JC.TextColor, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		status:     NewTickerText("", JC.TextColor, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		content:    NewTickerText("", JC.TextColor, JC.TickerContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		title:      NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		status:     NewTickerText("", tc, JC.TickerTitleSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		content:    NewTickerText("", tc, JC.TickerContentSize, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 	}
 
 	tl.background.CornerRadius = JC.TickerBorderRadius
@@ -168,7 +171,7 @@ func (h *tickerDisplay) updateContent() {
 	h.content.SetText(content)
 
 	if isNewContent {
-		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.TextColor, 1)
+		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
 	}
 
 	if h.background.FillColor != background {

@@ -1,8 +1,11 @@
 package widgets
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/animations"
@@ -13,8 +16,9 @@ var NotificationContainer *notificationDisplay
 
 type notificationDisplay struct {
 	widget.BaseWidget
-	text    *canvas.Text
-	padding float32
+	text     *canvas.Text
+	padding  float32
+	txtcolor color.Color
 }
 
 func NotificationInit() {
@@ -22,22 +26,27 @@ func NotificationInit() {
 }
 
 func NewNotificationDisplay() *notificationDisplay {
-	t := canvas.NewText("", JC.TextColor)
+	c := JC.MainTheme.Color(theme.ColorNameForeground, theme.VariantDark)
+
+	t := canvas.NewText("", c)
 	t.Alignment = fyne.TextAlignCenter
 	t.TextSize = JC.NotificationTextSize
 
 	w := &notificationDisplay{
-		text:    t,
-		padding: 10,
+		text:     t,
+		padding:  10,
+		txtcolor: c,
 	}
+
 	w.ExtendBaseWidget(w)
+
 	return w
 }
 
 func (w *notificationDisplay) UpdateText(msg string) {
 	maxWidth := w.text.Size().Width
 	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize, w.text.TextStyle)
-	w.text.Color = JC.TextColor
+	w.text.Color = w.txtcolor
 	w.text.Refresh()
 	w.Refresh()
 }
@@ -45,7 +54,7 @@ func (w *notificationDisplay) UpdateText(msg string) {
 func (w *notificationDisplay) ClearText() {
 	JA.StartFadingText(w.text, func() {
 		w.text.Text = ""
-		w.text.Color = JC.TextColor
+		w.text.Color = w.txtcolor
 		w.text.Refresh()
 		w.Refresh()
 	}, nil)
