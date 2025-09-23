@@ -20,6 +20,7 @@ type panelContainer struct {
 	dragCursorOffset fyne.Position
 	fps              time.Duration
 	done             chan struct{}
+	activeAction     *panelDisplay
 }
 
 func (c *panelContainer) Add(obj fyne.CanvasObject) {
@@ -137,6 +138,22 @@ func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt JT.PanelData)
 			panel.updateContent()
 		}
 	}
+}
+
+func (c *panelContainer) SetActiveAction(action *panelDisplay) {
+	c.activeAction = action
+}
+
+func (c *panelContainer) GetActiveAction() *panelDisplay {
+	return c.activeAction
+}
+
+func (c *panelContainer) HasActiveAction() bool {
+	return c.activeAction != nil
+}
+
+func (c *panelContainer) ResetActiveAction() {
+	c.activeAction = nil
 }
 
 func NewpanelContainer(

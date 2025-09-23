@@ -595,8 +595,8 @@ func ToggleDraggable() {
 	}
 
 	JP.UsePanelGrid().ForceRefresh()
-	if JP.ActiveAction != nil {
-		JP.ActiveAction.HideTarget()
+	if JP.UsePanelGrid().HasActiveAction() {
+		JP.UsePanelGrid().GetActiveAction().HideTarget()
 	}
 }
 

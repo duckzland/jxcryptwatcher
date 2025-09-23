@@ -6,7 +6,7 @@ import (
 )
 
 var tickerCacheStorage *tickerDataCacheType = &tickerDataCacheType{}
-var TickerUpdateThreshold = 2 * time.Minute
+var tickerUpdateThreshold = 2 * time.Minute
 
 type tickerDataCacheSnapshot struct {
 	Data        []tickerDataCacheEntry `json:"data"`
@@ -119,8 +119,8 @@ func (tc *tickerDataCacheType) ShouldRefresh() bool {
 	if last == nil {
 		return true
 	}
-	return time.Now().After(last.Add(TickerUpdateThreshold)) &&
-		time.Now().After(tc.GetTimestamp().Add(TickerUpdateThreshold))
+	return time.Now().After(last.Add(tickerUpdateThreshold)) &&
+		time.Now().After(tc.GetTimestamp().Add(tickerUpdateThreshold))
 }
 
 // Serialization

@@ -12,15 +12,6 @@ import (
 	JC "jxwatcher/core"
 )
 
-type tickerDataCache struct {
-	Type   string
-	Title  string
-	Format string
-	Status int
-	Key    string
-	OldKey string
-}
-
 type TickerData interface {
 	Init()
 	Set(rate string)
@@ -54,6 +45,15 @@ type TickerData interface {
 	FormatContent() string
 	DidChange() bool
 	Serialize() tickerDataCache
+}
+
+type tickerDataCache struct {
+	Type   string
+	Title  string
+	Format string
+	Status int
+	Key    string
+	OldKey string
 }
 
 type tickerDataType struct {

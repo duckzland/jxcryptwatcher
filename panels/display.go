@@ -18,7 +18,6 @@ import (
 	JT "jxwatcher/types"
 )
 
-var ActiveAction *panelDisplay = nil
 var activeDragging *panelDisplay = nil
 
 type panelDisplay struct {
@@ -128,18 +127,18 @@ func (h *panelDisplay) ShowTarget() {
 	h.visible = true
 	h.Refresh()
 
-	if ActiveAction != nil {
-		ActiveAction.HideTarget()
+	if h.parent.HasActiveAction() {
+		h.parent.GetActiveAction().HideTarget()
 	}
 
-	ActiveAction = h
+	h.parent.SetActiveAction(h)
 }
 
 func (h *panelDisplay) HideTarget() {
 	h.action.Hide()
 	h.visible = false
 	h.Refresh()
-	ActiveAction = nil
+	h.parent.ResetActiveAction()
 }
 
 func (h *panelDisplay) DisableClick() {
