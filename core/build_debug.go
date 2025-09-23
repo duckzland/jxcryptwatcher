@@ -14,7 +14,7 @@ import (
 )
 
 const MemoryDebug = false
-const PProfDebug = true
+const PProfDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
