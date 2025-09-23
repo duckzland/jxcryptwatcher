@@ -276,7 +276,6 @@ func RegisterWorkers() {
 
 	JC.UseWorker().RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
-			JC.UpdateDisplayTimestamp = time.Now()
 			JA.LayoutManager.SetLastDisplayUpdate(time.Now())
 		}
 	}, 200, func() bool {
