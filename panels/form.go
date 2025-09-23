@@ -23,8 +23,8 @@ func NewPanelForm(
 	onDestroy func(layer *fyne.Container),
 ) JW.DialogForm {
 
-	cm := JT.BP.GetOptions()
-	cs := JT.BP.GetMaps().GetSearchMap()
+	cm := JT.UsePanelMaps().GetOptions()
+	cs := JT.UsePanelMaps().GetMaps().GetSearchMap()
 
 	pse := container.NewStack()
 	pte := container.NewStack()
@@ -39,7 +39,7 @@ func NewPanelForm(
 
 	if panelKey != "new" {
 
-		pkt := JT.BP.GetDataByID(uuid)
+		pkt := JT.UsePanelMaps().GetDataByID(uuid)
 		pko := pkt.UsePanelKey()
 
 		title = "Editing Panel"
@@ -53,9 +53,9 @@ func NewPanelForm(
 			),
 		)
 
-		sourceEntry.SetDefaultValue(JT.BP.GetDisplayById(pko.GetSourceCoinString()))
+		sourceEntry.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetSourceCoinString()))
 
-		targetEntry.SetDefaultValue(JT.BP.GetDisplayById(pko.GetTargetCoinString()))
+		targetEntry.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetTargetCoinString()))
 
 		decimalsEntry.SetDefaultValue(pko.GetDecimalsString())
 
@@ -88,15 +88,15 @@ func NewPanelForm(
 			return fmt.Errorf("Please select a cryptocurrency.")
 		}
 
-		tid := JT.BP.GetIdByDisplay(s)
+		tid := JT.UsePanelMaps().GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !JT.BP.ValidateId(id) {
+		if err != nil || !JT.UsePanelMaps().ValidateId(id) {
 			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
-		xid := JT.BP.GetIdByDisplay(targetEntry.Text)
+		xid := JT.UsePanelMaps().GetIdByDisplay(targetEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err == nil && JT.BP.ValidateId(bid) && bid == id {
+		if err == nil && JT.UsePanelMaps().ValidateId(bid) && bid == id {
 			return fmt.Errorf("Source and target cryptocurrencies must be different.")
 		}
 
@@ -109,15 +109,15 @@ func NewPanelForm(
 			return fmt.Errorf("Please select a cryptocurrency.")
 		}
 
-		tid := JT.BP.GetIdByDisplay(s)
+		tid := JT.UsePanelMaps().GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
-		if err != nil || !JT.BP.ValidateId(id) {
+		if err != nil || !JT.UsePanelMaps().ValidateId(id) {
 			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
-		xid := JT.BP.GetIdByDisplay(sourceEntry.Text)
+		xid := JT.UsePanelMaps().GetIdByDisplay(sourceEntry.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
-		if err == nil && JT.BP.ValidateId(bid) && bid == id {
+		if err == nil && JT.UsePanelMaps().ValidateId(bid) && bid == id {
 			return fmt.Errorf("Source and target cryptocurrencies must be different.")
 		}
 
@@ -158,10 +158,10 @@ func NewPanelForm(
 				npk := JT.NewPanelKey()
 				var ns JT.PanelData
 
-				sid := JT.BP.GetIdByDisplay(sourceEntry.Text)
-				tid := JT.BP.GetIdByDisplay(targetEntry.Text)
-				bid := JT.BP.GetSymbolById(sid)
-				mid := JT.BP.GetSymbolById(tid)
+				sid := JT.UsePanelMaps().GetIdByDisplay(sourceEntry.Text)
+				tid := JT.UsePanelMaps().GetIdByDisplay(targetEntry.Text)
+				bid := JT.UsePanelMaps().GetSymbolById(sid)
+				mid := JT.UsePanelMaps().GetSymbolById(tid)
 
 				newKey := npk.GenerateKey(
 					sid,
@@ -174,7 +174,7 @@ func NewPanelForm(
 				)
 
 				if panelKey == "new" {
-					ns = JT.BP.Append(newKey)
+					ns = JT.UsePanelMaps().Append(newKey)
 
 					if ns == nil {
 						JC.Notify("Unable to add new panel. Please try again.")
@@ -188,7 +188,7 @@ func NewPanelForm(
 					}
 
 				} else {
-					ns = JT.BP.GetDataByID(uuid)
+					ns = JT.UsePanelMaps().GetDataByID(uuid)
 					if ns == nil {
 						JC.Notify("Unable to update panel. Please try again.")
 						return false

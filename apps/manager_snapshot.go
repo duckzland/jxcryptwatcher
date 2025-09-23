@@ -39,8 +39,8 @@ func (sm *snapshotManager) LoadPanels() int {
 		restored = append(restored, p)
 	}
 
-	JT.BP.Init()
-	JT.BP.Hydrate(restored)
+	JT.UsePanelMaps().Init()
+	JT.UsePanelMaps().Hydrate(restored)
 
 	return JC.HAVE_SNAPSHOT
 }
@@ -58,8 +58,8 @@ func (sm *snapshotManager) LoadCryptos() int {
 
 	cm := JT.NewCryptosMap()
 	cm.Hydrate(cache.Data)
-	JT.BP.SetMaps(cm)
-	JT.BP.GetOptions()
+	JT.UsePanelMaps().SetMaps(cm)
+	JT.UsePanelMaps().GetOptions()
 
 	return JC.HAVE_SNAPSHOT
 }
@@ -125,8 +125,8 @@ func (sm *snapshotManager) LoadTickerData() int {
 }
 
 func (sm *snapshotManager) Save() {
-	JC.SaveFile("snapshots-panels.json", JT.BP.Serialize())
-	JC.SaveFile("snapshots-cryptos.json", JT.BP.GetMaps().Serialize())
+	JC.SaveFile("snapshots-panels.json", JT.UsePanelMaps().Serialize())
+	JC.SaveFile("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
 	JC.SaveFile("snapshots-tickers.json", JT.BT.Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
 	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())

@@ -15,10 +15,10 @@ import (
 
 func UpdateDisplay() bool {
 
-	list := JT.BP.GetData()
+	list := JT.UsePanelMaps().GetData()
 	for _, pot := range list {
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetDataByID(pot.GetID())
+		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 		pk := pkt.Get()
 		pkt.Update(pk)
 
@@ -36,12 +36,12 @@ func UpdateRates() bool {
 	}
 
 	jb := make(map[string]string)
-	list := JT.BP.GetData()
+	list := JT.UsePanelMaps().GetData()
 
 	for _, pot := range list {
-		pk := JT.BP.GetDataByID(pot.GetID())
+		pk := JT.UsePanelMaps().GetDataByID(pot.GetID())
 
-		if !JT.BP.ValidatePanel(pk.Get()) {
+		if !JT.UsePanelMaps().ValidatePanel(pk.Get()) {
 			pk.SetStatus(JC.STATE_BAD_CONFIG)
 			continue
 		}
@@ -208,7 +208,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.StatusManager.SetNetworkStatus(false)
 
 		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
+			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
 
@@ -226,7 +226,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.StatusManager.SetConfigStatus(false)
 
 		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
+			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
 
@@ -314,7 +314,7 @@ func ProcessFetchingCryptosComplete(status int) {
 
 		JC.Notify("Crypto map regenerated successfully")
 
-		if JT.BP.RefreshData() {
+		if JT.UsePanelMaps().RefreshData() {
 			fyne.Do(func() {
 				JP.UsePanelGrid().ForceRefresh()
 			})
@@ -348,11 +348,11 @@ func ProcessFetchingCryptosComplete(status int) {
 
 func ValidateRatesCache() bool {
 
-	list := JT.BP.GetData()
+	list := JT.UsePanelMaps().GetData()
 	for _, pot := range list {
 
 		// Always get linked data! do not use the copied
-		pkt := JT.BP.GetDataByID(pot.GetID())
+		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 		pks := pkt.UsePanelKey()
 		ck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 
@@ -369,7 +369,7 @@ func RemovePanel(uuid string) {
 	if JP.UsePanelGrid().RemoveByID(uuid) {
 		JC.Logf("Removing panel %s", uuid)
 
-		if JT.BP.Remove(uuid) {
+		if JT.UsePanelMaps().Remove(uuid) {
 			JP.UsePanelGrid().ForceRefresh()
 
 			// Give time for grid to relayout first!
@@ -392,7 +392,7 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JP.UsePanelGrid().ForceRefresh()
 
-	if !JT.BP.ValidatePanel(pdt.Get()) {
+	if !JT.UsePanelMaps().ValidatePanel(pdt.Get()) {
 		pdt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 

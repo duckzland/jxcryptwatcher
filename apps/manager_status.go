@@ -333,11 +333,11 @@ func (a *statusManager) SetNetworkStatus(status bool) *statusManager {
 }
 
 func (a *statusManager) InitData() *statusManager {
-	ready := JT.BP.HasMaps()
-	noPanels := JT.BP.IsEmpty()
+	ready := JT.UsePanelMaps().HasMaps()
+	noPanels := JT.UsePanelMaps().IsEmpty()
 	badConfig := !JT.Config.IsValid()
-	badCryptos := !JT.BP.HasMaps() || JT.BP.GetMaps().IsEmpty()
-	panelsCount := JT.BP.TotalData()
+	badCryptos := !JT.UsePanelMaps().HasMaps() || JT.UsePanelMaps().GetMaps().IsEmpty()
+	panelsCount := JT.UsePanelMaps().TotalData()
 	badTickers := !JT.Config.IsValidTickers()
 
 	a.mu.Lock()
@@ -354,11 +354,11 @@ func (a *statusManager) InitData() *statusManager {
 }
 
 func (a *statusManager) DetectData() *statusManager {
-	newReady := JT.BP.HasMaps()
-	newNoPanels := JT.BP.IsEmpty()
+	newReady := JT.UsePanelMaps().HasMaps()
+	newNoPanels := JT.UsePanelMaps().IsEmpty()
 	newBadConfig := !JT.Config.IsValid()
-	newBadCryptos := !JT.BP.HasMaps() || JT.BP.GetMaps().IsEmpty()
-	newPanelsCount := JT.BP.TotalData()
+	newBadCryptos := !JT.UsePanelMaps().HasMaps() || JT.UsePanelMaps().GetMaps().IsEmpty()
+	newPanelsCount := JT.UsePanelMaps().TotalData()
 	newBadTickers := !JT.Config.IsValidTickers()
 
 	a.mu.Lock()

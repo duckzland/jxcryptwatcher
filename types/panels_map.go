@@ -6,7 +6,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var BP panelsMapType = panelsMapType{}
+var panelMapsStorage *panelsMapType = &panelsMapType{}
 
 type panelsMapType struct {
 	mu   sync.RWMutex
@@ -290,4 +290,8 @@ func (pc *panelsMapType) GetSymbolById(id string) string {
 
 func (pc *panelsMapType) GetSymbolByDisplay(id string) string {
 	return pc.maps.GetSymbolByDisplay(id)
+}
+
+func UsePanelMaps() *panelsMapType {
+	return panelMapsStorage
 }

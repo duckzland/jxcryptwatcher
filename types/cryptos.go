@@ -175,6 +175,6 @@ func CryptosLoaderInit() {
 	CM := CryptosLoader.CheckFile().LoadFile().ConvertToMap()
 	CM.ClearMapCache()
 
-	BP.SetMaps(CM)
-	BP.GetOptions()
+	UsePanelMaps().SetMaps(CM)
+	UsePanelMaps().GetOptions()
 }

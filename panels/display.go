@@ -223,7 +223,7 @@ func (h *panelDisplay) DragEnd() {
 
 func (h *panelDisplay) updateContent() {
 
-	pkt := JT.BP.GetDataByID(h.GetTag())
+	pkt := JT.UsePanelMaps().GetDataByID(h.GetTag())
 	if pkt == nil {
 		return
 	}
@@ -236,7 +236,7 @@ func (h *panelDisplay) updateContent() {
 		h.content.SetTextSize(JC.ThemeSize(JC.SizePanelContentSmall))
 	}
 
-	if !JT.BP.ValidatePanel(pkt.Get()) {
+	if !JT.UsePanelMaps().ValidatePanel(pkt.Get()) {
 		pkt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
@@ -471,14 +471,14 @@ func (h *panelDisplay) syncPanelData() bool {
 	for _, obj := range UsePanelGrid().Objects {
 		if panel, ok := obj.(*panelDisplay); ok {
 			uuid := panel.GetTag()
-			pdt := JT.BP.GetDataByID(uuid)
+			pdt := JT.UsePanelMaps().GetDataByID(uuid)
 			if pdt != nil {
 				nd = append(nd, pdt)
 			}
 		}
 	}
 
-	JT.BP.SetData(nd)
+	JT.UsePanelMaps().SetData(nd)
 
 	return true
 }

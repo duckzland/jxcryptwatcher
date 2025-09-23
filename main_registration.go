@@ -223,7 +223,7 @@ func RegisterActions() {
 				return
 			}
 
-			if JT.BP.TotalData() < 2 {
+			if JT.UsePanelMaps().TotalData() < 2 {
 				JA.StatusManager.DisallowDragging()
 				btn.Disable()
 				return

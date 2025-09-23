@@ -128,7 +128,7 @@ func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt JT.PanelData)
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*panelDisplay); ok {
 
-			pdt := JT.BP.GetDataByID(panel.GetTag())
+			pdt := JT.UsePanelMaps().GetDataByID(panel.GetTag())
 
 			if shouldUpdate != nil && !shouldUpdate(pdt) {
 				continue

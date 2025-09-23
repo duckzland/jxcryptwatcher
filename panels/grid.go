@@ -24,12 +24,12 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 	JC.PrintMemUsage("Start building panels")
 
 	// Get the list of panel data
-	list := JT.BP.GetData()
+	list := JT.UsePanelMaps().GetData()
 	p := []*panelDisplay{}
 
 	for _, pot := range list {
 		// Retrieve and initialize panel data
-		pkt := JT.BP.GetDataByID(pot.GetID())
+		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 
 		if pkt.UsePanelKey().GetValueFloat() == -1 {
 			pkt.SetStatus(JC.STATE_LOADING)
