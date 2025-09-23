@@ -2,16 +2,12 @@ package core
 
 import (
 	"image/color"
-	"time"
 
 	"fyne.io/fyne/v2"
 )
 
 var App fyne.App
 var Window fyne.Window
-
-// var UpdateStatusChan = make(chan string, 1000)
-var UpdateDisplayTimestamp = time.Now()
 
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32
