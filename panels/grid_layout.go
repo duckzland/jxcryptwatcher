@@ -22,7 +22,7 @@ type panelGridLayout struct {
 func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	// Apps is not ready yet!
-	if JA.UseLayoutManager() == nil || JA.UseLayoutManager().ContainerSize().Width <= 0 || JA.UseLayoutManager().ContainerSize().Height <= 0 {
+	if JA.UseLayout() == nil || JA.UseLayout().ContainerSize().Width <= 0 || JA.UseLayout().ContainerSize().Height <= 0 {
 		return
 	}
 
@@ -47,13 +47,13 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	// Battling scrollbar, detect if we have scrollbar visible
 	mr := g.countRows(size, hPad, objects)
 	th := (g.dynCellSize.Height * float32(mr)) + (float32(mr) * (g.innerPadding[0] + g.innerPadding[2]))
-	if th > JA.UseLayoutManager().Height() {
+	if th > JA.UseLayout().Height() {
 		sw -= 18
 	}
 
 	// Screen is too small for min width
-	if g.minCellSize.Width > JA.UseLayoutManager().Width() {
-		g.minCellSize.Width = JA.UseLayoutManager().Width() - hPad
+	if g.minCellSize.Width > JA.UseLayout().Width() {
+		g.minCellSize.Width = JA.UseLayout().Width() - hPad
 	}
 
 	if sw > g.minCellSize.Width {
@@ -86,21 +86,17 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	// Fix single column overflowing on android phone
-	if g.dynCellSize.Width > JA.UseLayoutManager().Width() {
-		g.dynCellSize.Width = JA.UseLayoutManager().Width()
+	if g.dynCellSize.Width > JA.UseLayout().Width() {
+		g.dynCellSize.Width = JA.UseLayout().Width()
 
-		if th > JA.UseLayoutManager().Height() {
+		if th > JA.UseLayout().Height() {
 			g.dynCellSize.Width -= 18
 		}
 	}
 
 	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
 
-	if JA.DragPlaceholder != nil {
-		if JA.DragPlaceholder.Size() != g.dynCellSize {
-			JA.DragPlaceholder.Resize(g.dynCellSize)
-		}
-	}
+	JA.UseLayout().ResizeDragPlaceholder(g.dynCellSize)
 
 	for _, child := range objects {
 		if !child.Visible() {
@@ -181,7 +177,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
 
 	// Battling scrollbar, when we have scrollbar give space for it
-	if height > JA.UseLayoutManager().GetContentHeight() {
+	if height > JA.UseLayout().GetContentHeight() {
 		width -= 18
 	}
 

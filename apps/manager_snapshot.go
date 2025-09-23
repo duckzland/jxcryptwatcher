@@ -141,6 +141,6 @@ func RegisterSnapshotManager() *snapshotManager {
 	return snapshotManagerStorage
 }
 
-func UseSnapshotManager() *snapshotManager {
+func UseSnapshot() *snapshotManager {
 	return snapshotManagerStorage
 }

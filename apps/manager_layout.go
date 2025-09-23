@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"image/color"
 	"sync"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 )
 
 var layoutManagerStorage *layoutManager = nil
-var DragPlaceholder fyne.CanvasObject
 
 type layoutManager struct {
 	mu                sync.RWMutex
@@ -26,6 +26,7 @@ type layoutManager struct {
 	tickersPopulated  *fyne.Container
 	scroll            *container.Scroll
 	container         *fyne.Container
+	dragPlaceholder   fyne.CanvasObject
 	actionAddPanel    *staticPage
 	actionFixSetting  *staticPage
 	actionGetCryptos  *staticPage
@@ -318,30 +319,30 @@ func (m *layoutManager) Refresh() {
 	scroll := m.scroll
 	m.mu.Unlock()
 
-	if content == nil || !UseStatusManager().IsReady() {
+	if content == nil || !UseStatus().IsReady() {
 		m.mu.Lock()
 		scroll.Content = m.loading
 		m.state = -1
 		m.mu.Unlock()
-	} else if !UseStatusManager().ValidConfig() {
+	} else if !UseStatus().ValidConfig() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
 		m.state = -2
 		m.mu.Unlock()
-	} else if !UseStatusManager().ValidCryptos() {
+	} else if !UseStatus().ValidCryptos() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
 		m.state = -3
 		m.mu.Unlock()
-	} else if !UseStatusManager().ValidPanels() {
+	} else if !UseStatus().ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionAddPanel
 		m.state = 0
 		m.mu.Unlock()
-	} else if !UseStatusManager().HasError() {
+	} else if !UseStatus().HasError() {
 		m.mu.Lock()
 		scroll.Content = *content
-		m.state = UseStatusManager().panels_count
+		m.state = UseStatus().panels_count
 		m.mu.Unlock()
 	} else {
 		m.mu.Lock()
@@ -358,8 +359,8 @@ func (m *layoutManager) Refresh() {
 		m.RefreshLayout()
 	}
 
-	if UseStatusManager().IsReady() {
-		if !UseStatusManager().ValidCryptos() {
+	if UseStatus().IsReady() {
+		if !UseStatus().ValidCryptos() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
@@ -369,17 +370,17 @@ func (m *layoutManager) Refresh() {
 		populated := m.tickersPopulated
 		m.mu.RUnlock()
 
-		if tickers != nil && tickers != populated && UseStatusManager().ValidTickers() {
+		if tickers != nil && tickers != populated && UseStatus().ValidTickers() {
 			m.SetTickers(m.tickersPopulated)
 			return
 		}
 
-		if tickers != nil && tickers == populated && !UseStatusManager().ValidTickers() {
+		if tickers != nil && tickers == populated && !UseStatus().ValidTickers() {
 			m.SetTickers(container.NewWithoutLayout())
 			return
 		}
 
-		if tickers == nil && UseStatusManager().ValidTickers() {
+		if tickers == nil && UseStatus().ValidTickers() {
 			m.SetTickers(populated)
 			return
 		}
@@ -439,6 +440,41 @@ func (lm *layoutManager) GetContentHeight() float32 {
 	return lm.contentHeight
 }
 
+func (c *layoutManager) GetDragPlaceholder() fyne.CanvasObject {
+	return c.dragPlaceholder
+}
+
+func (c *layoutManager) HasDragPlaceholder() bool {
+	return c.dragPlaceholder != nil
+}
+
+func (c *layoutManager) ResizeDragPlaceholder(size fyne.Size) {
+	if c.GetDragPlaceholder() != nil && c.GetDragPlaceholder().Size() != size {
+		c.GetDragPlaceholder().Resize(size)
+	}
+}
+
+func (c *layoutManager) MovePlaceholder(pos fyne.Position) {
+	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
+		rect.Move(pos)
+		canvas.Refresh(rect)
+	}
+}
+
+func (c *layoutManager) SetPlaceholderColor(color color.Color) {
+	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
+		rect.FillColor = color
+		canvas.Refresh(rect)
+	}
+}
+
+func (c *layoutManager) IsPlaceholderColor(color color.Color) bool {
+	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
+		return rect.FillColor == color
+	}
+	return false
+}
+
 func NewAppLayout() fyne.CanvasObject {
 
 	JW.NotificationInit()
@@ -456,17 +492,17 @@ func NewAppLayout() fyne.CanvasObject {
 
 	contentIcon := theme.ContentAddIcon()
 	manager.actionAddPanel = NewAppPage(&contentIcon, "Add Panel", func() {
-		UseActionManager().Call("add_panel")
+		UseAction().Call("add_panel")
 	})
 
 	settingIcon := theme.SettingsIcon()
 	manager.actionFixSetting = NewAppPage(&settingIcon, "Open Settings", func() {
-		UseActionManager().Call("open_settings")
+		UseAction().Call("open_settings")
 	})
 
 	restoreIcon := theme.ViewRestoreIcon()
 	manager.actionGetCryptos = NewAppPage(&restoreIcon, "Fetch Crypto Data", func() {
-		UseActionManager().Call("refresh_cryptos")
+		UseAction().Call("refresh_cryptos")
 	})
 
 	manager.scroll = container.NewVScroll(nil)
@@ -484,8 +520,8 @@ func NewAppLayout() fyne.CanvasObject {
 		overlay:     nil,
 	}
 
-	DragPlaceholder = canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTransparent))
-	if rect, ok := DragPlaceholder.(*canvas.Rectangle); ok {
+	manager.dragPlaceholder = canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTransparent))
+	if rect, ok := manager.dragPlaceholder.(*canvas.Rectangle); ok {
 		rect.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
 		layout.placeholder = rect
 	}
@@ -503,6 +539,6 @@ func NewAppLayout() fyne.CanvasObject {
 		JC.Window.Canvas())
 }
 
-func UseLayoutManager() *layoutManager {
+func UseLayout() *layoutManager {
 	return layoutManagerStorage
 }

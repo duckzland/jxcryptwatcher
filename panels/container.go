@@ -60,7 +60,7 @@ func (c *panelContainer) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
-	if JM.UseStatusManager().IsDraggable() {
+	if JM.UseStatus().IsDraggable() {
 		return
 	}
 
@@ -105,9 +105,9 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 						fyne.Do(func() {
 							switch direction {
 							case -1:
-								JM.UseLayoutManager().ScrollBy(-scrollStep)
+								JM.UseLayout().ScrollBy(-scrollStep)
 							case 1:
-								JM.UseLayoutManager().ScrollBy(scrollStep)
+								JM.UseLayout().ScrollBy(scrollStep)
 							}
 						})
 					}

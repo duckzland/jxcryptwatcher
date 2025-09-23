@@ -18,47 +18,47 @@ import (
 func RegisterActions() {
 
 	// Refresh ticker data
-	JA.UseActionManager().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
+	JA.UseAction().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
 			JC.UseFetcher().Call("cryptos_map", nil)
 		},
 		func(btn JW.ActionButton) {
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsOverlayShown() {
+			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
 			}
 
-			if JA.UseStatusManager().IsDraggable() {
+			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidConfig() {
+			if !JA.UseStatus().ValidConfig() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingRates() {
+			if JA.UseStatus().IsFetchingRates() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingCryptos() {
+			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Progress()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidCryptos() {
+			if !JA.UseStatus().ValidCryptos() {
 				btn.Error()
 				return
 			}
 
-			if !JA.UseStatusManager().IsValidCrypto() {
+			if !JA.UseStatus().IsValidCrypto() {
 				btn.Error()
 				return
 			}
@@ -67,10 +67,10 @@ func RegisterActions() {
 		}))
 
 	// Refresh exchange rates
-	JA.UseActionManager().Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
+	JA.UseAction().Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn JW.ActionButton) {
 			// Open the network status temporarily
-			JA.UseStatusManager().SetNetworkStatus(true)
+			JA.UseStatus().SetNetworkStatus(true)
 
 			// Force update
 			JT.UseExchangeCache().SoftReset()
@@ -82,57 +82,57 @@ func RegisterActions() {
 
 		},
 		func(btn JW.ActionButton) {
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsOverlayShown() {
+			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
 			}
 
-			if JA.UseStatusManager().IsDraggable() {
+			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingCryptos() {
+			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidConfig() {
+			if !JA.UseStatus().ValidConfig() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidCryptos() {
+			if !JA.UseStatus().ValidCryptos() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidPanels() {
+			if !JA.UseStatus().ValidPanels() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().IsValidConfig() {
+			if !JA.UseStatus().IsValidConfig() {
 				btn.Error()
 				return
 			}
 
-			if !JA.UseStatusManager().IsGoodNetworkStatus() {
+			if !JA.UseStatus().IsGoodNetworkStatus() {
 				btn.Error()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingRates() {
+			if JA.UseStatus().IsFetchingRates() {
 				btn.Progress()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingTickers() {
+			if JA.UseStatus().IsFetchingTickers() {
 				btn.Progress()
 				return
 			}
@@ -141,47 +141,47 @@ func RegisterActions() {
 		}))
 
 	// Open settings
-	JA.UseActionManager().Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
+	JA.UseAction().Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn JW.ActionButton) {
 			OpenSettingForm()
 		},
 		func(btn JW.ActionButton) {
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsOverlayShown() {
+			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingTickers() {
+			if JA.UseStatus().IsFetchingTickers() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingCryptos() {
+			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingRates() {
+			if JA.UseStatus().IsFetchingRates() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsDraggable() {
+			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidConfig() {
+			if !JA.UseStatus().ValidConfig() {
 				btn.Error()
 				return
 			}
 
-			if !JA.UseStatusManager().IsValidConfig() {
+			if !JA.UseStatus().IsValidConfig() {
 				btn.Error()
 				return
 			}
@@ -190,46 +190,46 @@ func RegisterActions() {
 		}))
 
 	// Panel drag toggle
-	JA.UseActionManager().Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
+	JA.UseAction().Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn JW.ActionButton) {
 			ToggleDraggable()
 		},
 		func(btn JW.ActionButton) {
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsOverlayShown() {
+			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingCryptos() {
-				JA.UseStatusManager().DisallowDragging()
+			if JA.UseStatus().IsFetchingCryptos() {
+				JA.UseStatus().DisallowDragging()
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingRates() {
-				JA.UseStatusManager().DisallowDragging()
+			if JA.UseStatus().IsFetchingRates() {
+				JA.UseStatus().DisallowDragging()
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidPanels() {
-				JA.UseStatusManager().DisallowDragging()
+			if !JA.UseStatus().ValidPanels() {
+				JA.UseStatus().DisallowDragging()
 				btn.Disable()
 				return
 			}
 
 			if JT.UsePanelMaps().TotalData() < 2 {
-				JA.UseStatusManager().DisallowDragging()
+				JA.UseStatus().DisallowDragging()
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsDraggable() {
+			if JA.UseStatus().IsDraggable() {
 				btn.Active()
 				return
 			}
@@ -238,32 +238,32 @@ func RegisterActions() {
 		}))
 
 	// Add new panel
-	JA.UseActionManager().Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
+	JA.UseAction().Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn JW.ActionButton) {
 			OpenNewPanelForm()
 		},
 		func(btn JW.ActionButton) {
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsOverlayShown() {
+			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
 			}
 
-			if JA.UseStatusManager().IsFetchingCryptos() {
+			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Disable()
 				return
 			}
 
-			if JA.UseStatusManager().IsDraggable() {
+			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
 				return
 			}
 
-			if !JA.UseStatusManager().ValidCryptos() {
+			if !JA.UseStatus().ValidCryptos() {
 				btn.Disable()
 				return
 			}
@@ -276,21 +276,21 @@ func RegisterWorkers() {
 
 	JC.UseWorker().RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
-			JA.UseLayoutManager().SetLastDisplayUpdate(time.Now())
+			JA.UseLayout().SetLastDisplayUpdate(time.Now())
 		}
 	}, 200, func() bool {
 
-		if !JA.UseStatusManager().ValidConfig() {
+		if !JA.UseStatus().ValidConfig() {
 			JC.Logln("Unable to refresh display: invalid configuration")
 			return false
 		}
 
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to refresh display: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to refresh display: app is paused")
 			return false
 		}
@@ -300,12 +300,12 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayoutManager().GetLastDisplayUpdate()) {
+		if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetLastDisplayUpdate()) {
 			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
 			return false
 		}
 
-		if !JA.UseStatusManager().ValidPanels() {
+		if !JA.UseStatus().ValidPanels() {
 			JC.Logln("Unable to refresh display: No valid panels configured")
 			return false
 		}
@@ -319,22 +319,22 @@ func RegisterWorkers() {
 		return max(JT.UseConfig().Delay*1000, 30000)
 	}, 1000, func() bool {
 
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to refresh rates: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to refresh rates: app is paused")
 			return false
 		}
 
-		if JA.UseStatusManager().IsDraggable() {
+		if JA.UseStatus().IsDraggable() {
 			JC.Logln("Unable to refresh rates: app is dragging")
 			return false
 		}
 
-		if !JA.UseStatusManager().ValidConfig() {
+		if !JA.UseStatus().ValidConfig() {
 			JC.Notify("Unable to refresh rates: invalid configuration")
 			return false
 		}
@@ -344,7 +344,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JA.UseStatusManager().ValidPanels() {
+		if !JA.UseStatus().ValidPanels() {
 			JC.Logln("Unable to refresh rates: No valid panels configured")
 			return false
 		}
@@ -358,12 +358,12 @@ func RegisterWorkers() {
 		return max(JT.UseConfig().Delay*1000, 30000)
 	}, 5000, func() bool {
 
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to refresh tickers: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to refresh tickers: app is paused")
 			return false
 		}
@@ -395,12 +395,12 @@ func RegisterWorkers() {
 		return true
 
 	}, 1000, 100, 1000, 2000, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to do notification: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to do notification: app is paused")
 			return false
 		}
@@ -424,35 +424,35 @@ func RegisterFetchers() {
 		},
 	}, 0, func(result JC.FetchResult) {
 
-		defer JA.UseStatusManager().EndFetchingCryptos()
+		defer JA.UseStatus().EndFetchingCryptos()
 
 		status := DetectHTTPResponse(result.Code)
 		ProcessFetchingCryptosComplete(status)
 
 	}, func() bool {
 
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch cryptos: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch cryptos: app is paused")
 			return false
 		}
 
-		if !JA.UseStatusManager().ValidConfig() {
+		if !JA.UseStatus().ValidConfig() {
 			JC.Notify("Invalid configuration. Unable to reset cryptos map.")
 			JC.Logln("Unable to do fetch cryptos: Invalid config")
 			return false
 		}
 
-		if JA.UseStatusManager().IsFetchingCryptos() {
+		if JA.UseStatus().IsFetchingCryptos() {
 			JC.Logln("Unable to do fetch cryptos: Another fetcher is running")
 			return false
 		}
 
-		JA.UseStatusManager().StartFetchingCryptos()
+		JA.UseStatus().StartFetchingCryptos()
 
 		return true
 	})
@@ -468,12 +468,12 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch CMC100: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch CMC100: app is paused")
 			return false
 		}
@@ -497,12 +497,12 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch fear greed: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch fear greed app is paused")
 			return false
 		}
@@ -526,12 +526,12 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch marketcap: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch marketcap: app is paused")
 			return false
 		}
@@ -555,12 +555,12 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch altcoin index: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch altcoin index: app is paused")
 			return false
 		}
@@ -589,17 +589,17 @@ func RegisterFetchers() {
 		// Process results?
 
 	}, func() bool {
-		if !JA.UseStatusManager().IsReady() {
+		if !JA.UseStatus().IsReady() {
 			JC.Logln("Unable to fetch rates: app is not ready yet")
 			return false
 		}
 
-		if JA.UseStatusManager().IsPaused() {
+		if JA.UseStatus().IsPaused() {
 			JC.Logln("Unable to fetch rates: app is paused")
 			return false
 		}
 
-		if !JA.UseStatusManager().ValidPanels() {
+		if !JA.UseStatus().ValidPanels() {
 			JC.Logln("Unable to rates: no configured panels")
 			return false
 		}
@@ -623,15 +623,15 @@ func RegisterLifecycle() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.UseWorker().ResumeAll()
-				JA.UseStatusManager().Resume()
+				JA.UseStatus().Resume()
 			}
 
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to fetch data as app is not ready yet")
 				return
 			}
 
-			if !JA.UseStatusManager().HasError() && JC.IsMobile {
+			if !JA.UseStatus().HasError() && JC.IsMobile {
 				// Force Refresh
 				JT.UseExchangeCache().SoftReset()
 				JC.UseWorker().Call("update_rates", JC.CallImmediate)
@@ -646,30 +646,30 @@ func RegisterLifecycle() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
-				JA.UseStatusManager().Pause()
+				JA.UseStatus().Pause()
 				JC.UseWorker().PauseAll()
 			}
 
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return
 			}
 
 			if !snapshotSaved && JC.IsMobile {
-				JA.UseSnapshotManager().Save()
+				JA.UseSnapshot().Save()
 				snapshotSaved = true
 			}
 		})
 		lc.SetOnStopped(func() {
 			JC.Logln("App stopped")
 
-			if !JA.UseStatusManager().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return
 			}
 
 			if !snapshotSaved {
-				JA.UseSnapshotManager().Save()
+				JA.UseSnapshot().Save()
 				snapshotSaved = true
 			}
 		})

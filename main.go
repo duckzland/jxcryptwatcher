@@ -64,23 +64,23 @@ func main() {
 
 		JT.ConfigInit()
 
-		if JA.UseSnapshotManager().LoadCryptos() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshot().LoadCryptos() == JC.NO_SNAPSHOT {
 			JT.CryptosLoaderInit()
 		}
 
-		if JA.UseSnapshotManager().LoadPanels() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshot().LoadPanels() == JC.NO_SNAPSHOT {
 			JT.PanelsInit()
 		}
 
-		if JA.UseSnapshotManager().LoadTickers() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshot().LoadTickers() == JC.NO_SNAPSHOT {
 			JT.TickersInit()
 		}
 
-		if JA.UseSnapshotManager().LoadExchangeData() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshot().LoadExchangeData() == JC.NO_SNAPSHOT {
 			JT.UseExchangeCache().Reset()
 		}
 
-		if JA.UseSnapshotManager().LoadTickerData() == JC.NO_SNAPSHOT {
+		if JA.UseSnapshot().LoadTickerData() == JC.NO_SNAPSHOT {
 			JT.UseTickerCache().Reset()
 		}
 
@@ -89,14 +89,14 @@ func main() {
 			JX.RegisterTickerGrid()
 			JP.RegisterPanelGrid(CreatePanel)
 
-			JA.UseStatusManager().InitData()
-			JA.UseLayoutManager().SetPage(JP.UsePanelGrid())
+			JA.UseStatus().InitData()
+			JA.UseLayout().SetPage(JP.UsePanelGrid())
 			JP.UsePanelGrid().Refresh()
-			JA.UseLayoutManager().Refresh()
+			JA.UseLayout().Refresh()
 
-			JC.Logln("App is ready: ", JA.UseStatusManager().IsReady())
+			JC.Logln("App is ready: ", JA.UseStatus().IsReady())
 
-			if !JA.UseStatusManager().HasError() {
+			if !JA.UseStatus().HasError() {
 
 				// Force Refresh
 				JT.UseExchangeCache().SoftReset()

@@ -430,8 +430,8 @@ func (a *statusManager) Refresh() *statusManager {
 	a.mu.Unlock()
 
 	if shouldUpdate {
-		UseLayoutManager().Refresh()
-		UseActionManager().Refresh()
+		UseLayout().Refresh()
+		UseAction().Refresh()
 	}
 
 	if !a.IsReady() || a.HasError() {
@@ -451,6 +451,6 @@ func RegisterStatusManager() *statusManager {
 	return statusManagerStorage
 }
 
-func UseStatusManager() *statusManager {
+func UseStatus() *statusManager {
 	return statusManagerStorage
 }

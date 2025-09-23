@@ -89,6 +89,6 @@ func RegisterActionManager() *actionManager {
 	return actionManagerStorage
 }
 
-func UseActionManager() *actionManager {
+func UseAction() *actionManager {
 	return actionManagerStorage
 }

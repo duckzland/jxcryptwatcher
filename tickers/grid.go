@@ -45,7 +45,7 @@ func RegisterTickerGrid() {
 		tickers,
 	)
 
-	JA.UseLayoutManager().RegisterTickers(container.NewStack(tickerGrid))
+	JA.UseLayout().RegisterTickers(container.NewStack(tickerGrid))
 
 	JC.PrintMemUsage("End building tickers")
 }

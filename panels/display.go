@@ -154,7 +154,7 @@ func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
-	if JM.UseStatusManager().IsDraggable() {
+	if JM.UseStatus().IsDraggable() {
 		h.HideTarget()
 		return
 	}
@@ -180,7 +180,7 @@ func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 }
 
 func (h *panelDisplay) Cursor() desktop.Cursor {
-	if JM.UseStatusManager().IsDraggable() {
+	if JM.UseStatus().IsDraggable() {
 		return desktop.PointerCursor
 	}
 
@@ -188,7 +188,7 @@ func (h *panelDisplay) Cursor() desktop.Cursor {
 }
 
 func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
-	if JM.UseStatusManager().IsDraggable() {
+	if JM.UseStatus().IsDraggable() {
 		h.panelDrag(ev)
 	} else {
 		h.parent.Dragged(ev)
@@ -196,7 +196,7 @@ func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
 }
 
 func (h *panelDisplay) DragEnd() {
-	if !JM.UseStatusManager().IsDraggable() {
+	if !JM.UseStatus().IsDraggable() {
 		h.dragging = false
 		if h.parent != nil {
 			h.parent.DragEnd()
@@ -208,14 +208,11 @@ func (h *panelDisplay) DragEnd() {
 	activeDragging = nil
 	h.dragging = false
 
-	if rect, ok := JM.DragPlaceholder.(*canvas.Rectangle); ok {
-		rect.FillColor = JC.ThemeColor(JC.ColorNameTransparent)
-		rect.Move(fyne.NewPos(0, -JC.ThemeSize(JC.SizePanelHeight)))
-		canvas.Refresh(rect)
-	}
+	JM.UseLayout().SetPlaceholderColor(JC.ThemeColor(JC.ColorNameTransparent))
+	JM.UseLayout().MovePlaceholder(fyne.NewPos(0, -JC.ThemeSize(JC.SizePanelHeight)))
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.UseLayoutManager().OffsetY()
+	h.dragOffset.Y -= h.dragScroll - JM.UseLayout().OffsetY()
 
 	h.snapToNearest()
 }
@@ -313,41 +310,33 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 
 	if activeDragging == nil {
 
-		rect, ok := JM.DragPlaceholder.(*canvas.Rectangle)
-		if !ok {
-			return
-		}
-
 		activeDragging = h
 		h.dragging = true
-		h.dragScroll = JM.UseLayoutManager().OffsetY()
+		h.dragScroll = JM.UseLayout().OffsetY()
 
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
+		lm := JM.UseLayout()
+		dp := JM.UseLayout().GetDragPlaceholder()
 
-		rect.Move(p)
-		canvas.Refresh(rect)
+		lm.MovePlaceholder(p)
+
+		dx := dp.Position().X
+		dy := dp.Position().Y
+		ds := dp.Size()
 
 		// Try to show placeholder as soon as possible
-		if p.X == rect.Position().X || p.Y == rect.Position().Y {
-			rect, _ := JM.DragPlaceholder.(*canvas.Rectangle)
-			rect.FillColor = JC.ThemeColor(JC.ColorNamePanelPlaceholder)
-			canvas.Refresh(rect)
+		if p.X == dx || p.Y == dy {
+			lm.SetPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
 		}
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
-			rect, ok := JM.DragPlaceholder.(*canvas.Rectangle)
-
-			if !ok {
-				return
-			}
-
-			shown := rect.FillColor == JC.ThemeColor(JC.ColorNamePanelPlaceholder)
-			posX := rect.Position().X
-			posY := rect.Position().Y
-			placeholderSize := rect.Size()
+			shown := lm.IsPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
+			posX := dx
+			posY := dy
+			placeholderSize := ds
 			edgeThreshold := placeholderSize.Height / 2
 			scrollStep := float32(10)
 
@@ -357,14 +346,13 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := JM.UseLayoutManager().ContentTopY() - edgeThreshold
-				edgeBottomY := JM.UseLayoutManager().ContentBottomY() - edgeThreshold
+				edgeTopY := lm.ContentTopY() - edgeThreshold
+				edgeBottomY := lm.ContentBottomY() - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
 					fyne.Do(func() {
-						rect.FillColor = JC.ThemeColor(JC.ColorNamePanelPlaceholder)
-						canvas.Refresh(rect)
+						lm.SetPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
 						shown = true
 					})
 				}
@@ -374,16 +362,15 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 					posX = targetX
 					posY = targetY
 					fyne.Do(func() {
-						rect.Move(fyne.NewPos(posX, posY))
-						canvas.Refresh(rect)
+						lm.MovePlaceholder(fyne.NewPos(posX, posY))
 					})
 				}
 
 				// Scroll when placeholder is half out of viewport
 				if posY < edgeTopY {
-					JM.UseLayoutManager().ScrollBy(-scrollStep)
+					lm.ScrollBy(-scrollStep)
 				} else if posY > edgeBottomY {
-					JM.UseLayoutManager().ScrollBy(scrollStep)
+					lm.ScrollBy(scrollStep)
 				}
 			}
 		}()

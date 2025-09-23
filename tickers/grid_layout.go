@@ -21,7 +21,7 @@ type tickerGridLayout struct {
 
 func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
-	if JA.UseLayoutManager() == nil || JA.UseLayoutManager().ContainerSize().Width <= 0 || JA.UseLayoutManager().ContainerSize().Height <= 0 {
+	if JA.UseLayout() == nil || JA.UseLayout().ContainerSize().Width <= 0 || JA.UseLayout().ContainerSize().Height <= 0 {
 		return
 	}
 
@@ -133,7 +133,7 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	g.dirty = false
 
-	aWidth := JA.UseLayoutManager().ContainerSize().Width
+	aWidth := JA.UseLayout().ContainerSize().Width
 
 	c := int(math.Floor(float64(aWidth) / float64(g.dynCellSize.Width)))
 
