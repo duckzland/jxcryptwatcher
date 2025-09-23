@@ -47,7 +47,7 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 		panels[i] = p[i]
 	}
 
-	panelGrid = NewpanelContainer(
+	panelGrid = NewPanelContainer(
 		&panelGridLayout{
 			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
 			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),

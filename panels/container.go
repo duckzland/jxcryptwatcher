@@ -156,7 +156,7 @@ func (c *panelContainer) ResetActiveAction() {
 	c.activeAction = nil
 }
 
-func NewpanelContainer(
+func NewPanelContainer(
 	layout *panelGridLayout,
 	Objects []fyne.CanvasObject,
 ) *panelContainer {
