@@ -8,7 +8,7 @@ import (
 )
 
 var dragDropZones []*panelDropZone
-var Grid *panelContainer = &panelContainer{}
+var panelGrid *panelContainer = &panelContainer{}
 
 type CreatePanelFunc func(JT.PanelData) fyne.CanvasObject
 
@@ -20,7 +20,7 @@ type panelDropZone struct {
 	panel  *panelDisplay
 }
 
-func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
+func RegisterPanelGrid(createPanel CreatePanelFunc) {
 	JC.PrintMemUsage("Start building panels")
 
 	// Get the list of panel data
@@ -47,7 +47,7 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 		panels[i] = p[i]
 	}
 
-	grid := NewpanelContainer(
+	panelGrid = NewpanelContainer(
 		&panelGridLayout{
 			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
 			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
@@ -67,6 +67,8 @@ func NewPanelGrid(createPanel CreatePanelFunc) *panelContainer {
 	dragDropZones = []*panelDropZone{}
 
 	JC.PrintMemUsage("End building panels")
+}
 
-	return grid
+func UsePanelGrid() *panelContainer {
+	return panelGrid
 }

@@ -213,7 +213,7 @@ func ProcessUpdatePanelComplete(status int) {
 			})
 
 			fyne.Do(func() {
-				JP.Grid.UpdatePanelsContent(func(pdt JT.PanelData) bool {
+				JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
 					return true
 				})
 			})
@@ -231,7 +231,7 @@ func ProcessUpdatePanelComplete(status int) {
 			})
 
 			fyne.Do(func() {
-				JP.Grid.UpdatePanelsContent(func(pdt JT.PanelData) bool {
+				JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
 					return true
 				})
 			})
@@ -316,7 +316,7 @@ func ProcessFetchingCryptosComplete(status int) {
 
 		if JT.BP.RefreshData() {
 			fyne.Do(func() {
-				JP.Grid.ForceRefresh()
+				JP.UsePanelGrid().ForceRefresh()
 			})
 
 			JT.UseExchangeCache().SoftReset()
@@ -366,11 +366,11 @@ func ValidateRatesCache() bool {
 
 func RemovePanel(uuid string) {
 
-	if JP.Grid.RemoveByID(uuid) {
+	if JP.UsePanelGrid().RemoveByID(uuid) {
 		JC.Logf("Removing panel %s", uuid)
 
 		if JT.BP.Remove(uuid) {
-			JP.Grid.ForceRefresh()
+			JP.UsePanelGrid().ForceRefresh()
 
 			// Give time for grid to relayout first!
 			JC.UseDebouncer().Call("removing_panel", 50*time.Millisecond, func() {
@@ -390,7 +390,7 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JC.Notify("Saving panel settings...")
 
-	JP.Grid.ForceRefresh()
+	JP.UsePanelGrid().ForceRefresh()
 
 	if !JT.BP.ValidatePanel(pdt.Get()) {
 		pdt.SetStatus(JC.STATE_BAD_CONFIG)
@@ -465,8 +465,8 @@ func OpenNewPanelForm() {
 		},
 		func(npdt JT.PanelData) {
 
-			JP.Grid.Add(CreatePanel(npdt))
-			JP.Grid.ForceRefresh()
+			JP.UsePanelGrid().Add(CreatePanel(npdt))
+			JP.UsePanelGrid().ForceRefresh()
 			JA.StatusManager.DetectData()
 
 			JC.Notify("New panel created.")
@@ -594,7 +594,7 @@ func ToggleDraggable() {
 		JA.StatusManager.AllowDragging()
 	}
 
-	JP.Grid.ForceRefresh()
+	JP.UsePanelGrid().ForceRefresh()
 	if JP.ActiveAction != nil {
 		JP.ActiveAction.HideTarget()
 	}

@@ -87,11 +87,11 @@ func main() {
 		fyne.Do(func() {
 
 			JX.RegisterTickerGrid()
-			JP.Grid = JP.NewPanelGrid(CreatePanel)
+			JP.RegisterPanelGrid(CreatePanel)
 
 			JA.StatusManager.InitData()
-			JA.LayoutManager.SetPage(JP.Grid)
-			JP.Grid.Refresh()
+			JA.LayoutManager.SetPage(JP.UsePanelGrid())
+			JP.UsePanelGrid().Refresh()
 			JA.LayoutManager.Refresh()
 
 			JC.Logln("App is ready: ", JA.StatusManager.IsReady())
