@@ -5,15 +5,19 @@ import (
 	"time"
 )
 
-var coreDebouncer = &debouncer{
-	channels: make(map[string]chan struct{}),
-	stoppers: make(map[string]chan struct{}),
-}
+var coreDebouncer *debouncer = nil
 
 type debouncer struct {
 	mu       sync.Mutex
 	channels map[string]chan struct{}
 	stoppers map[string]chan struct{}
+}
+
+func (d *debouncer) Init() {
+	d.mu.Lock()
+	d.channels = make(map[string]chan struct{})
+	d.stoppers = make(map[string]chan struct{})
+	d.mu.Unlock()
 }
 
 func (d *debouncer) CallOnce(key string, delay time.Duration, fn func()) {
@@ -95,6 +99,15 @@ func (d *debouncer) Cancel(key string) {
 		delete(d.channels, key)
 	}
 	d.mu.Unlock()
+}
+
+func RegisterDebouncer() *debouncer {
+	if coreDebouncer == nil {
+		InitOnce(func() {
+			coreDebouncer = &debouncer{}
+		})
+	}
+	return coreDebouncer
 }
 
 func UseDebouncer() *debouncer {

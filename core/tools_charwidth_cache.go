@@ -4,13 +4,18 @@ import (
 	"sync"
 )
 
-var charWidthCache = &cwCache{
-	store: make(map[int]float32),
-}
+var charWidthCache *cwCache = nil
 
 type cwCache struct {
 	mu    sync.RWMutex
 	store map[int]float32
+}
+
+func (c *cwCache) Init() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.store = make(map[int]float32)
 }
 
 func (c *cwCache) Add(key int, value float32) {
@@ -47,6 +52,15 @@ func (c *cwCache) Has(key int) bool {
 
 	_, exists := c.store[key]
 	return exists
+}
+
+func RegisterCharWidthCache() *cwCache {
+	if charWidthCache == nil {
+		InitOnce(func() {
+			charWidthCache = &cwCache{}
+		})
+	}
+	return charWidthCache
 }
 
 func UseCharWidthCache() *cwCache {

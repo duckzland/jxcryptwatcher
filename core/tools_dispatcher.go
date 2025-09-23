@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var coreDispatcher = &dispatcher{}
+var coreDispatcher *dispatcher = nil
 
 type dispatcher struct {
 	queue         chan func()
@@ -124,6 +124,15 @@ func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.delayBetween = delay
+}
+
+func RegisterDispatcher() *dispatcher {
+	if coreDispatcher == nil {
+		InitOnce(func() {
+			coreDispatcher = &dispatcher{}
+		})
+	}
+	return coreDispatcher
 }
 
 func UseDispatcher() *dispatcher {

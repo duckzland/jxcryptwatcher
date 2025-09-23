@@ -9,7 +9,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 
 	JA "jxwatcher/apps"
-	"jxwatcher/core"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
@@ -273,339 +272,317 @@ func RegisterActions() {
 }
 
 func RegisterWorkers() {
+	JC.UseWorker().RegisterSleeper(
+		"update_display", 200,
+		func() {
+			if UpdateDisplay() {
+				JA.UseLayout().SetLastDisplayUpdate(time.Now())
+			}
+		},
+		func() bool {
+			if !JA.UseStatus().ValidConfig() {
+				JC.Logln("Unable to refresh display: invalid configuration")
+				return false
+			}
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to refresh display: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to refresh display: app is paused")
+				return false
+			}
+			if !JT.UseExchangeCache().HasData() {
+				JC.Notify("Unable to refresh display: no cached data")
+				return false
+			}
+			if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetLastDisplayUpdate()) {
+				JC.Notify("Unable to refresh display: Data is newer than display timestamp")
+				return false
+			}
+			if !JA.UseStatus().ValidPanels() {
+				JC.Logln("Unable to refresh display: No valid panels configured")
+				return false
+			}
+			return true
+		},
+	)
 
-	JC.UseWorker().RegisterSleeper("update_display", func() {
-		if UpdateDisplay() {
-			JA.UseLayout().SetLastDisplayUpdate(time.Now())
-		}
-	}, 200, func() bool {
+	JC.UseWorker().Register(
+		"update_rates", 1000,
+		func() {
+			UpdateRates()
+		},
+		func() int64 {
+			return max(JT.UseConfig().Delay*1000, 30000)
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to refresh rates: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to refresh rates: app is paused")
+				return false
+			}
+			if JA.UseStatus().IsDraggable() {
+				JC.Logln("Unable to refresh rates: app is dragging")
+				return false
+			}
+			if !JA.UseStatus().ValidConfig() {
+				JC.Notify("Unable to refresh rates: invalid configuration")
+				return false
+			}
+			if !JT.UseExchangeCache().ShouldRefresh() {
+				JC.Logln("Unable to refresh rates: not cleared should refresh yet")
+				return false
+			}
+			if !JA.UseStatus().ValidPanels() {
+				JC.Logln("Unable to refresh rates: No valid panels configured")
+				return false
+			}
+			return true
+		},
+	)
 
-		if !JA.UseStatus().ValidConfig() {
-			JC.Logln("Unable to refresh display: invalid configuration")
-			return false
-		}
+	JC.UseWorker().Register(
+		"update_tickers", 5000,
+		func() {
+			UpdateTickers()
+		},
+		func() int64 {
+			return max(JT.UseConfig().Delay*1000, 30000)
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to refresh tickers: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to refresh tickers: app is paused")
+				return false
+			}
+			if !JT.UseConfig().IsValidTickers() {
+				JC.Logln("Unable to refresh tickers: Invalid ticker configuration")
+				return false
+			}
+			if !JT.UseTickerCache().ShouldRefresh() {
+				JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
+				return false
+			}
+			return true
+		},
+	)
 
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to refresh display: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to refresh display: app is paused")
-			return false
-		}
-
-		if !JT.UseExchangeCache().HasData() {
-			JC.Notify("Unable to refresh display: no cached data")
-			return false
-		}
-
-		if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetLastDisplayUpdate()) {
-			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
-			return false
-		}
-
-		if !JA.UseStatus().ValidPanels() {
-			JC.Logln("Unable to refresh display: No valid panels configured")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseWorker().Register("update_rates", func() {
-		UpdateRates()
-	}, func() int64 {
-		return max(JT.UseConfig().Delay*1000, 30000)
-	}, 1000, func() bool {
-
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to refresh rates: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to refresh rates: app is paused")
-			return false
-		}
-
-		if JA.UseStatus().IsDraggable() {
-			JC.Logln("Unable to refresh rates: app is dragging")
-			return false
-		}
-
-		if !JA.UseStatus().ValidConfig() {
-			JC.Notify("Unable to refresh rates: invalid configuration")
-			return false
-		}
-
-		if !JT.UseExchangeCache().ShouldRefresh() {
-			JC.Logln("Unable to refresh rates: not cleared should refresh yet")
-			return false
-		}
-
-		if !JA.UseStatus().ValidPanels() {
-			JC.Logln("Unable to refresh rates: No valid panels configured")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseWorker().Register("update_tickers", func() {
-		UpdateTickers()
-	}, func() int64 {
-		return max(JT.UseConfig().Delay*1000, 30000)
-	}, 5000, func() bool {
-
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to refresh tickers: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to refresh tickers: app is paused")
-			return false
-		}
-
-		if !JT.UseConfig().IsValidTickers() {
-			JC.Logln("Unable to refresh tickers: Invalid ticker configuration")
-			return false
-		}
-
-		if !JT.UseTickerCache().ShouldRefresh() {
-			JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseWorker().RegisterBuffered("notification", func(messages []string) bool {
-		if len(messages) == 0 {
-			return false
-		}
-		latest := messages[len(messages)-1]
-		fyne.Do(func() {
-			JW.UseNotification().UpdateText(latest)
-		})
-
-		ScheduledNotificationReset()
-
-		return true
-
-	}, 1000, 100, 1000, 2000, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to do notification: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to do notification: app is paused")
-			return false
-		}
-
-		return true
-	})
+	JC.UseWorker().RegisterBuffered(
+		"notification", 1000, 100, 1000, 2000,
+		func(messages []string) bool {
+			if len(messages) == 0 {
+				return false
+			}
+			latest := messages[len(messages)-1]
+			fyne.Do(func() {
+				JW.UseNotification().UpdateText(latest)
+			})
+			ScheduledNotificationReset()
+			return true
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to do notification: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to do notification: app is paused")
+				return false
+			}
+			return true
+		},
+	)
 }
 
 func RegisterFetchers() {
-
 	var delay int64 = 100
 
-	JC.UseFetcher().Register("cryptos_map", &JC.GenericFetcher{
-		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			code := JT.UseCryptosLoader().GetCryptos()
+	JC.UseFetcher().Register(
+		"cryptos_map", 0,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(
+					JT.UseCryptosLoader().GetCryptos(),
+					JT.UseCryptosLoader(),
+				), nil
+			},
+		),
+		func(result JC.FetchResultInterface) {
+			defer JA.UseStatus().EndFetchingCryptos()
 
-			return JC.FetchResult{
-				Code: code,
-				Data: JT.UseCryptosLoader(),
-			}, nil
+			status := DetectHTTPResponse(result.Code())
+			ProcessFetchingCryptosComplete(status)
 		},
-	}, 0, func(result JC.FetchResult) {
-
-		defer JA.UseStatus().EndFetchingCryptos()
-
-		status := DetectHTTPResponse(result.Code)
-		ProcessFetchingCryptosComplete(status)
-
-	}, func() bool {
-
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch cryptos: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch cryptos: app is paused")
-			return false
-		}
-
-		if !JA.UseStatus().ValidConfig() {
-			JC.Notify("Invalid configuration. Unable to reset cryptos map.")
-			JC.Logln("Unable to do fetch cryptos: Invalid config")
-			return false
-		}
-
-		if JA.UseStatus().IsFetchingCryptos() {
-			JC.Logln("Unable to do fetch cryptos: Another fetcher is running")
-			return false
-		}
-
-		JA.UseStatus().StartFetchingCryptos()
-
-		return true
-	})
-
-	JC.UseFetcher().Register("cmc100", &JC.GenericFetcher{
-		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.NewCMC100Fetcher()
-			code := ft.GetRate()
-
-			return JC.FetchResult{Code: code}, nil
-		},
-	}, delay, func(fr JC.FetchResult) {
-		// Process results?
-
-	}, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch CMC100: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch CMC100: app is paused")
-			return false
-		}
-
-		if !JT.UseConfig().CanDoCMC100() {
-			JC.Logln("Unable to fetch CMC100: Invalid config")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseFetcher().Register("feargreed", &JC.GenericFetcher{
-		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.NewFearGreedFetcher()
-			code := ft.GetRate()
-
-			return JC.FetchResult{Code: code}, nil
-		},
-	}, delay, func(fr JC.FetchResult) {
-		// Process results?
-
-	}, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch fear greed: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch fear greed app is paused")
-			return false
-		}
-
-		if !JT.UseConfig().CanDoFearGreed() {
-			JC.Logln("Unable to fetch fear greed: Invalid config")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseFetcher().Register("market_cap", &JC.GenericFetcher{
-		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.NewMarketCapFetcher()
-			code := ft.GetRate()
-
-			return JC.FetchResult{Code: code}, nil
-		},
-	}, delay, func(fr JC.FetchResult) {
-		// Process results?
-
-	}, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch marketcap: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch marketcap: app is paused")
-			return false
-		}
-
-		if !JT.UseConfig().CanDoMarketCap() {
-			JC.Logln("Unable to fetch marketcap: Invalid config")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseFetcher().Register("altcoin_index", &JC.GenericFetcher{
-		Handler: func(ctx context.Context) (JC.FetchResult, error) {
-			ft := JT.NewAltSeasonFetcher()
-			code := ft.GetRate()
-
-			return JC.FetchResult{Code: code}, nil
-		},
-	}, delay, func(fr JC.FetchResult) {
-		// Process results?
-
-	}, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch altcoin index: app is not ready yet")
-			return false
-		}
-
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch altcoin index: app is paused")
-			return false
-		}
-
-		if !JT.UseConfig().CanDoAltSeason() {
-			JC.Logln("Unable to fetch altcoin index: Invalid config")
-			return false
-		}
-
-		return true
-	})
-
-	JC.UseFetcher().Register("rates", &JC.DynamicPayloadFetcher{
-		Handler: func(ctx context.Context, payload any) (JC.FetchResult, error) {
-			rk, ok := payload.(string)
-
-			if !ok {
-				return JC.FetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch cryptos: app is not ready yet")
+				return false
 			}
-
-			ex := JT.NewExchangeResults()
-			code := ex.GetRate(rk)
-			return JC.FetchResult{Code: code, Data: ex}, nil
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch cryptos: app is paused")
+				return false
+			}
+			if !JA.UseStatus().ValidConfig() {
+				JC.Notify("Invalid configuration. Unable to reset cryptos map.")
+				JC.Logln("Unable to do fetch cryptos: Invalid config")
+				return false
+			}
+			if JA.UseStatus().IsFetchingCryptos() {
+				JC.Logln("Unable to do fetch cryptos: Another fetcher is running")
+				return false
+			}
+			JA.UseStatus().StartFetchingCryptos()
+			return true
 		},
-	}, delay, func(fr JC.FetchResult) {
-		// Process results?
+	)
 
-	}, func() bool {
-		if !JA.UseStatus().IsReady() {
-			JC.Logln("Unable to fetch rates: app is not ready yet")
-			return false
-		}
+	JC.UseFetcher().Register(
+		"cmc100", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Process results
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch CMC100: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch CMC100: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoCMC100() {
+				JC.Logln("Unable to fetch CMC100: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
 
-		if JA.UseStatus().IsPaused() {
-			JC.Logln("Unable to fetch rates: app is paused")
-			return false
-		}
+	JC.UseFetcher().Register(
+		"market_cap", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Process results?
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch marketcap: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch marketcap: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoMarketCap() {
+				JC.Logln("Unable to fetch marketcap: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
 
-		if !JA.UseStatus().ValidPanels() {
-			JC.Logln("Unable to rates: no configured panels")
-			return false
-		}
+	JC.UseFetcher().Register(
+		"altcoin_index", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Process results?
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch altcoin index: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch altcoin index: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoAltSeason() {
+				JC.Logln("Unable to fetch altcoin index: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
 
-		return true
-	})
+	JC.UseFetcher().Register(
+		"feargreed", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Optional: handle individual result
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch feargreed: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch feargreed: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoFearGreed() {
+				JC.Logln("Unable to fetch feargreed: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
+
+	JC.UseFetcher().Register(
+		"rates", delay,
+		JC.NewDynamicPayloadFetcher(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				rk, ok := payload.(string)
+				if !ok {
+					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD, nil), fmt.Errorf("invalid rk")
+				}
+				ex := JT.NewExchangeResults()
+				code := ex.GetRate(rk)
+				return JC.NewFetchResult(code, ex), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Process results?
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch rates: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch rates: app is paused")
+				return false
+			}
+			if !JA.UseStatus().ValidPanels() {
+				JC.Logln("Unable to rates: no configured panels")
+				return false
+			}
+			return true
+		},
+	)
 }
 
 func RegisterLifecycle() {
@@ -677,8 +654,7 @@ func RegisterLifecycle() {
 }
 
 func RegisterDispatcher() {
-	d := core.UseDispatcher()
-	d.Init()
+	d := JC.UseDispatcher()
 	d.SetBufferSize(10000)
 
 	if JC.IsMobile {
@@ -710,33 +686,35 @@ func RegisterCache() {
 		JC.ThemeSize(JC.SizeCompletionText),
 	}
 
+	cw := JC.UseCharWidthCache()
+
 	for _, size := range sizes {
 		// Normal
 		styleBits := 0
 		key := int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{}).Width)
+		if !cw.Has(key) {
+			cw.Add(key, fyne.MeasureText("a", size, fyne.TextStyle{}).Width)
 		}
 
 		// Bold
 		styleBits = 1
 		key = int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Bold: true}).Width)
+		if !cw.Has(key) {
+			cw.Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Bold: true}).Width)
 		}
 
 		// Italic
 		styleBits = 2
 		key = int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Italic: true}).Width)
+		if !cw.Has(key) {
+			cw.Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Italic: true}).Width)
 		}
 
 		// Monospace
 		styleBits = 4
 		key = int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Monospace: true}).Width)
+		if !cw.Has(key) {
+			cw.Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Monospace: true}).Width)
 		}
 	}
 }

@@ -41,6 +41,31 @@ type layoutManager struct {
 	contentHeight     float32
 }
 
+func (lm *layoutManager) Init() {
+	lm.mu = sync.RWMutex{}
+	// lm.topBar = container.NewWithoutLayout()
+	// lm.content = nil
+	// lm.tickers = container.NewWithoutLayout()
+	// lm.tickersPopulated = container.NewWithoutLayout()
+	// lm.scroll = container.NewScroll(nil)
+	// lm.container = container.NewWithoutLayout()
+	// lm.dragPlaceholder = nil
+
+	// lm.actionAddPanel = nil
+	// lm.actionFixSetting = nil
+	// lm.actionGetCryptos = nil
+	// lm.loading = nil
+	// lm.error = nil
+
+	lm.maxOffset = 0
+	lm.contentTopY = 0
+	lm.contentBottomY = 0
+	lm.state = 9
+	lm.lastDisplayUpdate = time.Time{}
+	lm.contentWidth = 0
+	lm.contentHeight = 0
+}
+
 func (m *layoutManager) TopBar() fyne.CanvasObject {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -479,13 +504,8 @@ func NewAppLayout() fyne.CanvasObject {
 
 	JW.NotificationInit()
 
-	manager := &layoutManager{
-		topBar: NewTopBar(),
-	}
-
-	JC.InitOnce(func() {
-		layoutManagerStorage = manager
-	})
+	manager := UseLayout()
+	manager.topBar = NewTopBar()
 
 	manager.loading = NewAppPage(nil, "Loading...", nil)
 	manager.error = NewAppPage(nil, "Failed to start application...", nil)
@@ -537,6 +557,15 @@ func NewAppLayout() fyne.CanvasObject {
 	return fynetooltip.AddWindowToolTipLayer(
 		manager.container,
 		JC.Window.Canvas())
+}
+
+func RegisteLayoutManager() *layoutManager {
+	if layoutManagerStorage == nil {
+		JC.InitOnce(func() {
+			layoutManagerStorage = &layoutManager{}
+		})
+	}
+	return layoutManagerStorage
 }
 
 func UseLayout() *layoutManager {

@@ -78,12 +78,12 @@ func UpdateRates() bool {
 				JT.UseExchangeCache().SoftReset()
 			}
 		},
-		func(results []JC.FetchResult) {
+		func(results []JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingRates()
 
 			for _, result := range results {
 
-				ns := DetectHTTPResponse(result.Code)
+				ns := DetectHTTPResponse(result.Code())
 				if hasError == JC.STATUS_SUCCESS || hasError < ns {
 					hasError = ns
 				}
@@ -149,11 +149,11 @@ func UpdateTickers() bool {
 				JT.UseTickerCache().SoftReset()
 			}
 		},
-		func(results map[string]JC.FetchResult) {
+		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingTickers()
 
 			for key, result := range results {
-				ns := DetectHTTPResponse(result.Code)
+				ns := DetectHTTPResponse(result.Code())
 				tktt := JT.UseTickerMaps().GetDataByType(key)
 
 				for _, tkt := range tktt {
@@ -419,11 +419,11 @@ func SavePanelForm(pdt JT.PanelData) {
 				JC.UseFetcher().GroupPayloadCall("rates", payloads,
 					func(shouldProceed bool) {
 					},
-					func(results []JC.FetchResult) {
+					func(results []JC.FetchResultInterface) {
 						for _, result := range results {
 							JT.UseExchangeCache().SoftReset()
 
-							status := DetectHTTPResponse(result.Code)
+							status := DetectHTTPResponse(result.Code())
 
 							switch status {
 							case JC.STATUS_SUCCESS:

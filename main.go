@@ -27,9 +27,21 @@ func main() {
 		JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 	})
 
+	JC.RegisterWorkerManager().Init()
+
+	JC.RegisterFetcherManager().Init()
+
+	JC.RegisterDispatcher().Init()
+
+	JC.RegisterDebouncer().Init()
+
+	JC.RegisterCharWidthCache().Init()
+
 	JT.RegisterExchangeCache().Init()
 
 	JT.RegisterTickerCache().Init()
+
+	JA.RegisteLayoutManager().Init()
 
 	JA.RegisterActionManager().Init()
 
