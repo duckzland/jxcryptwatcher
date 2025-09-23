@@ -212,7 +212,7 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 				// Debug to force display refresh!
 				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
-				ExchangeCache.Insert(&ex)
+				UseExchangeCache().Insert(&ex)
 			}
 
 			return JC.NETWORKING_SUCCESS

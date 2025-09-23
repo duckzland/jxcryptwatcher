@@ -73,7 +73,7 @@ func RegisterActions() {
 			JA.StatusManager.SetNetworkStatus(true)
 
 			// Force update
-			JT.ExchangeCache.SoftReset()
+			JT.UseExchangeCache().SoftReset()
 			JC.UseWorker().Call("update_rates", JC.CallDebounced)
 
 			// Force update
@@ -277,6 +277,7 @@ func RegisterWorkers() {
 	JC.UseWorker().RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
 			JC.UpdateDisplayTimestamp = time.Now()
+			JA.LayoutManager.SetLastDisplayUpdate(time.Now())
 		}
 	}, 200, func() bool {
 
@@ -295,12 +296,12 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.ExchangeCache.HasData() {
+		if !JT.UseExchangeCache().HasData() {
 			JC.Notify("Unable to refresh display: no cached data")
 			return false
 		}
 
-		if !JT.ExchangeCache.GetTimestamp().After(JC.UpdateDisplayTimestamp) {
+		if !JT.UseExchangeCache().GetTimestamp().After(JA.LayoutManager.GetLastDisplayUpdate()) {
 			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
 			return false
 		}
@@ -339,7 +340,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.ExchangeCache.ShouldRefresh() {
+		if !JT.UseExchangeCache().ShouldRefresh() {
 			JC.Logln("Unable to refresh rates: not cleared should refresh yet")
 			return false
 		}
@@ -633,7 +634,7 @@ func RegisterLifecycle() {
 
 			if !JA.StatusManager.HasError() && JC.IsMobile {
 				// Force Refresh
-				JT.ExchangeCache.SoftReset()
+				JT.UseExchangeCache().SoftReset()
 				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh

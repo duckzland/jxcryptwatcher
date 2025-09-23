@@ -24,7 +24,7 @@ func main() {
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
-	JT.ExchangeCache.Init()
+	JT.UseExchangeCache().Init()
 
 	JT.TickerCache.Init()
 
@@ -74,7 +74,7 @@ func main() {
 		}
 
 		if JA.SnapshotManager.LoadExchangeData() == JC.NO_SNAPSHOT {
-			JT.ExchangeCache.Reset()
+			JT.UseExchangeCache().Reset()
 		}
 
 		if JA.SnapshotManager.LoadTickerData() == JC.NO_SNAPSHOT {
@@ -97,7 +97,7 @@ func main() {
 			if !JA.StatusManager.HasError() {
 
 				// Force Refresh
-				JT.ExchangeCache.SoftReset()
+				JT.UseExchangeCache().SoftReset()
 				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh

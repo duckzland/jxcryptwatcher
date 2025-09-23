@@ -75,7 +75,7 @@ func UpdateRates() bool {
 		func(shouldProceed bool) {
 			if shouldProceed {
 				JA.StatusManager.StartFetchingRates()
-				JT.ExchangeCache.SoftReset()
+				JT.UseExchangeCache().SoftReset()
 			}
 		},
 		func(results []JC.FetchResult) {
@@ -319,7 +319,7 @@ func ProcessFetchingCryptosComplete(status int) {
 				JP.Grid.ForceRefresh()
 			})
 
-			JT.ExchangeCache.SoftReset()
+			JT.UseExchangeCache().SoftReset()
 			JC.UseWorker().Call("update_rates", JC.CallQueued)
 
 			JT.TickerCache.SoftReset()
@@ -354,9 +354,9 @@ func ValidateRatesCache() bool {
 		// Always get linked data! do not use the copied
 		pkt := JT.BP.GetDataByID(pot.GetID())
 		pks := pkt.UsePanelKey()
-		ck := JT.ExchangeCache.CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+		ck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 
-		if !JT.ExchangeCache.Has(ck) {
+		if !JT.UseExchangeCache().Has(ck) {
 			return false
 		}
 	}
@@ -421,7 +421,7 @@ func SavePanelForm(pdt JT.PanelData) {
 					},
 					func(results []JC.FetchResult) {
 						for _, result := range results {
-							JT.ExchangeCache.SoftReset()
+							JT.UseExchangeCache().SoftReset()
 
 							status := DetectHTTPResponse(result.Code)
 
@@ -565,7 +565,7 @@ func OpenSettingForm() {
 						JT.TickerCache.SoftReset()
 						JC.UseWorker().Call("update_tickers", JC.CallQueued)
 
-						JT.ExchangeCache.SoftReset()
+						JT.UseExchangeCache().SoftReset()
 						JC.UseWorker().Call("update_rates", JC.CallQueued)
 					}
 				} else {

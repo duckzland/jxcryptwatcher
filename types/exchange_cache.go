@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-var ExchangeCache exchangeDataCacheType = exchangeDataCacheType{}
-var CMCUpdateThreshold = 1 * time.Minute
+const exchangeCacheUpdateThreshold = 1 * time.Minute
+
+var exchangeCache exchangeDataCacheType = exchangeDataCacheType{}
 
 type exchangeDataCacheSnapshot struct {
 	Data        []exchangeDataType `json:"data"`
@@ -115,7 +116,7 @@ func (ec *exchangeDataCacheType) ShouldRefresh() bool {
 	if last == nil {
 		return true
 	}
-	return time.Now().After(last.Add(CMCUpdateThreshold))
+	return time.Now().After(last.Add(exchangeCacheUpdateThreshold))
 }
 
 // Serialization
@@ -176,4 +177,8 @@ func (ec *exchangeDataCacheType) CreateKeyFromInt(sid, tid int64) string {
 
 func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
 	return &exchangeDataCacheSnapshot{}
+}
+
+func UseExchangeCache() *exchangeDataCacheType {
+	return &exchangeCache
 }

@@ -19,21 +19,22 @@ var LayoutManager *layoutManager = nil
 var DragPlaceholder fyne.CanvasObject
 
 type layoutManager struct {
-	mu               sync.RWMutex
-	topBar           *fyne.Container
-	content          *fyne.CanvasObject
-	tickers          *fyne.Container
-	scroll           *container.Scroll
-	container        *fyne.Container
-	actionAddPanel   *staticPage
-	actionFixSetting *staticPage
-	actionGetCryptos *staticPage
-	loading          *staticPage
-	error            *staticPage
-	maxOffset        float32
-	contentTopY      float32
-	contentBottomY   float32
-	state            int
+	mu                sync.RWMutex
+	topBar            *fyne.Container
+	content           *fyne.CanvasObject
+	tickers           *fyne.Container
+	scroll            *container.Scroll
+	container         *fyne.Container
+	actionAddPanel    *staticPage
+	actionFixSetting  *staticPage
+	actionGetCryptos  *staticPage
+	loading           *staticPage
+	error             *staticPage
+	maxOffset         float32
+	contentTopY       float32
+	contentBottomY    float32
+	state             int
+	lastDisplayUpdate time.Time
 }
 
 func (m *layoutManager) TopBar() fyne.CanvasObject {
@@ -391,6 +392,18 @@ func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
 		layout.overlay = nil
 	}
+}
+
+func (lm *layoutManager) SetLastDisplayUpdate(ts time.Time) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	lm.lastDisplayUpdate = ts
+}
+
+func (lm *layoutManager) GetLastDisplayUpdate() time.Time {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	return lm.lastDisplayUpdate
 }
 
 func NewAppLayout() fyne.CanvasObject {
