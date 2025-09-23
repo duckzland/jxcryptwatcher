@@ -100,6 +100,7 @@ func NewPanelDisplay(
 		content:    pl.content,
 		subtitle:   pl.subtitle,
 		bottomText: pl.bottomText,
+		parent:     Grid,
 	}
 
 	if JC.IsMobile {
