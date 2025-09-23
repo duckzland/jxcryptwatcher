@@ -15,7 +15,7 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-var LayoutManager *layoutManager = nil
+var layoutManagerStorage *layoutManager = nil
 var DragPlaceholder fyne.CanvasObject
 
 type layoutManager struct {
@@ -447,7 +447,7 @@ func NewAppLayout() fyne.CanvasObject {
 		topBar: NewTopBar(),
 	}
 
-	LayoutManager = manager
+	layoutManagerStorage = manager
 
 	manager.loading = NewAppPage(nil, "Loading...", nil)
 	manager.error = NewAppPage(nil, "Failed to start application...", nil)
@@ -499,4 +499,8 @@ func NewAppLayout() fyne.CanvasObject {
 	return fynetooltip.AddWindowToolTipLayer(
 		manager.container,
 		JC.Window.Canvas())
+}
+
+func UseLayoutManager() *layoutManager {
+	return layoutManagerStorage
 }

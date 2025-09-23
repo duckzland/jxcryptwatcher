@@ -276,7 +276,7 @@ func RegisterWorkers() {
 
 	JC.UseWorker().RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
-			JA.LayoutManager.SetLastDisplayUpdate(time.Now())
+			JA.UseLayoutManager().SetLastDisplayUpdate(time.Now())
 		}
 	}, 200, func() bool {
 
@@ -300,7 +300,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.UseExchangeCache().GetTimestamp().After(JA.LayoutManager.GetLastDisplayUpdate()) {
+		if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayoutManager().GetLastDisplayUpdate()) {
 			JC.Notify("Unable to refresh display: Data is newer than display timestamp")
 			return false
 		}

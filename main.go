@@ -90,9 +90,9 @@ func main() {
 			JP.RegisterPanelGrid(CreatePanel)
 
 			JA.StatusManager.InitData()
-			JA.LayoutManager.SetPage(JP.UsePanelGrid())
+			JA.UseLayoutManager().SetPage(JP.UsePanelGrid())
 			JP.UsePanelGrid().Refresh()
-			JA.LayoutManager.Refresh()
+			JA.UseLayoutManager().Refresh()
 
 			JC.Logln("App is ready: ", JA.StatusManager.IsReady())
 

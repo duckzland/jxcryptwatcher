@@ -374,7 +374,7 @@ func RemovePanel(uuid string) {
 
 			// Give time for grid to relayout first!
 			JC.UseDebouncer().Call("removing_panel", 50*time.Millisecond, func() {
-				JA.LayoutManager.RefreshLayout()
+				JA.UseLayoutManager().RefreshLayout()
 
 				if JT.SavePanels() {
 					JC.Notify("Panel removed successfully.")
@@ -472,7 +472,7 @@ func OpenNewPanelForm() {
 			JC.Notify("New panel created.")
 		},
 		func(layer *fyne.Container) {
-			JA.LayoutManager.SetOverlay(layer)
+			JA.UseLayoutManager().SetOverlay(layer)
 
 			if JC.IsMobile {
 				JA.StatusManager.Pause()
@@ -480,7 +480,7 @@ func OpenNewPanelForm() {
 			}
 		},
 		func(layer *fyne.Container) {
-			JA.LayoutManager.RemoveOverlay(layer)
+			JA.UseLayoutManager().RemoveOverlay(layer)
 			JA.StatusManager.SetOverlayShownStatus(false)
 
 			if JC.IsMobile {
@@ -510,7 +510,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 		},
 		nil,
 		func(layer *fyne.Container) {
-			JA.LayoutManager.SetOverlay(layer)
+			JA.UseLayoutManager().SetOverlay(layer)
 
 			if JC.IsMobile {
 				JA.StatusManager.Pause()
@@ -518,7 +518,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 			}
 		},
 		func(layer *fyne.Container) {
-			JA.LayoutManager.RemoveOverlay(layer)
+			JA.UseLayoutManager().RemoveOverlay(layer)
 			JA.StatusManager.SetOverlayShownStatus(false)
 
 			if JC.IsMobile {
@@ -574,10 +574,10 @@ func OpenSettingForm() {
 			}()
 		},
 		func(layer *fyne.Container) {
-			JA.LayoutManager.SetOverlay(layer)
+			JA.UseLayoutManager().SetOverlay(layer)
 		},
 		func(layer *fyne.Container) {
-			JA.LayoutManager.RemoveOverlay(layer)
+			JA.UseLayoutManager().RemoveOverlay(layer)
 			JA.StatusManager.SetOverlayShownStatus(false)
 		})
 

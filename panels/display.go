@@ -215,7 +215,7 @@ func (h *panelDisplay) DragEnd() {
 	}
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
-	h.dragOffset.Y -= h.dragScroll - JM.LayoutManager.OffsetY()
+	h.dragOffset.Y -= h.dragScroll - JM.UseLayoutManager().OffsetY()
 
 	h.snapToNearest()
 }
@@ -320,7 +320,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 
 		activeDragging = h
 		h.dragging = true
-		h.dragScroll = JM.LayoutManager.OffsetY()
+		h.dragScroll = JM.UseLayoutManager().OffsetY()
 
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
 
@@ -357,8 +357,8 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := JM.LayoutManager.ContentTopY() - edgeThreshold
-				edgeBottomY := JM.LayoutManager.ContentBottomY() - edgeThreshold
+				edgeTopY := JM.UseLayoutManager().ContentTopY() - edgeThreshold
+				edgeBottomY := JM.UseLayoutManager().ContentBottomY() - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
@@ -381,9 +381,9 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 
 				// Scroll when placeholder is half out of viewport
 				if posY < edgeTopY {
-					JM.LayoutManager.ScrollBy(-scrollStep)
+					JM.UseLayoutManager().ScrollBy(-scrollStep)
 				} else if posY > edgeBottomY {
-					JM.LayoutManager.ScrollBy(scrollStep)
+					JM.UseLayoutManager().ScrollBy(scrollStep)
 				}
 			}
 		}()

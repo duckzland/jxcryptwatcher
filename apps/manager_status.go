@@ -430,7 +430,7 @@ func (a *statusManager) Refresh() *statusManager {
 	a.mu.Unlock()
 
 	if shouldUpdate {
-		LayoutManager.Refresh()
+		UseLayoutManager().Refresh()
 		UseActionManager().Refresh()
 	}
 

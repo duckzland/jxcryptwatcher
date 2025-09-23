@@ -105,9 +105,9 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 						fyne.Do(func() {
 							switch direction {
 							case -1:
-								JM.LayoutManager.ScrollBy(-scrollStep)
+								JM.UseLayoutManager().ScrollBy(-scrollStep)
 							case 1:
-								JM.LayoutManager.ScrollBy(scrollStep)
+								JM.UseLayoutManager().ScrollBy(scrollStep)
 							}
 						})
 					}
