@@ -581,7 +581,7 @@ func RegisterFetchers() {
 				return JC.FetchResult{Code: JC.NETWORKING_BAD_PAYLOAD}, fmt.Errorf("invalid rk")
 			}
 
-			ex := &JT.ExchangeResults{}
+			ex := JT.NewExchangeResults()
 			code := ex.GetRate(rk)
 			return JC.FetchResult{Code: code, Data: ex}, nil
 		},

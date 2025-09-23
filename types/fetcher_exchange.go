@@ -11,11 +11,11 @@ import (
 	JC "jxwatcher/core"
 )
 
-type ExchangeResults struct {
+type exchangeResults struct {
 	Rates []exchangeDataType
 }
 
-func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
+func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 
 	var v map[string]any
 	err := json.Unmarshal(data, &v)
@@ -58,7 +58,7 @@ func (er *ExchangeResults) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (er *ExchangeResults) validateData(v map[string]any) bool {
+func (er *exchangeResults) validateData(v map[string]any) bool {
 
 	if _, ok := v["data"]; !ok {
 		JC.Logln("Missing 'data' field in exchange results")
@@ -133,7 +133,7 @@ func (er *ExchangeResults) validateData(v map[string]any) bool {
 	return true
 }
 
-func (er *ExchangeResults) validateRate(rate any) bool {
+func (er *exchangeResults) validateRate(rate any) bool {
 	if _, ok := rate.(map[string]any); !ok {
 		JC.Logln("Invalid rate format:", rate)
 		return false
@@ -172,7 +172,7 @@ func (er *ExchangeResults) validateRate(rate any) bool {
 	return true
 }
 
-func (er *ExchangeResults) GetRate(rk string) int64 {
+func (er *exchangeResults) GetRate(rk string) int64 {
 
 	rko := strings.Split(rk, "|")
 
@@ -202,7 +202,7 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 			url.Add("convert_id", tid)
 		},
 		func(cc any) int64 {
-			dec, ok := cc.(*ExchangeResults)
+			dec, ok := cc.(*exchangeResults)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
@@ -217,4 +217,8 @@ func (er *ExchangeResults) GetRate(rk string) int64 {
 
 			return JC.NETWORKING_SUCCESS
 		})
+}
+
+func NewExchangeResults() *exchangeResults {
+	return &exchangeResults{}
 }
