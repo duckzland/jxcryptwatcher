@@ -2,7 +2,6 @@ package core
 
 import (
 	"image/color"
-	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -10,12 +9,9 @@ import (
 
 var App fyne.App
 var Window fyne.Window
-var HWTotalCPU = runtime.NumCPU()
 
 var UpdateStatusChan = make(chan string, 1000)
 var UpdateDisplayTimestamp = time.Now()
-
-var MainDebouncer = NewDebouncer()
 
 var MainLayoutContentWidth float32
 var MainLayoutContentHeight float32

@@ -275,7 +275,7 @@ func (m *layoutManager) ComputeMaxScrollOffset() {
 }
 
 func (m *layoutManager) RefreshLayout() {
-	JC.MainDebouncer.Call("refreshing_layout_layout", 5*time.Millisecond, func() {
+	JC.UseDebouncer().Call("refreshing_layout_layout", 5*time.Millisecond, func() {
 		m.mu.RLock()
 		if m.scroll != nil {
 			fyne.Do(m.scroll.Refresh)
@@ -285,7 +285,7 @@ func (m *layoutManager) RefreshLayout() {
 }
 
 func (m *layoutManager) RefreshContainer() {
-	JC.MainDebouncer.Call("refreshing_layout_container", 5*time.Millisecond, func() {
+	JC.UseDebouncer().Call("refreshing_layout_container", 5*time.Millisecond, func() {
 		m.mu.RLock()
 		fyne.Do(m.container.Refresh)
 		m.mu.RUnlock()

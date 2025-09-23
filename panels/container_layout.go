@@ -21,7 +21,7 @@ func (r *panelContainerLayout) MinSize() fyne.Size {
 }
 
 func (r *panelContainerLayout) Refresh() {
-	JC.MainDebouncer.Call("panel_container_refresh", 10*time.Millisecond, func() {
+	JC.UseDebouncer().Call("panel_container_refresh", 10*time.Millisecond, func() {
 		fyne.Do(func() {
 			r.Layout(r.container.Size())
 		})

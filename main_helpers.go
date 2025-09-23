@@ -94,7 +94,7 @@ func UpdateRates() bool {
 			}
 
 			if successCount != 0 {
-				JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
+				JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 			}
 
 			JC.Logln("Fetching has error:", hasError)
@@ -207,7 +207,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JC.Notify("Please check your network connection.")
 		JA.StatusManager.SetNetworkStatus(false)
 
-		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
+		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
@@ -225,7 +225,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.StatusManager.SetNetworkStatus(true)
 		JA.StatusManager.SetConfigStatus(false)
 
-		JC.MainDebouncer.Call("process_rates_complete", 100*time.Millisecond, func() {
+		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.BP.ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 				return pdt.UsePanelKey().GetValueFloat() < 0
 			})
@@ -259,7 +259,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetNetworkStatus(false)
 		JA.StatusManager.SetConfigStatus(true)
 
-		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
+		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
 			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
@@ -278,7 +278,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.StatusManager.SetNetworkStatus(true)
 		JA.StatusManager.SetConfigStatus(false)
 
-		JC.MainDebouncer.Call("process_tickers_complete", 30*time.Millisecond, func() {
+		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
 			JT.BT.ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
 				return !pdt.HasData()
 			})
@@ -320,10 +320,10 @@ func ProcessFetchingCryptosComplete(status int) {
 			})
 
 			JT.ExchangeCache.SoftReset()
-			JC.WorkerManager.Call("update_rates", JC.CallQueued)
+			JC.UseWorker().Call("update_rates", JC.CallQueued)
 
 			JT.TickerCache.SoftReset()
-			JC.WorkerManager.Call("update_tickers", JC.CallQueued)
+			JC.UseWorker().Call("update_tickers", JC.CallQueued)
 
 			JA.StatusManager.SetCryptoStatus(true)
 			JA.StatusManager.SetConfigStatus(true)
@@ -373,7 +373,7 @@ func RemovePanel(uuid string) {
 			JP.Grid.ForceRefresh()
 
 			// Give time for grid to relayout first!
-			JC.MainDebouncer.Call("removing_panel", 50*time.Millisecond, func() {
+			JC.UseDebouncer().Call("removing_panel", 50*time.Millisecond, func() {
 				JA.LayoutManager.RefreshLayout()
 
 				if JT.SavePanels() {
@@ -396,7 +396,7 @@ func SavePanelForm(pdt JT.PanelData) {
 		pdt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
-	JC.WorkerManager.Call("update_display", JC.CallBypassImmediate)
+	JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 
 	go func() {
 		if JT.SavePanels() {
@@ -563,10 +563,10 @@ func OpenSettingForm() {
 						JA.StatusManager.SetConfigStatus(true)
 
 						JT.TickerCache.SoftReset()
-						JC.WorkerManager.Call("update_tickers", JC.CallQueued)
+						JC.UseWorker().Call("update_tickers", JC.CallQueued)
 
 						JT.ExchangeCache.SoftReset()
-						JC.WorkerManager.Call("update_rates", JC.CallQueued)
+						JC.UseWorker().Call("update_rates", JC.CallQueued)
 					}
 				} else {
 					JC.Notify("Failed to save configuration.")
@@ -601,7 +601,7 @@ func ToggleDraggable() {
 }
 
 func ScheduledNotificationReset() {
-	JC.MainDebouncer.Call("notification_clear", 6000*time.Millisecond, func() {
+	JC.UseDebouncer().Call("notification_clear", 6000*time.Millisecond, func() {
 
 		// Break loop once notification is empty
 		if JW.NotificationContainer.GetText() == "" {
@@ -613,7 +613,7 @@ func ScheduledNotificationReset() {
 		}
 
 		// Ensure message shown for at least 6 seconds
-		last := JC.WorkerManager.GetLastUpdate("notification")
+		last := JC.UseWorker().GetLastUpdate("notification")
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
 			fyne.Do(func() {

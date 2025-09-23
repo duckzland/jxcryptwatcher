@@ -21,7 +21,7 @@ func (r *tickerContainerLayout) MinSize() fyne.Size {
 }
 
 func (r *tickerContainerLayout) Refresh() {
-	JC.MainDebouncer.Call("ticker_container_refresh", 10*time.Millisecond, func() {
+	JC.UseDebouncer().Call("ticker_container_refresh", 10*time.Millisecond, func() {
 		fyne.Do(func() {
 			r.Layout(r.container.Size())
 		})

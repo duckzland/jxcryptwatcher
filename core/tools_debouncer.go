@@ -5,25 +5,23 @@ import (
 	"time"
 )
 
-type Debouncer struct {
+var coreDebouncer = &debouncer{
+	channels: make(map[string]chan struct{}),
+	stoppers: make(map[string]chan struct{}),
+}
+
+type debouncer struct {
 	mu       sync.Mutex
 	channels map[string]chan struct{}
 	stoppers map[string]chan struct{}
 }
 
-func NewDebouncer() *Debouncer {
-	return &Debouncer{
-		channels: make(map[string]chan struct{}),
-		stoppers: make(map[string]chan struct{}),
-	}
-}
-
-func (d *Debouncer) CallOnce(key string, delay time.Duration, fn func()) {
+func (d *debouncer) CallOnce(key string, delay time.Duration, fn func()) {
 	d.Cancel(key)
 	d.Call(key, delay, fn)
 }
 
-func (d *Debouncer) Call(key string, delay time.Duration, fn func()) {
+func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.mu.Lock()
 	ch, exists := d.channels[key]
 	stopCh := d.stoppers[key]
@@ -86,7 +84,7 @@ func (d *Debouncer) Call(key string, delay time.Duration, fn func()) {
 	}
 }
 
-func (d *Debouncer) Cancel(key string) {
+func (d *debouncer) Cancel(key string) {
 	d.mu.Lock()
 	if stopCh, exists := d.stoppers[key]; exists {
 		close(stopCh)
@@ -97,4 +95,8 @@ func (d *Debouncer) Cancel(key string) {
 		delete(d.channels, key)
 	}
 	d.mu.Unlock()
+}
+
+func UseDebouncer() *debouncer {
+	return coreDebouncer
 }

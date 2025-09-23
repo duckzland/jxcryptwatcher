@@ -57,7 +57,7 @@ func main() {
 	JC.Notify("Application is starting...")
 
 	// Prevent locking when initialized at first install
-	JC.MainDebouncer.Call("initializing", 1*time.Millisecond, func() {
+	JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
 
 		JT.ConfigInit()
 
@@ -98,11 +98,11 @@ func main() {
 
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh
 				JT.TickerCache.SoftReset()
-				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
 			}
 		})
 	})

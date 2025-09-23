@@ -52,7 +52,7 @@ func NewCompletionEntry(
 		suggestions:         options,
 		searchable:          searchOptions,
 		searchableTotal:     len(searchOptions),
-		searchableChunkSize: min((len(searchOptions)+JC.HWTotalCPU-1)/JC.HWTotalCPU, 10),
+		searchableChunkSize: min((len(searchOptions)+JC.TotalCPU()-1)/JC.TotalCPU(), 10),
 		popup:               popup,
 		popupPosition:       fyne.NewPos(-1, -1),
 		entryPosition:       fyne.NewPos(-1, -1),
@@ -62,8 +62,8 @@ func NewCompletionEntry(
 
 	c.OnChanged = func(s string) {
 		c.SearchSuggestions(s)
-		JC.MainDebouncer.Cancel("validating-" + c.uuid)
-		JC.MainDebouncer.Call("validating-"+c.uuid, 300*time.Millisecond, func() {
+		JC.UseDebouncer().Cancel("validating-" + c.uuid)
+		JC.UseDebouncer().Call("validating-"+c.uuid, 300*time.Millisecond, func() {
 			fyne.Do(func() {
 				if !c.popup.Visible() {
 					c.skipValidation = false
@@ -137,7 +137,7 @@ func (c *completionEntry) SearchSuggestions(s string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	c.searchCancel = cancel
 
-	JC.MainDebouncer.Call("show_suggestion_"+c.uuid, delay, func() {
+	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
 		input := c.GetCurrentInput()
 
 		if len(input) < minText || input == "" {
@@ -206,7 +206,7 @@ func (c *completionEntry) SearchSuggestions(s string) {
 }
 
 func (c *completionEntry) CancelSearch() {
-	JC.MainDebouncer.Cancel("show_suggestion_" + c.uuid)
+	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 	if c.searchCancel != nil {
 		c.searchCancel()
 		c.searchCancel = nil
@@ -216,7 +216,7 @@ func (c *completionEntry) CancelSearch() {
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 	c.skipValidation = true
-	JC.MainDebouncer.Cancel("validating-" + c.uuid)
+	JC.UseDebouncer().Cancel("validating-" + c.uuid)
 }
 
 func (c *completionEntry) FocusLost() {
@@ -266,7 +266,7 @@ func (c *completionEntry) Resize(size fyne.Size) {
 
 	c.Entry.Resize(size)
 
-	JC.MainDebouncer.Call("completion_resizing_"+c.uuid, 50*time.Millisecond, func() {
+	JC.UseDebouncer().Call("completion_resizing_"+c.uuid, 50*time.Millisecond, func() {
 		fyne.Do(func() {
 			if c.popup != nil && c.popup.Visible() {
 				c.popupPosition = fyne.NewPos(-1, -1)

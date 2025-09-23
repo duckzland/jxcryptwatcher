@@ -8,6 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
+var hwTotalCPU = runtime.NumCPU()
+
+func TotalCPU() int {
+	return hwTotalCPU
+}
+
 func ReorderByMatch(arr []string, searchKey string) []string {
 	type sortable struct {
 		value string
@@ -85,7 +91,7 @@ func TraceGoroutines() {
 }
 
 func Notify(msg string) {
-	WorkerManager.PushMessage("notification", msg)
+	UseWorker().PushMessage("notification", msg)
 }
 
 func EqualStringSlices(a, b []string) bool {

@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-var verboseWorkersDebugMessage bool = false
-
 type CallMode int
 
 const (
@@ -20,7 +18,7 @@ const (
 type WorkerFunc func()
 type BufferedWorkerFunc func(messages []string) bool
 
-type Worker struct {
+type worker struct {
 	workers         map[string]WorkerFunc
 	locks           map[string]*sync.Mutex
 	active          map[string]bool
@@ -33,9 +31,10 @@ type Worker struct {
 	logTimestamps   map[string]time.Time
 	minDelayMs      map[string]int64
 	mu              sync.Mutex
+	verbose         bool
 }
 
-var WorkerManager = &Worker{
+var workerManager = &worker{
 	workers:         make(map[string]WorkerFunc),
 	locks:           make(map[string]*sync.Mutex),
 	active:          make(map[string]bool),
@@ -47,10 +46,11 @@ var WorkerManager = &Worker{
 	recentLogs:      make(map[string]string),
 	logTimestamps:   make(map[string]time.Time),
 	minDelayMs:      make(map[string]int64),
+	verbose:         false,
 }
 
-func (w *Worker) logGrouped(key string, interval int64, msg string) {
-	if !verboseWorkersDebugMessage {
+func (w *worker) logGrouped(key string, interval int64, msg string) {
+	if !w.verbose {
 		return
 	}
 
@@ -68,7 +68,7 @@ func (w *Worker) logGrouped(key string, interval int64, msg string) {
 	}
 }
 
-func (w *Worker) Register(key string, fn WorkerFunc, getInterval func() int64, debounce int64, shouldRun func() bool) {
+func (w *worker) Register(key string, fn WorkerFunc, getInterval func() int64, debounce int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -103,7 +103,7 @@ func (w *Worker) Register(key string, fn WorkerFunc, getInterval func() int64, d
 	}()
 }
 
-func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, minDelayMs int64, shouldRun func() bool) {
+func (w *worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval int64, debounce int64, bufferSize int64, minDelayMs int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -134,7 +134,7 @@ func (w *Worker) RegisterBuffered(key string, fn BufferedWorkerFunc, interval in
 	}
 }
 
-func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shouldRun func() bool) {
+func (w *worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shouldRun func() bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -167,7 +167,7 @@ func (w *Worker) RegisterSleeper(key string, fn WorkerFunc, delayMs int64, shoul
 	}()
 }
 
-func (w *Worker) Call(key string, mode CallMode) {
+func (w *worker) Call(key string, mode CallMode) {
 	w.mu.Lock()
 	cond := w.conditions[key]
 	w.mu.Unlock()
@@ -189,7 +189,7 @@ func (w *Worker) Call(key string, mode CallMode) {
 		queue <- struct{}{}
 
 	case CallDebounced:
-		MainDebouncer.Call("worker_"+key, time.Duration(1000)*time.Millisecond, func() {
+		UseDebouncer().Call("worker_"+key, time.Duration(1000)*time.Millisecond, func() {
 			w.mu.Lock()
 			queue := w.queues[key]
 			w.mu.Unlock()
@@ -198,7 +198,7 @@ func (w *Worker) Call(key string, mode CallMode) {
 	}
 }
 
-func (w *Worker) PushMessage(key string, msg string) {
+func (w *worker) PushMessage(key string, msg string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -210,7 +210,7 @@ func (w *Worker) PushMessage(key string, msg string) {
 	}
 }
 
-func (w *Worker) GetMessageChannel(key string) <-chan string {
+func (w *worker) GetMessageChannel(key string) <-chan string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -220,7 +220,7 @@ func (w *Worker) GetMessageChannel(key string) <-chan string {
 	return nil
 }
 
-func (w *Worker) runWorker(key string) {
+func (w *worker) runWorker(key string) {
 	w.mu.Lock()
 	lock, exists := w.locks[key]
 	fn, ok := w.workers[key]
@@ -242,7 +242,7 @@ func (w *Worker) runWorker(key string) {
 	w.mu.Unlock()
 }
 
-func (w *Worker) runBufferedWorker(key string) {
+func (w *worker) runBufferedWorker(key string) {
 	w.mu.Lock()
 	lock := w.locks[key]
 	fn := w.bufferedWorkers[key]
@@ -282,7 +282,7 @@ drain:
 	}
 }
 
-func (w *Worker) startQueueWorker(key string, buffered bool) {
+func (w *worker) startQueueWorker(key string, buffered bool) {
 	w.mu.Lock()
 	queue := w.queues[key]
 	w.mu.Unlock()
@@ -296,14 +296,14 @@ func (w *Worker) startQueueWorker(key string, buffered bool) {
 	}
 }
 
-func (w *Worker) Stop(key string) {
+func (w *worker) Stop(key string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.active[key] = false
 	Logf("[Worker:%s] Marked as inactive", key)
 }
 
-func (w *Worker) GetLastUpdate(key string) time.Time {
+func (w *worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -313,7 +313,7 @@ func (w *Worker) GetLastUpdate(key string) time.Time {
 	return time.Time{}
 }
 
-func (w *Worker) PauseAll() {
+func (w *worker) PauseAll() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	for key := range w.active {
@@ -322,11 +322,15 @@ func (w *Worker) PauseAll() {
 	}
 }
 
-func (w *Worker) ResumeAll() {
+func (w *worker) ResumeAll() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	for key := range w.active {
 		w.active[key] = true
 		Logf("[Worker:%s] Resumed", key)
 	}
+}
+
+func UseWorker() *worker {
+	return workerManager
 }

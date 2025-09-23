@@ -403,7 +403,7 @@ func (h *panelDisplay) snapToNearest() {
 	Grid.ForceRefresh()
 
 	go func() {
-		JC.MainDebouncer.Call("panel_drag", 1000*time.Millisecond, func() {
+		JC.UseDebouncer().Call("panel_drag", 1000*time.Millisecond, func() {
 			if h.syncPanelData() {
 				if JT.SavePanels() {
 					JC.Notify("Panels have been reordered and updated.")

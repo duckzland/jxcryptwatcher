@@ -73,11 +73,11 @@ func RegisterActions() {
 
 			// Force update
 			JT.ExchangeCache.SoftReset()
-			JC.WorkerManager.Call("update_rates", JC.CallDebounced)
+			JC.UseWorker().Call("update_rates", JC.CallDebounced)
 
 			// Force update
 			JT.TickerCache.SoftReset()
-			JC.WorkerManager.Call("update_tickers", JC.CallDebounced)
+			JC.UseWorker().Call("update_tickers", JC.CallDebounced)
 
 		},
 		func(btn JW.ActionButton) {
@@ -273,7 +273,7 @@ func RegisterActions() {
 
 func RegisterWorkers() {
 
-	JC.WorkerManager.RegisterSleeper("update_display", func() {
+	JC.UseWorker().RegisterSleeper("update_display", func() {
 		if UpdateDisplay() {
 			JC.UpdateDisplayTimestamp = time.Now()
 		}
@@ -312,7 +312,7 @@ func RegisterWorkers() {
 		return true
 	})
 
-	JC.WorkerManager.Register("update_rates", func() {
+	JC.UseWorker().Register("update_rates", func() {
 		UpdateRates()
 	}, func() int64 {
 		return max(JT.Config.Delay*1000, 30000)
@@ -351,7 +351,7 @@ func RegisterWorkers() {
 		return true
 	})
 
-	JC.WorkerManager.Register("update_tickers", func() {
+	JC.UseWorker().Register("update_tickers", func() {
 		UpdateTickers()
 	}, func() int64 {
 		return max(JT.Config.Delay*1000, 30000)
@@ -380,7 +380,7 @@ func RegisterWorkers() {
 		return true
 	})
 
-	JC.WorkerManager.RegisterBuffered("notification", func(messages []string) bool {
+	JC.UseWorker().RegisterBuffered("notification", func(messages []string) bool {
 		if len(messages) == 0 {
 			return false
 		}
@@ -621,7 +621,7 @@ func RegisterLifecycle() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
-				JC.WorkerManager.ResumeAll()
+				JC.UseWorker().ResumeAll()
 				JA.StatusManager.Resume()
 			}
 
@@ -633,11 +633,11 @@ func RegisterLifecycle() {
 			if !JA.StatusManager.HasError() && JC.IsMobile {
 				// Force Refresh
 				JT.ExchangeCache.SoftReset()
-				JC.WorkerManager.Call("update_rates", JC.CallImmediate)
+				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh
 				JT.TickerCache.SoftReset()
-				JC.WorkerManager.Call("update_tickers", JC.CallImmediate)
+				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
 			}
 		})
 		lc.SetOnExitedForeground(func() {
@@ -646,7 +646,7 @@ func RegisterLifecycle() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
 				JA.StatusManager.Pause()
-				JC.WorkerManager.PauseAll()
+				JC.UseWorker().PauseAll()
 			}
 
 			if !JA.StatusManager.IsReady() {
