@@ -20,7 +20,5 @@ var Tickers *fyne.Container
 
 var AnimDispatcher = NewDispatcher(100, 4, 16*time.Millisecond)
 
-var CharWidthCache = make(map[int]float32)
-
 var ThemeColor func(name fyne.ThemeColorName) color.Color
 var ThemeSize func(name fyne.ThemeSizeName) float32

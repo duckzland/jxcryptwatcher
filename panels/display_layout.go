@@ -1,10 +1,10 @@
 package panels
 
 import (
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+
+	JC "jxwatcher/core"
 )
 
 type panelDisplayLayout struct {

@@ -60,7 +60,7 @@ func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.Tex
 	}
 
 	key := int(fontSize)*10 + styleBits
-	charWidth, ok := CharWidthCache[key]
+	charWidth, ok := UseCharWidthCache().Get(key)
 	if !ok {
 		return str
 	}
