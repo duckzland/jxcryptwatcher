@@ -29,7 +29,7 @@ func main() {
 
 	JT.UseExchangeCache().Init()
 
-	JT.TickerCache.Init()
+	JT.UseTickerCache().Init()
 
 	JA.ActionManager.Init()
 
@@ -81,7 +81,7 @@ func main() {
 		}
 
 		if JA.SnapshotManager.LoadTickerData() == JC.NO_SNAPSHOT {
-			JT.TickerCache.Reset()
+			JT.UseTickerCache().Reset()
 		}
 
 		fyne.Do(func() {
@@ -103,7 +103,7 @@ func main() {
 				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh
-				JT.TickerCache.SoftReset()
+				JT.UseTickerCache().SoftReset()
 				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
 			}
 		})

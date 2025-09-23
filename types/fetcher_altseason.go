@@ -55,7 +55,7 @@ func (er *altSeasonFetcher) GetRate() int64 {
 				dec.Data.HistoricalValues.Now.LastUpdate = time.Now()
 			}
 
-			TickerCache.Insert("altcoin_index", dec.Data.HistoricalValues.Now.AltcoinIndex, dec.Data.HistoricalValues.Now.LastUpdate)
+			tickerCacheStorage.Insert("altcoin_index", dec.Data.HistoricalValues.Now.AltcoinIndex, dec.Data.HistoricalValues.Now.LastUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

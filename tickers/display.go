@@ -146,7 +146,7 @@ func (h *tickerDisplay) updateContent() {
 		}
 
 		if pkt.IsType("market_cap") {
-			raw := JT.TickerCache.Get("market_cap_24_percentage")
+			raw := JT.UseTickerCache().Get("market_cap_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index > 0 {
 				background = JC.ThemeColor(JC.ColorNameGreen)
@@ -156,7 +156,7 @@ func (h *tickerDisplay) updateContent() {
 		}
 
 		if pkt.IsType("cmc100") {
-			raw := JT.TickerCache.Get("cmc100_24_percentage")
+			raw := JT.UseTickerCache().Get("cmc100_24_percentage")
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index >= 0 {
 				background = JC.ThemeColor(JC.ColorNameGreen)

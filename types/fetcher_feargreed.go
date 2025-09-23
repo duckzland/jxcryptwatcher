@@ -61,7 +61,7 @@ func (er *fearGreedFetcher) GetRate() int64 {
 
 			ms := strconv.FormatInt(dec.Data.HistoricalValues.Now.Score, 10)
 
-			TickerCache.Insert("feargreed", ms, dec.Data.HistoricalValues.Now.LastUpdate)
+			tickerCacheStorage.Insert("feargreed", ms, dec.Data.HistoricalValues.Now.LastUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

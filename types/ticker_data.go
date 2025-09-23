@@ -240,10 +240,10 @@ func (p *tickerDataType) Update() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if !TickerCache.Has(p.category) {
+	if !tickerCacheStorage.Has(p.category) {
 		return false
 	}
-	npk := TickerCache.Get(p.category)
+	npk := tickerCacheStorage.Get(p.category)
 	if npk == "" {
 		return false
 	}

@@ -120,7 +120,7 @@ func (sm *snapshotManager) LoadTickerData() int {
 		return JC.NO_SNAPSHOT
 	}
 
-	JT.TickerCache.Hydrate(*snapshot)
+	JT.UseTickerCache().Hydrate(*snapshot)
 	return JC.HAVE_SNAPSHOT
 }
 
@@ -129,5 +129,5 @@ func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
 	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
-	JC.SaveFile("snapshots-ticker-cache.json", JT.TickerCache.Serialize())
+	JC.SaveFile("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
 }

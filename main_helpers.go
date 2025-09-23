@@ -146,7 +146,7 @@ func UpdateTickers() bool {
 		func(totalJob int) {
 			if totalJob > 0 {
 				JA.StatusManager.StartFetchingTickers()
-				JT.TickerCache.SoftReset()
+				JT.UseTickerCache().SoftReset()
 			}
 		},
 		func(results map[string]JC.FetchResult) {
@@ -322,7 +322,7 @@ func ProcessFetchingCryptosComplete(status int) {
 			JT.UseExchangeCache().SoftReset()
 			JC.UseWorker().Call("update_rates", JC.CallQueued)
 
-			JT.TickerCache.SoftReset()
+			JT.UseTickerCache().SoftReset()
 			JC.UseWorker().Call("update_tickers", JC.CallQueued)
 
 			JA.StatusManager.SetCryptoStatus(true)
@@ -562,7 +562,7 @@ func OpenSettingForm() {
 
 						JA.StatusManager.SetConfigStatus(true)
 
-						JT.TickerCache.SoftReset()
+						JT.UseTickerCache().SoftReset()
 						JC.UseWorker().Call("update_tickers", JC.CallQueued)
 
 						JT.UseExchangeCache().SoftReset()

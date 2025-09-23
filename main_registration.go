@@ -77,7 +77,7 @@ func RegisterActions() {
 			JC.UseWorker().Call("update_rates", JC.CallDebounced)
 
 			// Force update
-			JT.TickerCache.SoftReset()
+			JT.UseTickerCache().SoftReset()
 			JC.UseWorker().Call("update_tickers", JC.CallDebounced)
 
 		},
@@ -373,7 +373,7 @@ func RegisterWorkers() {
 			return false
 		}
 
-		if !JT.TickerCache.ShouldRefresh() {
+		if !JT.UseTickerCache().ShouldRefresh() {
 			JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
 			return false
 		}
@@ -637,7 +637,7 @@ func RegisterLifecycle() {
 				JC.UseWorker().Call("update_rates", JC.CallImmediate)
 
 				// Force Refresh
-				JT.TickerCache.SoftReset()
+				JT.UseTickerCache().SoftReset()
 				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
 			}
 		})

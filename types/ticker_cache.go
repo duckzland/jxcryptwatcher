@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var TickerCache tickerDataCacheType = tickerDataCacheType{}
+var tickerCacheStorage *tickerDataCacheType = &tickerDataCacheType{}
 var TickerUpdateThreshold = 2 * time.Minute
 
 type tickerDataCacheSnapshot struct {
@@ -164,4 +164,8 @@ func (tc *tickerDataCacheType) Hydrate(snapshot tickerDataCacheSnapshot) {
 
 func NewTickerDataCacheSnapshot() *tickerDataCacheSnapshot {
 	return &tickerDataCacheSnapshot{}
+}
+
+func UseTickerCache() *tickerDataCacheType {
+	return tickerCacheStorage
 }

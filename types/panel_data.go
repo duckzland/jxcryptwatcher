@@ -10,12 +10,6 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 )
 
-type panelDataCache struct {
-	Status int
-	Key    string
-	OldKey string
-}
-
 type PanelData interface {
 	Init()
 	Set(val string)
@@ -50,6 +44,12 @@ type PanelData interface {
 	IsEqualContentString(pk string) bool
 	RefreshKey(key string) string
 	Serialize() panelDataCache
+}
+
+type panelDataCache struct {
+	Status int
+	Key    string
+	OldKey string
 }
 
 type panelDataType struct {
