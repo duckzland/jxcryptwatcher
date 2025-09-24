@@ -52,7 +52,7 @@ func NewCompletionEntry(
 		suggestions:         options,
 		searchable:          searchOptions,
 		searchableTotal:     len(searchOptions),
-		searchableChunkSize: min((len(searchOptions)+JC.TotalCPU()-1)/JC.TotalCPU(), 10),
+		searchableChunkSize: (len(searchOptions) + JC.TotalCPU() - 1) / JC.TotalCPU(),
 		popup:               popup,
 		popupPosition:       fyne.NewPos(-1, -1),
 		entryPosition:       fyne.NewPos(-1, -1),
@@ -62,7 +62,6 @@ func NewCompletionEntry(
 
 	c.OnChanged = func(s string) {
 		c.SearchSuggestions(s)
-		JC.UseDebouncer().Cancel("validating-" + c.uuid)
 		JC.UseDebouncer().Call("validating-"+c.uuid, 300*time.Millisecond, func() {
 			fyne.Do(func() {
 				if !c.popup.Visible() {
@@ -107,25 +106,29 @@ func (c *completionEntry) GetCurrentInput() string {
 
 func (c *completionEntry) SearchSuggestions(s string) {
 
+	c.CancelSearch()
+
 	if s == c.lastInput {
 		return
 	}
 
+	JC.Logln("SearchSuggestions: new input detected:", s)
 	c.lastInput = s
 
 	if c.pause {
-		c.CancelSearch()
 		return
 	}
 
-	delay := 10 * time.Millisecond
-	if JC.IsMobile || c.popup.Visible() {
-		delay = 40 * time.Millisecond
+	// Delay matters, too fast it will choke mobile, too slow it will give bad UX experience!
+	delay := 30 * time.Millisecond
+	if c.popup.Visible() {
+		delay = 100 * time.Millisecond
+		if JC.IsMobile {
+			delay = 200 * time.Millisecond
+		}
 	}
 
 	minText := 1
-
-	c.CancelSearch()
 
 	if len(s) < minText || s == "" {
 		fyne.Do(func() {
@@ -138,8 +141,8 @@ func (c *completionEntry) SearchSuggestions(s string) {
 	c.searchCancel = cancel
 
 	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
-		input := c.GetCurrentInput()
 
+		input := c.GetCurrentInput()
 		if len(input) < minText || input == "" {
 			cancel()
 			fyne.Do(func() {
@@ -195,12 +198,14 @@ func (c *completionEntry) SearchSuggestions(s string) {
 			return
 		}
 
+		JC.Logln("Search complete, results:", len(results), c.GetCurrentInput())
 		results = JC.ReorderSearchable(results)
 
 		fyne.Do(func() {
 			c.SetOptions(results)
 			c.ShowCompletion()
 			c.DynamicResize()
+			JC.Logln("Completion UI updated")
 		})
 	})
 }
