@@ -32,15 +32,15 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameBackground:
 		return color.RGBA{R: 13, G: 20, B: 33, A: 255}
 	case theme.ColorNameButton:
-		return color.NRGBA{R: 0x28, G: 0x29, B: 0x2e, A: 0xff}
+		return color.NRGBA{R: 40, G: 41, B: 46, A: 255}
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 0x28, G: 0x29, B: 0x2e, A: 0xff}
+		return color.NRGBA{R: 40, G: 41, B: 46, A: 255}
 	case theme.ColorNameDisabled:
-		return color.NRGBA{R: 0x39, G: 0x39, B: 0x3a, A: 0xff}
+		return color.NRGBA{R: 57, G: 57, B: 58, A: 255}
 	case theme.ColorNameError:
 		return color.RGBA{R: 198, G: 40, B: 40, A: 255}
 	case theme.ColorNameFocus:
-		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
+		return color.NRGBA{R: 0, G: 122, B: 204, A: 255}
 	case theme.ColorNameForeground:
 		return color.RGBA{R: 255, G: 255, B: 255, A: 255}
 	case theme.ColorNameForegroundOnError:
@@ -52,39 +52,39 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameForegroundOnWarning:
 		return color.RGBA{R: 255, G: 255, B: 255, A: 255}
 	case theme.ColorNameHeaderBackground:
-		return color.NRGBA{R: 0x1b, G: 0x1b, B: 0x1b, A: 0xff}
+		return color.NRGBA{R: 27, G: 27, B: 27, A: 255}
 	case theme.ColorNameHover:
-		return color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x0f}
+		return color.NRGBA{R: 255, G: 255, B: 255, A: 15}
 	case theme.ColorNameHyperlink:
-		return color.NRGBA{R: 0x00, G: 0x6c, B: 0xff, A: 0xff}
+		return color.NRGBA{R: 0, G: 108, B: 255, A: 255}
 	case theme.ColorNameInputBackground:
-		return color.NRGBA{R: 0x20, G: 0x20, B: 0x23, A: 0xff}
+		return color.NRGBA{R: 32, G: 32, B: 35, A: 255}
 	case theme.ColorNameInputBorder:
-		return color.NRGBA{R: 0x39, G: 0x39, B: 0x3a, A: 0xff}
+		return color.NRGBA{R: 57, G: 57, B: 58, A: 255}
 	case theme.ColorNameMenuBackground:
-		return color.NRGBA{R: 0x28, G: 0x29, B: 0x2e, A: 0xff}
+		return color.NRGBA{R: 40, G: 41, B: 46, A: 255}
 	case theme.ColorNameOverlayBackground:
 		return color.NRGBA{R: 0, G: 0, B: 0, A: 128}
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 0xb2, G: 0xb2, B: 0xb2, A: 0xff}
+		return color.NRGBA{R: 178, G: 178, B: 178, A: 255}
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00}
+		return color.NRGBA{R: 255, G: 255, B: 255, A: 0}
 	case theme.ColorNamePrimary:
-		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
+		return color.NRGBA{R: 0, G: 122, B: 204, A: 255}
 	case theme.ColorNameScrollBar:
 		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
 	case theme.ColorNameScrollBarBackground:
 		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 	case theme.ColorNameSelection:
-		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
+		return color.NRGBA{R: 0, G: 122, B: 204, A: 255}
 	case theme.ColorNameSeparator:
 		return color.Gray{Y: 64}
 	case theme.ColorNameShadow:
 		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 	case theme.ColorNameSuccess:
-		return color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0xff}
+		return color.NRGBA{R: 67, G: 244, B: 54, A: 255}
 	case theme.ColorNameWarning:
-		return color.NRGBA{R: 0xff, G: 0x98, B: 0x00, A: 0xff}
+		return color.NRGBA{R: 255, G: 152, B: 0, A: 255}
 
 	case ColorNamePanelBG:
 		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
@@ -185,7 +185,6 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNameWindowTitleBarHeight:
 		return 26
 
-	// Injected custom sizes with  prefix
 	case SizePanelBorderRadius:
 		return 6
 	case SizePanelTitle:
