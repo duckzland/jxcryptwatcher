@@ -25,8 +25,6 @@ func main() {
 	JC.App.Settings().SetTheme(JA.NewTheme())
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
-	JC.Logln("App is booting...2")
-
 	JC.RegisterWorkerManager().Init()
 
 	JC.RegisterFetcherManager().Init()

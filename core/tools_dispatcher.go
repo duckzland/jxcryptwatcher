@@ -9,15 +9,11 @@ var coreDispatcher *dispatcher = nil
 
 type dispatcher struct {
 	queue         chan func()
-	sem           chan struct{}
 	mu            sync.Mutex
-	cond          *sync.Cond
 	paused        bool
-	started       bool
 	bufferSize    int
 	maxConcurrent int
 	delayBetween  time.Duration
-	preQueue      []func()
 }
 
 func (d *dispatcher) Init() {
@@ -38,26 +34,30 @@ func (d *dispatcher) Init() {
 		d.delayBetween = 16 * time.Millisecond
 	}
 
-	d.paused = false
 	d.queue = make(chan func(), d.bufferSize)
-	d.sem = make(chan struct{}, d.maxConcurrent)
-	d.cond = sync.NewCond(&d.mu)
-
-	for _, fn := range d.preQueue {
-		d.queue <- fn
-	}
-	d.preQueue = nil
+	d.paused = false
 }
 
 func (d *dispatcher) Start() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if d.started || d.queue == nil {
-		return
+	for i := 0; i < d.maxConcurrent; i++ {
+		if d.IsPaused() {
+			return
+		}
+		go d.worker()
 	}
-	d.started = true
-	go d.run()
+}
+
+func (d *dispatcher) worker() {
+	for {
+		if d.IsPaused() {
+			return
+		}
+
+		fn := <-d.queue
+		fn()
+
+		time.Sleep(d.GetDelay())
+	}
 }
 
 func (d *dispatcher) Submit(fn func()) {
@@ -65,33 +65,12 @@ func (d *dispatcher) Submit(fn func()) {
 	defer d.mu.Unlock()
 
 	if d.queue == nil {
-		d.preQueue = append(d.preQueue, fn)
 		return
 	}
 
-	d.queue <- fn
-}
-
-func (d *dispatcher) run() {
-	for fn := range d.queue {
-		d.sem <- struct{}{}
-
-		go func(f func()) {
-			defer func() {
-				<-d.sem
-				if d.delayBetween > 0 {
-					time.Sleep(d.delayBetween)
-				}
-			}()
-
-			d.mu.Lock()
-			for d.paused {
-				d.cond.Wait()
-			}
-			d.mu.Unlock()
-
-			f()
-		}(fn)
+	select {
+	case d.queue <- fn:
+	default:
 	}
 }
 
@@ -105,7 +84,7 @@ func (d *dispatcher) Resume() {
 	d.mu.Lock()
 	d.paused = false
 	d.mu.Unlock()
-	d.cond.Broadcast()
+	d.Start()
 }
 
 func (d *dispatcher) SetBufferSize(size int) {
@@ -124,6 +103,18 @@ func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.delayBetween = delay
+}
+
+func (d *dispatcher) GetDelay() time.Duration {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.delayBetween
+}
+
+func (d *dispatcher) IsPaused() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.paused
 }
 
 func RegisterDispatcher() *dispatcher {

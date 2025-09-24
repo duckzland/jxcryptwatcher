@@ -655,15 +655,15 @@ func RegisterLifecycle() {
 
 func RegisterDispatcher() {
 	d := JC.UseDispatcher()
-	d.SetBufferSize(10000)
+	d.SetBufferSize(100000)
 
 	if JC.IsMobile {
-		d.SetMaxConcurrent(1)
-		d.SetDelayBetween(48 * time.Millisecond)
+		d.SetMaxConcurrent(4)
+		d.SetDelayBetween(3 * time.Millisecond)
 
 	} else {
-		d.SetMaxConcurrent(10)
-		d.SetDelayBetween(1 * time.Millisecond)
+		d.SetMaxConcurrent(6)
+		d.SetDelayBetween(2 * time.Millisecond)
 	}
 
 	d.Start()
