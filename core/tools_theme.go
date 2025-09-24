@@ -68,7 +68,7 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNamePlaceHolder:
 		return color.NRGBA{R: 0xb2, G: 0xb2, B: 0xb2, A: 0xff}
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x66}
+		return color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00}
 	case theme.ColorNamePrimary:
 		return color.NRGBA{R: 0x00, G: 0x7a, B: 0xcc, A: 0xff}
 	case theme.ColorNameScrollBar:
