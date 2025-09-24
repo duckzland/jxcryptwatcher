@@ -314,8 +314,9 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 		p := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
 		lm := JM.UseLayout()
 		dp := JM.UseLayout().UsePlaceholder()
+		dc := JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder)
 
-		lm.UsePlaceholder().Move(p)
+		dp.Move(p)
 
 		dx := dp.Position().X
 		dy := dp.Position().Y
@@ -323,14 +324,14 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 
 		// Try to show placeholder as soon as possible
 		if p.X == dx || p.Y == dy {
-			lm.UsePlaceholder().SetColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
+			dp.SetColor(dc)
 		}
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
-			shown := lm.UsePlaceholder().IsColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
+			shown := dp.IsColor(dc)
 			posX := dx
 			posY := dy
 			placeholderSize := ds
@@ -349,7 +350,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
 					fyne.Do(func() {
-						lm.UsePlaceholder().SetColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
+						dp.SetColor(dc)
 						shown = true
 					})
 				}
@@ -359,7 +360,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 					posX = targetX
 					posY = targetY
 					fyne.Do(func() {
-						lm.UsePlaceholder().Move(fyne.NewPos(posX, posY))
+						dp.Move(fyne.NewPos(posX, posY))
 					})
 				}
 
