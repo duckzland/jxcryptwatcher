@@ -41,24 +41,10 @@ type layoutManager struct {
 
 func (m *layoutManager) Init() {
 	m.mu = sync.RWMutex{}
-	// m.topBar = container.NewWithoutLayout()
-	// m.content = nil
-	// m.tickers = container.NewWithoutLayout()
-	// m.tickersPopulated = container.NewWithoutLayout()
-	// m.scroll = container.NewScroll(nil)
-	// m.container = container.NewWithoutLayout()
-	// m.dragPlaceholder = nil
-
-	// m.actionAddPanel = nil
-	// m.actionFixSetting = nil
-	// m.actionGetCryptos = nil
-	// m.loading = nil
-	// m.error = nil
-
 	m.maxOffset = 0
 	m.contentTopY = 0
 	m.contentBottomY = 0
-	m.state = 9
+	m.state = -9
 	m.lastDisplayUpdate = time.Time{}
 	m.contentWidth = 0
 	m.contentHeight = 0
