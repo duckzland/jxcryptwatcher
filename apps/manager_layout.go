@@ -180,11 +180,11 @@ func (m *layoutManager) GetContentBottomY() float32 {
 
 func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
 	m.container.Remove(container)
+	m.mu.Lock()
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
-		m.mu.Lock()
 		layout.overlay = nil
-		m.mu.Unlock()
 	}
+	m.mu.Unlock()
 }
 
 func (m *layoutManager) RegisterDisplayUpdate(ts time.Time) {
@@ -201,11 +201,11 @@ func (m *layoutManager) RegisterContent(container fyne.CanvasObject) {
 
 func (m *layoutManager) RegisterOverlay(container *fyne.Container) {
 	m.container.Add(container)
+	m.mu.Lock()
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
-		m.mu.Lock()
 		layout.overlay = container
-		m.mu.Unlock()
 	}
+	m.mu.Unlock()
 }
 
 func (m *layoutManager) RegisterTickers(container *fyne.Container) {
