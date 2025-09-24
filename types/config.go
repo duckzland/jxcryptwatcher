@@ -110,7 +110,8 @@ func (c *configType) IsValid() bool {
 func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CanDoCMC100() || c.CanDoFearGreed() || c.CanDoMarketCap() || c.CanDoAltSeason()
+	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" ||
+		c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != ""
 }
 
 func (c *configType) CanDoCMC100() bool {

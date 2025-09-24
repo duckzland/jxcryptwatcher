@@ -410,7 +410,7 @@ func RegisterFetchers() {
 			func(ctx context.Context) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(
 					JT.UseCryptosLoader().GetCryptos(),
-					JT.UseCryptosLoader(),
+					nil,
 				), nil
 			},
 		),
