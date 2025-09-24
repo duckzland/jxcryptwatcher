@@ -659,11 +659,11 @@ func RegisterDispatcher() {
 
 	if JC.IsMobile {
 		d.SetMaxConcurrent(4)
-		d.SetDelayBetween(3 * time.Millisecond)
+		d.SetDelayBetween(4 * time.Millisecond)
 
 	} else {
-		d.SetMaxConcurrent(6)
-		d.SetDelayBetween(2 * time.Millisecond)
+		d.SetMaxConcurrent(3)
+		d.SetDelayBetween(8 * time.Millisecond)
 	}
 
 	d.Start()
