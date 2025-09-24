@@ -154,7 +154,7 @@ func (m *layoutManager) Refresh() {
 	}
 }
 
-func (m *layoutManager) GetLastDisplayUpdate() time.Time {
+func (m *layoutManager) GetDisplayUpdate() time.Time {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.lastDisplayUpdate

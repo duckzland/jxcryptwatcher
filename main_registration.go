@@ -296,7 +296,7 @@ func RegisterWorkers() {
 				JC.Notify("Unable to refresh display: no cached data")
 				return false
 			}
-			if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetLastDisplayUpdate()) {
+			if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetDisplayUpdate()) {
 				JC.Notify("Unable to refresh display: Data is newer than display timestamp")
 				return false
 			}
