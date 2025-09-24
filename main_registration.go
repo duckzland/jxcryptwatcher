@@ -451,7 +451,7 @@ func RegisterFetchers() {
 			},
 		),
 		func(fr JC.FetchResultInterface) {
-			// Process results
+			// Results is processed at GetRate()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -478,7 +478,7 @@ func RegisterFetchers() {
 			},
 		),
 		func(fr JC.FetchResultInterface) {
-			// Process results?
+			// Results is processed at GetRate()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -505,7 +505,7 @@ func RegisterFetchers() {
 			},
 		),
 		func(fr JC.FetchResultInterface) {
-			// Process results?
+			// Results is processed at GetRate()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -532,7 +532,7 @@ func RegisterFetchers() {
 			},
 		),
 		func(fr JC.FetchResultInterface) {
-			// Optional: handle individual result
+			// Results is processed at GetRate()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -559,13 +559,12 @@ func RegisterFetchers() {
 				if !ok {
 					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD, nil), fmt.Errorf("invalid rk")
 				}
-				ex := JT.NewExchangeResults()
-				code := ex.GetRate(rk)
-				return JC.NewFetchResult(code, ex), nil
+
+				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(rk), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
-			// Process results?
+			// Results is processed at GetRate()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -672,18 +671,18 @@ func RegisterDispatcher() {
 func RegisterCache() {
 	// Prepopulating character sizes
 	sizes := []float32{
-		JC.ThemeSize(JC.SizePanelTitle),
-		JC.ThemeSize(JC.SizePanelSubTitle),
-		JC.ThemeSize(JC.SizePanelBottomText),
-		JC.ThemeSize(JC.SizePanelContent),
-		JC.ThemeSize(JC.SizePanelTitleSmall),
-		JC.ThemeSize(JC.SizePanelSubTitleSmall),
-		JC.ThemeSize(JC.SizePanelBottomTextSmall),
-		JC.ThemeSize(JC.SizePanelContentSmall),
-		JC.ThemeSize(JC.SizeTickerTitle),
-		JC.ThemeSize(JC.SizeTickerContent),
-		JC.ThemeSize(JC.SizeNotificationText),
-		JC.ThemeSize(JC.SizeCompletionText),
+		JC.UseTheme().Size(JC.SizePanelTitle),
+		JC.UseTheme().Size(JC.SizePanelSubTitle),
+		JC.UseTheme().Size(JC.SizePanelBottomText),
+		JC.UseTheme().Size(JC.SizePanelContent),
+		JC.UseTheme().Size(JC.SizePanelTitleSmall),
+		JC.UseTheme().Size(JC.SizePanelSubTitleSmall),
+		JC.UseTheme().Size(JC.SizePanelBottomTextSmall),
+		JC.UseTheme().Size(JC.SizePanelContentSmall),
+		JC.UseTheme().Size(JC.SizeTickerTitle),
+		JC.UseTheme().Size(JC.SizeTickerContent),
+		JC.UseTheme().Size(JC.SizeNotificationText),
+		JC.UseTheme().Size(JC.SizeCompletionText),
 	}
 
 	for _, size := range sizes {

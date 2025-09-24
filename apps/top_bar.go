@@ -11,13 +11,13 @@ import (
 
 func NewTopBar() *fyne.Container {
 
-	topBg := canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG))
+	topBg := canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
 	topBg.CornerRadius = 4
 
 	return container.New(
 		&topBarLayout{
-			fixedWidth: JC.ThemeSize(JC.SizeActionBtnWidth),
-			spacer:     JC.ThemeSize(JC.SizeActionBtnGap),
+			fixedWidth: JC.UseTheme().Size(JC.SizeActionBtnWidth),
+			spacer:     JC.UseTheme().Size(JC.SizeActionBtnGap),
 		},
 		container.NewStack(
 			topBg,

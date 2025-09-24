@@ -58,11 +58,11 @@ func NotificationInit() {
 }
 
 func NewNotificationDisplay() *notificationDisplay {
-	c := JC.ThemeColor(theme.ColorNameForeground)
+	c := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
 	t := canvas.NewText("", c)
 	t.Alignment = fyne.TextAlignCenter
-	t.TextSize = JC.ThemeSize(JC.SizeNotificationText)
+	t.TextSize = JC.UseTheme().Size(JC.SizeNotificationText)
 
 	w := &notificationDisplay{
 		text:     t,

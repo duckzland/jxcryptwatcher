@@ -56,7 +56,7 @@ func NewCompletionList(
 		scaledHeight:     0,
 		itemTotal:        0,
 		lastSize:         fyne.NewSize(0, 0),
-		scrollContent:    canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTransparent)),
+		scrollContent:    canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
 		contentBox:       container.New(layout.NewVBoxLayout()),
 		fps:              time.Millisecond * 32,
 		maxOffset:        0,

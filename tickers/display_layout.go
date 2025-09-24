@@ -67,5 +67,5 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (tl *tickerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight))
+	return fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight))
 }

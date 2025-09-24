@@ -37,7 +37,7 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 
 		// Create the panel
 		panel := createPanel(pkt).(*panelDisplay)
-		panel.Resize(fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)))
+		panel.Resize(fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)))
 
 		p = append(p, panel)
 	}
@@ -49,15 +49,15 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 
 	panelGrid = NewPanelContainer(
 		&panelGridLayout{
-			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
-			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizePanelWidth), JC.ThemeSize(JC.SizePanelHeight)),
+			minCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
+			dynCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
 			colCount:    1,
 			rowCount:    1,
 			innerPadding: [4]float32{
-				JC.ThemeSize(JC.SizePaddingPanelTop),
-				JC.ThemeSize(JC.SizePaddingPanelRight),
-				JC.ThemeSize(JC.SizePaddingPanelBottom),
-				JC.ThemeSize(JC.SizePaddingPanelLeft),
+				JC.UseTheme().Size(JC.SizePaddingPanelTop),
+				JC.UseTheme().Size(JC.SizePaddingPanelRight),
+				JC.UseTheme().Size(JC.SizePaddingPanelBottom),
+				JC.UseTheme().Size(JC.SizePaddingPanelLeft),
 			},
 		},
 		panels,

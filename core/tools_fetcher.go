@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-var verboseFetcherDebugMessage bool = false
-
 type FetchResultInterface interface {
 	Code() int64
 	Data() any
@@ -23,10 +21,6 @@ type FetcherInterface interface {
 	Fetch(ctx context.Context, payload any, callback func(FetchResultInterface))
 }
 
-type FetchRequest struct {
-	Payload any
-}
-
 type fetchResult struct {
 	code   int64
 	data   any
@@ -34,12 +28,29 @@ type fetchResult struct {
 	source string
 }
 
-func (r *fetchResult) Code() int64        { return r.code }
-func (r *fetchResult) Data() any          { return r.data }
-func (r *fetchResult) Err() error         { return r.err }
-func (r *fetchResult) Source() string     { return r.source }
-func (r *fetchResult) SetSource(s string) { r.source = s }
-func (r *fetchResult) SetError(e error)   { r.err = e }
+func (r *fetchResult) Code() int64 {
+	return r.code
+}
+
+func (r *fetchResult) Data() any {
+	return r.data
+}
+
+func (r *fetchResult) Err() error {
+	return r.err
+}
+
+func (r *fetchResult) Source() string {
+	return r.source
+}
+
+func (r *fetchResult) SetSource(s string) {
+	r.source = s
+}
+
+func (r *fetchResult) SetError(e error) {
+	r.err = e
+}
 
 type fetcher struct {
 	fetchers         map[string]FetcherInterface
@@ -51,6 +62,7 @@ type fetcher struct {
 	lastGroupedLog   time.Time
 	activeWorkers    map[string]context.CancelFunc
 	mu               sync.Mutex
+	verbose          bool
 }
 
 var fetcherManager *fetcher = nil
@@ -67,6 +79,7 @@ func (m *fetcher) Init() {
 	m.recentGroupedLog = ""
 	m.lastGroupedLog = time.Time{}
 	m.activeWorkers = make(map[string]context.CancelFunc)
+	m.verbose = false
 }
 
 func (m *fetcher) Register(
@@ -232,7 +245,7 @@ func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(s
 }
 
 func (m *fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
-	if !verboseFetcherDebugMessage {
+	if !m.verbose {
 		return
 	}
 
@@ -269,6 +282,7 @@ func (gf *genericFetcher) Fetch(ctx context.Context, _ any, callback func(FetchR
 	}
 	callback(result)
 }
+
 func NewFetchResult(code int64, data any) FetchResultInterface {
 	return &fetchResult{
 		code: code,

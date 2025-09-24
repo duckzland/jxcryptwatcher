@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -14,15 +13,15 @@ import (
 	JT "jxwatcher/types"
 )
 
-var initOnce sync.Once
-
 func main() {
 	JC.InitLogger()
 
 	JC.Logln("App is booting...")
 
+	JC.RegisterThemeManager().Init()
+
 	JC.App = app.NewWithID(JC.AppID)
-	JC.App.Settings().SetTheme(JA.NewTheme())
+	JC.App.Settings().SetTheme(JC.UseTheme())
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
 	JC.RegisterWorkerManager().Init()

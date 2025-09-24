@@ -19,7 +19,7 @@ func RegisterTickerGrid() {
 
 	for _, pot := range list {
 		ticker := NewtickerDisplay(pot)
-		ticker.Resize(fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)))
+		ticker.Resize(fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight)))
 
 		p = append(p, ticker)
 	}
@@ -31,15 +31,15 @@ func RegisterTickerGrid() {
 
 	tickerGrid := NewTickerContainer(
 		&tickerGridLayout{
-			minCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
-			dynCellSize: fyne.NewSize(JC.ThemeSize(JC.SizeTickerWidth), JC.ThemeSize(JC.SizeTickerHeight)),
+			minCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight)),
+			dynCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight)),
 			colCount:    1,
 			rowCount:    1,
 			innerPadding: [4]float32{
-				JC.ThemeSize(JC.SizePaddingPanelTop),
-				JC.ThemeSize(JC.SizePaddingPanelRight),
-				JC.ThemeSize(JC.SizePaddingPanelBottom),
-				JC.ThemeSize(JC.SizePaddingPanelLeft),
+				JC.UseTheme().Size(JC.SizePaddingPanelTop),
+				JC.UseTheme().Size(JC.SizePaddingPanelRight),
+				JC.UseTheme().Size(JC.SizePaddingPanelBottom),
+				JC.UseTheme().Size(JC.SizePaddingPanelLeft),
 			},
 		},
 		tickers,

@@ -28,7 +28,6 @@ type panelDisplay struct {
 	visible      bool
 	disabled     bool
 	container    fyne.CanvasObject
-	parent       *panelContainer
 	dragScroll   float32
 	dragPosition fyne.Position
 	dragOffset   fyne.Position
@@ -51,17 +50,17 @@ func NewPanelDisplay(
 	pdt.SetID(uuid)
 	str := pdt.GetData()
 
-	tc := JC.ThemeColor(theme.ColorNameForeground)
+	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
 	pl := &panelDisplayLayout{
-		title:      NewPanelText("", tc, JC.ThemeSize(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		subtitle:   NewPanelText("", tc, JC.ThemeSize(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		content:    NewPanelText("", tc, JC.ThemeSize(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG)),
-		bottomText: NewPanelText("", tc, JC.ThemeSize(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		title:      NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		subtitle:   NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		content:    NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
+		bottomText: NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
-	pl.background.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
+	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
 	pl.action = NewPanelAction(
 		func() {
@@ -99,7 +98,6 @@ func NewPanelDisplay(
 		content:    pl.content,
 		subtitle:   pl.subtitle,
 		bottomText: pl.bottomText,
-		parent:     UsePanelGrid(),
 	}
 
 	if JC.IsMobile {
@@ -128,18 +126,18 @@ func (h *panelDisplay) ShowTarget() {
 	h.visible = true
 	h.Refresh()
 
-	if h.parent.HasActiveAction() {
-		h.parent.GetActiveAction().HideTarget()
+	if UsePanelGrid().HasActiveAction() {
+		UsePanelGrid().GetActiveAction().HideTarget()
 	}
 
-	h.parent.SetActiveAction(h)
+	UsePanelGrid().SetActiveAction(h)
 }
 
 func (h *panelDisplay) HideTarget() {
 	h.action.Hide()
 	h.visible = false
 	h.Refresh()
-	h.parent.ResetActiveAction()
+	UsePanelGrid().ResetActiveAction()
 }
 
 func (h *panelDisplay) DisableClick() {
@@ -192,16 +190,14 @@ func (h *panelDisplay) Dragged(ev *fyne.DragEvent) {
 	if JM.UseStatus().IsDraggable() {
 		h.panelDrag(ev)
 	} else {
-		h.parent.Dragged(ev)
+		UsePanelGrid().Dragged(ev)
 	}
 }
 
 func (h *panelDisplay) DragEnd() {
 	if !JM.UseStatus().IsDraggable() {
 		h.dragging = false
-		if h.parent != nil {
-			h.parent.DragEnd()
-		}
+		UsePanelGrid().DragEnd()
 		return
 	}
 
@@ -209,8 +205,8 @@ func (h *panelDisplay) DragEnd() {
 	activeDragging = nil
 	h.dragging = false
 
-	JM.UseLayout().SetPlaceholderColor(JC.ThemeColor(JC.ColorNameTransparent))
-	JM.UseLayout().MovePlaceholder(fyne.NewPos(0, -JC.ThemeSize(JC.SizePanelHeight)))
+	JM.UseLayout().SetPlaceholderColor(JC.UseTheme().GetColor(JC.ColorNameTransparent))
+	JM.UseLayout().MovePlaceholder(fyne.NewPos(0, -JC.UseTheme().Size(JC.SizePanelHeight)))
 
 	h.dragOffset = h.Position().Add(h.dragPosition)
 	h.dragOffset.Y -= h.dragScroll - JM.UseLayout().OffsetY()
@@ -226,11 +222,11 @@ func (h *panelDisplay) updateContent() {
 	}
 
 	pwidth := h.Size().Width
-	if pwidth != 0 && pwidth < JC.ThemeSize(JC.SizePanelWidth) {
-		h.title.SetTextSize(JC.ThemeSize(JC.SizePanelTitleSmall))
-		h.subtitle.SetTextSize(JC.ThemeSize(JC.SizePanelSubTitleSmall))
-		h.bottomText.SetTextSize(JC.ThemeSize(JC.SizePanelBottomTextSmall))
-		h.content.SetTextSize(JC.ThemeSize(JC.SizePanelContentSmall))
+	if pwidth != 0 && pwidth < JC.UseTheme().Size(JC.SizePanelWidth) {
+		h.title.SetTextSize(JC.UseTheme().Size(JC.SizePanelTitleSmall))
+		h.subtitle.SetTextSize(JC.UseTheme().Size(JC.SizePanelSubTitleSmall))
+		h.bottomText.SetTextSize(JC.UseTheme().Size(JC.SizePanelBottomTextSmall))
+		h.content.SetTextSize(JC.UseTheme().Size(JC.SizePanelContentSmall))
 	}
 
 	if !JT.UsePanelMaps().ValidatePanel(pkt.Get()) {
@@ -241,7 +237,7 @@ func (h *panelDisplay) updateContent() {
 	subtitle := ""
 	bottomText := ""
 	content := ""
-	background := JC.ThemeColor(JC.ColorNamePanelBG)
+	background := JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 	status := h.status
 
 	h.status = pkt.GetStatus()
@@ -249,7 +245,7 @@ func (h *panelDisplay) updateContent() {
 	switch h.status {
 	case JC.STATE_ERROR:
 		title = "Error loading data"
-		background = JC.ThemeColor(JC.ColorNameError)
+		background = JC.UseTheme().GetColor(JC.ColorNameError)
 
 	case JC.STATE_FETCHING_NEW:
 		title = "Fetching Rates..."
@@ -259,20 +255,20 @@ func (h *panelDisplay) updateContent() {
 
 	case JC.STATE_BAD_CONFIG:
 		title = "Invalid Panel"
-		background = JC.ThemeColor(JC.ColorNameError)
+		background = JC.UseTheme().GetColor(JC.ColorNameError)
 
 	case JC.STATE_LOADED:
 		if pkt.DidChange() {
 			switch pkt.IsValueIncrease() {
 			case JC.VALUE_INCREASE:
-				background = JC.ThemeColor(JC.ColorNameGreen)
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
 
 			case JC.VALUE_DECREASE:
-				background = JC.ThemeColor(JC.ColorNameRed)
+				background = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 
 		} else if pkt.IsOnInitialValue() {
-			background = JC.ThemeColor(JC.ColorNamePanelBG)
+			background = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 		}
 
 		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize, h.title.GetText().TextStyle)
@@ -327,14 +323,14 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 
 		// Try to show placeholder as soon as possible
 		if p.X == dx || p.Y == dy {
-			lm.SetPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
+			lm.SetPlaceholderColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
 		}
 
 		go func() {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
 
-			shown := lm.IsPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
+			shown := lm.IsPlaceholderColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
 			posX := dx
 			posY := dy
 			placeholderSize := ds
@@ -353,7 +349,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
 					fyne.Do(func() {
-						lm.SetPlaceholderColor(JC.ThemeColor(JC.ColorNamePanelPlaceholder))
+						lm.SetPlaceholderColor(JC.UseTheme().GetColor(JC.ColorNamePanelPlaceholder))
 						shown = true
 					})
 				}

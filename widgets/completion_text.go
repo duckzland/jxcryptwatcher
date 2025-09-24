@@ -28,19 +28,19 @@ type completionText struct {
 
 func NewCompletionText(height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:    canvas.NewText("", JC.ThemeColor(theme.ColorNameForeground)),
+		label:    canvas.NewText("", JC.UseTheme().GetColor(theme.ColorNameForeground)),
 		height:   height,
 		parent:   parent,
-		bgcolor:  JC.ThemeColor(theme.ColorNameHover),
-		sepcolor: JC.ThemeColor(theme.ColorNameSeparator),
-		traColor: JC.ThemeColor(JC.ColorNameTransparent),
+		bgcolor:  JC.UseTheme().GetColor(theme.ColorNameHover),
+		sepcolor: JC.UseTheme().GetColor(theme.ColorNameSeparator),
+		traColor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
 	}
 
 	if !JC.IsMobile {
 		s.background = canvas.NewRectangle(s.traColor)
 	}
 
-	s.label.TextSize = JC.ThemeSize(JC.SizeCompletionText)
+	s.label.TextSize = JC.UseTheme().Size(JC.SizeCompletionText)
 	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
 	return s

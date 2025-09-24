@@ -165,12 +165,6 @@ func NewPanelContainer(
 		layout:  layout,
 	}
 
-	for _, obj := range c.Objects {
-		if panel, ok := obj.(*panelDisplay); ok {
-			panel.parent = c
-		}
-	}
-
 	c.fps = 16 * time.Millisecond
 	if JC.IsMobile {
 		c.fps = 32 * time.Millisecond

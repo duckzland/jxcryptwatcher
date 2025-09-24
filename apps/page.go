@@ -35,15 +35,15 @@ func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 	var objects []fyne.CanvasObject
 
 	layout := &pageLayout{
-		background: canvas.NewRectangle(JC.ThemeColor(JC.ColorNamePanelBG)),
-		content:    canvas.NewText(p.content, JC.ThemeColor(theme.ColorNameForeground)),
+		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
+		content:    canvas.NewText(p.content, JC.UseTheme().GetColor(theme.ColorNameForeground)),
 	}
 
 	layout.content.Alignment = fyne.TextAlignCenter
 	layout.content.TextSize = 20
 
 	layout.background.SetMinSize(fyne.NewSize(100, 100))
-	layout.background.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
+	layout.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
 	objects = append(objects, layout.background)
 

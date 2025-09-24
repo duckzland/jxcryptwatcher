@@ -108,7 +108,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if a.placeholder != nil {
-		placeholderPos := fyne.NewPos(0, -JC.ThemeSize(JC.SizePanelHeight))
+		placeholderPos := fyne.NewPos(0, -JC.UseTheme().Size(JC.SizePanelHeight))
 		if a.placeholder.Position() != placeholderPos {
 			a.placeholder.Move(placeholderPos)
 		}

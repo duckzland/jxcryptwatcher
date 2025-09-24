@@ -540,9 +540,9 @@ func NewAppLayout() fyne.CanvasObject {
 		overlay:     nil,
 	}
 
-	manager.dragPlaceholder = canvas.NewRectangle(JC.ThemeColor(JC.ColorNameTransparent))
+	manager.dragPlaceholder = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent))
 	if rect, ok := manager.dragPlaceholder.(*canvas.Rectangle); ok {
-		rect.CornerRadius = JC.ThemeSize(JC.SizePanelBorderRadius)
+		rect.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 		layout.placeholder = rect
 	}
 

@@ -1,15 +1,25 @@
-package apps
+package core
 
 import (
 	"image/color"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
-
-	JC "jxwatcher/core"
 )
 
-type appTheme struct{}
+var activeTheme *appTheme = nil
+
+type appTheme struct {
+	variant fyne.ThemeVariant
+}
+
+func (t *appTheme) Init() {
+	t.variant = theme.VariantDark
+}
+
+func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
+	t.variant = variant
+}
 
 func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
@@ -70,31 +80,31 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case theme.ColorNameWarning:
 		return color.NRGBA{R: 0xff, G: 0x98, B: 0x00, A: 0xff}
 
-	case JC.ColorNamePanelBG:
+	case ColorNamePanelBG:
 		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
-	case JC.ColorNamePanelPlaceholder:
+	case ColorNamePanelPlaceholder:
 		return color.RGBA{R: 20, G: 22, B: 30, A: 200}
-	case JC.ColorNameTickerBG:
+	case ColorNameTickerBG:
 		return color.RGBA{R: 17, G: 119, B: 170, A: 255}
-	case JC.ColorNameRed:
+	case ColorNameRed:
 		return color.RGBA{R: 133, G: 36, B: 36, A: 255}
-	case JC.ColorNameGreen:
+	case ColorNameGreen:
 		return color.RGBA{R: 22, G: 106, B: 69, A: 255}
-	case JC.ColorNameBlue:
+	case ColorNameBlue:
 		return color.RGBA{R: 60, G: 120, B: 220, A: 255}
-	case JC.ColorNameLightBlue:
+	case ColorNameLightBlue:
 		return color.RGBA{R: 100, G: 160, B: 230, A: 255}
-	case JC.ColorNameLightPurple:
+	case ColorNameLightPurple:
 		return color.RGBA{R: 160, G: 140, B: 200, A: 255}
-	case JC.ColorNameLightOrange:
+	case ColorNameLightOrange:
 		return color.RGBA{R: 240, G: 160, B: 100, A: 255}
-	case JC.ColorNameOrange:
+	case ColorNameOrange:
 		return color.RGBA{R: 195, G: 102, B: 51, A: 255}
-	case JC.ColorNameYellow:
+	case ColorNameYellow:
 		return color.RGBA{R: 192, G: 168, B: 64, A: 255}
-	case JC.ColorNameTeal:
+	case ColorNameTeal:
 		return color.RGBA{R: 40, G: 170, B: 140, A: 255}
-	case JC.ColorNameTransparent:
+	case ColorNameTransparent:
 		return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 
 	default:
@@ -135,12 +145,12 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNamePadding:
 		return 4
 	case theme.SizeNameScrollBar:
-		if JC.IsMobile {
+		if IsMobile {
 			return 4
 		}
 		return 12
 	case theme.SizeNameScrollBarSmall:
-		if JC.IsMobile {
+		if IsMobile {
 			return 4
 		}
 		return 12
@@ -169,64 +179,64 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNameWindowTitleBarHeight:
 		return 26
 
-	// Injected custom sizes with JC. prefix
-	case JC.SizePanelBorderRadius:
+	// Injected custom sizes with  prefix
+	case SizePanelBorderRadius:
 		return 6
-	case JC.SizePanelTitle:
+	case SizePanelTitle:
 		return 16
-	case JC.SizePanelSubTitle:
+	case SizePanelSubTitle:
 		return 16
-	case JC.SizePanelBottomText:
+	case SizePanelBottomText:
 		return 12
-	case JC.SizePanelContent:
+	case SizePanelContent:
 		return 28
-	case JC.SizePanelTitleSmall:
+	case SizePanelTitleSmall:
 		return 13
-	case JC.SizePanelSubTitleSmall:
+	case SizePanelSubTitleSmall:
 		return 13
-	case JC.SizePanelBottomTextSmall:
+	case SizePanelBottomTextSmall:
 		return 10
-	case JC.SizePanelContentSmall:
+	case SizePanelContentSmall:
 		return 22
-	case JC.SizePanelWidth:
+	case SizePanelWidth:
 		return 320
-	case JC.SizePanelHeight:
+	case SizePanelHeight:
 		return 110
-	case JC.SizeActionBtnWidth:
+	case SizeActionBtnWidth:
 		return 40
-	case JC.SizeActionBtnGap:
+	case SizeActionBtnGap:
 		return 6
-	case JC.SizeTickerBorderRadius:
+	case SizeTickerBorderRadius:
 		return 6
-	case JC.SizeTickerWidth:
+	case SizeTickerWidth:
 		return 120
-	case JC.SizeTickerHeight:
+	case SizeTickerHeight:
 		return 50
-	case JC.SizeTickerTitle:
+	case SizeTickerTitle:
 		return 11
-	case JC.SizeTickerContent:
+	case SizeTickerContent:
 		return 20
-	case JC.SizeNotificationText:
+	case SizeNotificationText:
 		return 14
-	case JC.SizeCompletionText:
+	case SizeCompletionText:
 		return 14
 
-	case JC.SizePaddingPanelLeft:
+	case SizePaddingPanelLeft:
 		return 8
-	case JC.SizePaddingPanelTop:
+	case SizePaddingPanelTop:
 		return 8
-	case JC.SizePaddingPanelRight:
+	case SizePaddingPanelRight:
 		return 8
-	case JC.SizePaddingPanelBottom:
+	case SizePaddingPanelBottom:
 		return 8
 
-	case JC.SizePaddingTickerLeft:
+	case SizePaddingTickerLeft:
 		return 8
-	case JC.SizePaddingTickerTop:
+	case SizePaddingTickerTop:
 		return 8
-	case JC.SizePaddingTickerRight:
+	case SizePaddingTickerRight:
 		return 8
-	case JC.SizePaddingTickerBottom:
+	case SizePaddingTickerBottom:
 		return 8
 
 	default:
@@ -234,20 +244,17 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	}
 }
 
-var activeTheme = &appTheme{}
+func (t *appTheme) GetColor(name fyne.ThemeColorName) color.Color {
+	return t.Color(name, t.variant)
+}
 
-func NewTheme() fyne.Theme {
-	if JC.ThemeColor == nil {
-		JC.ThemeColor = func(name fyne.ThemeColorName) color.Color {
-			return activeTheme.Color(name, theme.VariantDark)
-		}
+func RegisterThemeManager() *appTheme {
+	if activeTheme == nil {
+		activeTheme = &appTheme{}
 	}
+	return activeTheme
+}
 
-	if JC.ThemeSize == nil {
-		JC.ThemeSize = func(name fyne.ThemeSizeName) float32 {
-			return activeTheme.Size(name)
-		}
-	}
-
+func UseTheme() *appTheme {
 	return activeTheme
 }
