@@ -21,7 +21,7 @@ type configType struct {
 	Version           string `json:"version"`
 }
 
-func (c *configType) LoadFile() *configType {
+func (c *configType) loadFile() *configType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
@@ -110,8 +110,7 @@ func (c *configType) IsValid() bool {
 func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" ||
-		c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != ""
+	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != ""
 }
 
 func (c *configType) CanDoCMC100() bool {
@@ -143,7 +142,7 @@ func ConfigInit() {
 	configStorage = &configType{}
 	configMu.Unlock()
 
-	UseConfig().CheckFile().LoadFile()
+	UseConfig().CheckFile().loadFile()
 }
 
 func UseConfig() *configType {

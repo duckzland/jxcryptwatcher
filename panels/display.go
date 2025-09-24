@@ -378,7 +378,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 func (h *panelDisplay) snapToNearest() {
 
 	// Convert target position to grid index
-	targetIndex := h.findDropTargetIndex()
+	targetIndex := h.findTargetIndex()
 	if targetIndex == -1 {
 		return
 	}
@@ -388,7 +388,7 @@ func (h *panelDisplay) snapToNearest() {
 
 	go func() {
 		JC.UseDebouncer().Call("panel_drag", 1000*time.Millisecond, func() {
-			if h.syncPanelData() {
+			if h.syncData() {
 				if JT.SavePanels() {
 					JC.Notify("Panels have been reordered and updated.")
 				}
@@ -397,7 +397,7 @@ func (h *panelDisplay) snapToNearest() {
 	}()
 }
 
-func (h *panelDisplay) findDropTargetIndex() int {
+func (h *panelDisplay) findTargetIndex() int {
 
 	JC.Logln(fmt.Sprintf("Dragging item - Position: (%.2f, %.2f)", h.dragOffset.X, h.dragOffset.Y))
 
@@ -449,7 +449,7 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	return result
 }
 
-func (h *panelDisplay) syncPanelData() bool {
+func (h *panelDisplay) syncData() bool {
 	nd := []JT.PanelData{}
 
 	for _, obj := range UsePanelGrid().Objects {

@@ -111,9 +111,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if a.overlay != nil {
-		if a.overlay.Size() != size {
-			a.overlay.Resize(size)
-		}
+		a.overlay.Resize(size)
 	}
 
 	if a.parent != nil {

@@ -179,12 +179,11 @@ func (m *layoutManager) GetContentBottomY() float32 {
 }
 
 func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.container.Remove(container)
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
+		m.mu.Lock()
 		layout.overlay = nil
+		m.mu.Unlock()
 	}
 }
 
@@ -201,12 +200,11 @@ func (m *layoutManager) RegisterContent(container fyne.CanvasObject) {
 }
 
 func (m *layoutManager) RegisterOverlay(container *fyne.Container) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.container.Add(container)
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
+		m.mu.Lock()
 		layout.overlay = container
+		m.mu.Unlock()
 	}
 }
 
