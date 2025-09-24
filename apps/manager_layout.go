@@ -1,12 +1,10 @@
 package apps
 
 import (
-	"image/color"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 
@@ -26,7 +24,7 @@ type layoutManager struct {
 	tickersPopulated  *fyne.Container
 	scroll            *container.Scroll
 	container         *fyne.Container
-	dragPlaceholder   fyne.CanvasObject
+	placeholder       *dragPlaceholder
 	actionAddPanel    *staticPage
 	actionFixSetting  *staticPage
 	actionGetCryptos  *staticPage
@@ -41,277 +39,29 @@ type layoutManager struct {
 	contentHeight     float32
 }
 
-func (lm *layoutManager) Init() {
-	lm.mu = sync.RWMutex{}
-	// lm.topBar = container.NewWithoutLayout()
-	// lm.content = nil
-	// lm.tickers = container.NewWithoutLayout()
-	// lm.tickersPopulated = container.NewWithoutLayout()
-	// lm.scroll = container.NewScroll(nil)
-	// lm.container = container.NewWithoutLayout()
-	// lm.dragPlaceholder = nil
+func (m *layoutManager) Init() {
+	m.mu = sync.RWMutex{}
+	// m.topBar = container.NewWithoutLayout()
+	// m.content = nil
+	// m.tickers = container.NewWithoutLayout()
+	// m.tickersPopulated = container.NewWithoutLayout()
+	// m.scroll = container.NewScroll(nil)
+	// m.container = container.NewWithoutLayout()
+	// m.dragPlaceholder = nil
 
-	// lm.actionAddPanel = nil
-	// lm.actionFixSetting = nil
-	// lm.actionGetCryptos = nil
-	// lm.loading = nil
-	// lm.error = nil
+	// m.actionAddPanel = nil
+	// m.actionFixSetting = nil
+	// m.actionGetCryptos = nil
+	// m.loading = nil
+	// m.error = nil
 
-	lm.maxOffset = 0
-	lm.contentTopY = 0
-	lm.contentBottomY = 0
-	lm.state = 9
-	lm.lastDisplayUpdate = time.Time{}
-	lm.contentWidth = 0
-	lm.contentHeight = 0
-}
-
-func (m *layoutManager) TopBar() fyne.CanvasObject {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.topBar
-}
-
-func (m *layoutManager) Content() *fyne.CanvasObject {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.content
-}
-
-func (m *layoutManager) Tickers() *fyne.Container {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.tickers
-}
-
-func (m *layoutManager) Scroll() *container.Scroll {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.scroll
-}
-
-func (m *layoutManager) Container() *fyne.Container {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.container
-}
-
-func (m *layoutManager) ContainerSize() fyne.Size {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.container.Size()
-}
-
-func (m *layoutManager) ActionAddPanel() *staticPage {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.actionAddPanel
-}
-
-func (m *layoutManager) ActionFixSetting() *staticPage {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.actionFixSetting
-}
-
-func (m *layoutManager) ActionGetCryptos() *staticPage {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.actionGetCryptos
-}
-
-func (m *layoutManager) LoadingPage() *staticPage {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.loading
-}
-
-func (m *layoutManager) ErrorPage() *staticPage {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.error
-}
-
-func (m *layoutManager) MaxOffset() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.maxOffset
-}
-
-func (m *layoutManager) ContentTopY() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.contentTopY
-}
-
-func (m *layoutManager) ContentBottomY() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.contentBottomY
-}
-
-func (m *layoutManager) State() int {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.state
-}
-
-func (m *layoutManager) OffsetY() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.scroll == nil {
-		return 0
-	}
-	return m.scroll.Offset.Y
-}
-
-func (m *layoutManager) OffsetX() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.scroll == nil {
-		return 0
-	}
-	return m.scroll.Offset.X
-}
-
-func (m *layoutManager) Height() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.scroll == nil {
-		return -1
-	}
-	return m.scroll.Size().Height
-}
-
-func (m *layoutManager) Width() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if m.scroll == nil {
-		return -1
-	}
-	return m.scroll.Size().Width
-}
-
-func (m *layoutManager) IsReady() bool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.scroll != nil && m.content != nil
-}
-
-func (m *layoutManager) SetMaxOffset(val float32) {
-	m.mu.Lock()
-	m.maxOffset = val
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) SetContentTopY(val float32) {
-	m.mu.Lock()
-	m.contentTopY = val
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) SetContentBottomY(val float32) {
-	m.mu.Lock()
-	m.contentBottomY = val
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) SetPage(container fyne.CanvasObject) {
-	m.mu.Lock()
-	m.content = &container
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) RegisterTickers(container *fyne.Container) {
-	if container == nil {
-		return
-	}
-
-	m.mu.Lock()
-	m.tickersPopulated = container
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) SetTickers(container *fyne.Container) {
-	if container == nil {
-		return
-	}
-
-	m.mu.Lock()
-	m.tickers = container
-	m.container.Objects[1] = container
-
-	if layout, ok := m.container.Layout.(*mainLayout); ok {
-		layout.tickers = container
-	}
-	m.mu.Unlock()
-
-	m.tickers.Refresh()
-	m.RefreshContainer()
-}
-
-func (m *layoutManager) SetOffsetY(offset float32) {
-	m.mu.Lock()
-	if m.scroll == nil || m.scroll.Offset.Y == offset {
-		m.mu.Unlock()
-		return
-	}
-	m.scroll.Offset.Y = offset
-	m.mu.Unlock()
-	m.RefreshLayout()
-}
-
-func (m *layoutManager) ScrollBy(delta float32) {
-	current := m.OffsetY()
-	newOffset := current + delta
-
-	m.mu.RLock()
-	max := m.maxOffset
-	m.mu.RUnlock()
-
-	if max == -1 {
-		m.ComputeMaxScrollOffset()
-		m.mu.RLock()
-		max = m.maxOffset
-		m.mu.RUnlock()
-	}
-
-	if newOffset < 0 {
-		if current > 0 {
-			newOffset = 0
-		} else {
-			return
-		}
-	} else if newOffset > max {
-		if current < max {
-			newOffset = max
-		} else {
-			return
-		}
-	}
-
-	m.SetOffsetY(newOffset)
-}
-
-func (m *layoutManager) ComputeMaxScrollOffset() {
-	m.mu.RLock()
-	scroll := m.scroll
-	m.mu.RUnlock()
-
-	if scroll == nil || scroll.Content == nil {
-		return
-	}
-
-	contentHeight := scroll.Content.MinSize().Height
-	viewportHeight := scroll.Size().Height
-
-	m.mu.Lock()
-	if contentHeight <= viewportHeight {
-		m.maxOffset = 0
-	} else {
-		m.maxOffset = contentHeight - viewportHeight
-	}
-	m.mu.Unlock()
+	m.maxOffset = 0
+	m.contentTopY = 0
+	m.contentBottomY = 0
+	m.state = 9
+	m.lastDisplayUpdate = time.Time{}
+	m.contentWidth = 0
+	m.contentHeight = 0
 }
 
 func (m *layoutManager) RefreshLayout() {
@@ -320,14 +70,6 @@ func (m *layoutManager) RefreshLayout() {
 		if m.scroll != nil {
 			fyne.Do(m.scroll.Refresh)
 		}
-		m.mu.RUnlock()
-	})
-}
-
-func (m *layoutManager) RefreshContainer() {
-	JC.UseDebouncer().Call("refreshing_layout_container", 5*time.Millisecond, func() {
-		m.mu.RLock()
-		fyne.Do(m.container.Refresh)
 		m.mu.RUnlock()
 	})
 }
@@ -386,7 +128,7 @@ func (m *layoutManager) Refresh() {
 
 	if UseStatus().IsReady() {
 		if !UseStatus().ValidCryptos() {
-			m.SetTickers(container.NewWithoutLayout())
+			m.setTickers(container.NewWithoutLayout())
 			return
 		}
 
@@ -396,108 +138,197 @@ func (m *layoutManager) Refresh() {
 		m.mu.RUnlock()
 
 		if tickers != nil && tickers != populated && UseStatus().ValidTickers() {
-			m.SetTickers(m.tickersPopulated)
+			m.setTickers(m.tickersPopulated)
 			return
 		}
 
 		if tickers != nil && tickers == populated && !UseStatus().ValidTickers() {
-			m.SetTickers(container.NewWithoutLayout())
+			m.setTickers(container.NewWithoutLayout())
 			return
 		}
 
 		if tickers == nil && UseStatus().ValidTickers() {
-			m.SetTickers(populated)
+			m.setTickers(populated)
 			return
 		}
 	}
 }
 
-func (m *layoutManager) AddToContainer(container *fyne.Container) {
-	m.container.Add(container)
+func (m *layoutManager) GetLastDisplayUpdate() time.Time {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.lastDisplayUpdate
 }
 
-func (m *layoutManager) RemoveFromContainer(container *fyne.Container) {
-	m.container.Remove(container)
+func (m *layoutManager) GetContentHeight() float32 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.contentHeight
 }
 
-func (m *layoutManager) SetOverlay(container *fyne.Container) {
-	m.container.Add(container)
-	if layout, ok := m.container.Layout.(*mainLayout); ok {
-		layout.overlay = container
-	}
+func (m *layoutManager) GetContentTopY() float32 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.contentTopY
+}
+
+func (m *layoutManager) GetContentBottomY() float32 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.contentBottomY
 }
 
 func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.container.Remove(container)
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
 		layout.overlay = nil
 	}
 }
 
-func (lm *layoutManager) SetLastDisplayUpdate(ts time.Time) {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
-	lm.lastDisplayUpdate = ts
+func (m *layoutManager) RegisterDisplayUpdate(ts time.Time) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lastDisplayUpdate = ts
 }
 
-func (lm *layoutManager) GetLastDisplayUpdate() time.Time {
-	lm.mu.RLock()
-	defer lm.mu.RUnlock()
-	return lm.lastDisplayUpdate
+func (m *layoutManager) RegisterContent(container fyne.CanvasObject) {
+	m.mu.Lock()
+	m.content = &container
+	m.mu.Unlock()
 }
 
-func (lm *layoutManager) SetContentSize(width, height float32) {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
-	lm.contentWidth = width
-	lm.contentHeight = height
-}
+func (m *layoutManager) RegisterOverlay(container *fyne.Container) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-func (lm *layoutManager) GetContentWidth() float32 {
-	lm.mu.RLock()
-	defer lm.mu.RUnlock()
-	return lm.contentWidth
-}
-
-func (lm *layoutManager) GetContentHeight() float32 {
-	lm.mu.RLock()
-	defer lm.mu.RUnlock()
-	return lm.contentHeight
-}
-
-func (c *layoutManager) GetDragPlaceholder() fyne.CanvasObject {
-	return c.dragPlaceholder
-}
-
-func (c *layoutManager) HasDragPlaceholder() bool {
-	return c.dragPlaceholder != nil
-}
-
-func (c *layoutManager) ResizeDragPlaceholder(size fyne.Size) {
-	if c.GetDragPlaceholder() != nil && c.GetDragPlaceholder().Size() != size {
-		c.GetDragPlaceholder().Resize(size)
+	m.container.Add(container)
+	if layout, ok := m.container.Layout.(*mainLayout); ok {
+		layout.overlay = container
 	}
 }
 
-func (c *layoutManager) MovePlaceholder(pos fyne.Position) {
-	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
-		rect.Move(pos)
-		canvas.Refresh(rect)
+func (m *layoutManager) RegisterTickers(container *fyne.Container) {
+	if container == nil {
+		return
 	}
+
+	m.mu.Lock()
+	m.tickersPopulated = container
+	m.mu.Unlock()
 }
 
-func (c *layoutManager) SetPlaceholderColor(color color.Color) {
-	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
-		rect.FillColor = color
-		canvas.Refresh(rect)
-	}
+func (m *layoutManager) UseContainer() *fyne.Container {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.container
 }
 
-func (c *layoutManager) IsPlaceholderColor(color color.Color) bool {
-	if rect, ok := c.dragPlaceholder.(*canvas.Rectangle); ok {
-		return rect.FillColor == color
+func (m *layoutManager) UseScroll() *container.Scroll {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.scroll
+}
+
+func (m *layoutManager) UsePlaceholder() *dragPlaceholder {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.placeholder
+}
+
+func (m *layoutManager) ScrollBy(delta float32) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	scroll := m.scroll
+	if scroll == nil || scroll.Content == nil {
+		return
 	}
-	return false
+
+	current := scroll.Offset.Y
+	newOffset := current + delta
+
+	if m.maxOffset == -1 {
+		contentHeight := scroll.Content.MinSize().Height
+		viewportHeight := scroll.Size().Height
+
+		if contentHeight <= viewportHeight {
+			m.maxOffset = 0
+		} else {
+			m.maxOffset = contentHeight - viewportHeight
+		}
+	}
+
+	max := m.maxOffset
+
+	if newOffset < 0 {
+		if current <= 0 {
+			return
+		}
+		newOffset = 0
+	} else if newOffset > max {
+		if current >= max {
+			return
+		}
+		newOffset = max
+	}
+
+	if scroll.Offset.Y == newOffset {
+		return
+	}
+
+	scroll.Offset.Y = newOffset
+	m.RefreshLayout()
+}
+
+func (m *layoutManager) setTickers(container *fyne.Container) {
+	if container == nil {
+		return
+	}
+
+	m.mu.Lock()
+	m.tickers = container
+	m.container.Objects[1] = container
+
+	if layout, ok := m.container.Layout.(*mainLayout); ok {
+		layout.tickers = container
+	}
+	m.mu.Unlock()
+
+	m.tickers.Refresh()
+
+	JC.UseDebouncer().Call("refreshing_layout_container", 5*time.Millisecond, func() {
+		m.mu.RLock()
+		fyne.Do(m.container.Refresh)
+		m.mu.RUnlock()
+	})
+}
+
+func (m *layoutManager) setContentSize(width, height float32) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.contentWidth = width
+	m.contentHeight = height
+}
+
+func (m *layoutManager) setMaxOffset(val float32) {
+	m.mu.Lock()
+	m.maxOffset = val
+	m.mu.Unlock()
+}
+
+func (m *layoutManager) setContentTopY(val float32) {
+	m.mu.Lock()
+	m.contentTopY = val
+	m.mu.Unlock()
+}
+
+func (m *layoutManager) setContentBottomY(val float32) {
+	m.mu.Lock()
+	m.contentBottomY = val
+	m.mu.Unlock()
 }
 
 func NewAppLayout() fyne.CanvasObject {
@@ -530,20 +361,16 @@ func NewAppLayout() fyne.CanvasObject {
 
 	manager.tickers = container.NewWithoutLayout()
 
+	manager.placeholder = NewDragPlaceholder()
+
 	layout := &mainLayout{
 		padding:     10,
 		parent:      manager,
 		topBar:      manager.topBar,
 		tickers:     manager.tickers,
 		content:     manager.scroll,
-		placeholder: nil,
+		placeholder: manager.placeholder,
 		overlay:     nil,
-	}
-
-	manager.dragPlaceholder = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent))
-	if rect, ok := manager.dragPlaceholder.(*canvas.Rectangle); ok {
-		rect.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-		layout.placeholder = rect
 	}
 
 	manager.container = container.New(

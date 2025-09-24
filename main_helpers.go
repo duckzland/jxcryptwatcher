@@ -472,7 +472,7 @@ func OpenNewPanelForm() {
 			JC.Notify("New panel created.")
 		},
 		func(layer *fyne.Container) {
-			JA.UseLayout().SetOverlay(layer)
+			JA.UseLayout().RegisterOverlay(layer)
 
 			if JC.IsMobile {
 				JA.UseStatus().Pause()
@@ -510,7 +510,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 		},
 		nil,
 		func(layer *fyne.Container) {
-			JA.UseLayout().SetOverlay(layer)
+			JA.UseLayout().RegisterOverlay(layer)
 
 			if JC.IsMobile {
 				JA.UseStatus().Pause()
@@ -574,7 +574,7 @@ func OpenSettingForm() {
 			}()
 		},
 		func(layer *fyne.Container) {
-			JA.UseLayout().SetOverlay(layer)
+			JA.UseLayout().RegisterOverlay(layer)
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RemoveOverlay(layer)

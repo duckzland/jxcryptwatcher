@@ -276,7 +276,7 @@ func RegisterWorkers() {
 		"update_display", 200,
 		func() {
 			if UpdateDisplay() {
-				JA.UseLayout().SetLastDisplayUpdate(time.Now())
+				JA.UseLayout().RegisterLastDisplayUpdate(time.Now())
 			}
 		},
 		func() bool {

@@ -2,7 +2,6 @@ package apps
 
 import (
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
@@ -15,7 +14,7 @@ type mainLayout struct {
 	tickers     *fyne.Container
 	overlay     *fyne.Container
 	content     *container.Scroll
-	placeholder *canvas.Rectangle
+	placeholder *dragPlaceholder
 }
 
 func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
@@ -108,10 +107,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if a.placeholder != nil {
-		placeholderPos := fyne.NewPos(0, -JC.UseTheme().Size(JC.SizePanelHeight))
-		if a.placeholder.Position() != placeholderPos {
-			a.placeholder.Move(placeholderPos)
-		}
+		a.placeholder.Move(fyne.NewPos(0, -JC.UseTheme().Size(JC.SizePanelHeight)))
 	}
 
 	if a.overlay != nil {
@@ -121,10 +117,10 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if a.parent != nil {
-		a.parent.SetContentSize(contentSize.Width, contentSize.Height)
-		a.parent.SetMaxOffset(-1)
-		a.parent.SetContentTopY(contentY)
-		a.parent.SetContentBottomY(contentY + contentSize.Height)
+		a.parent.setContentSize(contentSize.Width, contentSize.Height)
+		a.parent.setMaxOffset(-1)
+		a.parent.setContentTopY(contentY)
+		a.parent.setContentBottomY(contentY + contentSize.Height)
 	}
 }
 

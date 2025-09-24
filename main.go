@@ -99,7 +99,7 @@ func main() {
 			JP.RegisterPanelGrid(CreatePanel)
 
 			JA.UseStatus().InitData()
-			JA.UseLayout().SetPage(JP.UsePanelGrid())
+			JA.UseLayout().RegisterContent(JP.UsePanelGrid())
 			JP.UsePanelGrid().Refresh()
 			JA.UseLayout().Refresh()
 
