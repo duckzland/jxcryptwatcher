@@ -2,6 +2,7 @@ package core
 
 import (
 	"image/color"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
@@ -10,14 +11,19 @@ import (
 var activeTheme *appTheme = nil
 
 type appTheme struct {
+	mu      sync.Mutex
 	variant fyne.ThemeVariant
 }
 
 func (t *appTheme) Init() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.variant = theme.VariantDark
 }
 
 func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.variant = variant
 }
 
@@ -85,7 +91,7 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case ColorNamePanelPlaceholder:
 		return color.RGBA{R: 20, G: 22, B: 30, A: 200}
 	case ColorNameTickerBG:
-		return color.RGBA{R: 17, G: 119, B: 170, A: 255}
+		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
 	case ColorNameRed:
 		return color.RGBA{R: 133, G: 36, B: 36, A: 255}
 	case ColorNameGreen:
@@ -245,6 +251,8 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 }
 
 func (t *appTheme) GetColor(name fyne.ThemeColorName) color.Color {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.Color(name, t.variant)
 }
 
