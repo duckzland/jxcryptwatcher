@@ -19,7 +19,6 @@ type panelContainer struct {
 	dragging         bool
 	dragCursorOffset fyne.Position
 	fps              time.Duration
-	done             chan struct{}
 	activeAction     *panelDisplay
 }
 
@@ -79,7 +78,6 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 	// Smoother dragging compares to just pass this to scroll directly
 	if !c.dragging {
 		c.dragging = true
-		c.done = make(chan struct{})
 
 		go func() {
 			ticker := time.NewTicker(c.fps)
@@ -87,27 +85,24 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 
 			lastY := ev.Position.Y
 
-			for {
-				select {
-				case <-c.done:
-					return
-				case <-ticker.C:
-					currentY := c.position.Y
-					deltaY := currentY - lastY
+			for c.dragging {
+				<-ticker.C
 
-					scrollEvent := &fyne.ScrollEvent{
-						Scrolled: fyne.Delta{
-							DX: 0,
-							DY: -deltaY,
-						},
-					}
+				currentY := c.position.Y
+				deltaY := currentY - lastY
 
-					fyne.Do(func() {
-						JA.UseLayout().UseScroll().Scrolled(scrollEvent)
-					})
-
-					lastY = currentY
+				scrollEvent := &fyne.ScrollEvent{
+					Scrolled: fyne.Delta{
+						DX: 0,
+						DY: -deltaY,
+					},
 				}
+
+				fyne.Do(func() {
+					JA.UseLayout().UseScroll().Scrolled(scrollEvent)
+				})
+
+				lastY = currentY
 			}
 		}()
 	}
@@ -120,10 +115,6 @@ func (c *panelContainer) DragEnd() {
 	}
 
 	c.dragging = false
-	if c.done != nil {
-		close(c.done)
-		c.done = nil
-	}
 }
 
 func (c *panelContainer) UpdatePanelsContent(shouldUpdate func(pdt JT.PanelData) bool) {
