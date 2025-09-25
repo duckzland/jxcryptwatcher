@@ -20,6 +20,9 @@ func (d *debouncer) Init() {
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.mu.Lock()
+	if d.generations[key] > 1000000 {
+		d.generations[key] = 0
+	}
 	d.generations[key]++
 	gen := d.generations[key]
 	d.mu.Unlock()
