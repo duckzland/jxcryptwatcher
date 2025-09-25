@@ -53,10 +53,10 @@ func NewPanelDisplay(
 	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
 	pl := &panelDisplayLayout{
+		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
 		title:      NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		subtitle:   NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 		content:    NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
 		bottomText: NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
 	}
 
