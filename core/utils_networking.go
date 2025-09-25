@@ -79,7 +79,7 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
-			Logln("Raw Error", urlErr.Err.Error())
+			// Logln("Raw Error", urlErr.Err.Error())
 			if strings.Contains(urlErr.Err.Error(), "tls") {
 				Logln("TLS handshake error:", urlErr.Err)
 				return NETWORKING_BAD_CONFIG
