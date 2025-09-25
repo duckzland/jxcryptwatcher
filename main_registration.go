@@ -272,7 +272,7 @@ func RegisterActions() {
 }
 
 func RegisterWorkers() {
-	JC.UseWorker().RegisterSleeper(
+	JC.UseWorker().RegisterListener(
 		"update_display", 200,
 		func() {
 			if UpdateDisplay() {
@@ -375,7 +375,10 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().RegisterBuffered(
-		"notification", 1000, 100, 1000, 2000,
+		"notification", 1000, 2000,
+		func() int64 {
+			return 1000
+		},
 		func(messages []string) bool {
 			if len(messages) == 0 {
 				return false

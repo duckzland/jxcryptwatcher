@@ -39,7 +39,7 @@ func (w *worker) Init() {
 	defer w.mu.Unlock()
 
 	if w.workers != nil {
-		Logf("WorkerManager already initialized — skipping Init()")
+		Logln("WorkerManager already initialized — skipping Init()")
 		return
 	}
 
@@ -57,152 +57,56 @@ func (w *worker) Init() {
 
 func (w *worker) Register(key string, debounce int64, fn WorkerFunc, getInterval func() int64, shouldRun func() bool) {
 	w.mu.Lock()
-	if _, exists := w.workers[key]; exists {
-		Logf("Worker %s already registered", key)
-		w.mu.Unlock()
-		return
+	if cancel, exists := w.cancelFuncs[key]; exists {
+		cancel()
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	w.workers[key] = fn
-	w.locks[key] = &sync.Mutex{}
-	w.active[key] = true
-	w.queues[key] = make(chan struct{}, 100)
-	w.conditions[key] = shouldRun
-	w.cancelFuncs[key] = cancel
 	w.mu.Unlock()
 
-	go w.startQueueWorker(ctx, key, false)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				w.mu.Lock()
-				active := w.active[key]
-				w.mu.Unlock()
-				if !active {
-					time.Sleep(100 * time.Millisecond)
-					continue
-				}
-				w.Call(key, CallQueued)
-				interval := getInterval()
-				if interval <= 0 {
-					interval = 1000
-				}
-				time.Sleep(time.Duration(interval) * time.Millisecond)
-			}
-		}
-	}()
-}
-
-func (w *worker) RegisterBuffered(
-	key string,
-	interval int64,
-	debounce int64,
-	bufferSize int64,
-	minDelayMs int64,
-	fn BufferedWorkerFunc,
-	shouldRun func() bool,
-) {
-	w.mu.Lock()
-	if _, exists := w.bufferedWorkers[key]; exists {
-		w.mu.Unlock()
-		Logf("Buffered worker %s already registered — skipping", key)
-		return
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-	w.bufferedWorkers[key] = fn
-	w.locks[key] = &sync.Mutex{}
-	w.active[key] = true
-	w.queues[key] = make(chan struct{}, 100)
-	w.conditions[key] = shouldRun
-	w.messageQueues[key] = make(chan string, bufferSize)
-	w.minDelayMs[key] = minDelayMs
-	if w.cancelFuncs == nil {
-		w.cancelFuncs = make(map[string]context.CancelFunc)
-	}
-	w.cancelFuncs[key] = cancel
-	w.mu.Unlock()
+	w.createWorker(key, 100, -1, -1, cancel, fn, nil, shouldRun)
+	interval := getInterval()
 
-	go w.startQueueWorker(ctx, key, true)
+	go w.processQueues(ctx, key)
 
 	if interval > 0 {
-		go func() {
-			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					w.mu.Lock()
-					active := w.active[key]
-					w.mu.Unlock()
-					if active {
-						w.Call(key, CallQueued)
-					}
-				}
-			}
-		}()
+		go w.processScheduler(ctx, key, interval, CallQueued)
 	}
 }
 
-func (w *worker) RegisterSleeper(
-	key string,
-	delayMs int64,
-	fn WorkerFunc,
-	shouldRun func() bool,
-) {
-	w.mu.Lock()
-	if _, exists := w.workers[key]; exists {
-		w.mu.Unlock()
-		Logf("Sleeper worker %s already registered — skipping", key)
-		return
-	}
+func (w *worker) RegisterBuffered(key string, bufferSize int64, minDelayMs int64, getInterval func() int64, fn BufferedWorkerFunc, shouldRun func() bool) {
 
-	ctx, cancel := context.WithCancel(context.Background())
-	w.workers[key] = fn
-	w.locks[key] = &sync.Mutex{}
-	w.active[key] = true
-	w.queues[key] = make(chan struct{}, 1)
-	w.conditions[key] = shouldRun
-	if w.cancelFuncs == nil {
-		w.cancelFuncs = make(map[string]context.CancelFunc)
+	w.mu.Lock()
+	if cancel, exists := w.cancelFuncs[key]; exists {
+		cancel()
 	}
-	w.cancelFuncs[key] = cancel
 	w.mu.Unlock()
 
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case _, ok := <-w.queues[key]:
-				if !ok {
-					return
-				}
-				w.mu.Lock()
-				active := w.active[key]
-				cond := w.conditions[key]
-				w.mu.Unlock()
+	ctx, cancel := context.WithCancel(context.Background())
 
-				if !active {
-					continue
-				}
-				if cond != nil && !cond() {
-					continue
-				}
-				if delayMs > 0 {
-					time.Sleep(time.Duration(delayMs) * time.Millisecond)
-				}
-				w.runWorker(key)
-			}
-		}
-	}()
+	w.createWorker(key, 100, bufferSize, minDelayMs, cancel, nil, fn, shouldRun)
+
+	interval := getInterval()
+
+	go w.processBuffers(ctx, key)
+
+	if interval > 0 {
+		go w.processScheduler(ctx, key, interval, CallQueued)
+	}
+}
+
+func (w *worker) RegisterListener(key string, delay int64, fn WorkerFunc, shouldRun func() bool) {
+
+	w.mu.Lock()
+	if cancel, exists := w.cancelFuncs[key]; exists {
+		cancel()
+	}
+	w.mu.Unlock()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	w.createWorker(key, 1, -1, -1, cancel, fn, nil, shouldRun)
+
+	go w.processListener(ctx, key, delay)
 }
 
 func (w *worker) Call(key string, mode CallMode) {
@@ -234,6 +138,7 @@ func (w *worker) Call(key string, mode CallMode) {
 		})
 	}
 }
+
 func (w *worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -274,7 +179,96 @@ func (w *worker) pushMessage(key string, msg string) {
 	}
 }
 
-func (w *worker) startQueueWorker(ctx context.Context, key string, buffered bool) {
+func (w *worker) createWorker(key string, qb int64, mb int64, delay int64, cancel context.CancelFunc, fnw WorkerFunc, fnb BufferedWorkerFunc, cond func() bool) {
+	w.mu.Lock()
+
+	if fnw != nil {
+		w.workers[key] = fnw
+	}
+
+	if fnb != nil {
+		w.bufferedWorkers[key] = fnb
+	}
+
+	if mb > 0 {
+		w.messageQueues[key] = make(chan string, mb)
+	}
+
+	if delay > 0 {
+		w.minDelayMs[key] = delay
+	}
+
+	if qb > 0 {
+		w.queues[key] = make(chan struct{}, qb)
+	}
+
+	w.locks[key] = &sync.Mutex{}
+	w.active[key] = true
+	w.conditions[key] = cond
+	w.cancelFuncs[key] = cancel
+
+	w.mu.Unlock()
+}
+
+func (w *worker) processScheduler(ctx context.Context, key string, interval int64, callType CallMode) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			w.mu.Lock()
+			active := w.active[key]
+			cond := w.conditions[key]
+			w.mu.Unlock()
+
+			if !active {
+				continue
+			}
+
+			if cond != nil && !cond() {
+				continue
+			}
+
+			w.Call(key, callType)
+		}
+	}
+}
+
+func (w *worker) processListener(ctx context.Context, key string, delay int64) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case _, ok := <-w.queues[key]:
+			if !ok {
+				return
+			}
+
+			w.mu.Lock()
+			active := w.active[key]
+			cond := w.conditions[key]
+			w.mu.Unlock()
+
+			if !active {
+				continue
+			}
+
+			if cond != nil && !cond() {
+				continue
+			}
+
+			if delay > 0 {
+				time.Sleep(time.Duration(delay) * time.Millisecond)
+			}
+
+			w.runWorker(key)
+		}
+	}
+}
+
+func (w *worker) processQueues(ctx context.Context, key string) {
 	w.mu.Lock()
 	queue := w.queues[key]
 	w.mu.Unlock()
@@ -284,11 +278,22 @@ func (w *worker) startQueueWorker(ctx context.Context, key string, buffered bool
 		case <-ctx.Done():
 			return
 		case <-queue:
-			if buffered {
-				w.runBufferedWorker(key)
-			} else {
-				w.runWorker(key)
-			}
+			w.runWorker(key)
+		}
+	}
+}
+
+func (w *worker) processBuffers(ctx context.Context, key string) {
+	w.mu.Lock()
+	queue := w.queues[key]
+	w.mu.Unlock()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-queue:
+			w.runBufferedWorker(key)
 		}
 	}
 }
