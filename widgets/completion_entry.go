@@ -105,117 +105,77 @@ func (c *completionEntry) GetCurrentInput() string {
 }
 
 func (c *completionEntry) SearchSuggestions(s string) {
-
-	c.CancelSearch()
+	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 
 	if s == c.lastInput {
 		return
 	}
 
-	JC.Logln("SearchSuggestions: new input detected:", s)
-	c.lastInput = s
-
 	if c.pause {
 		return
 	}
 
-	// Delay matters, too fast it will choke mobile, too slow it will give bad UX experience!
-	delay := 30 * time.Millisecond
-	if c.popup.Visible() {
-		delay = 100 * time.Millisecond
-		if JC.IsMobile {
-			delay = 200 * time.Millisecond
-		}
-	}
-
-	minText := 1
-
-	if len(s) < minText || s == "" {
+	if len(s) < 1 {
 		fyne.Do(func() {
 			c.HideCompletion()
 		})
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	c.searchCancel = cancel
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	results := []string{}
+	lowerInput := strings.ToLower(s)
+	c.lastInput = s
+	input := s
+	delay := 10 * time.Millisecond
+
+	if c.popup.Visible() {
+		delay = 50 * time.Millisecond
+	}
+
+	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
+		end := min(i+c.searchableChunkSize, c.searchableTotal)
+
+		wg.Add(1)
+		go func(start, end int) {
+			defer wg.Done()
+			local := []string{}
+			for j := start; j < end; j++ {
+				if strings.Contains(c.searchable[j], lowerInput) {
+					local = append(local, c.suggestions[j])
+				}
+			}
+			mu.Lock()
+			results = append(results, local...)
+			mu.Unlock()
+		}(i, end)
+	}
+
+	wg.Wait()
+
+	if len(results) == 0 {
+		fyne.Do(func() {
+			c.HideCompletion()
+		})
+		return
+	}
+
+	results = JC.ReorderSearchable(results)
 
 	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
-
-		input := c.GetCurrentInput()
-		if len(input) < minText || input == "" {
-			cancel()
-			fyne.Do(func() {
-				c.HideCompletion()
-			})
-			return
-		}
-
-		lowerS := strings.ToLower(input)
-
-		var wg sync.WaitGroup
-		var mu sync.Mutex
-		results := []string{}
-
-		for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
-			end := min(i+c.searchableChunkSize, c.searchableTotal)
-
-			wg.Add(1)
-			go func(start, end int) {
-				defer wg.Done()
-				local := []string{}
-				for j := start; j < end; j++ {
-					if ctx.Err() != nil {
-						return
-					}
-					if strings.Contains(c.searchable[j], lowerS) {
-						local = append(local, c.suggestions[j])
-					}
-				}
-				if ctx.Err() != nil {
-					return
-				}
-				mu.Lock()
-				results = append(results, local...)
-				mu.Unlock()
-			}(i, end)
-		}
-
-		wg.Wait()
-
-		if ctx.Err() != nil {
-			return
-		}
-
-		if len(results) == 0 {
-			fyne.Do(func() {
-				c.HideCompletion()
-			})
-			return
-		}
-
-		if input != c.GetCurrentInput() {
-			return
-		}
-
-		JC.Logln("Search complete, results:", len(results), c.GetCurrentInput())
-		results = JC.ReorderSearchable(results)
-
 		fyne.Do(func() {
+
+			if input != c.GetCurrentInput() {
+				return
+			}
+
 			c.SetOptions(results)
 			c.ShowCompletion()
 			c.DynamicResize()
-			JC.Logln("Completion UI updated")
 		})
 	})
-}
-
-func (c *completionEntry) CancelSearch() {
-	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
-	if c.searchCancel != nil {
-		c.searchCancel()
-		c.searchCancel = nil
-	}
 }
 
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
@@ -457,7 +417,7 @@ func (c *completionEntry) popUpPos() fyne.Position {
 }
 
 func (c *completionEntry) setTextFromMenu(s string) {
-	c.CancelSearch()
+	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 
 	c.pause = true
 	c.Entry.SetText(s)
