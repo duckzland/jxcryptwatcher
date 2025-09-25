@@ -57,6 +57,9 @@ type fetcher struct {
 	conditions    map[string]func() bool
 	activeWorkers map[string]context.CancelFunc
 	mu            sync.Mutex
+
+	broadcastDispatcher *dispatcher
+	parallelDispatcher  *dispatcher
 }
 
 var fetcherManager *fetcher = nil
@@ -65,11 +68,32 @@ func (m *fetcher) Init() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Can cause zombie go, don't reinit!
+	if m.fetchers != nil || m.activeWorkers != nil || m.broadcastDispatcher != nil || m.parallelDispatcher != nil {
+		return
+	}
+
 	m.fetchers = make(map[string]FetcherInterface)
 	m.delay = make(map[string]time.Duration)
 	m.callbacks = make(map[string]func(FetchResultInterface))
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
+
+	m.broadcastDispatcher = &dispatcher{
+		maxConcurrent: 4,
+		delayBetween:  500 * time.Millisecond,
+		bufferSize:    1000,
+	}
+	m.broadcastDispatcher.Init()
+	m.broadcastDispatcher.Start()
+
+	m.parallelDispatcher = &dispatcher{
+		maxConcurrent: 2,
+		delayBetween:  500 * time.Millisecond,
+		bufferSize:    1000,
+	}
+	m.parallelDispatcher.Init()
+	m.parallelDispatcher.Start()
 }
 
 func (m *fetcher) Register(
@@ -110,7 +134,7 @@ func (m *fetcher) Call(key string, payload any) {
 	}()
 }
 
-func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess func(totalJob int), callback func(map[string]FetchResultInterface)) {
+func (m *fetcher) ParallelCall(keys []string, payloads map[string]any, preprocess func(totalJob int), callback func(map[string]FetchResultInterface)) {
 	var wg sync.WaitGroup
 	results := make(map[string]FetchResultInterface)
 	mu := sync.Mutex{}
@@ -136,9 +160,9 @@ func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess f
 		}
 
 		wg.Add(1)
-		go func(k string) {
-			defer wg.Done()
+		k := key
 
+		m.parallelDispatcher.Submit(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
@@ -147,7 +171,9 @@ func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess f
 				results[k] = result
 				mu.Unlock()
 			})
-		}(key)
+
+			wg.Done()
+		})
 	}
 
 	go func() {
@@ -156,7 +182,7 @@ func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess f
 	}()
 }
 
-func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(shouldProceed bool), callback func([]FetchResultInterface)) {
+func (m *fetcher) BroadcastCall(key string, payloads []any, preprocess func(shouldProceed bool), callback func([]FetchResultInterface)) {
 	if cond, ok := m.conditions[key]; ok && cond != nil {
 		if !cond() {
 			if preprocess != nil {
@@ -175,10 +201,12 @@ func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(s
 	mu := sync.Mutex{}
 
 	for i, payload := range payloads {
-		wg.Add(1)
-		go func(idx int, p any) {
-			defer wg.Done()
+		idx := i
+		p := payload
 
+		wg.Add(1)
+
+		m.broadcastDispatcher.Submit(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
@@ -187,7 +215,9 @@ func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(s
 				results[idx] = result
 				mu.Unlock()
 			})
-		}(i, payload)
+
+			wg.Done()
+		})
 	}
 
 	go func() {
