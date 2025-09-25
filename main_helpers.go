@@ -473,20 +473,10 @@ func OpenNewPanelForm() {
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RegisterOverlay(layer)
-
-			if JC.IsMobile {
-				JA.UseStatus().Pause()
-				JC.UseDispatcher().Pause()
-			}
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RemoveOverlay(layer)
 			JA.UseStatus().SetOverlayShownStatus(false)
-
-			if JC.IsMobile {
-				JA.UseStatus().Resume()
-				JC.UseDispatcher().Resume()
-			}
 		},
 	)
 
@@ -511,20 +501,10 @@ func OpenPanelEditForm(pk string, uuid string) {
 		nil,
 		func(layer *fyne.Container) {
 			JA.UseLayout().RegisterOverlay(layer)
-
-			if JC.IsMobile {
-				JA.UseStatus().Pause()
-				JC.UseDispatcher().Pause()
-			}
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RemoveOverlay(layer)
 			JA.UseStatus().SetOverlayShownStatus(false)
-
-			if JC.IsMobile {
-				JA.UseStatus().Resume()
-				JC.UseDispatcher().Resume()
-			}
 		})
 
 	if d != nil {
