@@ -653,8 +653,9 @@ func RegisterLifecycle() {
 }
 
 func RegisterDispatcher() {
+	JC.PrintPerfStats("Creating Dispatcher Buffer", time.Now())
 	d := JC.UseDispatcher()
-	d.SetBufferSize(100000)
+	d.SetBufferSize(1000000)
 
 	if JC.IsMobile {
 		d.SetMaxConcurrent(JC.MaximumThreads(4))

@@ -14,16 +14,17 @@ import (
 )
 
 func UpdateDisplay() bool {
-
 	list := JT.UsePanelMaps().GetData()
-	for _, pot := range list {
-		// Always get linked data! do not use the copied
-		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
-		pk := pkt.Get()
-		pkt.Update(pk)
 
-		// Give pause to prevent race condition
-		time.Sleep(1 * time.Millisecond)
+	for _, pot := range list {
+		potID := pot.GetID()
+
+		// Submit backend update to dispatcher
+		JC.UseDispatcher().Submit(func() {
+			pkt := JT.UsePanelMaps().GetDataByID(potID)
+			pk := pkt.Get()
+			pkt.Update(pk)
+		})
 	}
 
 	return true
