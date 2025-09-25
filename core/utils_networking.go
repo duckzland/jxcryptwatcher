@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,13 +21,22 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		return NETWORKING_URL_ERROR
 	}
 
+	// Injected: context with timeout to enforce cancellation
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	client := &http.Client{
 		Transport: &http.Transport{
-			DisableKeepAlives: true,
+			DisableKeepAlives:     true,
+			ResponseHeaderTimeout: 10 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
 		},
-		Timeout: 10 * time.Second,
+		// Timeout is optional now — context handles it
 	}
-	req, err := http.NewRequest("GET", parsedURL.String(), nil)
+
+	// Injected: request tied to context
+	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
 		Logln("Error encountered:", err)
 		return NETWORKING_ERROR_CONNECTION
@@ -40,7 +50,6 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	req.Header.Set("Expires", "0")
 
 	q := url.Values{}
-
 	AlterRequests(q, req)
 
 	if prefetch != nil {
@@ -48,11 +57,14 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	}
 
 	req.URL.RawQuery = q.Encode()
-
 	Logf("Fetching data from %v", req.URL)
 
 	resp, err := client.Do(req)
 	if err != nil {
+
+		if tr, ok := client.Transport.(*http.Transport); ok {
+			tr.CloseIdleConnections()
+		}
 
 		var opErr *net.OpError
 		if errors.As(err, &opErr) {
@@ -75,16 +87,11 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		}
 
 		Logln(fmt.Errorf("Failed to fetch data: %w", err))
-
 		return NETWORKING_ERROR_CONNECTION
-
-	} else {
-		// JC.Logln("Fetched Fear & Greed Data from:", req.URL)
 	}
 
 	defer resp.Body.Close()
 
-	// Handle HTTP status codes
 	switch resp.StatusCode {
 	case 401, 404:
 		Logln(fmt.Sprintf("Error %d: Unauthorized", resp.StatusCode))
@@ -93,16 +100,13 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		Logln(fmt.Sprintf("Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode))
 		return NETWORKING_ERROR_CONNECTION
 	case 200:
-		// return 200
+		// OK
 	default:
 		Logln(fmt.Sprintf("Error %d: Request failed", resp.StatusCode))
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	c := resp.Body
-
-	// Decode JSON directly from response body to save memory
-	decoder := json.NewDecoder(c)
+	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(dec); err != nil {
 		Logln(fmt.Errorf("Failed to examine data: %w", err))
 		return NETWORKING_BAD_DATA_RECEIVED
@@ -113,6 +117,5 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	}
 
 	PrintMemUsage("End fetching data")
-
 	return NETWORKING_SUCCESS
 }

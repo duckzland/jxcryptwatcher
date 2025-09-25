@@ -2,8 +2,6 @@ package core
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"sync"
 	"time"
 )
@@ -53,16 +51,12 @@ func (r *fetchResult) SetError(e error) {
 }
 
 type fetcher struct {
-	fetchers         map[string]FetcherInterface
-	delay            map[string]time.Duration
-	lastActivity     map[string]*time.Time
-	callbacks        map[string]func(FetchResultInterface)
-	conditions       map[string]func() bool
-	recentGroupedLog string
-	lastGroupedLog   time.Time
-	activeWorkers    map[string]context.CancelFunc
-	mu               sync.Mutex
-	verbose          bool
+	fetchers      map[string]FetcherInterface
+	delay         map[string]time.Duration
+	callbacks     map[string]func(FetchResultInterface)
+	conditions    map[string]func() bool
+	activeWorkers map[string]context.CancelFunc
+	mu            sync.Mutex
 }
 
 var fetcherManager *fetcher = nil
@@ -73,13 +67,9 @@ func (m *fetcher) Init() {
 
 	m.fetchers = make(map[string]FetcherInterface)
 	m.delay = make(map[string]time.Duration)
-	m.lastActivity = make(map[string]*time.Time)
 	m.callbacks = make(map[string]func(FetchResultInterface))
 	m.conditions = make(map[string]func() bool)
-	m.recentGroupedLog = ""
-	m.lastGroupedLog = time.Time{}
 	m.activeWorkers = make(map[string]context.CancelFunc)
-	m.verbose = false
 }
 
 func (m *fetcher) Register(
@@ -93,8 +83,6 @@ func (m *fetcher) Register(
 	defer m.mu.Unlock()
 
 	m.fetchers[key] = fetcher
-	now := time.Now()
-	m.lastActivity[key] = &now
 	m.delay[key] = time.Duration(delaySeconds) * time.Second
 	m.callbacks[key] = callback
 	m.conditions[key] = conditions
@@ -114,18 +102,7 @@ func (m *fetcher) Call(key string, payload any) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		m.fetchers[key].Fetch(ctx, payload, func(result FetchResultInterface) {
-			result.SetSource(key)
-			lines := []string{
-				fmt.Sprintf("Immediate call → %s → Code: %d", result.Source(), result.Code()),
-			}
-			if result.Err() != nil {
-				lines = append(lines, fmt.Sprintf("Error: %v", result.Err()))
-			} else {
-				lines = append(lines, fmt.Sprintf("Data: %+v", result.Data()))
-			}
-			m.logGrouped("CALL", lines, 30*time.Second)
-
+		m.executeCall(ctx, key, payload, func(result FetchResultInterface) {
 			if cb, ok := m.callbacks[key]; ok {
 				cb(result)
 			}
@@ -165,27 +142,16 @@ func (m *fetcher) GroupCall(keys []string, payloads map[string]any, preprocess f
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			payload := payloads[k]
-			if fetcher := m.fetchers[k]; fetcher != nil {
-				fetcher.Fetch(ctx, payload, func(result FetchResultInterface) {
-					result.SetSource(k)
-					mu.Lock()
-					results[k] = result
-					mu.Unlock()
-				})
-			} else {
-				Logf("Fetcher for key %s is nil", k)
-			}
+			m.executeCall(ctx, k, payloads[k], func(result FetchResultInterface) {
+				mu.Lock()
+				results[k] = result
+				mu.Unlock()
+			})
 		}(key)
 	}
 
 	go func() {
 		wg.Wait()
-		lines := []string{}
-		for k, r := range results {
-			lines = append(lines, fmt.Sprintf("%s → Code: %d", k, r.Code()))
-		}
-		m.logGrouped("GROUPCALL", lines, 60*time.Second)
 		callback(results)
 	}()
 }
@@ -216,16 +182,7 @@ func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(s
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			fetcher, ok := m.fetchers[key]
-			if !ok || fetcher == nil {
-				m.logGrouped("GROUPCALL", []string{
-					fmt.Sprintf("Fetcher not found for key: %s", key),
-				}, 60*time.Second)
-				return
-			}
-
-			fetcher.Fetch(ctx, p, func(result FetchResultInterface) {
-				result.SetSource(key)
+			m.executeCall(ctx, key, p, func(result FetchResultInterface) {
 				mu.Lock()
 				results[idx] = result
 				mu.Unlock()
@@ -235,27 +192,18 @@ func (m *fetcher) GroupPayloadCall(key string, payloads []any, preprocess func(s
 
 	go func() {
 		wg.Wait()
-		lines := []string{}
-		for _, r := range results {
-			lines = append(lines, fmt.Sprintf("%s → Code: %d", r.Source(), r.Code()))
-		}
-		m.logGrouped("GROUPCALL", lines, 60*time.Second)
 		callback(results)
 	}()
 }
 
-func (m *fetcher) logGrouped(tag string, lines []string, interval time.Duration) {
-	if !m.verbose {
-		return
-	}
-
-	msg := fmt.Sprintf("[%s] %s", tag, strings.Join(lines, " | "))
-	now := time.Now()
-
-	if msg != m.recentGroupedLog || now.Sub(m.lastGroupedLog) >= interval {
-		Logln(msg)
-		m.recentGroupedLog = msg
-		m.lastGroupedLog = now
+func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {
+	if fetcher := m.fetchers[key]; fetcher != nil {
+		fetcher.Fetch(ctx, payload, func(result FetchResultInterface) {
+			result.SetSource(key)
+			setResult(result)
+		})
+	} else {
+		Logf("Fetcher for key %s is nil", key)
 	}
 }
 
