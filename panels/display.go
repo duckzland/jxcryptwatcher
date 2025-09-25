@@ -379,7 +379,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 					}
 
 					fyne.Do(func() {
-						JM.UseLayout().UseScroll().Scrolled(&fyne.ScrollEvent{
+						lm.UseScroll().Scrolled(&fyne.ScrollEvent{
 							Scrolled: fyne.Delta{DX: 0, DY: deltaY},
 						})
 					})
