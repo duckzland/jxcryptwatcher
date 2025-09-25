@@ -656,14 +656,13 @@ func RegisterDispatcher() {
 	JC.PrintPerfStats("Creating Dispatcher Buffer", time.Now())
 	d := JC.UseDispatcher()
 	d.SetBufferSize(1000000)
+	d.SetDelayBetween(100 * time.Millisecond)
 
 	if JC.IsMobile {
 		d.SetMaxConcurrent(JC.MaximumThreads(4))
-		d.SetDelayBetween(100 * time.Millisecond)
 
 	} else {
 		d.SetMaxConcurrent(JC.MaximumThreads(6))
-		d.SetDelayBetween(100 * time.Millisecond)
 	}
 
 	d.Start()

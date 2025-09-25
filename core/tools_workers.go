@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -19,14 +20,15 @@ type BufferedWorkerFunc func(messages []string) bool
 
 type worker struct {
 	workers         map[string]WorkerFunc
+	bufferedWorkers map[string]BufferedWorkerFunc
 	locks           map[string]*sync.Mutex
 	active          map[string]bool
 	queues          map[string]chan struct{}
+	messageQueues   map[string]chan string
 	conditions      map[string]func() bool
 	lastRun         map[string]time.Time
-	bufferedWorkers map[string]BufferedWorkerFunc
-	messageQueues   map[string]chan string
 	minDelayMs      map[string]int64
+	cancelFuncs     map[string]context.CancelFunc
 	mu              sync.Mutex
 }
 
@@ -35,6 +37,11 @@ var workerManager *worker = nil
 func (w *worker) Init() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+
+	if w.workers != nil {
+		Logf("WorkerManager already initialized — skipping Init()")
+		return
+	}
 
 	w.workers = make(map[string]WorkerFunc)
 	w.locks = make(map[string]*sync.Mutex)
@@ -45,45 +52,48 @@ func (w *worker) Init() {
 	w.bufferedWorkers = make(map[string]BufferedWorkerFunc)
 	w.messageQueues = make(map[string]chan string)
 	w.minDelayMs = make(map[string]int64)
+	w.cancelFuncs = make(map[string]context.CancelFunc)
 }
 
-func (w *worker) Register(
-	key string,
-	debounce int64,
-	fn WorkerFunc,
-	getInterval func() int64,
-	shouldRun func() bool,
-) {
+func (w *worker) Register(key string, debounce int64, fn WorkerFunc, getInterval func() int64, shouldRun func() bool) {
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	if _, exists := w.workers[key]; exists {
+		Logf("Worker %s already registered", key)
+		w.mu.Unlock()
+		return
+	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	w.workers[key] = fn
 	w.locks[key] = &sync.Mutex{}
 	w.active[key] = true
 	w.queues[key] = make(chan struct{}, 100)
 	w.conditions[key] = shouldRun
+	w.cancelFuncs[key] = cancel
+	w.mu.Unlock()
 
-	go w.startQueueWorker(key, false)
+	go w.startQueueWorker(ctx, key, false)
 
 	go func() {
 		for {
-			w.mu.Lock()
-			active := w.active[key]
-			w.mu.Unlock()
-
-			if !active {
-				time.Sleep(100 * time.Millisecond)
-				continue
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				w.mu.Lock()
+				active := w.active[key]
+				w.mu.Unlock()
+				if !active {
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+				w.Call(key, CallQueued)
+				interval := getInterval()
+				if interval <= 0 {
+					interval = 1000
+				}
+				time.Sleep(time.Duration(interval) * time.Millisecond)
 			}
-
-			w.Call(key, CallQueued)
-
-			interval := getInterval()
-			if interval <= 0 {
-				interval = 1000
-			}
-
-			time.Sleep(time.Duration(interval) * time.Millisecond)
 		}
 	}()
 }
@@ -98,8 +108,13 @@ func (w *worker) RegisterBuffered(
 	shouldRun func() bool,
 ) {
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	if _, exists := w.bufferedWorkers[key]; exists {
+		w.mu.Unlock()
+		Logf("Buffered worker %s already registered — skipping", key)
+		return
+	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	w.bufferedWorkers[key] = fn
 	w.locks[key] = &sync.Mutex{}
 	w.active[key] = true
@@ -107,20 +122,29 @@ func (w *worker) RegisterBuffered(
 	w.conditions[key] = shouldRun
 	w.messageQueues[key] = make(chan string, bufferSize)
 	w.minDelayMs[key] = minDelayMs
+	if w.cancelFuncs == nil {
+		w.cancelFuncs = make(map[string]context.CancelFunc)
+	}
+	w.cancelFuncs[key] = cancel
+	w.mu.Unlock()
 
-	go w.startQueueWorker(key, true)
+	go w.startQueueWorker(ctx, key, true)
 
 	if interval > 0 {
 		go func() {
 			ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
 			defer ticker.Stop()
-			for range ticker.C {
-				w.mu.Lock()
-				active := w.active[key]
-				w.mu.Unlock()
-
-				if active {
-					w.Call(key, CallQueued)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					w.mu.Lock()
+					active := w.active[key]
+					w.mu.Unlock()
+					if active {
+						w.Call(key, CallQueued)
+					}
 				}
 			}
 		}()
@@ -133,35 +157,50 @@ func (w *worker) RegisterSleeper(
 	fn WorkerFunc,
 	shouldRun func() bool,
 ) {
-
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	if _, exists := w.workers[key]; exists {
+		w.mu.Unlock()
+		Logf("Sleeper worker %s already registered — skipping", key)
+		return
+	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	w.workers[key] = fn
 	w.locks[key] = &sync.Mutex{}
 	w.active[key] = true
-	w.queues[key] = make(chan struct{})
+	w.queues[key] = make(chan struct{}, 1)
 	w.conditions[key] = shouldRun
+	if w.cancelFuncs == nil {
+		w.cancelFuncs = make(map[string]context.CancelFunc)
+	}
+	w.cancelFuncs[key] = cancel
+	w.mu.Unlock()
 
 	go func() {
 		for {
-			w.mu.Lock()
-			queue, ok := w.queues[key]
-			active := w.active[key]
-			cond := w.conditions[key]
-			w.mu.Unlock()
-
-			_, ok = <-queue
-			if !ok || !active {
+			select {
+			case <-ctx.Done():
 				return
+			case _, ok := <-w.queues[key]:
+				if !ok {
+					return
+				}
+				w.mu.Lock()
+				active := w.active[key]
+				cond := w.conditions[key]
+				w.mu.Unlock()
+
+				if !active {
+					continue
+				}
+				if cond != nil && !cond() {
+					continue
+				}
+				if delayMs > 0 {
+					time.Sleep(time.Duration(delayMs) * time.Millisecond)
+				}
+				w.runWorker(key)
 			}
-			if cond != nil && !cond() {
-				continue
-			}
-			if delayMs > 0 {
-				time.Sleep(time.Duration(delayMs) * time.Millisecond)
-			}
-			w.runWorker(key)
 		}
 	}()
 }
@@ -169,34 +208,32 @@ func (w *worker) RegisterSleeper(
 func (w *worker) Call(key string, mode CallMode) {
 	w.mu.Lock()
 	cond := w.conditions[key]
+	queue := w.queues[key]
 	w.mu.Unlock()
 
-	if mode != CallBypassImmediate {
-		if cond != nil && !cond() {
-			return
-		}
+	if mode != CallBypassImmediate && cond != nil && !cond() {
+		return
 	}
 
 	switch mode {
 	case CallImmediate, CallBypassImmediate:
 		go w.runWorker(key)
-
 	case CallQueued:
-		w.mu.Lock()
-		queue := w.queues[key]
-		w.mu.Unlock()
-		queue <- struct{}{}
-
+		select {
+		case queue <- struct{}{}:
+		default:
+			Logf("Queue full for key: %s", key)
+		}
 	case CallDebounced:
-		UseDebouncer().Call("worker_"+key, time.Duration(1000)*time.Millisecond, func() {
-			w.mu.Lock()
-			queue := w.queues[key]
-			w.mu.Unlock()
-			queue <- struct{}{}
+		UseDebouncer().Call("worker_"+key, time.Second, func() {
+			select {
+			case queue <- struct{}{}:
+			default:
+				Logf("Debounced queue full for key: %s", key)
+			}
 		})
 	}
 }
-
 func (w *worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -237,16 +274,21 @@ func (w *worker) pushMessage(key string, msg string) {
 	}
 }
 
-func (w *worker) startQueueWorker(key string, buffered bool) {
+func (w *worker) startQueueWorker(ctx context.Context, key string, buffered bool) {
 	w.mu.Lock()
 	queue := w.queues[key]
 	w.mu.Unlock()
 
-	for range queue {
-		if buffered {
-			w.runBufferedWorker(key)
-		} else {
-			w.runWorker(key)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-queue:
+			if buffered {
+				w.runBufferedWorker(key)
+			} else {
+				w.runWorker(key)
+			}
 		}
 	}
 }
