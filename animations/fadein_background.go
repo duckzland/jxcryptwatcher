@@ -14,29 +14,29 @@ func FadeInBackground(
 	duration time.Duration,
 	callback func(),
 ) {
-	alphaSteps := []uint8{20, 64, 128, 192, 255}
-	if JC.IsMobile {
-		alphaSteps = []uint8{20, 128, 255}
-	}
+	JC.UseDispatcher().Submit(func() {
+		alphaSteps := []uint8{20, 64, 128, 192, 255}
+		if JC.IsMobile {
+			alphaSteps = []uint8{20, 128, 255}
+		}
 
-	interval := duration / time.Duration(len(alphaSteps))
-	ticker := time.NewTicker(interval)
+		interval := duration / time.Duration(len(alphaSteps))
+		ticker := time.NewTicker(interval)
 
-	go func() {
-		defer ticker.Stop()
+		go func() {
+			defer ticker.Stop()
 
-		for _, alpha := range alphaSteps {
-			<-ticker.C
-			JC.UseDispatcher().Submit(func() {
+			for _, alpha := range alphaSteps {
+				<-ticker.C
 				fyne.Do(func() {
 					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 					rect.Refresh()
 				})
-			})
-		}
+			}
 
-		if callback != nil {
-			JC.UseDispatcher().Submit(callback)
-		}
-	}()
+			if callback != nil {
+				fyne.Do(callback)
+			}
+		}()
+	})
 }

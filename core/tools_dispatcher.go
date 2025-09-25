@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -14,6 +15,8 @@ type dispatcher struct {
 	bufferSize    int
 	maxConcurrent int
 	delayBetween  time.Duration
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func (d *dispatcher) Init() {
@@ -36,6 +39,8 @@ func (d *dispatcher) Init() {
 
 	d.queue = make(chan func(), d.bufferSize)
 	d.paused = false
+
+	d.ctx, d.cancel = context.WithCancel(context.Background())
 }
 
 func (d *dispatcher) Start() {
@@ -48,15 +53,15 @@ func (d *dispatcher) Start() {
 }
 
 func (d *dispatcher) worker() {
+	ctx := d.ctx
 	for {
-		if d.IsPaused() {
+		select {
+		case <-ctx.Done():
 			return
+		case fn := <-d.queue:
+			fn()
+			time.Sleep(d.GetDelay())
 		}
-
-		fn := <-d.queue
-		fn()
-
-		time.Sleep(d.GetDelay())
 	}
 }
 
@@ -77,13 +82,18 @@ func (d *dispatcher) Submit(fn func()) {
 func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
+	if d.cancel != nil {
+		d.cancel()
+	}
 	d.mu.Unlock()
 }
 
 func (d *dispatcher) Resume() {
 	d.mu.Lock()
 	d.paused = false
+	d.ctx, d.cancel = context.WithCancel(context.Background())
 	d.mu.Unlock()
+
 	d.Start()
 }
 

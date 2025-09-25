@@ -14,6 +14,21 @@ func TotalCPU() int {
 	return hwTotalCPU
 }
 
+func MaximumThreads(capLimit int) int {
+	const throttleFactor = 2
+
+	cpu := TotalCPU()
+	max := cpu / throttleFactor
+
+	if max < 1 {
+		max = 1
+	}
+	if max > capLimit {
+		max = capLimit
+	}
+	return max
+}
+
 func ReorderByMatch(arr []string, searchKey string) []string {
 	type sortable struct {
 		value string

@@ -16,39 +16,39 @@ func StartFlashingText(
 	visibleColor color.Color,
 	flashes int,
 ) {
-	if JC.IsMobile {
-		interval = interval / 2
-	}
-
-	alphaSequence := make([]uint8, flashes*2)
-	for i := range alphaSequence {
-		if i%2 == 0 {
-			alphaSequence[i] = 200
-		} else {
-			alphaSequence[i] = 255
+	JC.UseDispatcher().Submit(func() {
+		if JC.IsMobile {
+			interval = interval / 2
 		}
-	}
 
-	ticker := time.NewTicker(interval)
+		alphaSequence := make([]uint8, flashes*2)
+		for i := range alphaSequence {
+			if i%2 == 0 {
+				alphaSequence[i] = 200
+			} else {
+				alphaSequence[i] = 255
+			}
+		}
 
-	go func() {
-		defer ticker.Stop()
+		ticker := time.NewTicker(interval)
 
-		var lastAlpha uint8 = 0
+		go func() {
+			defer ticker.Stop()
 
-		for _, alpha := range alphaSequence {
-			<-ticker.C
+			var lastAlpha uint8 = 0
 
-			if alpha != lastAlpha {
-				lastAlpha = alpha
+			for _, alpha := range alphaSequence {
+				<-ticker.C
 
-				JC.UseDispatcher().Submit(func() {
+				if alpha != lastAlpha {
+					lastAlpha = alpha
+
 					fyne.Do(func() {
 						JC.SetTextAlpha(text, alpha)
 						text.Refresh()
 					})
-				})
+				}
 			}
-		}
-	}()
+		}()
+	})
 }

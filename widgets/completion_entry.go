@@ -289,6 +289,7 @@ func (c *completionEntry) SetParent(parent DialogForm) {
 func (c *completionEntry) ShowCompletion() {
 
 	c.skipValidation = true
+	JC.UseDebouncer().Cancel("validating-" + c.uuid)
 
 	if c.pause {
 		return
