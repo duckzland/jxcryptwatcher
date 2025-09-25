@@ -327,6 +327,9 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 			dp.SetColor(dc)
 		}
 
+		ctY := lm.UseScroll().Position().Y
+		cbY := ctY + lm.UseScroll().Size().Height
+
 		go func() {
 			ticker := time.NewTicker(h.fps)
 			defer ticker.Stop()
@@ -336,7 +339,7 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 			posY := dy
 			placeholderSize := ds
 			edgeThreshold := placeholderSize.Height / 2
-			scrollStep := float32(10)
+			scrollStep := float32(3)
 
 			for h.dragging {
 				<-ticker.C
@@ -344,8 +347,8 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 				targetX := p.X + h.dragPosition.X - (placeholderSize.Width / 2)
 				targetY := p.Y + h.dragPosition.Y - (placeholderSize.Height / 2)
 
-				edgeTopY := lm.GetContentTopY() - edgeThreshold
-				edgeBottomY := lm.GetContentBottomY() - edgeThreshold
+				edgeTopY := ctY - edgeThreshold
+				edgeBottomY := cbY - edgeThreshold
 
 				// Just in case the initial function failed to move and show
 				if !shown && (targetX == posX || targetY == posY) {
@@ -364,11 +367,22 @@ func (h *panelDisplay) panelDrag(ev *fyne.DragEvent) {
 					})
 				}
 
-				// Scroll when placeholder is half out of viewport
-				if posY < edgeTopY {
-					lm.ScrollBy(-scrollStep)
-				} else if posY > edgeBottomY {
-					lm.ScrollBy(scrollStep)
+				if posY > edgeBottomY || posY < edgeTopY {
+					deltaY := float32(0)
+
+					if posY > edgeBottomY {
+						deltaY = posY - edgeBottomY
+						deltaY = -fyne.Min(deltaY, scrollStep)
+					} else {
+						deltaY = edgeTopY - posY
+						deltaY = fyne.Min(deltaY, scrollStep)
+					}
+
+					fyne.Do(func() {
+						JM.UseLayout().UseScroll().Scrolled(&fyne.ScrollEvent{
+							Scrolled: fyne.Delta{DX: 0, DY: deltaY},
+						})
+					})
 				}
 			}
 		}()

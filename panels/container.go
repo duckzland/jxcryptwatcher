@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
-	JM "jxwatcher/apps"
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
@@ -15,7 +15,7 @@ type panelContainer struct {
 	widget.BaseWidget
 	Objects          []fyne.CanvasObject
 	layout           *panelGridLayout
-	dragPosition     fyne.Position
+	position         fyne.Position
 	dragging         bool
 	dragCursorOffset fyne.Position
 	fps              time.Duration
@@ -60,7 +60,7 @@ func (c *panelContainer) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
-	if JM.UseStatus().IsDraggable() {
+	if JA.UseStatus().IsDraggable() {
 		return
 	}
 
@@ -69,48 +69,44 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 		return
 	}
 
-	c.dragPosition = ev.Position
+	if JC.IsMobile {
+		JA.UseLayout().UseScroll().Dragged(ev)
+		return
+	}
 
+	c.position = ev.Position
+
+	// Smoother dragging compares to just pass this to scroll directly
 	if !c.dragging {
 		c.dragging = true
-		c.dragCursorOffset = ev.Position.Subtract(c.Position())
 		c.done = make(chan struct{})
-
-		sourceY := c.Position().Y
-		scrollStep := float32(10)
-		edgeThreshold := float32(30)
 
 		go func() {
 			ticker := time.NewTicker(c.fps)
 			defer ticker.Stop()
+
+			lastY := ev.Position.Y
 
 			for {
 				select {
 				case <-c.done:
 					return
 				case <-ticker.C:
-					targetY := c.dragPosition.Y - c.dragCursorOffset.Y
-					delta := targetY - sourceY
-					direction := 0
+					currentY := c.position.Y
+					deltaY := currentY - lastY
 
-					if delta < -edgeThreshold {
-						direction = -1
-					} else if delta > edgeThreshold {
-						direction = 1
-					} else {
-						direction = 0
+					scrollEvent := &fyne.ScrollEvent{
+						Scrolled: fyne.Delta{
+							DX: 0,
+							DY: -deltaY,
+						},
 					}
 
-					if direction != 0 {
-						fyne.Do(func() {
-							switch direction {
-							case -1:
-								JM.UseLayout().ScrollBy(-scrollStep)
-							case 1:
-								JM.UseLayout().ScrollBy(scrollStep)
-							}
-						})
-					}
+					fyne.Do(func() {
+						JA.UseLayout().UseScroll().Scrolled(scrollEvent)
+					})
+
+					lastY = currentY
 				}
 			}
 		}()
@@ -118,6 +114,11 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 }
 
 func (c *panelContainer) DragEnd() {
+	if JC.IsMobile {
+		JA.UseLayout().UseScroll().DragEnd()
+		return
+	}
+
 	c.dragging = false
 	if c.done != nil {
 		close(c.done)

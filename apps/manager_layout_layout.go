@@ -113,13 +113,6 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	if a.overlay != nil {
 		a.overlay.Resize(size)
 	}
-
-	if a.parent != nil {
-		a.parent.setContentSize(contentSize.Width, contentSize.Height)
-		a.parent.setMaxOffset(-1)
-		a.parent.setContentTopY(contentY)
-		a.parent.setContentBottomY(contentY + contentSize.Height)
-	}
 }
 
 func (a *mainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {

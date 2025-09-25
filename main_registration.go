@@ -297,7 +297,7 @@ func RegisterWorkers() {
 				return false
 			}
 			if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetDisplayUpdate()) {
-				JC.Notify("Unable to refresh display: Data is newer than display timestamp")
+				JC.Notify("Unable to refresh display: Data is older than display timestamp")
 				return false
 			}
 			if !JA.UseStatus().ValidPanels() {

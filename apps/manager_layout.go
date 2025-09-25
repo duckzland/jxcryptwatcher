@@ -30,24 +30,14 @@ type layoutManager struct {
 	actionGetCryptos  *staticPage
 	loading           *staticPage
 	error             *staticPage
-	maxOffset         float32
-	contentTopY       float32
-	contentBottomY    float32
 	state             int
 	lastDisplayUpdate time.Time
-	contentWidth      float32
-	contentHeight     float32
 }
 
 func (m *layoutManager) Init() {
 	m.mu = sync.RWMutex{}
-	m.maxOffset = 0
-	m.contentTopY = 0
-	m.contentBottomY = 0
 	m.state = -9
 	m.lastDisplayUpdate = time.Time{}
-	m.contentWidth = 0
-	m.contentHeight = 0
 }
 
 func (m *layoutManager) RefreshLayout() {
@@ -66,7 +56,6 @@ func (m *layoutManager) Refresh() {
 	}
 
 	m.mu.Lock()
-	m.maxOffset = -1
 	currentState := m.state
 	content := m.content
 	scroll := m.scroll
@@ -146,24 +135,6 @@ func (m *layoutManager) GetDisplayUpdate() time.Time {
 	return m.lastDisplayUpdate
 }
 
-func (m *layoutManager) GetContentHeight() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.contentHeight
-}
-
-func (m *layoutManager) GetContentTopY() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.contentTopY
-}
-
-func (m *layoutManager) GetContentBottomY() float32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.contentBottomY
-}
-
 func (m *layoutManager) RemoveOverlay(container *fyne.Container) {
 	m.container.Remove(container)
 	m.mu.Lock()
@@ -222,51 +193,6 @@ func (m *layoutManager) UsePlaceholder() *dragPlaceholder {
 	return m.placeholder
 }
 
-func (m *layoutManager) ScrollBy(delta float32) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	scroll := m.scroll
-	if scroll == nil || scroll.Content == nil {
-		return
-	}
-
-	current := scroll.Offset.Y
-	newOffset := current + delta
-
-	if m.maxOffset == -1 {
-		contentHeight := scroll.Content.MinSize().Height
-		viewportHeight := scroll.Size().Height
-
-		if contentHeight <= viewportHeight {
-			m.maxOffset = 0
-		} else {
-			m.maxOffset = contentHeight - viewportHeight
-		}
-	}
-
-	max := m.maxOffset
-
-	if newOffset < 0 {
-		if current <= 0 {
-			return
-		}
-		newOffset = 0
-	} else if newOffset > max {
-		if current >= max {
-			return
-		}
-		newOffset = max
-	}
-
-	if scroll.Offset.Y == newOffset {
-		return
-	}
-
-	scroll.Offset.Y = newOffset
-	m.RefreshLayout()
-}
-
 func (m *layoutManager) setTickers(container *fyne.Container) {
 	if container == nil {
 		return
@@ -288,31 +214,6 @@ func (m *layoutManager) setTickers(container *fyne.Container) {
 		fyne.Do(m.container.Refresh)
 		m.mu.RUnlock()
 	})
-}
-
-func (m *layoutManager) setContentSize(width, height float32) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.contentWidth = width
-	m.contentHeight = height
-}
-
-func (m *layoutManager) setMaxOffset(val float32) {
-	m.mu.Lock()
-	m.maxOffset = val
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) setContentTopY(val float32) {
-	m.mu.Lock()
-	m.contentTopY = val
-	m.mu.Unlock()
-}
-
-func (m *layoutManager) setContentBottomY(val float32) {
-	m.mu.Lock()
-	m.contentBottomY = val
-	m.mu.Unlock()
 }
 
 func NewAppLayout() fyne.CanvasObject {

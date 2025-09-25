@@ -177,7 +177,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
 
 	// Battling scrollbar, when we have scrollbar give space for it
-	if height > JA.UseLayout().GetContentHeight() {
+	if height > JA.UseLayout().UseScroll().Size().Height {
 		width -= 18
 	}
 
