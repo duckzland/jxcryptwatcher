@@ -61,7 +61,7 @@ func NewCompletionEntry(
 	c.ExtendBaseWidget(c)
 
 	c.OnChanged = func(s string) {
-		c.SearchSuggestions(s)
+		c.searchSuggestions(s)
 		JC.UseDebouncer().Call("validating-"+c.uuid, 300*time.Millisecond, func() {
 			fyne.Do(func() {
 				if !c.popup.Visible() {
@@ -72,10 +72,10 @@ func NewCompletionEntry(
 		})
 	}
 
-	c.completionList = NewCompletionList(c.setTextFromMenu, c.HideCompletion, c.itemHeight)
+	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
 
 	closeBtn := NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
-		c.HideCompletion()
+		c.hideCompletion()
 	}, nil)
 
 	closeBtn.Resize(fyne.NewSize(32, 32))
@@ -100,84 +100,6 @@ func NewCompletionEntry(
 	return c
 }
 
-func (c *completionEntry) GetCurrentInput() string {
-	return c.lastInput
-}
-
-func (c *completionEntry) SearchSuggestions(s string) {
-	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
-
-	if s == c.lastInput {
-		return
-	}
-
-	if c.pause {
-		return
-	}
-
-	if len(s) < 1 {
-		fyne.Do(func() {
-			c.HideCompletion()
-		})
-		return
-	}
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
-	results := []string{}
-	lowerInput := strings.ToLower(s)
-	c.lastInput = s
-	input := s
-	delay := 10 * time.Millisecond
-
-	if c.popup.Visible() {
-		delay = 50 * time.Millisecond
-	}
-
-	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
-		end := min(i+c.searchableChunkSize, c.searchableTotal)
-
-		wg.Add(1)
-		go func(start, end int) {
-			defer wg.Done()
-			local := []string{}
-			for j := start; j < end; j++ {
-				if strings.Contains(c.searchable[j], lowerInput) {
-					local = append(local, c.suggestions[j])
-				}
-			}
-			mu.Lock()
-			results = append(results, local...)
-			mu.Unlock()
-		}(i, end)
-	}
-
-	wg.Wait()
-
-	if len(results) == 0 {
-		fyne.Do(func() {
-			c.HideCompletion()
-		})
-		return
-	}
-
-	results = JC.ReorderSearchable(results)
-
-	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
-		fyne.Do(func() {
-
-			if input != c.GetCurrentInput() {
-				return
-			}
-
-			c.SetOptions(results)
-			c.ShowCompletion()
-			c.DynamicResize()
-		})
-	})
-}
-
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 	c.skipValidation = true
@@ -195,32 +117,17 @@ func (c *completionEntry) FocusGained() {
 	c.Entry.FocusGained()
 
 	if activeEntry != nil && activeEntry != c {
-		activeEntry.HideCompletion()
+		activeEntry.hideCompletion()
 	}
 
 	if len(c.Text) > 0 {
 		c.completionList.SetData(c.options)
-		c.ShowCompletion()
+		c.showCompletion()
 	}
 }
 
 func (c *completionEntry) SetDefaultValue(s string) {
 	c.Text = s
-}
-
-func (c *completionEntry) HideCompletion() {
-
-	c.skipValidation = false
-
-	if c.popup != nil {
-		c.popup.Hide()
-	}
-
-	if c.completionList != nil {
-		c.completionList.SetData([]string{})
-	}
-
-	c.popupPosition = fyne.NewPos(-1, -1)
 }
 
 func (c *completionEntry) Refresh() {
@@ -236,7 +143,7 @@ func (c *completionEntry) Resize(size fyne.Size) {
 			if c.popup != nil && c.popup.Visible() {
 				c.popupPosition = fyne.NewPos(-1, -1)
 				c.popup.Move(c.popUpPos())
-				c.DynamicResize()
+				c.dynamicResize()
 			}
 		})
 	})
@@ -263,7 +170,35 @@ func (c *completionEntry) Validate() error {
 	return err
 }
 
-func (c *completionEntry) DynamicResize() {
+func (c *completionEntry) SetParent(parent DialogForm) {
+	c.parent = parent
+}
+
+func (c *completionEntry) setOptions(itemList []string) {
+
+	c.options = itemList
+
+	if c.completionList != nil {
+		c.completionList.SetData(c.options)
+	}
+}
+
+func (c *completionEntry) hideCompletion() {
+
+	c.skipValidation = false
+
+	if c.popup != nil {
+		c.popup.Hide()
+	}
+
+	if c.completionList != nil {
+		c.completionList.SetData([]string{})
+	}
+
+	c.popupPosition = fyne.NewPos(-1, -1)
+}
+
+func (c *completionEntry) dynamicResize() {
 	mx := c.maxSize()
 	ox := c.popup.Size()
 
@@ -273,20 +208,7 @@ func (c *completionEntry) DynamicResize() {
 	}
 }
 
-func (c *completionEntry) SetOptions(itemList []string) {
-
-	c.options = itemList
-
-	if c.completionList != nil {
-		c.completionList.SetData(c.options)
-	}
-}
-
-func (c *completionEntry) SetParent(parent DialogForm) {
-	c.parent = parent
-}
-
-func (c *completionEntry) ShowCompletion() {
+func (c *completionEntry) showCompletion() {
 
 	c.skipValidation = true
 	JC.UseDebouncer().Cancel("validating-" + c.uuid)
@@ -296,7 +218,7 @@ func (c *completionEntry) ShowCompletion() {
 	}
 
 	if len(c.options) == 0 || len(c.Text) == 0 {
-		c.HideCompletion()
+		c.hideCompletion()
 		return
 	}
 
@@ -338,6 +260,103 @@ func (c *completionEntry) ShowCompletion() {
 	c.popup.Show()
 
 	activeEntry = c
+}
+
+func (c *completionEntry) getCurrentInput() string {
+	return c.lastInput
+}
+
+func (c *completionEntry) searchSuggestions(s string) {
+	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
+
+	if c.searchCancel != nil {
+		c.searchCancel()
+	}
+
+	if s == c.lastInput {
+		return
+	}
+
+	if c.pause {
+		return
+	}
+
+	if len(s) < 1 {
+		fyne.Do(func() {
+			c.hideCompletion()
+		})
+		return
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	results := []string{}
+	lowerInput := strings.ToLower(s)
+	c.lastInput = s
+	input := s
+	delay := 10 * time.Millisecond
+
+	if c.popup.Visible() {
+		delay = 50 * time.Millisecond
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c.searchCancel = cancel
+
+	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
+		end := min(i+c.searchableChunkSize, c.searchableTotal)
+		wg.Add(1)
+		go func(start, end int, id int) {
+			defer wg.Done()
+			c.searchWorker(ctx, start, end, lowerInput, &results, &mu)
+		}(i, end, i/c.searchableChunkSize)
+	}
+
+	wg.Wait()
+	c.searchCancel = nil
+
+	if len(results) == 0 {
+		fyne.Do(func() {
+			c.hideCompletion()
+		})
+		return
+	}
+
+	results = JC.ReorderSearchable(results)
+
+	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
+		fyne.Do(func() {
+
+			if input != c.getCurrentInput() {
+				return
+			}
+
+			c.setOptions(results)
+			c.showCompletion()
+			c.dynamicResize()
+		})
+	})
+}
+
+func (c *completionEntry) searchWorker(ctx context.Context, start, end int, lowerInput string, results *[]string, mu *sync.Mutex) {
+	select {
+	case <-ctx.Done():
+		return
+
+	default:
+		local := []string{}
+		for j := start; j < end; j++ {
+			if strings.Contains(c.searchable[j], lowerInput) {
+				local = append(local, c.suggestions[j])
+			}
+		}
+		mu.Lock()
+		*results = append(*results, local...)
+		mu.Unlock()
+	}
 }
 
 func (c *completionEntry) calculatePosition(force bool) bool {
