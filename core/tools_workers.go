@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -27,11 +26,8 @@ type worker struct {
 	lastRun         map[string]time.Time
 	bufferedWorkers map[string]BufferedWorkerFunc
 	messageQueues   map[string]chan string
-	recentLogs      map[string]string
-	logTimestamps   map[string]time.Time
 	minDelayMs      map[string]int64
 	mu              sync.Mutex
-	verbose         bool
 }
 
 var workerManager *worker = nil
@@ -48,10 +44,7 @@ func (w *worker) Init() {
 	w.lastRun = make(map[string]time.Time)
 	w.bufferedWorkers = make(map[string]BufferedWorkerFunc)
 	w.messageQueues = make(map[string]chan string)
-	w.recentLogs = make(map[string]string)
-	w.logTimestamps = make(map[string]time.Time)
 	w.minDelayMs = make(map[string]int64)
-	w.verbose = false
 }
 
 func (w *worker) Register(
@@ -204,35 +197,6 @@ func (w *worker) Call(key string, mode CallMode) {
 	}
 }
 
-func (w *worker) PushMessage(key string, msg string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if ch, ok := w.messageQueues[key]; ok {
-		ch <- msg
-		w.queues[key] <- struct{}{}
-	} else {
-		w.logGrouped(key+"_pushfail", 5000, fmt.Sprintf("[PushMessage] messageQueue not found for key: %s", key))
-	}
-}
-
-func (w *worker) GetMessageChannel(key string) <-chan string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if ch, ok := w.messageQueues[key]; ok {
-		return ch
-	}
-	return nil
-}
-
-func (w *worker) Stop(key string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.active[key] = false
-	Logf("[Worker:%s] Marked as inactive", key)
-}
-
 func (w *worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -248,7 +212,7 @@ func (w *worker) PauseAll() {
 	defer w.mu.Unlock()
 	for key := range w.active {
 		w.active[key] = false
-		Logf("[Worker:%s] Paused", key)
+		Logf("Worker:%s Paused", key)
 	}
 }
 
@@ -257,26 +221,19 @@ func (w *worker) ResumeAll() {
 	defer w.mu.Unlock()
 	for key := range w.active {
 		w.active[key] = true
-		Logf("[Worker:%s] Resumed", key)
+		Logf("Worker:%s Resumed", key)
 	}
 }
 
-func (w *worker) logGrouped(key string, interval int64, msg string) {
-	if !w.verbose {
-		return
-	}
-
+func (w *worker) pushMessage(key string, msg string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	lastMsg := w.recentLogs[key]
-	lastTime := w.logTimestamps[key]
-	now := time.Now()
-
-	if msg != lastMsg || now.Sub(lastTime).Milliseconds() >= interval {
-		Logln(msg)
-		w.recentLogs[key] = msg
-		w.logTimestamps[key] = now
+	if ch, ok := w.messageQueues[key]; ok {
+		ch <- msg
+		w.queues[key] <- struct{}{}
+	} else {
+		Logf("MessageQueue not found for key: %s", key)
 	}
 }
 
@@ -301,14 +258,12 @@ func (w *worker) runWorker(key string) {
 	w.mu.Unlock()
 
 	if !exists || !ok {
-		w.logGrouped(key+"_missing", 5000, fmt.Sprintf("[Worker:%s] Not registered", key))
+		Logf("Worker:%s Not registered", key)
 		return
 	}
 
 	lock.Lock()
 	defer lock.Unlock()
-
-	w.logGrouped(key+"_exec", 1000, fmt.Sprintf("[Worker:%s] Executing...", key))
 	fn()
 
 	w.mu.Lock()
@@ -347,7 +302,6 @@ drain:
 	}
 
 	if len(messages) > 0 {
-		w.logGrouped(key+"_exec", 1000, fmt.Sprintf("[Worker:%s] Executing with %d messages...", key, len(messages)))
 		if fn(messages) {
 			w.mu.Lock()
 			w.lastRun[key] = time.Now()
