@@ -647,7 +647,7 @@ func RegisterLifecycle() {
 		lc.SetOnStopped(func() {
 			JC.Logln("App stopped")
 
-			if JA.UseStatus().IsReady() {
+			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return
 			}
