@@ -608,7 +608,7 @@ func RegisterLifecycle() {
 
 			snapshotSaved = false
 
-			if !JC.IsMobile {
+			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.UseWorker().Resume()
 				JA.UseStatus().Resume()
@@ -633,7 +633,7 @@ func RegisterLifecycle() {
 		lc.SetOnExitedForeground(func() {
 			JC.Logln("App exited foreground")
 
-			if !JC.IsMobile {
+			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
 				JA.UseStatus().Pause()
 				JC.UseWorker().Pause()
