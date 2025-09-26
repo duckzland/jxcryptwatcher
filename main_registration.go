@@ -298,11 +298,11 @@ func RegisterWorkers() {
 				return false
 			}
 			if !JT.UseExchangeCache().HasData() {
-				JC.Notify("Unable to refresh display: no cached data")
+				JC.Logln("Unable to refresh display: no cached data")
 				return false
 			}
 			if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetDisplayUpdate()) {
-				JC.Notify("Unable to refresh display: Data is older than display timestamp")
+				JC.Logln("Unable to refresh display: Data is older than display timestamp")
 				return false
 			}
 			if !JA.UseStatus().ValidPanels() {
@@ -335,7 +335,7 @@ func RegisterWorkers() {
 				return false
 			}
 			if !JA.UseStatus().ValidConfig() {
-				JC.Notify("Unable to refresh rates: invalid configuration")
+				JC.Logln("Unable to refresh rates: invalid configuration")
 				return false
 			}
 			if !JT.UseExchangeCache().ShouldRefresh() {
