@@ -7,7 +7,7 @@ import (
 )
 
 type workerUnit struct {
-	ops    string
+	ops    int
 	delay  time.Duration
 	fn     func(any) bool
 	queue  chan any
@@ -18,7 +18,7 @@ type workerUnit struct {
 
 func (w *workerUnit) Call() {
 	switch w.ops {
-	case "scheduler":
+	case WORKER_SCHEDULER:
 		w.mu.Lock()
 		fn := w.fn
 		w.mu.Unlock()
@@ -26,7 +26,7 @@ func (w *workerUnit) Call() {
 			fn(nil)
 		}
 
-	case "listener":
+	case WORKER_LISTENER:
 		w.Push(struct{}{})
 	}
 }
@@ -50,10 +50,10 @@ func (w *workerUnit) Start() {
 
 	switch w.ops {
 
-	case "scheduler":
+	case WORKER_SCHEDULER:
 		go w.scheduler()
 
-	case "listener":
+	case WORKER_LISTENER:
 		go w.listener()
 	}
 }

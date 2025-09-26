@@ -35,13 +35,13 @@ func (w *worker) Init() {
 	w.lastRun = make(map[string]time.Time)
 }
 
-func (w *worker) Register(key, ops string, size int64, getDelay func() int64, fn func(any) bool, shouldRun func() bool) {
+func (w *worker) Register(key string, ops int, size int64, getDelay func() int64, fn func(any) bool, shouldRun func() bool) {
 	w.mu.Lock()
 	w.conditions[key] = shouldRun
 	w.lastRun[key] = time.Now()
 	w.mu.Unlock()
 
-	if ops == "scheduler" {
+	if ops == WORKER_SCHEDULER {
 		size = 1
 	}
 
