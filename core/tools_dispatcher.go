@@ -22,9 +22,9 @@ type dispatcher struct {
 	queue         chan func()
 	mu            sync.Mutex
 	paused        bool
-	bufferSize    int
+	buffer        int
 	maxConcurrent int
-	delayBetween  time.Duration
+	delay         time.Duration
 	ctx           context.Context
 	cancel        context.CancelFunc
 }
@@ -37,17 +37,17 @@ func (d *dispatcher) Init() {
 		return
 	}
 
-	if d.bufferSize == 0 {
-		d.bufferSize = 1000
+	if d.buffer == 0 {
+		d.buffer = 1000
 	}
 	if d.maxConcurrent == 0 {
 		d.maxConcurrent = 4
 	}
-	if d.delayBetween == 0 {
-		d.delayBetween = 16 * time.Millisecond
+	if d.delay == 0 {
+		d.delay = 16 * time.Millisecond
 	}
 
-	d.queue = make(chan func(), d.bufferSize)
+	d.queue = make(chan func(), d.buffer)
 	d.paused = false
 
 	d.ctx, d.cancel = context.WithCancel(context.Background())
@@ -111,7 +111,7 @@ func (d *dispatcher) Resume() {
 func (d *dispatcher) SetBufferSize(size int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.bufferSize = size
+	d.buffer = size
 }
 
 func (d *dispatcher) SetMaxConcurrent(n int) {
@@ -123,13 +123,13 @@ func (d *dispatcher) SetMaxConcurrent(n int) {
 func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.delayBetween = delay
+	d.delay = delay
 }
 
 func (d *dispatcher) GetDelay() time.Duration {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return d.delayBetween
+	return d.delay
 }
 
 func (d *dispatcher) IsPaused() bool {
@@ -162,11 +162,11 @@ func UseDispatcher() *dispatcher {
 	return coreDispatcher
 }
 
-func NewDispatcher(bufferSize, maxConcurrent int, delayBetween time.Duration) *dispatcher {
+func NewDispatcher(buffer, maxConcurrent int, delay time.Duration) *dispatcher {
 	d := &dispatcher{
-		bufferSize:    bufferSize,
+		buffer:        buffer,
 		maxConcurrent: maxConcurrent,
-		delayBetween:  delayBetween,
+		delay:         delay,
 		paused:        false,
 	}
 	d.Init()

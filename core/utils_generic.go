@@ -106,7 +106,7 @@ func TraceGoroutines() {
 }
 
 func Notify(msg string) {
-	UseWorker().pushMessage("notification", msg)
+	UseWorker().Push("notification", msg)
 }
 
 func EqualStringSlices(a, b []string) bool {

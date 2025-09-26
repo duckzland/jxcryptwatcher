@@ -272,12 +272,17 @@ func RegisterActions() {
 }
 
 func RegisterWorkers() {
-	JC.UseWorker().RegisterListener(
-		"update_display", 200,
-		func() {
+	JC.UseWorker().Register(
+		"update_display", "listener", 1,
+		func() int64 {
+			return 200
+		},
+		func(any) bool {
 			if UpdateDisplay() {
 				JA.UseLayout().RegisterDisplayUpdate(time.Now())
+				return true
 			}
+			return false
 		},
 		func() bool {
 			if !JA.UseStatus().ValidConfig() {
@@ -309,12 +314,12 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_rates", 1000,
-		func() {
-			UpdateRates()
-		},
+		"update_rates", "scheduler", 1,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
+		},
+		func(any) bool {
+			return UpdateRates()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -346,12 +351,12 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_tickers", 5000,
-		func() {
-			UpdateTickers()
-		},
+		"update_tickers", "scheduler", 1,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
+		},
+		func(any) bool {
+			return UpdateTickers()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -374,19 +379,23 @@ func RegisterWorkers() {
 		},
 	)
 
-	JC.UseWorker().RegisterBuffered(
-		"notification", 1000, 2000,
+	JC.UseWorker().Register(
+		"notification", "executor", 1000,
 		func() int64 {
-			return 1000
+			return 3000
 		},
-		func(messages []string) bool {
-			if len(messages) == 0 {
+		func(payload any) bool {
+			messages, ok := payload.([]string)
+			if !ok || len(messages) == 0 {
 				return false
 			}
+
 			latest := messages[len(messages)-1]
+
 			fyne.Do(func() {
 				JW.UseNotification().UpdateText(latest)
 			})
+
 			ScheduledNotificationReset()
 			return true
 		},
@@ -599,7 +608,7 @@ func RegisterLifecycle() {
 
 			snapshotSaved = false
 
-			if JC.IsMobile {
+			if !JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.UseWorker().Resume()
 				JA.UseStatus().Resume()
@@ -624,7 +633,7 @@ func RegisterLifecycle() {
 		lc.SetOnExitedForeground(func() {
 			JC.Logln("App exited foreground")
 
-			if JC.IsMobile {
+			if !JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
 				JA.UseStatus().Pause()
 				JC.UseWorker().Pause()
