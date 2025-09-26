@@ -138,7 +138,6 @@ drain:
 		select {
 		case msg := <-w.queue:
 			if str, ok := msg.(string); ok {
-				Logln("Processing", str)
 				messages = append(messages, str)
 			}
 		default:
