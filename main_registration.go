@@ -380,9 +380,9 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", "executor", 1000,
+		"notification", "executor", 10000,
 		func() int64 {
-			return 3000
+			return 2000
 		},
 		func(payload any) bool {
 			messages, ok := payload.([]string)
