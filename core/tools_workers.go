@@ -41,7 +41,7 @@ func (w *worker) Register(key, ops string, size int64, getDelay func() int64, fn
 	w.lastRun[key] = time.Now()
 	w.mu.Unlock()
 
-	if ops != "executor" {
+	if ops == "scheduler" {
 		size = 1
 	}
 

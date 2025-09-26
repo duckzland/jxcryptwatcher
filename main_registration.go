@@ -380,18 +380,12 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", "executor", 10000,
+		"notification", "listener", 10000,
 		func() int64 {
-			return 2000
+			return 1000
 		},
 		func(payload any) bool {
-			messages, ok := payload.([]string)
-			if !ok || len(messages) == 0 {
-				return false
-			}
-
-			latest := messages[len(messages)-1]
-
+			latest, _ := payload.(string)
 			fyne.Do(func() {
 				JW.UseNotification().UpdateText(latest)
 			})

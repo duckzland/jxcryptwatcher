@@ -18,9 +18,6 @@ type workerUnit struct {
 
 func (w *workerUnit) Call() {
 	switch w.ops {
-	case "executor":
-		w.drainAndExecute()
-
 	case "scheduler":
 		w.mu.Lock()
 		fn := w.fn
@@ -52,8 +49,6 @@ func (w *workerUnit) Start() {
 	w.ctx, w.cancel = context.WithCancel(context.Background())
 
 	switch w.ops {
-	case "executor":
-		go w.executor()
 
 	case "scheduler":
 		go w.scheduler()
@@ -96,23 +91,12 @@ func (w *workerUnit) scheduler() {
 	}
 }
 
-func (w *workerUnit) executor() {
-	for {
-		select {
-		case <-w.ctx.Done():
-			return
-		case <-time.After(w.delay):
-			w.drainAndExecute()
-		}
-	}
-}
-
 func (w *workerUnit) listener() {
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case _, ok := <-w.queue:
+		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
@@ -125,32 +109,8 @@ func (w *workerUnit) listener() {
 				time.Sleep(delay)
 			}
 			if fn != nil {
-				fn(nil)
+				fn(x)
 			}
-		}
-	}
-}
-
-func (w *workerUnit) drainAndExecute() {
-	var messages []string
-drain:
-	for {
-		select {
-		case msg := <-w.queue:
-			if str, ok := msg.(string); ok {
-				messages = append(messages, str)
-			}
-		default:
-			break drain
-		}
-	}
-
-	if len(messages) > 0 {
-		w.mu.Lock()
-		fn := w.fn
-		w.mu.Unlock()
-		if fn != nil {
-			fn(messages)
 		}
 	}
 }
