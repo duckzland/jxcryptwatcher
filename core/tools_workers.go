@@ -149,7 +149,7 @@ func (w *worker) GetLastUpdate(key string) time.Time {
 	return time.Time{}
 }
 
-func (w *worker) PauseAll() {
+func (w *worker) Pause() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	for key := range w.active {
@@ -158,7 +158,7 @@ func (w *worker) PauseAll() {
 	}
 }
 
-func (w *worker) ResumeAll() {
+func (w *worker) Resume() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	for key := range w.active {
