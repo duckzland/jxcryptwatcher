@@ -77,7 +77,7 @@ func (w *workerUnit) scheduler() {
 			return
 		case <-t.C:
 			w.Call()
-		case _, ok := <-w.queue:
+		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
@@ -86,7 +86,9 @@ func (w *workerUnit) scheduler() {
 			fn := w.fn
 			w.mu.Unlock()
 
-			fn(nil)
+			if fn != nil {
+				fn(x)
+			}
 		}
 	}
 }
