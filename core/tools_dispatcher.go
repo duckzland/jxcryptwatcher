@@ -6,6 +6,16 @@ import (
 	"time"
 )
 
+type Dispatcher interface {
+	Submit(fn func())
+	GetDelay() time.Duration
+	IsPaused() bool
+	Pause()
+	Resume()
+	Start()
+	Drain()
+}
+
 var coreDispatcher *dispatcher = nil
 
 type dispatcher struct {
@@ -52,29 +62,30 @@ func (d *dispatcher) Start() {
 	}
 }
 
-func (d *dispatcher) worker() {
-	ctx := d.ctx
+func (d *dispatcher) Drain() {
+	d.mu.Lock()
+	queue := d.queue
+	d.mu.Unlock()
 	for {
 		select {
-		case <-ctx.Done():
+		case <-queue:
+		default:
 			return
-		case fn := <-d.queue:
-			fn()
-			time.Sleep(d.GetDelay())
 		}
 	}
 }
 
 func (d *dispatcher) Submit(fn func()) {
 	d.mu.Lock()
-	defer d.mu.Unlock()
+	queue := d.queue
+	d.mu.Unlock()
 
-	if d.queue == nil {
+	if queue == nil {
 		return
 	}
 
 	select {
-	case d.queue <- fn:
+	case queue <- fn:
 	default:
 	}
 }
@@ -82,10 +93,10 @@ func (d *dispatcher) Submit(fn func()) {
 func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
+	d.mu.Unlock()
 	if d.cancel != nil {
 		d.cancel()
 	}
-	d.mu.Unlock()
 }
 
 func (d *dispatcher) Resume() {
@@ -127,6 +138,19 @@ func (d *dispatcher) IsPaused() bool {
 	return d.paused
 }
 
+func (d *dispatcher) worker() {
+	ctx := d.ctx
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case fn := <-d.queue:
+			fn()
+			time.Sleep(d.GetDelay())
+		}
+	}
+}
+
 func RegisterDispatcher() *dispatcher {
 	if coreDispatcher == nil {
 		coreDispatcher = &dispatcher{}
@@ -136,4 +160,15 @@ func RegisterDispatcher() *dispatcher {
 
 func UseDispatcher() *dispatcher {
 	return coreDispatcher
+}
+
+func NewDispatcher(bufferSize, maxConcurrent int, delayBetween time.Duration) *dispatcher {
+	d := &dispatcher{
+		bufferSize:    bufferSize,
+		maxConcurrent: maxConcurrent,
+		delayBetween:  delayBetween,
+		paused:        false,
+	}
+	d.Init()
+	return d
 }

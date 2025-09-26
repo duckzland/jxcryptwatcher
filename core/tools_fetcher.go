@@ -79,20 +79,10 @@ func (m *fetcher) Init() {
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
 
-	m.broadcastDispatcher = &dispatcher{
-		maxConcurrent: 4,
-		delayBetween:  500 * time.Millisecond,
-		bufferSize:    1000,
-	}
-	m.broadcastDispatcher.Init()
+	m.broadcastDispatcher = NewDispatcher(1000, 4, 500*time.Millisecond)
 	m.broadcastDispatcher.Start()
 
-	m.parallelDispatcher = &dispatcher{
-		maxConcurrent: 2,
-		delayBetween:  500 * time.Millisecond,
-		bufferSize:    1000,
-	}
-	m.parallelDispatcher.Init()
+	m.parallelDispatcher = NewDispatcher(1000, 2, 500*time.Millisecond)
 	m.parallelDispatcher.Start()
 }
 

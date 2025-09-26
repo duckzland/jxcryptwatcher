@@ -1,7 +1,6 @@
 package widgets
 
 import (
-	"context"
 	"strings"
 	"sync"
 	"time"
@@ -30,7 +29,6 @@ type completionEntry struct {
 	searchable          []string
 	searchableTotal     int
 	searchableChunkSize int
-	searchCancel        context.CancelFunc
 	popupPosition       fyne.Position
 	entryPosition       fyne.Position
 	canvas              fyne.Canvas
@@ -38,6 +36,7 @@ type completionEntry struct {
 	uuid                string
 	userValidator       func(string) error
 	skipValidation      bool
+	dispatcher          JC.Dispatcher
 }
 
 func NewCompletionEntry(
@@ -58,6 +57,7 @@ func NewCompletionEntry(
 		entryPosition:       fyne.NewPos(-1, -1),
 		itemHeight:          40,
 	}
+
 	c.ExtendBaseWidget(c)
 
 	c.OnChanged = func(s string) {
@@ -71,6 +71,9 @@ func NewCompletionEntry(
 			})
 		})
 	}
+
+	c.dispatcher = JC.NewDispatcher(1000, c.searchableChunkSize, 16*time.Millisecond)
+	c.dispatcher.Start()
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
 
@@ -269,59 +272,57 @@ func (c *completionEntry) getCurrentInput() string {
 func (c *completionEntry) searchSuggestions(s string) {
 	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 
-	if c.searchCancel != nil {
-		c.searchCancel()
-	}
+	c.dispatcher.Drain()
+	c.dispatcher.Pause()
 
-	if s == c.lastInput {
-		return
-	}
-
-	if c.pause {
+	if s == c.lastInput || c.pause {
 		return
 	}
 
 	if len(s) < 1 {
-		fyne.Do(func() {
-			c.hideCompletion()
-		})
+		fyne.Do(func() { c.hideCompletion() })
 		return
 	}
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-
 	results := []string{}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
 	lowerInput := strings.ToLower(s)
 	c.lastInput = s
 	input := s
 	delay := 10 * time.Millisecond
-
 	if c.popup.Visible() {
 		delay = 50 * time.Millisecond
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	c.searchCancel = cancel
-
 	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
+		start := i
 		end := min(i+c.searchableChunkSize, c.searchableTotal)
+
 		wg.Add(1)
-		go func(start, end int, id int) {
+		c.dispatcher.Submit(func() {
 			defer wg.Done()
-			c.searchWorker(ctx, start, end, lowerInput, &results, &mu)
-		}(i, end, i/c.searchableChunkSize)
+
+			local := []string{}
+			for j := start; j < end; j++ {
+				if strings.Contains(c.searchable[j], lowerInput) {
+					local = append(local, c.suggestions[j])
+				}
+			}
+
+			mu.Lock()
+			results = append(results, local...)
+			mu.Unlock()
+		})
 	}
 
+	c.dispatcher.Resume()
+
 	wg.Wait()
-	c.searchCancel = nil
 
 	if len(results) == 0 {
-		fyne.Do(func() {
-			c.hideCompletion()
-		})
+		fyne.Do(func() { c.hideCompletion() })
 		return
 	}
 
@@ -329,34 +330,15 @@ func (c *completionEntry) searchSuggestions(s string) {
 
 	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
 		fyne.Do(func() {
-
 			if input != c.getCurrentInput() {
 				return
 			}
-
 			c.setOptions(results)
 			c.showCompletion()
 			c.dynamicResize()
 		})
 	})
-}
 
-func (c *completionEntry) searchWorker(ctx context.Context, start, end int, lowerInput string, results *[]string, mu *sync.Mutex) {
-	select {
-	case <-ctx.Done():
-		return
-
-	default:
-		local := []string{}
-		for j := start; j < end; j++ {
-			if strings.Contains(c.searchable[j], lowerInput) {
-				local = append(local, c.suggestions[j])
-			}
-		}
-		mu.Lock()
-		*results = append(*results, local...)
-		mu.Unlock()
-	}
 }
 
 func (c *completionEntry) calculatePosition(force bool) bool {
