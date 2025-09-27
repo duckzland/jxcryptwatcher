@@ -1,8 +1,6 @@
 package panels
 
 import (
-	"math/big"
-
 	"fyne.io/fyne/v2"
 
 	JC "jxwatcher/core"
@@ -33,7 +31,7 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 		// Retrieve and initialize panel data
 		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 
-		if pkt.UsePanelKey().GetValueFloat().Cmp(big.NewFloat(-1)) == 0 {
+		if pkt.UsePanelKey().IsValueMatchingFloat(-1, "==") {
 			pkt.SetStatus(JC.STATE_LOADING)
 		}
 

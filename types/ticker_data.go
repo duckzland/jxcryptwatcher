@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 	"sync"
 
@@ -262,7 +261,7 @@ func (p *tickerDataType) Update() bool {
 
 	switch p.status {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.GetValueFloat().Cmp(big.NewFloat(0)) >= 0 {
+		if nso.IsValueMatchingFloat(0, ">=") {
 			nst = JC.STATE_LOADED
 		}
 	case JC.STATE_LOADED:

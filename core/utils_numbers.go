@@ -15,13 +15,17 @@ func NumDecPlaces(v float64) int {
 	return 0
 }
 
-func CountDecimalPlaces(f *big.Float) int {
+func BigFloatNumDecPlaces(f *big.Float) int {
 	str := f.Text('f', -1) // full decimal string
 	parts := strings.Split(str, ".")
 	if len(parts) == 2 {
 		return len(strings.TrimRight(parts[1], "0"))
 	}
 	return 0
+}
+
+func ToBigFloat(val float64) *big.Float {
+	return new(big.Float).SetPrec(256).SetFloat64(val)
 }
 
 func IsNumeric(val string) bool {

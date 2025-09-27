@@ -28,6 +28,30 @@ func (p *panelKeyType) UpdateValue(rate *big.Float) string {
 	return p.value
 }
 
+func (p *panelKeyType) IsValueMatching(rate *big.Float, op string) bool {
+	cmp := p.GetValueFloat().Cmp(rate)
+	switch op {
+	case "==", "=":
+		return cmp == 0
+	case "!=":
+		return cmp != 0
+	case "<":
+		return cmp < 0
+	case "<=":
+		return cmp <= 0
+	case ">":
+		return cmp > 0
+	case ">=":
+		return cmp >= 0
+	default:
+		return false // unsupported operator
+	}
+}
+
+func (p *panelKeyType) IsValueMatchingFloat(val float64, op string) bool {
+	return p.IsValueMatching(JC.ToBigFloat(val), op)
+}
+
 func (p *panelKeyType) RefreshKey() string {
 	return p.GenerateKeyFromPanel(p.GetPanel(), p.GetValueFloat())
 }
@@ -110,7 +134,7 @@ func (p *panelKeyType) GetValueString() string {
 
 func (p *panelKeyType) GetReverseValueString() string {
 	pkv := p.GetReverseValueFloat()
-	frac := JC.CountDecimalPlaces(pkv)
+	frac := JC.BigFloatNumDecPlaces(pkv)
 	if frac < 3 {
 		frac = 2
 	}

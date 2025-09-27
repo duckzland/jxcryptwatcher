@@ -214,8 +214,7 @@ func (p *panelDataType) GetOldValueString() string {
 }
 
 func (p *panelDataType) RefreshData() {
-	rate := new(big.Float).SetPrec(256).SetFloat64(-3)
-	npk := p.UsePanelKey().UpdateValue(rate)
+	npk := p.UsePanelKey().UpdateValue(JC.ToBigFloat(-3))
 	p.mu.Lock()
 	p.data.Set(npk)
 	p.mu.Unlock()
@@ -245,7 +244,7 @@ func (p *panelDataType) Update(pk string) bool {
 
 	switch nst {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.GetValueFloat().Cmp(big.NewFloat(0)) >= 0 {
+		if nso.IsValueMatchingFloat(0, ">=") {
 			nst = JC.STATE_LOADED
 		}
 	case JC.STATE_LOADED:
@@ -309,7 +308,7 @@ func (p *panelDataType) DidChange() bool {
 
 	opt := &panelKeyType{value: old}
 	return old != p.Get() &&
-		opt.GetValueFloat().Cmp(big.NewFloat(-1)) != 0 &&
+		opt.IsValueMatchingFloat(-1, "!=") &&
 		status == JC.STATE_LOADED
 }
 
@@ -320,7 +319,7 @@ func (p *panelDataType) IsOnInitialValue() bool {
 	p.mu.RUnlock()
 
 	opt := &panelKeyType{value: old}
-	return opt.GetValueFloat().Cmp(big.NewFloat(-1)) == 0 && status == JC.STATE_LOADED
+	return opt.IsValueMatchingFloat(-1, "==") && status == JC.STATE_LOADED
 }
 
 func (p *panelDataType) IsValueIncrease() int {
