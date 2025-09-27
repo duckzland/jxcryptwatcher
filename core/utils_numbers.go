@@ -28,6 +28,10 @@ func ToBigFloat(val float64) *big.Float {
 	return new(big.Float).SetPrec(256).SetFloat64(val)
 }
 
+func ToBigString(val string) (*big.Float, bool) {
+	return new(big.Float).SetPrec(256).SetString(val)
+}
+
 func IsNumeric(val string) bool {
 	_, err := strconv.Atoi(val)
 	return err == nil

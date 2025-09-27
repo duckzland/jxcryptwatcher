@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 	"sync"
 
@@ -88,7 +87,7 @@ func (p *panelDataType) Insert(panel panelType, rate float64) {
 		p.oldKey = old
 	}
 	pkt := &panelKeyType{}
-	r := new(big.Float).SetPrec(256).SetFloat64(rate)
+	r := JC.ToBigFloat(rate)
 	p.data.Set(pkt.GenerateKeyFromPanel(panel, r))
 	p.mu.Unlock()
 }

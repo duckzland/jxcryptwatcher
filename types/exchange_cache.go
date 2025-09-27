@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"math/big"
+	JC "jxwatcher/core"
 	"sync"
 	"time"
 )
@@ -183,9 +183,9 @@ func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 
 	for _, snap := range snapshot.Data {
 		if snap.Timestamp.After(cutoff) {
-			f, ok := new(big.Float).SetPrec(256).SetString(snap.TargetAmount)
+			f, ok := JC.ToBigString(snap.TargetAmount)
 			if !ok {
-				f = new(big.Float).SetPrec(256).SetFloat64(0)
+				f = JC.ToBigFloat(0)
 			}
 
 			ex := exchangeDataType{

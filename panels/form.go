@@ -3,7 +3,6 @@ package panels
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"strconv"
 
 	"fyne.io/fyne/v2"
@@ -171,7 +170,7 @@ func NewPanelForm(
 					bid,
 					mid,
 					decimalsEntry.Text,
-					big.NewFloat(-1),
+					JC.ToBigFloat(-1),
 				)
 
 				if panelKey == "new" {

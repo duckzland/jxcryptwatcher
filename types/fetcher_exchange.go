@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"math/big"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -56,7 +55,7 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 		ex.TargetId, _ = rate.(map[string]any)["cryptoId"].(json.Number).Int64()
 
 		price := rate.(map[string]any)["price"].(json.Number).String()
-		ex.TargetAmount, _ = new(big.Float).SetPrec(256).SetString(price)
+		ex.TargetAmount, _ = JC.ToBigString(price)
 
 		ex.Timestamp = tx
 

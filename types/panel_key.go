@@ -105,21 +105,21 @@ func (p *panelKeyType) GetPanel() panelType {
 
 func (p *panelKeyType) GetValueFloat() *big.Float {
 	raw := p.GetValueString()
-	f, ok := new(big.Float).SetPrec(256).SetString(raw)
+	f, ok := JC.ToBigString(raw)
 	if ok {
 		return f
 	}
-	return new(big.Float).SetPrec(256).SetFloat64(0)
+	return JC.ToBigFloat(0)
 }
 
 func (p *panelKeyType) GetReverseValueFloat() *big.Float {
 	raw := p.GetValueString()
-	val, ok := new(big.Float).SetPrec(256).SetString(raw)
+	val, ok := JC.ToBigString(raw)
 	if !ok || val.Sign() == 0 {
-		return new(big.Float).SetPrec(256).SetFloat64(0)
+		return JC.ToBigFloat(0)
 	}
 
-	return new(big.Float).Quo(big.NewFloat(1), val)
+	return new(big.Float).Quo(JC.ToBigFloat(1), val)
 }
 
 func (p *panelKeyType) GetValueString() string {
@@ -187,8 +187,8 @@ func (p *panelKeyType) GetCalculatedValueFormattedString() string {
 		frac = 2
 	}
 
-	nv := new(big.Float).SetPrec(256).Mul(p.GetValueFloat(), big.NewFloat(source))
-	if nv.Cmp(big.NewFloat(1)) < 0 {
+	nv := new(big.Float).SetPrec(256).Mul(p.GetValueFloat(), JC.ToBigFloat(source))
+	if nv.Cmp(JC.ToBigFloat(1)) < 0 {
 		frac = max(int(p.GetDecimalsInt()), 4)
 	}
 
