@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"sync"
 
@@ -87,7 +88,8 @@ func (p *panelDataType) Insert(panel panelType, rate float64) {
 		p.oldKey = old
 	}
 	pkt := &panelKeyType{}
-	p.data.Set(pkt.GenerateKeyFromPanel(panel, rate))
+	r := new(big.Float).SetPrec(256).SetFloat64(rate)
+	p.data.Set(pkt.GenerateKeyFromPanel(panel, r))
 	p.mu.Unlock()
 }
 
@@ -212,7 +214,8 @@ func (p *panelDataType) GetOldValueString() string {
 }
 
 func (p *panelDataType) RefreshData() {
-	npk := p.UsePanelKey().UpdateValue(-3)
+	rate := new(big.Float).SetPrec(256).SetFloat64(-3)
+	npk := p.UsePanelKey().UpdateValue(rate)
 	p.mu.Lock()
 	p.data.Set(npk)
 	p.mu.Unlock()
@@ -231,9 +234,11 @@ func (p *panelDataType) Update(pk string) bool {
 
 	if UseExchangeCache().Has(ck) {
 		Data := UseExchangeCache().Get(ck)
-		if Data != nil {
+		if Data != nil && Data.TargetAmount != nil {
 			pko := panelKeyType{value: npk}
 			npk = pko.UpdateValue(Data.TargetAmount)
+			JC.Logf("ExchangeCache hit: TargetAmount=%s | Updated npk=%v",
+				Data.TargetAmount.Text('g', -1), npk)
 		}
 	}
 
@@ -242,7 +247,7 @@ func (p *panelDataType) Update(pk string) bool {
 
 	switch nst {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.GetValueFloat() >= 0 {
+		if nso.GetValueFloat().Cmp(big.NewFloat(0)) >= 0 {
 			nst = JC.STATE_LOADED
 		}
 	case JC.STATE_LOADED:
@@ -303,8 +308,11 @@ func (p *panelDataType) DidChange() bool {
 	old := p.oldKey
 	status := p.status
 	p.mu.RUnlock()
-	opt := &panelKeyType{old}
-	return old != p.Get() && opt.GetValueFloat() != -1 && status == JC.STATE_LOADED
+
+	opt := &panelKeyType{value: old}
+	return old != p.Get() &&
+		opt.GetValueFloat().Cmp(big.NewFloat(-1)) != 0 &&
+		status == JC.STATE_LOADED
 }
 
 func (p *panelDataType) IsOnInitialValue() bool {
@@ -312,8 +320,9 @@ func (p *panelDataType) IsOnInitialValue() bool {
 	old := p.oldKey
 	status := p.status
 	p.mu.RUnlock()
-	opt := &panelKeyType{old}
-	return opt.GetValueFloat() == -1 && status == JC.STATE_LOADED
+
+	opt := &panelKeyType{value: old}
+	return opt.GetValueFloat().Cmp(big.NewFloat(-1)) == 0 && status == JC.STATE_LOADED
 }
 
 func (p *panelDataType) IsValueIncrease() int {

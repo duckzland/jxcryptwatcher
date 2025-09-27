@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/big"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -210,7 +211,7 @@ func ProcessUpdatePanelComplete(status int) {
 
 		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-				return pdt.UsePanelKey().GetValueFloat() < 0
+				return pdt.UsePanelKey().GetValueFloat().Cmp(big.NewFloat(0)) < 0
 			})
 
 			fyne.Do(func() {
@@ -228,7 +229,7 @@ func ProcessUpdatePanelComplete(status int) {
 
 		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
 			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-				return pdt.UsePanelKey().GetValueFloat() < 0
+				return pdt.UsePanelKey().GetValueFloat().Cmp(big.NewFloat(0)) < 0
 			})
 
 			fyne.Do(func() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"sync"
 
 	JC "jxwatcher/core"
@@ -120,14 +121,14 @@ func (p *panelsType) ConvertToMap(maps *panelsMapType) {
 		pp := &(*p)[i]
 
 		pko := panelKeyType{}
-		pko.GenerateKeyFromPanel(*pp, -1)
+		pko.GenerateKeyFromPanel(*pp, big.NewFloat(-1))
 
 		pp.SourceSymbol = maps.GetSymbolById(pko.GetSourceCoinString())
 		pp.TargetSymbol = maps.GetSymbolById(pko.GetTargetCoinString())
 
-		JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, -1))
+		JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, big.NewFloat(-1)))
 
-		maps.Append(pko.GenerateKeyFromPanel(*pp, -1))
+		maps.Append(pko.GenerateKeyFromPanel(*pp, big.NewFloat(-1)))
 	}
 }
 

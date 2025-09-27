@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 )
@@ -11,9 +12,19 @@ const exchangeCacheUpdateThreshold = 10 * time.Second
 var exchangeCacheStorage *exchangeDataCacheType = nil
 
 type exchangeDataCacheSnapshot struct {
-	Data        []exchangeDataType `json:"data"`
-	Timestamp   time.Time          `json:"timestamp"`
-	LastUpdated time.Time          `json:"last_updated"`
+	Data        []exchangeDataSnapshot `json:"data"`
+	Timestamp   time.Time              `json:"timestamp"`
+	LastUpdated time.Time              `json:"last_updated"`
+}
+
+type exchangeDataSnapshot struct {
+	SourceSymbol string    `json:"source_symbol"`
+	SourceId     int64     `json:"source_id"`
+	SourceAmount float64   `json:"source_amount"`
+	TargetSymbol string    `json:"target_symbol"`
+	TargetId     int64     `json:"target_id"`
+	TargetAmount string    `json:"target_amount"`
+	Timestamp    time.Time `json:"timestamp"`
 }
 
 type exchangeDataCacheType struct {
@@ -92,7 +103,6 @@ func (ec *exchangeDataCacheType) Reset() *exchangeDataCacheType {
 	return ec
 }
 
-// Status checks
 func (ec *exchangeDataCacheType) Has(ck string) bool {
 	d, ok := ec.data.Load(ck)
 	return ok && d != nil
@@ -121,13 +131,33 @@ func (ec *exchangeDataCacheType) ShouldRefresh() bool {
 
 // Serialization
 func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
-	var result []exchangeDataType
+	var result []exchangeDataSnapshot
 	cutoff := time.Now().Add(-24 * time.Hour)
 
 	ec.data.Range(func(_, value any) bool {
 		if ex, ok := value.(exchangeDataType); ok {
-			if ex.Timestamp.After(cutoff) {
-				result = append(result, ex)
+			if ex.Timestamp.After(cutoff) && ex.TargetAmount != nil {
+				raw := ex.TargetAmount.Text('g', -1)
+
+				if raw == "NaN" ||
+					raw == "0" ||
+					ex.SourceAmount == 0 ||
+					ex.SourceId == 0 ||
+					ex.TargetId == 0 ||
+					ex.SourceSymbol == "" ||
+					ex.TargetSymbol == "" {
+					return true
+				}
+
+				result = append(result, exchangeDataSnapshot{
+					SourceSymbol: ex.SourceSymbol,
+					SourceId:     ex.SourceId,
+					SourceAmount: ex.SourceAmount,
+					TargetSymbol: ex.TargetSymbol,
+					TargetId:     ex.TargetId,
+					TargetAmount: raw,
+					Timestamp:    ex.Timestamp,
+				})
 			}
 		}
 		return true
@@ -151,8 +181,23 @@ func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 	ec.data = sync.Map{}
 	cutoff := time.Now().Add(-24 * time.Hour)
 
-	for _, ex := range snapshot.Data {
-		if ex.Timestamp.After(cutoff) {
+	for _, snap := range snapshot.Data {
+		if snap.Timestamp.After(cutoff) {
+			f, ok := new(big.Float).SetPrec(256).SetString(snap.TargetAmount)
+			if !ok {
+				f = new(big.Float).SetPrec(256).SetFloat64(0)
+			}
+
+			ex := exchangeDataType{
+				SourceSymbol: snap.SourceSymbol,
+				SourceId:     snap.SourceId,
+				SourceAmount: snap.SourceAmount,
+				TargetSymbol: snap.TargetSymbol,
+				TargetId:     snap.TargetId,
+				TargetAmount: f,
+				Timestamp:    snap.Timestamp,
+			}
+
 			ck := ec.CreateKeyFromExchangeData(&ex)
 			ec.data.Store(ck, ex)
 		}

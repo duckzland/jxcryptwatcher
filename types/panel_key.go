@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -20,9 +21,10 @@ func (p *panelKeyType) Set(value string) {
 	p.value = value
 }
 
-func (p *panelKeyType) UpdateValue(rate float64) string {
+func (p *panelKeyType) UpdateValue(rate *big.Float) string {
 	pkk := strings.Split(p.value, "|")
-	p.value = fmt.Sprintf("%s|%.20f", pkk[0], rate)
+
+	p.value = fmt.Sprintf("%s|%s", pkk[0], rate.Text('g', -1))
 	return p.value
 }
 
@@ -30,13 +32,21 @@ func (p *panelKeyType) RefreshKey() string {
 	return p.GenerateKeyFromPanel(p.GetPanel(), p.GetValueFloat())
 }
 
-func (p *panelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate float64) string {
-	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%.20f", source, target, value, sourceSymbol, targetSymbol, decimals, rate)
+func (p *panelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate *big.Float) string {
+	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%s", source, target, value, sourceSymbol, targetSymbol, decimals, rate.Text('g', -1))
 	return p.value
 }
 
-func (p *panelKeyType) GenerateKeyFromPanel(panel panelType, rate float64) string {
-	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%.20f", panel.Source, panel.Target, JC.DynamicFormatFloatToString(panel.Value), panel.SourceSymbol, panel.TargetSymbol, panel.Decimals, rate)
+func (p *panelKeyType) GenerateKeyFromPanel(panel panelType, rate *big.Float) string {
+	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%s",
+		panel.Source,
+		panel.Target,
+		JC.DynamicFormatFloatToString(panel.Value),
+		panel.SourceSymbol,
+		panel.TargetSymbol,
+		panel.Decimals,
+		rate.Text('g', -1),
+	)
 	return p.value
 }
 
@@ -69,24 +79,23 @@ func (p *panelKeyType) GetPanel() panelType {
 	}
 }
 
-func (p *panelKeyType) GetValueFloat() float64 {
-
-	value, err := strconv.ParseFloat(p.GetValueString(), 64)
-	if err == nil {
-		return value
+func (p *panelKeyType) GetValueFloat() *big.Float {
+	raw := p.GetValueString()
+	f, ok := new(big.Float).SetPrec(256).SetString(raw)
+	if ok {
+		return f
 	}
-
-	return 0
+	return new(big.Float).SetPrec(256).SetFloat64(0)
 }
 
-func (p *panelKeyType) GetReverseValueFloat() float64 {
-
-	value, err := strconv.ParseFloat(p.GetValueString(), 64)
-	if err == nil {
-		return 1 / value
+func (p *panelKeyType) GetReverseValueFloat() *big.Float {
+	raw := p.GetValueString()
+	val, ok := new(big.Float).SetPrec(256).SetString(raw)
+	if !ok || val.Sign() == 0 {
+		return new(big.Float).SetPrec(256).SetFloat64(0)
 	}
 
-	return 0
+	return new(big.Float).Quo(big.NewFloat(1), val)
 }
 
 func (p *panelKeyType) GetValueString() string {
@@ -100,36 +109,18 @@ func (p *panelKeyType) GetValueString() string {
 }
 
 func (p *panelKeyType) GetReverseValueString() string {
-
 	pkv := p.GetReverseValueFloat()
-	frac := JC.NumDecPlaces(pkv)
+	frac := JC.CountDecimalPlaces(pkv)
 	if frac < 3 {
 		frac = 2
 	}
-
-	return strconv.FormatFloat(pkv, 'f', frac, 64)
+	return pkv.Text('f', frac)
 }
-
-// func (p *panelKeyType) GetValueFormattedString() string {
-
-// 	pr := message.NewPrinter(language.English)
-// 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
-// 	dec := int(p.GetDecimalsInt())
-// 	if frac < 3 {
-// 		frac = 2
-// 	}
-
-// 	if frac < dec {
-// 		frac = dec
-// 	}
-
-// 	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat(), number.MaxFractionDigits(frac)))
-
-// }
 
 func (p *panelKeyType) GetValueFormattedString() string {
 	value := p.GetValueFloat()
-	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	source := p.GetSourceValueFloat()
+	frac := JC.NumDecPlaces(source)
 	dec := int(p.GetDecimalsInt())
 
 	if frac < 3 {
@@ -139,14 +130,24 @@ func (p *panelKeyType) GetValueFormattedString() string {
 		frac = dec
 	}
 
-	formatted := strconv.FormatFloat(value, 'f', frac, 64)
+	f64, _ := value.Float64()
 	pr := message.NewPrinter(language.English)
-	return pr.Sprintf("%s", formatted)
+
+	// JC.Logf("Formatting panelKeyType: rawValue=%v value=%s frac=%d dec=%d formatted=%v",
+	// 	p.GetRawValue(),
+	// 	value.Text('f', 20),
+	// 	frac,
+	// 	dec,
+	// 	number.Decimal(f64, number.MaxFractionDigits(frac)),
+	// )
+
+	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
 }
 
 func (p *panelKeyType) GetReverseValueFormattedString() string {
 	value := p.GetReverseValueFloat()
-	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	source := p.GetSourceValueFloat()
+	frac := JC.NumDecPlaces(source)
 	dec := int(p.GetDecimalsInt())
 
 	if frac < 3 {
@@ -156,26 +157,27 @@ func (p *panelKeyType) GetReverseValueFormattedString() string {
 		frac = dec
 	}
 
-	formatted := strconv.FormatFloat(value, 'f', frac, 64)
+	f64, _ := value.Float64()
 	pr := message.NewPrinter(language.English)
-	return pr.Sprintf("%s", formatted)
+	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
 }
 
 func (p *panelKeyType) GetCalculatedValueFormattedString() string {
-
 	pr := message.NewPrinter(language.English)
-	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
+	source := p.GetSourceValueFloat()
+	frac := JC.NumDecPlaces(source)
+
 	if frac < 3 {
 		frac = 2
 	}
 
-	nv := p.GetValueFloat() * p.GetSourceValueFloat()
-	if nv < 1 {
+	nv := new(big.Float).SetPrec(256).Mul(p.GetValueFloat(), big.NewFloat(source))
+	if nv.Cmp(big.NewFloat(1)) < 0 {
 		frac = max(int(p.GetDecimalsInt()), 4)
 	}
 
-	return pr.Sprintf("%v", number.Decimal(p.GetValueFloat()*p.GetSourceValueFloat(), number.MaxFractionDigits(int(frac))))
-
+	f64, _ := nv.Float64()
+	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
 }
 
 func (p *panelKeyType) GetSourceCoinInt() int64 {

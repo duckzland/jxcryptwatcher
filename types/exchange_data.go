@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"math/big"
+	"time"
+)
 
 type exchangeDataType struct {
 	SourceSymbol string
@@ -8,6 +11,6 @@ type exchangeDataType struct {
 	SourceAmount float64
 	TargetSymbol string
 	TargetId     int64
-	TargetAmount float64
+	TargetAmount *big.Float
 	Timestamp    time.Time
 }
