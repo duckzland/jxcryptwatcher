@@ -36,9 +36,6 @@ const STATUS_NETWORK_ERROR = 1
 const STATUS_CONFIG_ERROR = 2
 const STATUS_BAD_DATA_RECEIVED = 3
 
-const WORKER_SCHEDULER = 0
-const WORKER_LISTENER = 1
-
 const ColorNameError fyne.ThemeColorName = "error"
 const ColorNameTransparent fyne.ThemeColorName = "transparent"
 const ColorNameRed fyne.ThemeColorName = "red"

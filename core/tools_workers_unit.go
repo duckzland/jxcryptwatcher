@@ -6,8 +6,15 @@ import (
 	"time"
 )
 
+type WorkerMode int
+
+const (
+	WorkerScheduler WorkerMode = iota
+	WorkerListener
+)
+
 type workerUnit struct {
-	ops    int
+	ops    WorkerMode
 	delay  time.Duration
 	fn     func(any) bool
 	queue  chan any
@@ -18,7 +25,7 @@ type workerUnit struct {
 
 func (w *workerUnit) Call() {
 	switch w.ops {
-	case WORKER_SCHEDULER:
+	case WorkerScheduler:
 		w.mu.Lock()
 		fn := w.fn
 		w.mu.Unlock()
@@ -26,7 +33,7 @@ func (w *workerUnit) Call() {
 			fn(nil)
 		}
 
-	case WORKER_LISTENER:
+	case WorkerListener:
 		w.Push(struct{}{})
 	}
 }
@@ -50,10 +57,10 @@ func (w *workerUnit) Start() {
 
 	switch w.ops {
 
-	case WORKER_SCHEDULER:
+	case WorkerScheduler:
 		go w.scheduler()
 
-	case WORKER_LISTENER:
+	case WorkerListener:
 		go w.listener()
 	}
 }
