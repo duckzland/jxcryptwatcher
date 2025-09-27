@@ -541,6 +541,8 @@ func OpenSettingForm() {
 							})
 						}
 
+						JC.UseWorker().Reload()
+
 						JA.UseStatus().SetConfigStatus(true)
 
 						JT.UseTickerCache().SoftReset()

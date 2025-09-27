@@ -46,9 +46,9 @@ func (w *worker) Register(key string, ops WorkerMode, size int64, getDelay func(
 	}
 
 	w.registry[key] = &workerUnit{
-		ops:   ops,
-		delay: time.Duration(getDelay()) * time.Millisecond,
-		queue: make(chan any, size),
+		ops:      ops,
+		getDelay: getDelay,
+		queue:    make(chan any, size),
 		fn: func(payload any) bool {
 			if shouldRun != nil && !shouldRun() {
 				return false
@@ -88,6 +88,11 @@ func (w *worker) Call(key string, mode CallMode) {
 			unit.Call()
 		})
 	}
+}
+
+func (w *worker) Reload() {
+	w.Pause()
+	w.Resume()
 }
 
 func (w *worker) Pause() {

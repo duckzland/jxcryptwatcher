@@ -251,6 +251,7 @@ func (p *panelDataType) Update(pk string) bool {
 	p.SetStatus(nst)
 
 	if npk != opk {
+		JC.Logln("Updating panel:", npk, opk)
 		p.Set(npk)
 		p.SetOldKey(opk)
 	}

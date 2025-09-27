@@ -14,13 +14,14 @@ const (
 )
 
 type workerUnit struct {
-	ops    WorkerMode
-	delay  time.Duration
-	fn     func(any) bool
-	queue  chan any
-	ctx    context.Context
-	cancel context.CancelFunc
-	mu     sync.Mutex
+	ops      WorkerMode
+	delay    time.Duration
+	fn       func(any) bool
+	getDelay func() int64
+	queue    chan any
+	ctx      context.Context
+	cancel   context.CancelFunc
+	mu       sync.Mutex
 }
 
 func (w *workerUnit) Call() {
@@ -53,13 +54,15 @@ func (w *workerUnit) Start() {
 		return
 	}
 
+	if w.getDelay != nil {
+		w.delay = time.Duration(w.getDelay()) * time.Millisecond
+	}
+
 	w.ctx, w.cancel = context.WithCancel(context.Background())
 
 	switch w.ops {
-
 	case WorkerScheduler:
 		go w.scheduler()
-
 	case WorkerListener:
 		go w.listener()
 	}
