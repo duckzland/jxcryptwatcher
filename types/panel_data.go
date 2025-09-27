@@ -255,9 +255,10 @@ func (p *panelDataType) Update(pk string) bool {
 		JC.Logln("Updating panel:", npk, opk)
 		p.Set(npk)
 		p.SetOldKey(opk)
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (p *panelDataType) FormatTitle() string {

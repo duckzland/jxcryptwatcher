@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -15,16 +16,30 @@ import (
 
 func UpdateDisplay() bool {
 	list := JT.UsePanelMaps().GetData()
+	var updateDisplay int
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	for _, pot := range list {
 		potID := pot.GetID()
+		wg.Add(1)
 
-		// Submit backend update to dispatcher
 		JC.UseDispatcher().Submit(func() {
+			defer wg.Done()
 			pkt := JT.UsePanelMaps().GetDataByID(potID)
 			pk := pkt.Get()
-			pkt.Update(pk)
+			if pkt.Update(pk) {
+				mu.Lock()
+				updateDisplay++
+				mu.Unlock()
+			}
 		})
+	}
+
+	wg.Wait()
+
+	if updateDisplay != 0 {
+		JC.Notify("Panel display refreshed with latest rates")
 	}
 
 	return true
@@ -36,6 +51,7 @@ func UpdateRates() bool {
 		return false
 	}
 
+	var mu sync.Mutex
 	jb := make(map[string]string)
 	list := JT.UsePanelMaps().GetData()
 
@@ -85,6 +101,7 @@ func UpdateRates() bool {
 			for _, result := range results {
 
 				ns := DetectHTTPResponse(result.Code())
+				mu.Lock()
 				if hasError == JC.STATUS_SUCCESS || hasError < ns {
 					hasError = ns
 				}
@@ -92,10 +109,7 @@ func UpdateRates() bool {
 				if ns == JC.STATUS_SUCCESS {
 					successCount++
 				}
-			}
-
-			if successCount != 0 {
-				JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
+				mu.Unlock()
 			}
 
 			JC.Logln("Fetching has error:", hasError)
@@ -103,6 +117,12 @@ func UpdateRates() bool {
 			ProcessUpdatePanelComplete(hasError)
 
 			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
+
+			mu.Lock()
+			if successCount != 0 {
+				JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
+			}
+			mu.Unlock()
 		})
 
 	return true
@@ -113,6 +133,8 @@ func UpdateTickers() bool {
 	if JA.UseStatus().IsFetchingTickers() {
 		return false
 	}
+
+	var mu sync.Mutex
 
 	// Prepare keys and payloads
 	keys := []string{}
@@ -140,6 +162,7 @@ func UpdateTickers() bool {
 	}
 
 	var hasError int = 0
+	var updateDisplay int = 0
 
 	JC.Notify("Fetching the latest ticker data...")
 
@@ -160,16 +183,28 @@ func UpdateTickers() bool {
 				for _, tkt := range tktt {
 					switch ns {
 					case JC.STATUS_SUCCESS:
-						tkt.Update()
+						if tkt.Update() {
+							mu.Lock()
+							updateDisplay++
+							mu.Unlock()
+						}
 					}
 				}
 
+				mu.Lock()
 				if hasError == 0 || hasError < ns {
 					hasError = ns
 				}
+				mu.Unlock()
 			}
 
 			ProcessUpdateTickerComplete(hasError)
+
+			mu.Lock()
+			if updateDisplay != 0 {
+				JC.Notify("Ticker display refreshed with new rates")
+			}
+			mu.Unlock()
 		})
 
 	return true
@@ -199,7 +234,7 @@ func ProcessUpdatePanelComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JC.Notify("Exchange rates updated successfully")
+		JC.Notify("Exchange fetch completed.")
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(true)
 
@@ -250,7 +285,7 @@ func ProcessUpdateTickerComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JC.Notify("Ticker rates updated successfully")
+		JC.Notify("Ticker fetch completed.")
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(true)
 

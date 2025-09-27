@@ -269,11 +269,13 @@ func (p *tickerDataType) Update() bool {
 
 	p.status = nst
 	if npk != opk {
+		JC.Logln("Updating Ticker:", npk, opk)
 		p.oldKey = opk
 		p.data.Set(npk)
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (p *tickerDataType) FormatContent() string {
