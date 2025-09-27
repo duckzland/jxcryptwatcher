@@ -133,14 +133,6 @@ func (p *panelKeyType) GetValueFormattedString() string {
 	f64, _ := value.Float64()
 	pr := message.NewPrinter(language.English)
 
-	// JC.Logf("Formatting panelKeyType: rawValue=%v value=%s frac=%d dec=%d formatted=%v",
-	// 	p.GetRawValue(),
-	// 	value.Text('f', 20),
-	// 	frac,
-	// 	dec,
-	// 	number.Decimal(f64, number.MaxFractionDigits(frac)),
-	// )
-
 	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
 }
 

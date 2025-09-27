@@ -47,15 +47,6 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 
 		ex := exchangeDataType{}
 
-		// JC.Logf("Source: symbol=%q id=%q amount=%v | Target: symbol=%q cryptoId=%v price=%v",
-		// 	sc.(map[string]any)["symbol"],
-		// 	sc.(map[string]any)["id"],
-		// 	sc.(map[string]any)["amount"],
-		// 	rate.(map[string]any)["symbol"],
-		// 	rate.(map[string]any)["cryptoId"],
-		// 	rate.(map[string]any)["price"],
-		// )
-
 		// CMC Json data is weird the the id is in string while cryptoId is in int64 (but golang cast this as float64)
 		ex.SourceSymbol = sc.(map[string]any)["symbol"].(string)
 		ex.SourceId, _ = strconv.ParseInt(sc.(map[string]any)["id"].(string), 10, 64)
@@ -66,15 +57,6 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 
 		price := rate.(map[string]any)["price"].(json.Number).String()
 		ex.TargetAmount, _ = new(big.Float).SetPrec(256).SetString(price)
-
-		// JC.Logf("Parsed: SourceSymbol=%s SourceId=%d SourceAmount=%s | TargetSymbol=%s TargetId=%d TargetAmount=%s",
-		// 	ex.SourceSymbol,
-		// 	ex.SourceId,
-		// 	strconv.FormatFloat(ex.SourceAmount, 'f', -1, 64),
-		// 	ex.TargetSymbol,
-		// 	ex.TargetId,
-		// 	ex.TargetAmount.Text('f', 30), // ← 30 decimal places
-		// )
 
 		ex.Timestamp = tx
 
@@ -237,6 +219,14 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 
 				// Debug to force display refresh!
 				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+
+				JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)",
+					ex.SourceSymbol,
+					ex.SourceId,
+					ex.TargetAmount.Text('f', -1),
+					ex.TargetSymbol,
+					ex.TargetId,
+				)
 
 				UseExchangeCache().Insert(&ex)
 			}

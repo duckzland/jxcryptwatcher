@@ -237,8 +237,6 @@ func (p *panelDataType) Update(pk string) bool {
 		if Data != nil && Data.TargetAmount != nil {
 			pko := panelKeyType{value: npk}
 			npk = pko.UpdateValue(Data.TargetAmount)
-			JC.Logf("ExchangeCache hit: TargetAmount=%s | Updated npk=%v",
-				Data.TargetAmount.Text('g', -1), npk)
 		}
 	}
 
