@@ -121,6 +121,16 @@ func (w *worker) Push(key string, payload any) {
 	}
 }
 
+func (w *worker) Flush(key string) {
+	w.mu.Lock()
+	unit := w.registry[key]
+	w.mu.Unlock()
+
+	if unit != nil {
+		unit.Flush()
+	}
+}
+
 func (w *worker) GetLastUpdate(key string) time.Time {
 	w.mu.Lock()
 	defer w.mu.Unlock()

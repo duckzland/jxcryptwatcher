@@ -24,6 +24,16 @@ type workerUnit struct {
 	mu       sync.Mutex
 }
 
+func (w *workerUnit) Flush() {
+	for {
+		select {
+		case <-w.queue:
+		default:
+			return
+		}
+	}
+}
+
 func (w *workerUnit) Call() {
 	switch w.ops {
 	case WorkerScheduler:

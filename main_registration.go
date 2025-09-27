@@ -73,10 +73,12 @@ func RegisterActions() {
 
 			// Force update
 			JT.UseExchangeCache().SoftReset()
+			JC.UseWorker().Flush("update_rates")
 			JC.UseWorker().Call("update_rates", JC.CallDebounced)
 
 			// Force update
 			JT.UseTickerCache().SoftReset()
+			JC.UseWorker().Flush("update_tickers")
 			JC.UseWorker().Call("update_tickers", JC.CallDebounced)
 
 		},
