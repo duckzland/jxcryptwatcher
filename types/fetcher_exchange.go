@@ -17,8 +17,15 @@ type exchangeResults struct {
 
 func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 
-	var v map[string]any
-	err := json.Unmarshal(data, &v)
+	// var v map[string]any
+	// err := json.Unmarshal(data, &v)
+
+	var v map[string]interface{}
+
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	decoder.UseNumber()
+
+	err := decoder.Decode(&v)
 	if err != nil {
 		return err
 	}
@@ -45,11 +52,12 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 		// CMC Json data is weird the the id is in string while cryptoId is in int64 (but golang cast this as float64)
 		ex.SourceSymbol = sc.(map[string]any)["symbol"].(string)
 		ex.SourceId, _ = strconv.ParseInt(sc.(map[string]any)["id"].(string), 10, 64)
-		ex.SourceAmount = sc.(map[string]any)["amount"].(float64)
+		ex.SourceAmount, _ = sc.(map[string]any)["amount"].(json.Number).Float64()
 
 		ex.TargetSymbol = rate.(map[string]any)["symbol"].(string)
-		ex.TargetId = int64(rate.(map[string]any)["cryptoId"].(float64))
-		ex.TargetAmount = rate.(map[string]any)["price"].(float64)
+		ex.TargetId, _ = rate.(map[string]any)["cryptoId"].(json.Number).Int64()
+		ex.TargetAmount, _ = rate.(map[string]any)["price"].(json.Number).Float64()
+
 		ex.Timestamp = tx
 
 		er.Rates = append(er.Rates, ex)
@@ -100,7 +108,7 @@ func (er *exchangeResults) validateData(v map[string]any) bool {
 		return false
 	}
 
-	if _, ok := v["data"].(map[string]any)["amount"].(float64); !ok {
+	if _, ok := v["data"].(map[string]any)["amount"].(json.Number); !ok {
 		JC.Logln("Invalid 'amount' field type in 'data'")
 		return false
 	}
@@ -154,7 +162,7 @@ func (er *exchangeResults) validateRate(rate any) bool {
 		return false
 	}
 
-	if _, ok := rate.(map[string]any)["cryptoId"].(float64); !ok {
+	if _, ok := rate.(map[string]any)["cryptoId"].(json.Number); !ok {
 		JC.Logln("Invalid cryptoId type in rate:", rate)
 		return false
 	}
@@ -164,7 +172,7 @@ func (er *exchangeResults) validateRate(rate any) bool {
 		return false
 	}
 
-	if _, ok := rate.(map[string]any)["price"].(float64); !ok {
+	if _, ok := rate.(map[string]any)["price"].(json.Number); !ok {
 		JC.Logln("Invalid price type in rate:", rate)
 		return false
 	}
