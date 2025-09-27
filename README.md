@@ -107,9 +107,8 @@ To refresh the list of available cryptocurrencies, simply delete the file:
 rm ~/.config/jxcryptwatcher/cryptos.json
 ```
 
-It will be re-created on the next app launch.
+It will be re-created on the next app launch or you can use the Reload button at top of the app to reset and refetch the file.
 
-Or you can use the Reload button at top of the app to reset and refetch the file.
 ---
 
 ## Notes
