@@ -6,7 +6,7 @@ import (
 )
 
 var tickerCacheStorage *tickerDataCacheType = nil
-var tickerUpdateThreshold = 2 * time.Minute
+var tickerUpdateThreshold = 10 * time.Second
 
 type tickerDataCacheSnapshot struct {
 	Data        []tickerDataCacheEntry `json:"data"`

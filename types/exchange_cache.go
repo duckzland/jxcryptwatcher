@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const exchangeCacheUpdateThreshold = 1 * time.Minute
+const exchangeCacheUpdateThreshold = 10 * time.Second
 
 var exchangeCacheStorage *exchangeDataCacheType = nil
 
