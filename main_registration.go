@@ -162,6 +162,16 @@ func RegisterActions() {
 				return
 			}
 
+			if !JA.UseStatus().ValidConfig() {
+				btn.Error()
+				return
+			}
+
+			if !JA.UseStatus().IsValidConfig() {
+				btn.Error()
+				return
+			}
+
 			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Disable()
 				return
@@ -174,16 +184,6 @@ func RegisterActions() {
 
 			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
-				return
-			}
-
-			if !JA.UseStatus().ValidConfig() {
-				btn.Error()
-				return
-			}
-
-			if !JA.UseStatus().IsValidConfig() {
-				btn.Error()
 				return
 			}
 

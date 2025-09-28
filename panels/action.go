@@ -15,54 +15,54 @@ func NewPanelAction(
 	onDelete func(),
 ) *panelAction {
 
-	pa := &panelAction{
-		editBtn: JW.NewActionButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal",
-			func(JW.ActionButton) {
-				if onEdit != nil {
-					onEdit()
-				}
-			}, func(btn JW.ActionButton) {
-				if JA.UseStatus().IsOverlayShown() {
-					btn.DisallowActions()
-					return
-				}
+	pa := &panelAction{}
+	pa.editBtn = JW.NewActionButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal",
+		func(JW.ActionButton) {
+			if onEdit != nil {
+				onEdit()
+			}
+		}, func(btn JW.ActionButton) {
+			if JA.UseStatus().IsOverlayShown() {
+				btn.DisallowActions()
+				return
+			}
 
-				if JA.UseStatus().IsFetchingCryptos() {
-					btn.Hide()
-					return
-				}
+			if JA.UseStatus().IsFetchingCryptos() {
+				pa.Hide()
+				return
+			}
 
-				if JA.UseStatus().IsDraggable() {
-					btn.Hide()
-					return
-				}
+			if JA.UseStatus().IsDraggable() {
+				pa.Hide()
+				return
+			}
 
-				btn.Enable()
-			}),
-		deleteBtn: JW.NewActionButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
-			func(JW.ActionButton) {
-				if onDelete != nil {
-					onDelete()
-				}
-			}, func(btn JW.ActionButton) {
-				if JA.UseStatus().IsOverlayShown() {
-					btn.DisallowActions()
-					return
-				}
+			btn.Enable()
+		})
 
-				if JA.UseStatus().IsFetchingCryptos() {
-					btn.Hide()
-					return
-				}
+	pa.deleteBtn = JW.NewActionButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
+		func(JW.ActionButton) {
+			if onDelete != nil {
+				onDelete()
+			}
+		}, func(btn JW.ActionButton) {
+			if JA.UseStatus().IsOverlayShown() {
+				btn.DisallowActions()
+				return
+			}
 
-				if JA.UseStatus().IsDraggable() {
-					btn.Hide()
-					return
-				}
+			if JA.UseStatus().IsFetchingCryptos() {
+				pa.Hide()
+				return
+			}
 
-				btn.Enable()
-			}),
-	}
+			if JA.UseStatus().IsDraggable() {
+				pa.Hide()
+				return
+			}
+
+			btn.Enable()
+		})
 
 	pa.container = container.New(&panelActionLayout{height: 30, margin: 3}, pa.editBtn, pa.deleteBtn)
 
@@ -81,13 +81,28 @@ func (pa *panelAction) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (pa *panelAction) Show() {
-	pa.container.Show()
-	JA.UseAction().Add(pa.deleteBtn)
-	JA.UseAction().Add(pa.editBtn)
+	if pa.canShow() {
+		pa.container.Show()
+
+		JA.UseAction().Add(pa.deleteBtn)
+		JA.UseAction().Add(pa.editBtn)
+	}
 }
 
 func (pa *panelAction) Hide() {
 	pa.container.Hide()
 	JA.UseAction().Remove(pa.deleteBtn)
 	JA.UseAction().Remove(pa.editBtn)
+}
+
+func (pa *panelAction) canShow() bool {
+	if JA.UseStatus().IsFetchingCryptos() {
+		return false
+	}
+
+	if JA.UseStatus().IsDraggable() {
+		return false
+	}
+
+	return true
 }

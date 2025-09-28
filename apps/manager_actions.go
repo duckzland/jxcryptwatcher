@@ -63,7 +63,9 @@ func (a *actionManager) Refresh() {
 
 	fyne.Do(func() {
 		for _, btn := range a.buttons {
-			btn.Refresh()
+			if btn != nil {
+				btn.Refresh()
+			}
 		}
 	})
 }

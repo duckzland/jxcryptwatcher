@@ -153,10 +153,6 @@ func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
-	if JM.UseStatus().IsDraggable() {
-		h.HideTarget()
-		return
-	}
 
 	if h.visible && !h.action.Visible() {
 		h.ShowTarget()

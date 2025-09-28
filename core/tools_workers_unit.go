@@ -73,6 +73,7 @@ func (w *workerUnit) Start() {
 	switch w.ops {
 	case WorkerScheduler:
 		go w.scheduler()
+
 	case WorkerListener:
 		go w.listener()
 	}
