@@ -78,14 +78,14 @@ func (w *worker) Call(key string, mode CallMode) {
 
 	switch mode {
 	case CallImmediate, CallBypassImmediate:
-		unit.Call()
+		unit.Call(nil)
 
 	case CallQueued:
 		unit.Push(nil)
 
 	case CallDebounced:
 		UseDebouncer().Call("worker_"+key, time.Second, func() {
-			unit.Call()
+			unit.Call(nil)
 		})
 	}
 }

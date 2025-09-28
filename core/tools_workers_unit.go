@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -22,6 +23,17 @@ type workerUnit struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	mu       sync.Mutex
+	busy     atomic.Bool
+}
+
+func (w *workerUnit) Call(payload any) {
+	w.mu.Lock()
+	fn := w.fn
+	w.mu.Unlock()
+
+	if fn != nil {
+		fn(payload)
+	}
 }
 
 func (w *workerUnit) Flush() {
@@ -31,21 +43,6 @@ func (w *workerUnit) Flush() {
 		default:
 			return
 		}
-	}
-}
-
-func (w *workerUnit) Call() {
-	switch w.ops {
-	case WorkerScheduler:
-		w.mu.Lock()
-		fn := w.fn
-		w.mu.Unlock()
-		if fn != nil {
-			fn(nil)
-		}
-
-	case WorkerListener:
-		w.Push(struct{}{})
 	}
 }
 
@@ -97,19 +94,23 @@ func (w *workerUnit) scheduler() {
 		case <-w.ctx.Done():
 			return
 		case <-t.C:
-			w.Call()
+			if w.busy.Load() {
+				continue
+			}
+
+			w.Push(nil)
+
 		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
 
-			w.mu.Lock()
-			fn := w.fn
-			w.mu.Unlock()
-
-			if fn != nil {
-				fn(x)
+			if w.busy.Swap(true) {
+				continue
 			}
+
+			w.Call(x)
+			w.busy.Store(false)
 		}
 	}
 }
@@ -123,17 +124,16 @@ func (w *workerUnit) listener() {
 			if !ok {
 				return
 			}
+
 			w.mu.Lock()
-			fn := w.fn
 			delay := w.delay
 			w.mu.Unlock()
 
 			if delay > 0 {
 				time.Sleep(delay)
 			}
-			if fn != nil {
-				fn(x)
-			}
+
+			w.Call(x)
 		}
 	}
 }
