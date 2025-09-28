@@ -123,6 +123,8 @@ func UpdateRates() bool {
 				JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 			}
 			mu.Unlock()
+
+			JC.UseWorker().Reset("update_rates")
 		})
 
 	return true
@@ -205,6 +207,8 @@ func UpdateTickers() bool {
 				JC.Notify("Ticker display refreshed with new rates")
 			}
 			mu.Unlock()
+
+			JC.UseWorker().Reset("update_tickers")
 		})
 
 	return true

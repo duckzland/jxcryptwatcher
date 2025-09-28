@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -23,7 +22,6 @@ type workerUnit struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	mu       sync.Mutex
-	busy     atomic.Bool
 }
 
 func (w *workerUnit) Call(payload any) {
@@ -86,31 +84,28 @@ func (w *workerUnit) Stop() {
 	w.mu.Unlock()
 }
 
+func (w *workerUnit) Reset() {
+	w.Flush()
+	w.Stop()
+	w.Start()
+}
+
 func (w *workerUnit) scheduler() {
-	t := time.NewTicker(w.delay)
-	defer t.Stop()
+	ticker := time.NewTicker(w.delay)
+
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-w.ctx.Done():
 			return
-		case <-t.C:
-			if w.busy.Load() {
-				continue
-			}
-
+		case <-ticker.C:
 			w.Push(nil)
-
 		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
-
-			if w.busy.Swap(true) {
-				continue
-			}
-
 			w.Call(x)
-			w.busy.Store(false)
 		}
 	}
 }
