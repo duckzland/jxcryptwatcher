@@ -157,8 +157,8 @@ func RegisterActions() {
 				return
 			}
 
-			if JA.UseStatus().IsFetchingTickers() {
-				btn.Disable()
+			if !JA.UseStatus().IsGoodNetworkStatus() {
+				btn.Error()
 				return
 			}
 

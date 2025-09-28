@@ -27,6 +27,11 @@ func NewPanelAction(
 					return
 				}
 
+				if JA.UseStatus().IsFetchingCryptos() {
+					btn.Hide()
+					return
+				}
+
 				if JA.UseStatus().IsDraggable() {
 					btn.Hide()
 					return
@@ -42,6 +47,11 @@ func NewPanelAction(
 			}, func(btn JW.ActionButton) {
 				if JA.UseStatus().IsOverlayShown() {
 					btn.DisallowActions()
+					return
+				}
+
+				if JA.UseStatus().IsFetchingCryptos() {
+					btn.Hide()
 					return
 				}
 
