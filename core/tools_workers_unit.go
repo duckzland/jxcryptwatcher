@@ -96,6 +96,10 @@ func (w *workerUnit) scheduler() {
 	defer ticker.Stop()
 
 	for {
+		if w.ctx == nil {
+			return
+		}
+
 		select {
 		case <-w.ctx.Done():
 			return
@@ -112,6 +116,10 @@ func (w *workerUnit) scheduler() {
 
 func (w *workerUnit) listener() {
 	for {
+		if w.ctx == nil {
+			return
+		}
+
 		select {
 		case <-w.ctx.Done():
 			return
