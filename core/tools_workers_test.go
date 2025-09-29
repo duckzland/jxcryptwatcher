@@ -6,16 +6,10 @@ import (
 )
 
 func stopWorker(w *worker, key string, delayMs int64) {
-
-	// Delay is only to emulate that the actual test is finished!
-	// Not to simulate if the unit can be stopped sanely!
 	time.Sleep(time.Duration(delayMs) * time.Millisecond)
-
 	w.mu.Lock()
 	unit := w.registry[key]
 	w.mu.Unlock()
-
-	// We only stops, this is by design to test if stopping sane!
 	if unit != nil {
 		unit.Stop()
 	}
@@ -24,77 +18,46 @@ func stopWorker(w *worker, key string, delayMs int64) {
 func TestWorkerInit(t *testing.T) {
 	w := &worker{}
 	w.Init()
-
 	if w.registry == nil || w.conditions == nil || w.lastRun == nil {
 		t.Error("Expected internal maps to be initialized")
 	}
 }
 
-func TestRegisterAndUseWorkerManager(t *testing.T) {
+func TestWorkerSingleton(t *testing.T) {
 	w1 := RegisterWorkerManager()
 	w2 := UseWorker()
-
 	if w1 != w2 {
-		t.Error("Expected singleton instance from RegisterWorkerManager and UseWorker")
+		t.Error("Expected singleton instance")
 	}
 }
 
-func TestWorkerListenerPushTriggersFunction(t *testing.T) {
+func TestWorkerCallImmediate(t *testing.T) {
 	called := false
-
 	w := &worker{}
 	w.Init()
-	w.Register("listener_push", WorkerListener, 1,
+	w.Register("call_immediate", 1,
 		func() int64 { return 10 },
+		nil,
 		func(payload any) bool {
 			called = true
 			return true
 		},
 		func() bool { return true },
 	)
-
-	w.Push("listener_push", "payload")
-
-	time.Sleep(time.Duration(15) * time.Millisecond)
-
+	w.Call("call_immediate", CallImmediate)
 	if !called {
-		t.Error("Expected listener to fire on pushed payload")
+		t.Error("Expected function to be called immediately")
 	}
-
-	stopWorker(w, "scheduler_immediate", 30)
-}
-
-func TestWorkerSchedulerCallImmediate(t *testing.T) {
-	called := false
-
-	w := &worker{}
-	w.Init()
-	w.Register("scheduler_immediate", WorkerScheduler, 1,
-		func() int64 { return 10 },
-		func(payload any) bool {
-			called = true
-			return true
-		},
-		func() bool { return true },
-	)
-
-	w.Call("scheduler_immediate", CallImmediate)
-
-	if !called {
-		t.Error("Expected scheduler to call function immediately")
-	}
-
-	stopWorker(w, "scheduler_immediate", 20)
+	stopWorker(w, "call_immediate", 20)
 }
 
 func TestWorkerCallDebounced(t *testing.T) {
 	var callCount int
-
 	RegisterDebouncer().Init()
-
 	w := &worker{}
 	w.Init()
-	w.Register("debounced_static", WorkerScheduler, 1,
+	w.Register("debounced", 1,
+		nil,
 		func() int64 { return 50 },
 		func(payload any) bool {
 			callCount++
@@ -102,127 +65,106 @@ func TestWorkerCallDebounced(t *testing.T) {
 		},
 		func() bool { return true },
 	)
-
-	w.Call("debounced_static", CallDebounced)
-	w.Call("debounced_static", CallDebounced)
-	w.Call("debounced_static", CallDebounced)
-
-	time.Sleep(time.Duration(60) * time.Millisecond)
+	w.Call("debounced", CallDebounced)
+	w.Call("debounced", CallDebounced)
+	w.Call("debounced", CallDebounced)
+	time.Sleep(60 * time.Millisecond)
 	if callCount != 1 {
-		t.Errorf("Expected debounced function to fire once, but fired %d times", callCount)
+		t.Errorf("Expected debounced call once, got %d", callCount)
 	}
-
-	stopWorker(w, "debounced_static", 120)
+	stopWorker(w, "debounced", 100)
 }
 
-func TestWorkerCallBypassImmediateRespectsCondition(t *testing.T) {
+func TestWorkerCallBypassImmediateIgnoresCondition(t *testing.T) {
 	called := false
-
 	w := &worker{}
 	w.Init()
-	w.Register("bypass_static", WorkerScheduler, 1,
+	w.Register("bypass", 1,
+		nil,
 		func() int64 { return 10 },
 		func(payload any) bool {
 			called = true
-			t.Error("Function should not have been called — condition is false")
 			return true
 		},
 		func() bool { return false },
 	)
-
-	w.Call("bypass_static", CallBypassImmediate)
-
-	if called {
-		t.Error("Function should not have been called — condition is false")
+	w.Call("bypass", CallBypassImmediate)
+	if !called {
+		t.Error("Expected function to be called despite false condition")
 	}
-
-	stopWorker(w, "bypass_static", 20)
+	stopWorker(w, "bypass", 20)
 }
 
 func TestWorkerPushFlushReset(t *testing.T) {
 	called := false
-
 	w := &worker{}
 	w.Init()
-	w.Register("flush_reset_static", WorkerListener, 1,
+	w.Register("reset", 1,
 		func() int64 { return 10 },
+		nil,
 		func(payload any) bool {
 			called = true
 			return true
 		},
 		func() bool { return true },
 	)
-
-	w.Push("flush_reset_static", "payload")
-	w.Flush("flush_reset_static")
-	w.Reset("flush_reset_static")
-	w.Push("flush_reset_static", "payload")
-
-	time.Sleep(time.Duration(15) * time.Millisecond)
-
+	w.Push("reset", "payload")
+	w.Flush("reset")
+	w.Reset("reset")
+	w.Push("reset", "payload")
+	time.Sleep(15 * time.Millisecond)
 	if !called {
 		t.Error("Expected function to be called after reset and push")
 	}
-
-	stopWorker(w, "flush_reset_static", 30)
+	stopWorker(w, "reset", 30)
 }
 
 func TestWorkerPauseResumeReload(t *testing.T) {
 	called := false
-
 	w := &worker{}
 	w.Init()
-	w.Register("pause_resume_static", WorkerListener, 1,
+	w.Register("reload", 1,
 		func() int64 { return 10 },
+		nil,
 		func(payload any) bool {
 			called = true
 			return true
 		},
 		func() bool { return true },
 	)
-
 	w.Pause()
 	w.Resume()
-	w.Push("pause_resume_static", "payload")
-
-	time.Sleep(time.Duration(15) * time.Millisecond)
-
+	w.Push("reload", "payload")
+	time.Sleep(15 * time.Millisecond)
 	if !called {
 		t.Error("Expected function to be called after resume")
 	}
-
-	// Reload test
 	called = false
 	w.Reload()
-	w.Push("pause_resume_static", "payload")
-
-	time.Sleep(time.Duration(15) * time.Millisecond)
+	w.Push("reload", "payload")
+	time.Sleep(15 * time.Millisecond)
 	if !called {
 		t.Error("Expected function to be called after reload")
 	}
-
-	stopWorker(w, "pause_resume_static", 50)
+	stopWorker(w, "reload", 50)
 }
 
-func TestWorkerGetLastUpdate(t *testing.T) {
+func TestWorkerLastUpdate(t *testing.T) {
 	w := &worker{}
 	w.Init()
-	w.Register("last_update_static", WorkerScheduler, 1,
+	w.Register("last_update", 1,
+		nil,
 		func() int64 { return 10 },
 		func(payload any) bool {
 			return true
 		},
 		func() bool { return true },
 	)
-
-	w.Call("last_update_static", CallImmediate)
-
+	w.Call("last_update", CallImmediate)
 	before := time.Now().Add(-1 * time.Second)
-	after := w.GetLastUpdate("last_update_static")
-
+	after := w.GetLastUpdate("last_update")
 	if after.Before(before) {
-		t.Errorf("Expected last update to be after call, got %v", after)
+		t.Errorf("Expected last update to be recent, got %v", after)
 	}
-
-	stopWorker(w, "last_update_static", 20)
+	stopWorker(w, "last_update", 20)
 }

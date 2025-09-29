@@ -35,24 +35,24 @@ func (w *worker) Init() {
 	w.lastRun = make(map[string]time.Time)
 }
 
-func (w *worker) Register(key string, ops WorkerMode, size int64, getDelay func() int64, fn func(any) bool, shouldRun func() bool) {
+func (w *worker) Register(key string, size int64, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
 	w.mu.Lock()
 	w.conditions[key] = shouldRun
 	w.lastRun[key] = time.Now()
 	w.mu.Unlock()
 
-	if ops == WorkerScheduler {
-		size = 1
-	}
-
 	w.registry[key] = &workerUnit{
-		ops:      ops,
-		getDelay: getDelay,
-		queue:    make(chan any, size),
+		getInterval: getInterval,
+		getDelay:    getDelay,
+		queue:       make(chan any, size),
 		fn: func(payload any) bool {
-			if shouldRun != nil && !shouldRun() {
-				return false
+
+			if mode, ok := payload.(CallMode); !ok || mode != CallBypassImmediate {
+				if shouldRun != nil && !shouldRun() {
+					return false
+				}
 			}
+
 			w.mu.Lock()
 			w.lastRun[key] = time.Now()
 			w.mu.Unlock()
@@ -77,8 +77,11 @@ func (w *worker) Call(key string, mode CallMode) {
 	}
 
 	switch mode {
-	case CallImmediate, CallBypassImmediate:
+	case CallImmediate:
 		unit.Call(nil)
+
+	case CallBypassImmediate:
+		unit.Call(CallBypassImmediate)
 
 	case CallQueued:
 		unit.Push(nil)

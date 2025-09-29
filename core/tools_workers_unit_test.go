@@ -10,8 +10,8 @@ func TestWorkerUnitListenerStartAndCall(t *testing.T) {
 	called := make(chan bool, 1)
 
 	w := &workerUnit{
-		ops:      WorkerListener,
-		getDelay: func() int64 { return 1 },
+		getInterval: nil,
+		getDelay:    func() int64 { return 1 },
 		fn: func(payload any) bool {
 			called <- true
 			return true
@@ -39,8 +39,8 @@ func TestWorkerUnitSchedulerTriggers(t *testing.T) {
 	count := 0
 
 	w := &workerUnit{
-		ops:      WorkerScheduler,
-		getDelay: func() int64 { return 20 },
+		getDelay:    nil,
+		getInterval: func() int64 { return 20 },
 		fn: func(payload any) bool {
 			mu.Lock()
 			count++
@@ -81,8 +81,8 @@ func TestWorkerUnitReset(t *testing.T) {
 	called := make(chan bool, 1)
 
 	w := &workerUnit{
-		ops:      WorkerListener,
-		getDelay: func() int64 { return 10 },
+		getInterval: nil,
+		getDelay:    func() int64 { return 10 },
 		fn: func(payload any) bool {
 			called <- true
 			return true
@@ -106,10 +106,10 @@ func TestWorkerUnitReset(t *testing.T) {
 
 func TestWorkerUnitGetDelayOverride(t *testing.T) {
 	w := &workerUnit{
-		ops:      WorkerListener,
-		getDelay: func() int64 { return 25 },
-		fn:       func(payload any) bool { return true },
-		queue:    make(chan any, 1),
+		getInterval: nil,
+		getDelay:    func() int64 { return 25 },
+		fn:          func(payload any) bool { return true },
+		queue:       make(chan any, 1),
 	}
 
 	w.Start()

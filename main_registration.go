@@ -275,10 +275,11 @@ func RegisterActions() {
 
 func RegisterWorkers() {
 	JC.UseWorker().Register(
-		"update_display", JC.WorkerListener, 1,
+		"update_display", 1,
 		func() int64 {
 			return 200
 		},
+		nil,
 		func(any) bool {
 			if UpdateDisplay() {
 				JA.UseLayout().RegisterDisplayUpdate(time.Now())
@@ -316,7 +317,8 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_rates", JC.WorkerScheduler, 1,
+		"update_rates", 1,
+		nil,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
 		},
@@ -353,7 +355,8 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_tickers", JC.WorkerScheduler, 1,
+		"update_tickers", 1,
+		nil,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
 		},
@@ -382,10 +385,11 @@ func RegisterWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", JC.WorkerListener, 10000,
+		"notification", 10000,
 		func() int64 {
 			return 1000
 		},
+		nil,
 		func(payload any) bool {
 			latest, _ := payload.(string)
 			fyne.Do(func() {

@@ -6,22 +6,16 @@ import (
 	"time"
 )
 
-type WorkerMode int
-
-const (
-	WorkerScheduler WorkerMode = iota
-	WorkerListener
-)
-
 type workerUnit struct {
-	ops      WorkerMode
-	delay    time.Duration
-	fn       func(any) bool
-	getDelay func() int64
-	queue    chan any
-	ctx      context.Context
-	cancel   context.CancelFunc
-	mu       sync.Mutex
+	delay       time.Duration
+	interval    time.Duration
+	fn          func(any) bool
+	getDelay    func() int64
+	getInterval func() int64
+	queue       chan any
+	ctx         context.Context
+	cancel      context.CancelFunc
+	mu          sync.Mutex
 }
 
 func (w *workerUnit) Call(payload any) {
@@ -63,15 +57,13 @@ func (w *workerUnit) Start() {
 		w.delay = time.Duration(w.getDelay()) * time.Millisecond
 	}
 
+	if w.getInterval != nil {
+		w.interval = time.Duration(w.getInterval()) * time.Millisecond
+	}
+
 	w.ctx, w.cancel = context.WithCancel(context.Background())
 
-	switch w.ops {
-	case WorkerScheduler:
-		go w.scheduler()
-
-	case WorkerListener:
-		go w.listener()
-	}
+	go w.worker()
 }
 
 func (w *workerUnit) Stop() {
@@ -90,9 +82,16 @@ func (w *workerUnit) Reset() {
 	w.Start()
 }
 
-func (w *workerUnit) scheduler() {
-	ticker := time.NewTicker(w.delay)
+func (w *workerUnit) newTicker() *time.Ticker {
+	if w.interval > 0 {
+		return time.NewTicker(w.interval)
+	}
+	return &time.Ticker{C: make(chan time.Time)}
+}
 
+func (w *workerUnit) worker() {
+
+	ticker := w.newTicker()
 	defer ticker.Stop()
 
 	for {
@@ -103,26 +102,10 @@ func (w *workerUnit) scheduler() {
 		select {
 		case <-w.ctx.Done():
 			return
+
 		case <-ticker.C:
 			w.Push(nil)
-		case x, ok := <-w.queue:
-			if !ok {
-				return
-			}
-			w.Call(x)
-		}
-	}
-}
 
-func (w *workerUnit) listener() {
-	for {
-		if w.ctx == nil {
-			return
-		}
-
-		select {
-		case <-w.ctx.Done():
-			return
 		case x, ok := <-w.queue:
 			if !ok {
 				return
