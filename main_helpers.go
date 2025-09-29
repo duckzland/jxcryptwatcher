@@ -78,24 +78,24 @@ func UpdateRates() bool {
 		return false
 	}
 
-	var payloads []any
-	for _, rk := range jb {
-		payloads = append(payloads, rk)
-	}
+	payloads := make(map[string][]string)
 
+	for _, rk := range jb {
+		payloads["rates"] = append(payloads["rates"], rk)
+	}
 	var hasError int = 0
 	successCount := 0
 
 	JC.Notify("Fetching the latest exchange rates...")
 
-	JC.UseFetcher().BroadcastCall("rates", payloads,
-		func(shouldProceed bool) {
-			if shouldProceed {
+	JC.UseFetcher().Dispatch(payloads,
+		func(scheduledJobs int) {
+			if scheduledJobs > 0 {
 				JA.UseStatus().StartFetchingRates()
 				JT.UseExchangeCache().SoftReset()
 			}
 		},
-		func(results []JC.FetchResultInterface) {
+		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingRates()
 
 			for _, result := range results {
@@ -139,27 +139,22 @@ func UpdateTickers() bool {
 	var mu sync.Mutex
 
 	// Prepare keys and payloads
-	keys := []string{}
-	payloads := map[string]any{}
+	payloads := map[string][]string{}
 
 	if JT.UseConfig().CanDoCMC100() {
-		keys = append(keys, "cmc100")
-		payloads["cmc100"] = nil
+		payloads["cmc100"] = []string{}
 	}
 	if JT.UseConfig().CanDoFearGreed() {
-		keys = append(keys, "feargreed")
-		payloads["feargreed"] = nil
+		payloads["feargreed"] = []string{}
 	}
 	if JT.UseConfig().CanDoMarketCap() {
-		keys = append(keys, "market_cap")
-		payloads["market_cap"] = nil
+		payloads["market_cap"] = []string{}
 	}
 	if JT.UseConfig().CanDoAltSeason() {
-		keys = append(keys, "altcoin_index")
-		payloads["altcoin_index"] = nil
+		payloads["altcoin_index"] = []string{}
 	}
 
-	if len(keys) == 0 {
+	if len(payloads) == 0 {
 		return false
 	}
 
@@ -168,7 +163,7 @@ func UpdateTickers() bool {
 
 	JC.Notify("Fetching the latest ticker data...")
 
-	JC.UseFetcher().ParallelCall(keys, payloads,
+	JC.UseFetcher().Dispatch(payloads,
 		func(totalJob int) {
 			if totalJob > 0 {
 				JA.UseStatus().StartFetchingTickers()
@@ -454,12 +449,13 @@ func SavePanelForm(pdt JT.PanelData) {
 				sid := pkt.GetSourceCoinString()
 				tid := pkt.GetTargetCoinString()
 
-				payloads := []any{sid + "|" + tid}
+				payloads := map[string][]string{}
+				payloads["rates"] = []string{sid + "|" + tid}
 
-				JC.UseFetcher().BroadcastCall("rates", payloads,
-					func(shouldProceed bool) {
+				JC.UseFetcher().Dispatch(payloads,
+					func(totalScheduled int) {
 					},
-					func(results []JC.FetchResultInterface) {
+					func(results map[string]JC.FetchResultInterface) {
 						for _, result := range results {
 							JT.UseExchangeCache().SoftReset()
 
