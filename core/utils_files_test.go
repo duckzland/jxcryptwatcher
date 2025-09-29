@@ -14,10 +14,6 @@ func init() {
 	_ = app.New() // Initializes a dummy Fyne app for storage access
 }
 
-type filesMockResponse struct {
-	Message string `json:"message"`
-}
-
 type filesNullWriter struct{}
 
 func (n filesNullWriter) Write(p []byte) (int, error) {
