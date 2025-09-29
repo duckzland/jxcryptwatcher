@@ -18,7 +18,6 @@ type completionList struct {
 	widget.BaseWidget
 	uuid             string
 	data             []string
-	selected         int
 	itemVisible      int
 	itemHeight       float32
 	itemTotal        int
@@ -48,7 +47,6 @@ func NewCompletionList(
 ) *completionList {
 	n := &completionList{
 		uuid:             JC.CreateUUID(),
-		selected:         -1,
 		onChange:         onChange,
 		onClose:          onClose,
 		itemHeight:       itemHeight,
@@ -95,7 +93,6 @@ func (n *completionList) SetData(items []string) {
 
 	n.data = items
 	n.scrollOffset = 0
-	n.selected = -1
 	n.prepareForScroll()
 
 	delay := 10 * time.Millisecond

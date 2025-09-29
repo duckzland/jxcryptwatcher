@@ -17,6 +17,7 @@ type DialogForm interface {
 	Hide()
 	GetContent() *fyne.Container
 	GetForm() *widget.Form
+	Submit()
 }
 
 type dialogForm struct {

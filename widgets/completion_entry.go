@@ -232,8 +232,6 @@ func (c *completionEntry) showCompletion() {
 	// Always reset position cache!
 	c.calculatePosition(true)
 
-	c.completionList.selected = -1
-
 	mx := c.maxSize()
 	ox := c.popup.Size()
 
