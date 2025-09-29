@@ -21,6 +21,7 @@ func TestFetcherInit(t *testing.T) {
 		}
 	}()
 	f.mu.Lock()
+	_ = f
 	f.mu.Unlock()
 }
 
