@@ -139,6 +139,26 @@ if [[ -z "$shortcut_guid" ]]; then
     exit 1
 fi
 
+# Copy Windows resource file
+rsrc_file="assets/windows/rsrc_windows_amd64.syso"
+
+# Update the syso file
+if [ ! -f $rsrc_file ]; then
+  cd assets/windows/
+  output=$(go-winres simply --icon jxwatcher.ico --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
+
+  if [ -n "$output" ]; then
+      echo_error "Windows assets creation failed: $output"
+      rm rsrc_windows*
+      exit 1
+  fi
+
+  cd ../../
+  echo_success "Successfully generated windows assets: $rsrc_file"
+fi
+
+cp "$rsrc_file" rsrc_windows_amd64.syso
+
 # Build Go binary
 GOOS=windows \
 GOARCH=amd64  \
@@ -149,20 +169,6 @@ CC=/usr/bin/x86_64-w64-mingw32-gcc \
 go build -tags="${tags}" -ldflags "${ldflags}" -o "${build_dir}/${bin_name}" .
 
 echo_success "Successfully built Windows binary: ${build_dir}/${bin_name}"
-
-# Copy Windows resource file
-rsrc_file="assets/windows/rsrc_windows_amd64.syso"
-
-# Update the syso file
-cd assets/windows/
-go-winres simply --icon jxwatcher.ico --product-version $version --file-version $version --product-name $app_name
-cd ../../
-
-cp "$rsrc_file" rsrc_windows_amd64.syso
-rm assets/windows/rsrc_windows*
-
-# Remove copied resource file
-rm -f rsrc_windows_amd64.syso
 
 # Create WXS (installer source) file
 cat > "$wxs_file" <<EOF
@@ -239,3 +245,4 @@ echo_success "Windows installer successfully created: ${msi_output}"
 
 # Clean up
 rm -f "$wxs_file"
+rm -f rsrc_windows_amd64.syso

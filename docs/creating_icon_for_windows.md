@@ -24,13 +24,16 @@ svgtoico(){
     inkscape -w 16 -h 16 -o "$1-16.png" "$2"
     inkscape -w 32 -h 32 -o "$1-32.png" "$2"
     inkscape -w 48 -h 48 -o "$1-48.png" "$2"
+    inkscape -w 64 -h 64 -o "$1-64.png" "$2"
+    inkscape -w 128 -h 128 -o "$1-128.png" "$2"
     inkscape -w 256 -h 256 -o "$1-256.png" "$2"
+    inkscape -w 512 -h 512 -o "$1-512.png" "$2"
 
     # Combine PNGs into an ICO file
-    convert "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png" "$1.ico"
+    convert "$1-16.png" "$1-32.png" "$1-48.png" "$1-64.png" "$1-128.png" "$1-256.png" "$1-512.png" "$1.ico"
 
     # Clean up temporary PNG files
-    rm "$1-16.png" "$1-32.png" "$1-48.png" "$1-256.png"
+    rm "$1-16.png" "$1-32.png" "$1-48.png" "$1-64.png" "$1-128.png" "$1-256.png" "$1-512.png"
 
     # Move the generated ICO to the desired location
     mv "$1.ico" "$3"
