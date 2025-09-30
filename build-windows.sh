@@ -144,7 +144,7 @@ rsrc_file="assets/windows/rsrc_windows_amd64.syso"
 
 # Update the syso file
 cd assets/windows/
-output=$(go-winres simply --icon jxwatcher.ico --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
+output=$(go-winres simply --icon jxwatcher.ico --manifest gui --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
 
 if [ -n "$output" ]; then
     echo_error "Windows assets creation failed: $output"
