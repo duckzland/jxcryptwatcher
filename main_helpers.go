@@ -253,7 +253,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<") || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		fyne.Do(func() {
@@ -269,7 +269,7 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.UseStatus().SetConfigStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<") || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		fyne.Do(func() {
@@ -301,7 +301,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.UseStatus().SetConfigStatus(true)
 
 		JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
-			return !pdt.HasData()
+			return !pdt.HasData() || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		fyne.Do(func() {
@@ -318,7 +318,7 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.UseStatus().SetConfigStatus(false)
 
 		JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
-			return !pdt.HasData()
+			return !pdt.HasData() || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {

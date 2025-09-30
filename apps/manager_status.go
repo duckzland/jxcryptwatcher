@@ -6,6 +6,8 @@ import (
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+
+	"fyne.io/fyne/v2"
 )
 
 var statusManagerStorage *statusManager = nil
@@ -423,8 +425,11 @@ func (a *statusManager) Refresh() *statusManager {
 	a.mu.Unlock()
 
 	if shouldUpdate {
-		UseLayout().Refresh()
-		UseAction().Refresh()
+		// Always protect fyne.Do as this most likely called inside go routine
+		fyne.Do(func() {
+			UseLayout().Refresh()
+			UseAction().Refresh()
+		})
 	}
 
 	if !a.IsReady() || a.HasError() {
