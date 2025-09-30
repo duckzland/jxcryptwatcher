@@ -12,7 +12,12 @@ import (
 	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
+
+	_ "embed"
 )
+
+//go:embed assets/256x256/jxwatcher.png
+var iconData []byte
 
 func UpdateDisplay() bool {
 	list := JT.UsePanelMaps().GetData()
@@ -632,6 +637,21 @@ func ScheduledNotificationReset() {
 			ScheduledNotificationReset()
 		}
 	})
+}
+
+func SetAppIcon() {
+
+	icon := fyne.NewStaticResource("jxwatcher.png", iconData)
+	JC.Window.SetIcon(icon)
+
+	// icon, err := fyne.LoadResourceFromPath(a)
+	// if err != nil {
+	// 	JC.Logln("Failed to load icon", err)
+	// } else {
+	// 	JC.Logln("App Icon loaded from:", a)
+	// 	JC.Window.SetIcon(icon)
+	// }
+
 }
 
 func CreatePanel(pkt JT.PanelData) fyne.CanvasObject {
