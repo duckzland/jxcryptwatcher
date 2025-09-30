@@ -257,7 +257,7 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 12
 
 	case SizePanelContent:
-		return 28
+		return 26
 
 	case SizePanelTitleSmall:
 		return 13
