@@ -626,9 +626,8 @@ func ScheduledNotificationReset() {
 		last := JC.UseWorker().GetLastUpdate("notification")
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
-			fyne.Do(func() {
-				JW.UseNotification().ClearText()
-			})
+			JW.UseNotification().ClearText()
+
 		} else {
 			ScheduledNotificationReset()
 		}
