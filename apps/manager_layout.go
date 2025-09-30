@@ -41,13 +41,13 @@ func (m *layoutManager) Init() {
 }
 
 func (m *layoutManager) RefreshLayout() {
-	JC.UseDebouncer().Call("refreshing_layout_layout", 5*time.Millisecond, func() {
-		m.mu.RLock()
-		if m.scroll != nil {
-			fyne.Do(m.scroll.Refresh)
-		}
-		m.mu.RUnlock()
-	})
+	m.mu.RLock()
+	scroll := m.scroll
+	m.mu.RUnlock()
+
+	if scroll != nil {
+		scroll.Refresh()
+	}
 }
 
 func (m *layoutManager) Refresh() {
@@ -209,11 +209,7 @@ func (m *layoutManager) setTickers(container *fyne.Container) {
 
 	m.tickers.Refresh()
 
-	JC.UseDebouncer().Call("refreshing_layout_container", 5*time.Millisecond, func() {
-		m.mu.RLock()
-		fyne.Do(m.container.Refresh)
-		m.mu.RUnlock()
-	})
+	m.container.Refresh()
 }
 
 func NewAppLayout() fyne.CanvasObject {

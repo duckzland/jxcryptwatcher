@@ -4,8 +4,6 @@ import (
 	"slices"
 	"sync"
 
-	"fyne.io/fyne/v2"
-
 	JW "jxwatcher/widgets"
 )
 
@@ -29,10 +27,11 @@ func (a *actionManager) Add(btn JW.ActionButton) {
 }
 
 func (a *actionManager) Get(tag string) JW.ActionButton {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
+	a.mu.Lock()
+	buttons := a.buttons
+	a.mu.Unlock()
 
-	for _, btn := range a.buttons {
+	for _, btn := range buttons {
 		if btn.GetTag() == tag {
 			return btn
 		}
@@ -58,27 +57,28 @@ func (a *actionManager) Remove(btn JW.ActionButton) {
 }
 
 func (a *actionManager) Refresh() {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
+	a.mu.Lock()
+	buttons := a.buttons
+	a.mu.Unlock()
 
-	fyne.Do(func() {
-		for _, btn := range a.buttons {
-			if btn != nil {
-				btn.Refresh()
-			}
+	for _, btn := range buttons {
+		if btn != nil {
+			btn.Refresh()
 		}
-	})
+	}
 }
 
 func (a *actionManager) Disable() {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
+	a.mu.Lock()
+	buttons := a.buttons
+	a.mu.Unlock()
 
-	fyne.Do(func() {
-		for _, btn := range a.buttons {
+	for _, btn := range buttons {
+		if btn != nil {
 			btn.Disable()
 		}
-	})
+	}
+
 }
 
 func RegisterActionManager() *actionManager {

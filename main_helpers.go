@@ -112,11 +112,11 @@ func UpdateRates() bool {
 				mu.Unlock()
 			}
 
-			JC.Logln("Fetching has error:", hasError)
+			JC.Logln("Exchange fetching has error:", hasError)
 
 			ProcessUpdatePanelComplete(hasError)
 
-			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(payloads))
+			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(jb))
 
 			mu.Lock()
 			if successCount != 0 {
@@ -142,16 +142,16 @@ func UpdateTickers() bool {
 	payloads := map[string][]string{}
 
 	if JT.UseConfig().CanDoCMC100() {
-		payloads["cmc100"] = []string{}
+		payloads["cmc100"] = []string{"cmc100"}
 	}
 	if JT.UseConfig().CanDoFearGreed() {
-		payloads["feargreed"] = []string{}
+		payloads["feargreed"] = []string{"feargreed"}
 	}
 	if JT.UseConfig().CanDoMarketCap() {
-		payloads["market_cap"] = []string{}
+		payloads["market_cap"] = []string{"market_cap"}
 	}
 	if JT.UseConfig().CanDoAltSeason() {
-		payloads["altcoin_index"] = []string{}
+		payloads["altcoin_index"] = []string{"altcoin_index"}
 	}
 
 	if len(payloads) == 0 {
@@ -160,6 +160,7 @@ func UpdateTickers() bool {
 
 	var hasError int = 0
 	var updateDisplay int = 0
+	var successCount int = 0
 
 	JC.Notify("Fetching the latest ticker data...")
 
@@ -180,6 +181,11 @@ func UpdateTickers() bool {
 				for _, tkt := range tktt {
 					switch ns {
 					case JC.STATUS_SUCCESS:
+
+						mu.Lock()
+						successCount++
+						mu.Unlock()
+
 						if tkt.Update() {
 							mu.Lock()
 							updateDisplay++
@@ -195,7 +201,11 @@ func UpdateTickers() bool {
 				mu.Unlock()
 			}
 
+			JC.Logln("Tickers fetching has error:", hasError)
+
 			ProcessUpdateTickerComplete(hasError)
+
+			JC.Logf("Tickers Rate updated: %v/%v", successCount, len(payloads))
 
 			mu.Lock()
 			if updateDisplay != 0 {
@@ -242,15 +252,13 @@ func ProcessUpdatePanelComplete(status int) {
 		JC.Notify("Please check your network connection.")
 		JA.UseStatus().SetNetworkStatus(false)
 
-		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-				return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
-			})
+		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
+		})
 
-			fyne.Do(func() {
-				JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
-					return true
-				})
+		fyne.Do(func() {
+			JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
+				return true
 			})
 		})
 
@@ -260,15 +268,13 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(false)
 
-		JC.UseDebouncer().Call("process_rates_complete", 100*time.Millisecond, func() {
-			JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-				return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
-			})
+		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<")
+		})
 
-			fyne.Do(func() {
-				JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
-					return true
-				})
+		fyne.Do(func() {
+			JP.UsePanelGrid().UpdatePanelsContent(func(pdt JT.PanelData) bool {
+				return true
 			})
 		})
 
@@ -294,15 +300,13 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(false)
 		JA.UseStatus().SetConfigStatus(true)
 
-		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
-				return !pdt.HasData()
-			})
+		JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
+			return !pdt.HasData()
+		})
 
-			fyne.Do(func() {
-				JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
-					return true
-				})
+		fyne.Do(func() {
+			JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
+				return true
 			})
 		})
 
@@ -313,16 +317,12 @@ func ProcessUpdateTickerComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(false)
 
-		JC.UseDebouncer().Call("process_tickers_complete", 30*time.Millisecond, func() {
-			JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
-				return !pdt.HasData()
-			})
+		JT.UseTickerMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.TickerData) bool {
+			return !pdt.HasData()
+		})
 
-			fyne.Do(func() {
-				JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
-					return true
-				})
-			})
+		JX.UseTickerGrid().UpdateTickersContent(func(pdt JT.TickerData) bool {
+			return true
 		})
 
 	case JC.STATUS_BAD_DATA_RECEIVED:
@@ -407,14 +407,11 @@ func RemovePanel(uuid string) {
 		if JT.UsePanelMaps().Remove(uuid) {
 			JP.UsePanelGrid().ForceRefresh()
 
-			// Give time for grid to relayout first!
-			JC.UseDebouncer().Call("removing_panel", 50*time.Millisecond, func() {
-				JA.UseLayout().RefreshLayout()
+			JA.UseLayout().RefreshLayout()
 
-				if JT.SavePanels() {
-					JC.Notify("Panel removed successfully.")
-				}
-			})
+			if JT.SavePanels() {
+				JC.Notify("Panel removed successfully.")
+			}
 		}
 	}
 
@@ -433,57 +430,56 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 
-	go func() {
-		if JT.SavePanels() {
+	if JT.SavePanels() {
 
-			if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
-				return
-			}
+		if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
+			return
+		}
 
-			// Only fetch new rates if no cache exists!
-			if !ValidateRatesCache() {
+		// Only fetch new rates if no cache exists!
+		if !ValidateRatesCache() {
 
-				// Force refresh without fail!
-				pkt := pdt.UsePanelKey()
+			// Force refresh without fail!
+			pkt := pdt.UsePanelKey()
 
-				sid := pkt.GetSourceCoinString()
-				tid := pkt.GetTargetCoinString()
+			sid := pkt.GetSourceCoinString()
+			tid := pkt.GetTargetCoinString()
 
-				payloads := map[string][]string{}
-				payloads["rates"] = []string{sid + "|" + tid}
+			payloads := map[string][]string{}
+			payloads["rates"] = []string{sid + "|" + tid}
 
-				JC.UseFetcher().Dispatch(payloads,
-					func(totalScheduled int) {
-					},
-					func(results map[string]JC.FetchResultInterface) {
-						for _, result := range results {
-							JT.UseExchangeCache().SoftReset()
+			JC.UseFetcher().Dispatch(payloads,
+				func(totalScheduled int) {
+				},
+				func(results map[string]JC.FetchResultInterface) {
+					for _, result := range results {
+						JT.UseExchangeCache().SoftReset()
 
-							status := DetectHTTPResponse(result.Code())
+						status := DetectHTTPResponse(result.Code())
 
-							switch status {
-							case JC.STATUS_SUCCESS:
+						switch status {
+						case JC.STATUS_SUCCESS:
 
-								opk := pdt.Get()
-								if opk != "" {
-									pdt.Update(opk)
-								}
-
-							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
-								pdt.SetStatus(JC.STATE_ERROR)
+							opk := pdt.Get()
+							if opk != "" {
+								pdt.Update(opk)
 							}
 
-							ProcessUpdatePanelComplete(status)
+						case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
+							pdt.SetStatus(JC.STATE_ERROR)
 						}
-					})
-			}
 
-			JC.Notify("Panel settings saved.")
-
-		} else {
-			JC.Notify("Failed to save panel settings.")
+						ProcessUpdatePanelComplete(status)
+					}
+				})
 		}
-	}()
+
+		JC.Notify("Panel settings saved.")
+
+	} else {
+		JC.Notify("Failed to save panel settings.")
+	}
+
 }
 
 func OpenNewPanelForm() {
@@ -561,35 +557,31 @@ func OpenSettingForm() {
 		func() {
 			JC.Notify("Saving configuration...")
 
-			go func() {
-				if JT.UseConfig().SaveFile() != nil {
-					JC.Notify("Configuration saved successfully.")
-					JA.UseStatus().DetectData()
+			if JT.UseConfig().SaveFile() != nil {
+				JC.Notify("Configuration saved successfully.")
+				JA.UseStatus().DetectData()
 
-					if JT.UseConfig().IsValidTickers() {
-						if JT.UseTickerMaps().IsEmpty() {
-							JC.Logln("Rebuilding tickers due to empty ticker list")
-							JT.TickersInit()
+				if JT.UseConfig().IsValidTickers() {
+					if JT.UseTickerMaps().IsEmpty() {
+						JC.Logln("Rebuilding tickers due to empty ticker list")
+						JT.TickersInit()
 
-							fyne.Do(func() {
-								JX.RegisterTickerGrid()
-							})
-						}
-
-						JC.UseWorker().Reload()
-
-						JA.UseStatus().SetConfigStatus(true)
-
-						JT.UseTickerCache().SoftReset()
-						JC.UseWorker().Call("update_tickers", JC.CallQueued)
-
-						JT.UseExchangeCache().SoftReset()
-						JC.UseWorker().Call("update_rates", JC.CallQueued)
+						JX.RegisterTickerGrid()
 					}
-				} else {
-					JC.Notify("Failed to save configuration.")
+
+					JC.UseWorker().Reload()
+
+					JA.UseStatus().SetConfigStatus(true)
+
+					JT.UseTickerCache().SoftReset()
+					JC.UseWorker().Call("update_tickers", JC.CallQueued)
+
+					JT.UseExchangeCache().SoftReset()
+					JC.UseWorker().Call("update_rates", JC.CallQueued)
 				}
-			}()
+			} else {
+				JC.Notify("Failed to save configuration.")
+			}
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RegisterOverlay(layer)

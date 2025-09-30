@@ -119,7 +119,6 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	mu := sync.Mutex{}
 	total := 0
 
-	// Count total jobs based on conditions
 	for key, items := range payloads {
 		if cond, ok := m.conditions[key]; ok && cond != nil {
 			if cond() {
@@ -150,7 +149,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 
 				m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
 					mu.Lock()
-					results[payload] = result // using payload as result key
+					results[payload] = result
 					mu.Unlock()
 				})
 

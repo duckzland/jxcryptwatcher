@@ -1,11 +1,7 @@
 package tickers
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
-
-	JC "jxwatcher/core"
 )
 
 type tickerContainerLayout struct {
@@ -21,11 +17,7 @@ func (r *tickerContainerLayout) MinSize() fyne.Size {
 }
 
 func (r *tickerContainerLayout) Refresh() {
-	JC.UseDebouncer().Call("ticker_container_refresh", 10*time.Millisecond, func() {
-		fyne.Do(func() {
-			r.Layout(r.container.Size())
-		})
-	})
+	r.Layout(r.container.Size())
 }
 
 func (r *tickerContainerLayout) Objects() []fyne.CanvasObject {

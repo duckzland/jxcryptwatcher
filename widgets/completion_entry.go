@@ -62,14 +62,6 @@ func NewCompletionEntry(
 
 	c.OnChanged = func(s string) {
 		c.searchSuggestions(s)
-		JC.UseDebouncer().Call("validating-"+c.uuid, 300*time.Millisecond, func() {
-			fyne.Do(func() {
-				if !c.popup.Visible() {
-					c.skipValidation = false
-					c.SetValidationError(c.Validator(c.Text))
-				}
-			})
-		})
 	}
 
 	c.dispatcher = JC.NewDispatcher(1000, c.searchableChunkSize, 16*time.Millisecond)
@@ -106,7 +98,6 @@ func NewCompletionEntry(
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 	c.skipValidation = true
-	JC.UseDebouncer().Cancel("validating-" + c.uuid)
 }
 
 func (c *completionEntry) FocusLost() {
@@ -140,17 +131,11 @@ func (c *completionEntry) Refresh() {
 func (c *completionEntry) Resize(size fyne.Size) {
 
 	c.Entry.Resize(size)
-
-	JC.UseDebouncer().Call("completion_resizing_"+c.uuid, 50*time.Millisecond, func() {
-		fyne.Do(func() {
-			if c.popup != nil && c.popup.Visible() {
-				c.popupPosition = fyne.NewPos(-1, -1)
-				c.popup.Move(c.popUpPos())
-				c.dynamicResize()
-			}
-		})
-	})
-
+	if c.popup != nil && c.popup.Visible() {
+		c.popupPosition = fyne.NewPos(-1, -1)
+		c.popup.Move(c.popUpPos())
+		c.dynamicResize()
+	}
 }
 
 func (c *completionEntry) SetValidator(fn func(string) error) {
@@ -165,7 +150,6 @@ func (c *completionEntry) SetValidator(fn func(string) error) {
 }
 
 func (c *completionEntry) Validate() error {
-	// This is important to prevent user trying to click save when skipvalidation is active!
 	c.skipValidation = false
 	err := c.Validator(c.Entry.Text)
 	c.SetValidationError(err)
@@ -214,7 +198,6 @@ func (c *completionEntry) dynamicResize() {
 func (c *completionEntry) showCompletion() {
 
 	c.skipValidation = true
-	JC.UseDebouncer().Cancel("validating-" + c.uuid)
 
 	if c.pause {
 		return
@@ -268,7 +251,6 @@ func (c *completionEntry) getCurrentInput() string {
 }
 
 func (c *completionEntry) searchSuggestions(s string) {
-	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 
 	c.dispatcher.Drain()
 	c.dispatcher.Pause()
@@ -278,7 +260,7 @@ func (c *completionEntry) searchSuggestions(s string) {
 	}
 
 	if len(s) < 1 {
-		fyne.Do(func() { c.hideCompletion() })
+		c.hideCompletion()
 		return
 	}
 
@@ -289,9 +271,9 @@ func (c *completionEntry) searchSuggestions(s string) {
 	lowerInput := strings.ToLower(s)
 	c.lastInput = s
 	input := s
-	delay := 10 * time.Millisecond
+	delay := 5 * time.Millisecond
 	if c.popup.Visible() {
-		delay = 50 * time.Millisecond
+		delay = 10 * time.Millisecond
 	}
 
 	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
@@ -320,17 +302,18 @@ func (c *completionEntry) searchSuggestions(s string) {
 	wg.Wait()
 
 	if len(results) == 0 {
-		fyne.Do(func() { c.hideCompletion() })
+		c.hideCompletion()
 		return
 	}
 
 	results = JC.ReorderSearchable(results)
 
 	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
+		if input != c.getCurrentInput() {
+			return
+		}
+
 		fyne.Do(func() {
-			if input != c.getCurrentInput() {
-				return
-			}
 			c.setOptions(results)
 			c.showCompletion()
 			c.dynamicResize()

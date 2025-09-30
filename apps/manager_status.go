@@ -126,7 +126,7 @@ func (a *statusManager) AppReady() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -137,7 +137,7 @@ func (a *statusManager) Pause() *statusManager {
 	a.lastChange = time.Now()
 	a.mu.Unlock()
 
-	a.DebounceRefresh()
+	a.Refresh()
 	return a
 }
 
@@ -147,7 +147,7 @@ func (a *statusManager) Resume() *statusManager {
 	a.lastChange = time.Now()
 	a.mu.Unlock()
 
-	a.DebounceRefresh()
+	a.Refresh()
 	return a
 }
 
@@ -161,7 +161,7 @@ func (a *statusManager) StartFetchingCryptos() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -177,7 +177,7 @@ func (a *statusManager) EndFetchingCryptos() *statusManager {
 
 	if changed {
 		a.DetectData()
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -192,7 +192,7 @@ func (a *statusManager) StartFetchingRates() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -207,7 +207,7 @@ func (a *statusManager) EndFetchingRates() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -222,7 +222,7 @@ func (a *statusManager) StartFetchingTickers() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -237,7 +237,7 @@ func (a *statusManager) EndFetchingTickers() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -252,7 +252,7 @@ func (a *statusManager) AllowDragging() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -267,7 +267,7 @@ func (a *statusManager) DisallowDragging() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -282,7 +282,7 @@ func (a *statusManager) SetOverlayShownStatus(status bool) *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -297,7 +297,7 @@ func (a *statusManager) SetConfigStatus(status bool) *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -312,7 +312,7 @@ func (a *statusManager) SetCryptoStatus(status bool) *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -327,7 +327,7 @@ func (a *statusManager) SetNetworkStatus(status bool) *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -381,7 +381,7 @@ func (a *statusManager) DetectData() *statusManager {
 	a.mu.Unlock()
 
 	if changed {
-		a.DebounceRefresh()
+		a.Refresh()
 	}
 	return a
 }
@@ -414,13 +414,6 @@ func (a *statusManager) ValidTickers() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return !a.bad_tickers
-}
-
-func (a *statusManager) DebounceRefresh() *statusManager {
-	JC.UseDebouncer().Call("refreshing_status", 8*time.Millisecond, func() {
-		a.Refresh()
-	})
-	return a
 }
 
 func (a *statusManager) Refresh() *statusManager {

@@ -1,11 +1,7 @@
 package panels
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
-
-	JC "jxwatcher/core"
 )
 
 type panelContainerLayout struct {
@@ -21,11 +17,7 @@ func (r *panelContainerLayout) MinSize() fyne.Size {
 }
 
 func (r *panelContainerLayout) Refresh() {
-	JC.UseDebouncer().Call("panel_container_refresh", 10*time.Millisecond, func() {
-		fyne.Do(func() {
-			r.Layout(r.container.Size())
-		})
-	})
+	r.Layout(r.container.Size())
 }
 
 func (r *panelContainerLayout) Objects() []fyne.CanvasObject {

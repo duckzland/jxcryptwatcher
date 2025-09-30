@@ -396,15 +396,13 @@ func (h *panelDisplay) snapToNearest() {
 	UsePanelGrid().Objects = h.reorder(targetIndex)
 	UsePanelGrid().ForceRefresh()
 
-	go func() {
-		JC.UseDebouncer().Call("panel_drag", 1000*time.Millisecond, func() {
-			if h.syncData() {
-				if JT.SavePanels() {
-					JC.Notify("Panels have been reordered and updated.")
-				}
+	JC.UseDebouncer().Call("panel_drag", 1000*time.Millisecond, func() {
+		if h.syncData() {
+			if JT.SavePanels() {
+				JC.Notify("Panels have been reordered and updated.")
 			}
-		})
-	}()
+		}
+	})
 }
 
 func (h *panelDisplay) findTargetIndex() int {

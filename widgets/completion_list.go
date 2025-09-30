@@ -94,28 +94,18 @@ func (n *completionList) SetData(items []string) {
 	n.data = items
 	n.scrollOffset = 0
 	n.prepareForScroll()
+	scaledHeight := n.scaledItemHeight * float32(n.itemTotal)
 
-	delay := 10 * time.Millisecond
-	if JC.IsMobile {
-		delay = 50 * time.Millisecond
+	if n.scaledHeight != scaledHeight {
+		n.scaledHeight = scaledHeight
+		n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledHeight))
+
+		if n.scrollBox.Offset.Y != 0 {
+			n.scrollBox.ScrollToTop()
+		}
+
+		n.refreshContent()
 	}
-
-	JC.UseDebouncer().Cancel("layout_update_" + n.uuid)
-	JC.UseDebouncer().Call("layout_update_"+n.uuid, delay, func() {
-		fyne.Do(func() {
-			scaledHeight := n.scaledItemHeight * float32(n.itemTotal)
-			if n.scaledHeight != scaledHeight {
-				n.scaledHeight = scaledHeight
-				n.scrollContent.SetMinSize(fyne.NewSize(1, n.scaledHeight))
-			}
-
-			if n.scrollBox.Offset.Y != 0 {
-				n.scrollBox.ScrollToTop()
-			}
-
-			n.refreshContent()
-		})
-	})
 }
 
 func (n *completionList) Resize(size fyne.Size) {
