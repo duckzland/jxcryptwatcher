@@ -152,11 +152,14 @@ if [ -n "$output" ]; then
     exit 1
 fi
 
+# Copy to build folder
 cd ../../
-echo_success "Successfully generated windows assets: $rsrc_file"
-
-
 cp "$rsrc_file" rsrc_windows_amd64.syso
+
+# Dont store copy
+rm -f assets/windows/rsrc_windows*
+
+echo_success "Successfully generated windows assets: $rsrc_file"
 
 # Build Go binary
 GOOS=windows \
