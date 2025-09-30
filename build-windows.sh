@@ -143,19 +143,18 @@ fi
 rsrc_file="assets/windows/rsrc_windows_amd64.syso"
 
 # Update the syso file
-if [ ! -f $rsrc_file ]; then
-  cd assets/windows/
-  output=$(go-winres simply --icon jxwatcher.ico --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
+cd assets/windows/
+output=$(go-winres simply --icon jxwatcher.ico --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
 
-  if [ -n "$output" ]; then
-      echo_error "Windows assets creation failed: $output"
-      rm rsrc_windows*
-      exit 1
-  fi
-
-  cd ../../
-  echo_success "Successfully generated windows assets: $rsrc_file"
+if [ -n "$output" ]; then
+    echo_error "Windows assets creation failed: $output"
+    rm rsrc_windows*
+    exit 1
 fi
+
+cd ../../
+echo_success "Successfully generated windows assets: $rsrc_file"
+
 
 cp "$rsrc_file" rsrc_windows_amd64.syso
 
