@@ -91,11 +91,8 @@ func CreateUUID() string {
 }
 
 func GetMonthBounds(t time.Time) (startUnix, endUnix int64) {
-	year, month, _ := t.Date()
-	location := t.Location()
-
-	start := time.Date(year, month, 1, 0, 0, 0, 0, location)
-	end := start.AddDate(0, 1, 0).Add(-time.Second) // last second of the month
+	end := t
+	start := t.AddDate(0, 0, -30)
 
 	return start.Unix(), end.Unix()
 }

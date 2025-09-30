@@ -95,8 +95,8 @@ func TestGetMonthBounds(t *testing.T) {
 	tm := time.Date(2025, time.September, 15, 0, 0, 0, 0, time.UTC)
 	start, end := GetMonthBounds(tm)
 
-	expectedStart := time.Date(2025, time.September, 1, 0, 0, 0, 0, time.UTC).Unix()
-	expectedEnd := time.Date(2025, time.September, 30, 23, 59, 59, 0, time.UTC).Unix()
+	expectedStart := time.Date(2025, time.August, 16, 0, 0, 0, 0, time.UTC).Unix()
+	expectedEnd := time.Date(2025, time.September, 15, 0, 0, 0, 0, time.UTC).Unix()
 
 	if start != expectedStart || end != expectedEnd {
 		t.Errorf("GetMonthBounds failed. Got (%d, %d), want (%d, %d)", start, end, expectedStart, expectedEnd)
