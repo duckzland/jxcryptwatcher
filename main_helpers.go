@@ -17,7 +17,7 @@ import (
 )
 
 //go:embed assets/256x256/jxwatcher.png
-var iconData []byte
+var appIconData []byte
 
 func UpdateDisplay() bool {
 	list := JT.UsePanelMaps().GetData()
@@ -641,7 +641,7 @@ func ScheduledNotificationReset() {
 
 func SetAppIcon() {
 
-	icon := fyne.NewStaticResource("jxwatcher.png", iconData)
+	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
 	JC.Window.SetIcon(icon)
 
 	// icon, err := fyne.LoadResourceFromPath(a)
