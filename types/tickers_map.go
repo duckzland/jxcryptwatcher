@@ -121,9 +121,25 @@ func (pc *tickersMapType) ChangeStatus(newStatus int, shouldChange func(pdt Tick
 }
 
 func (pc *tickersMapType) Hydrate(data []TickerData) {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
-	pc.data = data
+	for _, tkd := range data {
+		ex := pc.GetDataByType(tkd.GetType())
+
+		if len(ex) > 0 {
+			for _, tkt := range ex {
+				tkt.Set(tkd.Get())
+				tkt.SetType(tkd.GetType())
+				tkt.SetTitle(tkd.GetTitle())
+				tkt.SetFormat(tkd.GetFormat())
+				tkt.SetStatus(tkd.GetStatus())
+				tkt.SetOldKey(tkd.GetOldKey())
+			}
+		} else {
+			pc.mu.Lock()
+			pc.data = append(pc.data, tkd)
+			pc.mu.Unlock()
+		}
+	}
+
 }
 
 func (pc *tickersMapType) Serialize() []tickerDataCache {
@@ -136,6 +152,7 @@ func (pc *tickersMapType) Serialize() []tickerDataCache {
 			out = append(out, t.Serialize())
 		}
 	}
+
 	return out
 }
 

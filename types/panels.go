@@ -137,18 +137,18 @@ func PanelsInit() {
 	UsePanelMaps().SetMaps(maps)
 
 	panelsMu.Lock()
-	Panels := panelsType{}
+	panels := panelsType{}
 	panelsMu.Unlock()
 
-	Panels.CheckFile().LoadFile().ConvertToMap(UsePanelMaps())
+	panels.CheckFile().LoadFile().ConvertToMap(UsePanelMaps())
 }
 
 func SavePanels() bool {
 	panelsMu.RLock()
-	Panels := panelsType{}
+	panels := panelsType{}
 	panelsMu.RUnlock()
 
-	return Panels.SaveFile(UsePanelMaps())
+	return panels.SaveFile(UsePanelMaps())
 }
 
 func RemovePanel(uuid string) bool {

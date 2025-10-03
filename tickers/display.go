@@ -165,27 +165,37 @@ func (h *tickerDisplay) updateContent() {
 				background = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 		}
-
 		if pkt.IsType("rsi") {
 			raw := JT.UseTickerCache().Get("rsi")
 			index, _ := strconv.ParseFloat(raw, 64)
-			if index < 50 {
-				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
-			} else {
+			switch {
+			case index >= 70:
 				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+			case index >= 55:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkRed)
+			case index >= 45:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
+			case index >= 30:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkGreen)
+			default:
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
 			}
 		}
 
 		if pkt.IsType("pulse") {
-			os := JT.UseTickerCache().Get("rsi_oversold_percentage")
-			ob := JT.UseTickerCache().Get("rsi_overbought_percentage")
-			osi, _ := strconv.ParseFloat(os, 64)
-			obi, _ := strconv.ParseFloat(ob, 64)
-
-			if obi > osi {
-				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
-			} else {
+			raw := JT.UseTickerCache().Get("rsi")
+			index, _ := strconv.ParseFloat(raw, 64)
+			switch {
+			case index >= 70:
 				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+			case index >= 55:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkRed)
+			case index >= 45:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
+			case index >= 30:
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkGreen)
+			default:
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
 			}
 		}
 	}

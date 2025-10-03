@@ -126,8 +126,14 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	case ColorNameRed:
 		return color.RGBA{R: 133, G: 36, B: 36, A: 255}
 
+	case ColorNameDarkRed:
+		return color.RGBA{R: 100, G: 25, B: 25, A: 255}
+
 	case ColorNameGreen:
 		return color.RGBA{R: 22, G: 106, B: 69, A: 255}
+
+	case ColorNameDarkGreen:
+		return color.RGBA{R: 15, G: 70, B: 45, A: 255}
 
 	case ColorNameBlue:
 		return color.RGBA{R: 60, G: 120, B: 220, A: 255}
@@ -149,6 +155,9 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 
 	case ColorNameTeal:
 		return color.RGBA{R: 40, G: 170, B: 140, A: 255}
+
+	case ColorNameDarkGrey:
+		return color.RGBA{R: 40, G: 40, B: 40, A: 255} // Dark Grey
 
 	case ColorNameTransparent:
 		return color.RGBA{R: 0, G: 0, B: 0, A: 0}

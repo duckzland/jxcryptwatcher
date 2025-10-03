@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
-	JC "jxwatcher/core"
 )
 
 type tickerGridLayout struct {
@@ -77,8 +76,6 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		if emptySpace > 0 {
 			g.dynCellSize.Width += emptySpace / float32(g.colCount)
 		}
-
-		JC.Logln("Calculated", g.colCount, g.dynCellSize.Width, g.minCellSize.Width, pads)
 	}
 
 	if g.colCount == 0 {

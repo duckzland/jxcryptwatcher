@@ -58,6 +58,7 @@ func (sm *snapshotManager) LoadCryptos() int {
 
 	cm := JT.NewCryptosMap()
 	cm.Hydrate(cache.Data)
+
 	JT.UsePanelMaps().SetMaps(cm)
 	JT.UsePanelMaps().GetOptions()
 
@@ -88,7 +89,7 @@ func (sm *snapshotManager) LoadTickers() int {
 		restored = append(restored, t)
 	}
 
-	JT.UseTickerMaps().Init()
+	JT.TickersInit()
 	JT.UseTickerMaps().Hydrate(restored)
 
 	return JC.HAVE_SNAPSHOT
