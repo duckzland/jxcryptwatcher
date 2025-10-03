@@ -73,7 +73,9 @@ func main() {
 	// Prevent locking when initialized at first install
 	JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
 
-		JT.ConfigInit()
+		if !JT.ConfigInit() {
+			JA.UseSnapshot().Delete()
+		}
 
 		if JA.UseSnapshot().LoadCryptos() == JC.NO_SNAPSHOT {
 			JT.CryptosLoaderInit()

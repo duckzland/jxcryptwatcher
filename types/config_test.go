@@ -54,7 +54,7 @@ func TestConfigCheckFileCreatesDefault(t *testing.T) {
 	test.NewApp()
 
 	configStorage = &configType{}
-	configStorage.CheckFile()
+	configStorage.checkFile()
 	configStorage.loadFile()
 
 	if !configStorage.IsValid() {

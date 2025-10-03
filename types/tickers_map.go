@@ -173,6 +173,22 @@ func TickersInit() {
 		tdt.SetFormat("percentage")
 		UseTickerMaps().Add(tdt)
 	}
+
+	if UseConfig().CanDoRSI() {
+		tdt := NewTickerData()
+		tdt.SetTitle("Crypto RSI")
+		tdt.SetType("rsi")
+		tdt.SetFormat("number")
+		UseTickerMaps().Add(tdt)
+	}
+
+	if UseConfig().CanDoRSI() {
+		tdt := NewTickerData()
+		tdt.SetTitle("Market Pulse")
+		tdt.SetType("pulse")
+		tdt.SetFormat("pulse")
+		UseTickerMaps().Add(tdt)
+	}
 }
 
 func UseTickerMaps() *tickersMapType {

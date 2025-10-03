@@ -50,6 +50,46 @@ func UpdateDisplay() bool {
 	return true
 }
 
+func UpdateTickerDisplay() bool {
+
+	var mu sync.Mutex
+	var updateDisplay int = 0
+
+	tickers := []string{}
+	if JT.UseConfig().CanDoCMC100() {
+		tickers = append(tickers, "cmc100")
+	}
+	if JT.UseConfig().CanDoFearGreed() {
+		tickers = append(tickers, "feargreed")
+	}
+	if JT.UseConfig().CanDoMarketCap() {
+		tickers = append(tickers, "market_cap")
+	}
+	if JT.UseConfig().CanDoAltSeason() {
+		tickers = append(tickers, "altcoin_index")
+	}
+	if JT.UseConfig().CanDoRSI() {
+		tickers = append(tickers, "rsi", "pulse")
+	}
+
+	for _, key := range tickers {
+		tktt := JT.UseTickerMaps().GetDataByType(key)
+		for _, tkt := range tktt {
+			if tkt.Update() {
+				mu.Lock()
+				updateDisplay++
+				mu.Unlock()
+			}
+		}
+	}
+
+	if updateDisplay != 0 {
+		JC.Notify("Ticker display refreshed with new rates")
+	}
+
+	return true
+}
+
 func UpdateRates() bool {
 
 	if JA.UseStatus().IsFetchingRates() {
@@ -158,13 +198,15 @@ func UpdateTickers() bool {
 	if JT.UseConfig().CanDoAltSeason() {
 		payloads["altcoin_index"] = []string{"altcoin_index"}
 	}
+	if JT.UseConfig().CanDoRSI() {
+		payloads["rsi"] = []string{"rsi"}
+	}
 
 	if len(payloads) == 0 {
 		return false
 	}
 
 	var hasError int = 0
-	var updateDisplay int = 0
 	var successCount int = 0
 
 	JC.Notify("Fetching the latest ticker data...")
@@ -179,24 +221,14 @@ func UpdateTickers() bool {
 		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingTickers()
 
-			for key, result := range results {
+			for _, result := range results {
 				ns := DetectHTTPResponse(result.Code())
-				tktt := JT.UseTickerMaps().GetDataByType(key)
+				switch ns {
+				case JC.STATUS_SUCCESS:
 
-				for _, tkt := range tktt {
-					switch ns {
-					case JC.STATUS_SUCCESS:
-
-						mu.Lock()
-						successCount++
-						mu.Unlock()
-
-						if tkt.Update() {
-							mu.Lock()
-							updateDisplay++
-							mu.Unlock()
-						}
-					}
+					mu.Lock()
+					successCount++
+					mu.Unlock()
 				}
 
 				mu.Lock()
@@ -212,11 +244,9 @@ func UpdateTickers() bool {
 
 			JC.Logf("Tickers Rate updated: %v/%v", successCount, len(payloads))
 
-			mu.Lock()
-			if updateDisplay != 0 {
-				JC.Notify("Ticker display refreshed with new rates")
+			if successCount > 0 {
+				UpdateTickerDisplay()
 			}
-			mu.Unlock()
 
 			JC.UseWorker().Reset("update_tickers")
 		})

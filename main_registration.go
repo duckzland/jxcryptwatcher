@@ -564,6 +564,33 @@ func RegisterFetchers() {
 	)
 
 	JC.UseFetcher().Register(
+		"rsi", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Results is processed at GetRate()
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch rsi: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch rsi: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoFearGreed() {
+				JC.Logln("Unable to fetch rsi: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
+
+	JC.UseFetcher().Register(
 		"rates", delay,
 		JC.NewDynamicPayloadFetcher(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {

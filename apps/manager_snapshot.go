@@ -124,6 +124,28 @@ func (sm *snapshotManager) LoadTickerData() int {
 	return JC.HAVE_SNAPSHOT
 }
 
+func (sm *snapshotManager) Delete() int {
+	files := []string{
+		"snapshots-panels.json",
+		"snapshots-cryptos.json",
+		"snapshots-tickers.json",
+		"snapshots-exchange.json",
+		"snapshots-ticker-cache.json",
+	}
+
+	success := true
+	for _, file := range files {
+		if !JC.EraseFile(file) {
+			success = false
+		}
+	}
+
+	if success {
+		return JC.SNAPSHOT_DELETED
+	}
+	return JC.SNAPSHOT_DELETE_FAILED
+}
+
 func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-panels.json", JT.UsePanelMaps().Serialize())
 	JC.SaveFile("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())

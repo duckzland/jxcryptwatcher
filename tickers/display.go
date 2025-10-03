@@ -165,6 +165,29 @@ func (h *tickerDisplay) updateContent() {
 				background = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 		}
+
+		if pkt.IsType("rsi") {
+			raw := JT.UseTickerCache().Get("rsi")
+			index, _ := strconv.ParseFloat(raw, 64)
+			if index < 50 {
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+			} else {
+				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+			}
+		}
+
+		if pkt.IsType("pulse") {
+			os := JT.UseTickerCache().Get("rsi_oversold_percentage")
+			ob := JT.UseTickerCache().Get("rsi_overbought_percentage")
+			osi, _ := strconv.ParseFloat(os, 64)
+			obi, _ := strconv.ParseFloat(ob, 64)
+
+			if obi > osi {
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+			} else {
+				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+			}
+		}
 	}
 
 	h.title.SetText(title)

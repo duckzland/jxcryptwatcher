@@ -12,6 +12,24 @@ import (
 	"fyne.io/fyne/v2/storage"
 )
 
+func DeleteFile(path string) bool {
+	fullPath := strings.TrimLeft(path, "/")
+	fileURI, err := storage.ParseURI(fullPath)
+
+	if err != nil {
+		Logln("Error parsing URI for file:", err)
+		return false
+	}
+
+	if err := storage.Delete(fileURI); err != nil {
+		Logf("Error deleting file: %v", err)
+		return false
+	}
+
+	Logf("Successfully deleted file: %s", path)
+	return true
+}
+
 func CreateFile(path string, textString string) bool {
 
 	fullPath := strings.TrimLeft(path, "/")
@@ -137,4 +155,9 @@ func LoadFile(filename string) (string, bool) {
 	}
 
 	return buffer.String(), true
+}
+
+func EraseFile(filename string) bool {
+	path := BuildPathRelatedToUserDirectory([]string{filename})
+	return DeleteFile(path)
 }

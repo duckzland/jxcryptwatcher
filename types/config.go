@@ -17,34 +17,42 @@ type configType struct {
 	FearGreedEndpoint string `json:"feargreed_endpoint"`
 	CMC100Endpoint    string `json:"cmc100_endpoint"`
 	MarketCapEndpoint string `json:"marketcap_endpoint"`
+	RSIEndpoint       string `json:"rsi_endpoint"`
 	Delay             int64  `json:"delay"`
 	Version           string `json:"version"`
 }
 
-func (c *configType) loadFile() *configType {
+func (c *configType) loadFile() bool {
 	configMu.Lock()
 	defer configMu.Unlock()
 
 	content, ok := JC.LoadFile("config.json")
 	if !ok {
 		JC.Logf("Failed to load config.json")
-		return c
+		return configStorage.checkFile().CanDoAltSeason()
 	}
 
 	if err := json.Unmarshal([]byte(content), c); err != nil {
 		JC.Logf("Failed to unmarshal config.json: %v", err)
-		return c
+		return false
 	}
 
-	c.updateDefault()
+	if c.updateDefault() {
+		// Call directly!, using c.SaveConfig() will cause double lock!
+		JC.SaveFile("config.json", configStorage)
+		return false
+	}
+
 	JC.Logln("Configuration Loaded")
-	return c
+
+	return true
 }
 
-func (c *configType) updateDefault() *configType {
-	if c.Version == "" || c.Version == "1.2.0" {
-		JC.Logln("Updating old config")
-		c.Version = "1.2.6"
+func (c *configType) updateDefault() bool {
+
+	if c.Version != "1.6.0" {
+		JC.Logln("Updating old config to 1.6.0")
+		c.Version = "1.6.0"
 
 		if c.AltSeasonEndpoint == "" {
 			c.AltSeasonEndpoint = "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart"
@@ -58,20 +66,26 @@ func (c *configType) updateDefault() *configType {
 		if c.MarketCapEndpoint == "" {
 			c.MarketCapEndpoint = "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical"
 		}
+		if c.RSIEndpoint == "" {
+			c.RSIEndpoint = "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall"
+		}
 
-		c.SaveFile()
+		return true
 	}
-	return c
+
+	return false
 }
 
 func (c *configType) SaveFile() *configType {
 	configMu.RLock()
 	defer configMu.RUnlock()
+
 	JC.SaveFile("config.json", configStorage)
+
 	return c
 }
 
-func (c *configType) CheckFile() *configType {
+func (c *configType) checkFile() *configType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
@@ -84,7 +98,8 @@ func (c *configType) CheckFile() *configType {
 			FearGreedEndpoint: "https://api.coinmarketcap.com/data-api/v3/fear-greed/chart",
 			CMC100Endpoint:    "https://api.coinmarketcap.com/data-api/v3/top100/supplement",
 			MarketCapEndpoint: "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical",
-			Version:           "1.4.0",
+			RSIEndpoint:       "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall",
+			Version:           "1.6.0",
 			Delay:             60,
 		}
 
@@ -137,12 +152,18 @@ func (c *configType) CanDoAltSeason() bool {
 	return c.AltSeasonEndpoint != ""
 }
 
-func ConfigInit() {
+func (c *configType) CanDoRSI() bool {
+	configMu.RLock()
+	defer configMu.RUnlock()
+	return c.RSIEndpoint != ""
+}
+
+func ConfigInit() bool {
 	configMu.Lock()
 	configStorage = &configType{}
 	configMu.Unlock()
 
-	UseConfig().CheckFile().loadFile()
+	return UseConfig().checkFile().loadFile()
 }
 
 func UseConfig() *configType {

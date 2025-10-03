@@ -26,6 +26,7 @@ func NewSettingsForm(
 	fearGreedEndpointEntry := widget.NewEntry()
 	CMC100EndpointEntry := widget.NewEntry()
 	marketCapEndpointEntry := widget.NewEntry()
+	rsiEndpointEntry := widget.NewEntry()
 
 	// Prefill with config data
 	delayEntry.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
@@ -35,6 +36,7 @@ func NewSettingsForm(
 	fearGreedEndpointEntry.SetText(JT.UseConfig().FearGreedEndpoint)
 	CMC100EndpointEntry.SetText(JT.UseConfig().CMC100Endpoint)
 	marketCapEndpointEntry.SetText(JT.UseConfig().MarketCapEndpoint)
+	rsiEndpointEntry.SetText(JT.UseConfig().RSIEndpoint)
 
 	delayEntry.Validator = func(s string) error {
 		if len(s) == 0 {
@@ -116,6 +118,17 @@ func NewSettingsForm(
 		return nil
 	}
 
+	rsiEndpointEntry.Validator = func(s string) error {
+		if len(s) == 0 {
+			return fmt.Errorf("This field cannot be empty")
+		}
+		_, err := url.ParseRequestURI(s)
+		if err != nil {
+			return fmt.Errorf("Invalid URL format")
+		}
+		return nil
+	}
+
 	formItems := []*widget.FormItem{
 		widget.NewFormItem("Crypto Maps URL", dataEndPointEntry),
 		widget.NewFormItem("Exchange URL", exchangeEndPointEntry),
@@ -123,6 +136,7 @@ func NewSettingsForm(
 		widget.NewFormItem("Fear&Greed URL", fearGreedEndpointEntry),
 		widget.NewFormItem("CMC100 URL", CMC100EndpointEntry),
 		widget.NewFormItem("MarketCap URL", marketCapEndpointEntry),
+		widget.NewFormItem("RSI URL", rsiEndpointEntry),
 		widget.NewFormItem("Delay (seconds)", delayEntry),
 	}
 
@@ -138,6 +152,7 @@ func NewSettingsForm(
 				JT.UseConfig().FearGreedEndpoint = fearGreedEndpointEntry.Text
 				JT.UseConfig().CMC100Endpoint = CMC100EndpointEntry.Text
 				JT.UseConfig().MarketCapEndpoint = marketCapEndpointEntry.Text
+				JT.UseConfig().RSIEndpoint = rsiEndpointEntry.Text
 
 				JT.UseConfig().Delay = delay
 
