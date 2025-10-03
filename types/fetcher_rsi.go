@@ -58,7 +58,7 @@ func (er *rsiFetcher) GetRate() int64 {
 			ts := dec.Status.Timestamp
 
 			tickerCacheStorage.Insert("rsi", rsi, ts)
-			tickerCacheStorage.Insert("pulse", fmt.Sprintf("%.1f | %.1f", dec.Data.Overall.OverboughtPercentage, dec.Data.Overall.OversoldPercentage), ts)
+			tickerCacheStorage.Insert("pulse", fmt.Sprintf("%.2f%%  %.2f%%", dec.Data.Overall.OverboughtPercentage, dec.Data.Overall.OversoldPercentage), ts)
 			tickerCacheStorage.Insert("rsi_oversold_percentage", sp, ts)
 			tickerCacheStorage.Insert("rsi_overbought_precentage", bp, ts)
 			tickerCacheStorage.Insert("rsi_neutral_percentage", np, ts)

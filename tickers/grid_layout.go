@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
+	JC "jxwatcher/core"
 )
 
 type tickerGridLayout struct {
@@ -48,34 +49,13 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if size.Width > g.minCellSize.Width {
+		g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
 
-		switch len(objects) {
-		case 6:
-			g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
-
-			if g.colCount < 6 {
-				g.colCount = 3
-			} else if g.colCount < 3 {
-				g.colCount = 3
-			} else if g.colCount > len(objects) {
-				g.colCount = len(objects)
-			}
-
-			if g.colCount > 3 && g.colCount%2 != 0 {
-				g.colCount--
-			}
-		case 4:
-			g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
-			if g.colCount < 2 {
-				g.colCount = 2
-			} else if g.colCount > len(objects) {
-				g.colCount = len(objects)
-			}
-
-			if g.colCount > 2 && g.colCount%2 != 0 {
-				g.colCount--
-			}
-
+		switch g.colCount {
+		case 5, 4, 3:
+			g.colCount = 3
+		case 2:
+			g.colCount = 2
 		default:
 			g.colCount = len(objects)
 		}
@@ -97,6 +77,8 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		if emptySpace > 0 {
 			g.dynCellSize.Width += emptySpace / float32(g.colCount)
 		}
+
+		JC.Logln("Calculated", g.colCount, g.dynCellSize.Width, g.minCellSize.Width, pads)
 	}
 
 	if g.colCount == 0 {
@@ -150,21 +132,16 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	aWidth := JA.UseLayout().UseContainer().Size().Width
 
 	c := int(math.Floor(float64(aWidth) / float64(g.dynCellSize.Width)))
+	r := 1
 
-	switch len(objects) {
-	case 6:
-		if c > 3 && c%2 != 0 {
-			c--
-		}
-	case 4:
-		if c > 2 && c%2 != 0 {
-			c--
-		}
+	switch c {
+	case 5, 4, 3:
+		r = 2
+	case 2:
+		r = 3
 	default:
-		c = len(objects)
+		r = 1
 	}
-
-	r := int(math.Ceil(float64(len(objects)) / float64(c)))
 
 	rows := max(r, 1)
 	cols := max(c, 1)

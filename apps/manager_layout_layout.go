@@ -23,7 +23,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	const splitThreshold = 1600.0
-	const minTickerWidth = 800.0
+	const minTickerWidth = 900.0
 
 	padding := a.padding
 
