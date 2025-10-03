@@ -33,13 +33,13 @@ func (sm *snapshotManager) LoadPanels() int {
 		}
 
 		p.Init()
-		p.SetStatus(c.Status)
-		p.SetOldKey(c.OldKey)
 		p.Set(p.RefreshKey(c.Key))
+		p.SetOldKey(c.OldKey)
+		p.SetStatus(c.Status)
 		restored = append(restored, p)
 	}
 
-	JT.UsePanelMaps().Init()
+	JT.PanelsInit()
 	JT.UsePanelMaps().Hydrate(restored)
 
 	return JC.HAVE_SNAPSHOT

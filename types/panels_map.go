@@ -219,18 +219,34 @@ func (pc *panelsMapType) ChangeStatus(newStatus int, shouldChange func(pdt Panel
 }
 
 func (pc *panelsMapType) Hydrate(data []PanelData) {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
 
-	for _, pk := range data {
-		if !pk.HasParent() {
-			pk.SetParent(pc)
-			if !pc.ValidatePanel(pk.Get()) {
-				pk.SetStatus(JC.STATE_BAD_CONFIG)
-			}
+	dataLen := pc.TotalData()
+
+	for i := 0; i < dataLen; i++ {
+		pdt := pc.GetDataByIndex(i)
+		if pdt == nil || i < 0 || i >= len(data) {
+			continue
+		}
+
+		pkn := data[i]
+		pko := pdt.UsePanelKey()
+
+		if !pko.IsConfigMatching(pkn.Get()) {
+			continue
+		}
+
+		pdt.Set(pkn.Get())
+		pdt.SetOldKey(pkn.GetOldKey())
+		pdt.SetStatus(pkn.GetStatus())
+
+		if !pdt.HasParent() {
+			pdt.SetParent(pc)
+		}
+
+		if !pc.ValidatePanel(pdt.Get()) {
+			pdt.SetStatus(JC.STATE_BAD_CONFIG)
 		}
 	}
-	pc.data = data
 }
 
 func (pc *panelsMapType) Serialize() []panelDataCache {

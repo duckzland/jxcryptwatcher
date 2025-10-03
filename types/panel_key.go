@@ -52,6 +52,13 @@ func (p *panelKeyType) IsValueMatchingFloat(val float64, op string) bool {
 	return p.IsValueMatching(JC.ToBigFloat(val), op)
 }
 
+func (p *panelKeyType) IsConfigMatching(key string) bool {
+	s := strings.SplitN(p.value, "|", 2)
+	v := strings.SplitN(key, "|", 2)
+
+	return len(s) > 0 && len(v) > 0 && s[0] == v[0]
+}
+
 func (p *panelKeyType) RefreshKey() string {
 	return p.GenerateKeyFromPanel(p.GetPanel(), p.GetValueFloat())
 }

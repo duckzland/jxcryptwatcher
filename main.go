@@ -97,8 +97,6 @@ func main() {
 			JT.UseTickerCache().Reset()
 		}
 
-		JA.UseSnapshot().Delete()
-
 		fyne.Do(func() {
 
 			JX.RegisterTickerGrid()
