@@ -296,7 +296,7 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 11
 
 	case SizeTickerContent:
-		return 16
+		return 18
 
 	case SizeNotificationText:
 		return 14
