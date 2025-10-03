@@ -76,13 +76,11 @@ func (c *configType) updateDefault() bool {
 	return false
 }
 
-func (c *configType) SaveFile() *configType {
+func (c *configType) saveFile() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 
-	JC.SaveFile("config.json", configStorage)
-
-	return c
+	return JC.SaveFile("config.json", configStorage)
 }
 
 func (c *configType) checkFile() *configType {
@@ -168,4 +166,8 @@ func ConfigInit() bool {
 
 func UseConfig() *configType {
 	return configStorage
+}
+
+func ConfigSave() bool {
+	return UseConfig().saveFile()
 }

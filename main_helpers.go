@@ -592,7 +592,7 @@ func OpenSettingForm() {
 		func() {
 			JC.Notify("Saving configuration...")
 
-			if JT.UseConfig().SaveFile() != nil {
+			if JT.ConfigSave() {
 				JC.Notify("Configuration saved successfully.")
 				JA.UseStatus().DetectData()
 

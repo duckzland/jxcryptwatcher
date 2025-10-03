@@ -37,13 +37,15 @@ func TestConfigInitLoadAndValidate(t *testing.T) {
 		MarketCapEndpoint: "https://marketcap",
 		Version:           "1.3.0",
 	}
-	configStorage.SaveFile()
+	ConfigSave()
 
-	configStorage = &configType{}
-	configStorage.loadFile()
+	ConfigInit()
 
-	if !configStorage.IsValid() {
+	if !UseConfig().IsValid() {
 		t.Error("Expected config to be valid")
+	}
+	if UseConfig().Version != "1.6.0" {
+		t.Errorf("Expected version to be 1.6.0 after load, got %s", UseConfig().Version)
 	}
 	configTurnOnLogs()
 }
@@ -53,12 +55,13 @@ func TestConfigCheckFileCreatesDefault(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	configStorage = &configType{}
-	configStorage.checkFile()
-	configStorage.loadFile()
+	ConfigInit()
 
-	if !configStorage.IsValid() {
+	if !UseConfig().IsValid() {
 		t.Error("Expected default config to be valid")
+	}
+	if UseConfig().Version != "1.6.0" {
+		t.Errorf("Expected default version to be 1.6.0, got %s", UseConfig().Version)
 	}
 	configTurnOnLogs()
 }
@@ -77,17 +80,41 @@ func TestSaveFileAndReload(t *testing.T) {
 		MarketCapEndpoint: "https://marketcap",
 		Version:           "1.5.0",
 		Delay:             99,
+		RSIEndpoint:       "https://custom-rsi",
 	}
-	configStorage.SaveFile()
+	ConfigSave()
 
-	configStorage = &configType{}
-	configStorage.loadFile()
+	ConfigInit()
 
-	if !configStorage.IsValid() {
+	if !UseConfig().IsValid() {
 		t.Error("Expected config to be valid")
 	}
-	if configStorage.Delay != 99 {
-		t.Errorf("Expected delay 99 after reload, got %d", configStorage.Delay)
+	if UseConfig().Delay != 99 {
+		t.Errorf("Expected delay 99 after reload, got %d", UseConfig().Delay)
+	}
+	if UseConfig().RSIEndpoint != "https://custom-rsi" {
+		t.Errorf("Expected RSIEndpoint to remain unchanged, got %s", UseConfig().RSIEndpoint)
+	}
+	configTurnOnLogs()
+}
+
+func TestUpdateDefaultVersionPatch(t *testing.T) {
+	configTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	configStorage = &configType{
+		Version: "",
+	}
+	ConfigSave()
+
+	ConfigInit()
+
+	if UseConfig().Version != "1.6.0" {
+		t.Errorf("Expected version to be updated to 1.6.0, got %s", UseConfig().Version)
+	}
+	if UseConfig().RSIEndpoint == "" {
+		t.Error("Expected RSIEndpoint to be set by updateDefault")
 	}
 	configTurnOnLogs()
 }
@@ -99,21 +126,27 @@ func TestCapabilityChecks(t *testing.T) {
 		FearGreedEndpoint: "x",
 		CMC100Endpoint:    "x",
 		MarketCapEndpoint: "x",
+		RSIEndpoint:       "x",
 	}
+	ConfigSave()
+	ConfigInit()
 
-	if !configStorage.CanDoAltSeason() {
+	if !UseConfig().CanDoAltSeason() {
 		t.Error("Expected CanDoAltSeason to be true")
 	}
-	if !configStorage.CanDoFearGreed() {
+	if !UseConfig().CanDoFearGreed() {
 		t.Error("Expected CanDoFearGreed to be true")
 	}
-	if !configStorage.CanDoCMC100() {
+	if !UseConfig().CanDoCMC100() {
 		t.Error("Expected CanDoCMC100 to be true")
 	}
-	if !configStorage.CanDoMarketCap() {
+	if !UseConfig().CanDoMarketCap() {
 		t.Error("Expected CanDoMarketCap to be true")
 	}
-	if !configStorage.IsValidTickers() {
+	if !UseConfig().CanDoRSI() {
+		t.Error("Expected CanDoRSI to be true")
+	}
+	if !UseConfig().IsValidTickers() {
 		t.Error("Expected IsValidTickers to be true")
 	}
 	configTurnOnLogs()
@@ -128,18 +161,19 @@ func TestConcurrentAccess(t *testing.T) {
 		DataEndpoint:     "x",
 		ExchangeEndpoint: "x",
 	}
+	ConfigSave()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		configStorage.SaveFile()
+		ConfigSave()
 	}()
 
 	go func() {
 		defer wg.Done()
-		if !configStorage.IsValid() {
+		if !UseConfig().IsValid() {
 			t.Error("Expected config to be valid during concurrent access")
 		}
 	}()
