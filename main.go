@@ -74,7 +74,6 @@ func main() {
 	JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
 
 		if !JT.ConfigInit() {
-			JA.UseSnapshot().Delete()
 		}
 
 		if JA.UseSnapshot().LoadCryptos() == JC.NO_SNAPSHOT {

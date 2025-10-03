@@ -29,7 +29,9 @@ func (c *configType) loadFile() bool {
 	content, ok := JC.LoadFile("config.json")
 	if !ok {
 		JC.Logf("Failed to load config.json")
-		return configStorage.checkFile().CanDoAltSeason()
+		configStorage.checkFile()
+
+		return c.IsValid() && c.IsValidTickers()
 	}
 
 	if err := json.Unmarshal([]byte(content), c); err != nil {
@@ -123,7 +125,7 @@ func (c *configType) IsValid() bool {
 func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != ""
+	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != "" || c.RSIEndpoint != ""
 }
 
 func (c *configType) CanDoCMC100() bool {
