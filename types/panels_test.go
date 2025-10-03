@@ -54,12 +54,12 @@ func TestPanelsTypeCreateSaveLoad(t *testing.T) {
 
 	// Save to file
 	p := &panelsType{}
-	if !p.SaveFile(pm) {
+	if !p.saveFile(pm) {
 		t.Error("Failed to save panels")
 	}
 
 	// Load from file
-	loaded := (&panelsType{}).LoadFile()
+	loaded := (&panelsType{}).loadFile()
 	if len(*loaded) != 1 {
 		t.Errorf("Expected 1 panel, got %d", len(*loaded))
 	}
@@ -106,7 +106,7 @@ func TestPanelsTypeConvertToMap(t *testing.T) {
 		},
 	}
 
-	p.ConvertToMap(pm)
+	p.convertToMap(pm)
 	if pm.TotalData() != 1 {
 		t.Errorf("Expected 1 panel in map, got %d", pm.TotalData())
 	}

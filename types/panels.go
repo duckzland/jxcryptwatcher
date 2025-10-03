@@ -16,7 +16,7 @@ var panelsMu sync.RWMutex
 
 type panelsType []panelType
 
-func (p *panelsType) LoadFile() *panelsType {
+func (p *panelsType) loadFile() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -53,7 +53,7 @@ func (p *panelsType) LoadFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) SaveFile(maps *panelsMapType) bool {
+func (p *panelsType) saveFile(maps *panelsMapType) bool {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
@@ -91,7 +91,7 @@ func (p *panelsType) SaveFile(maps *panelsMapType) bool {
 	return JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), string(jsonData))
 }
 
-func (p *panelsType) CreateFile() *panelsType {
+func (p *panelsType) createFile() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -99,10 +99,10 @@ func (p *panelsType) CreateFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) CheckFile() *panelsType {
+func (p *panelsType) checkFile() *panelsType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
-		p.CreateFile()
+		p.createFile()
 	}
 
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *panelsType) CheckFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) ConvertToMap(maps *panelsMapType) {
+func (p *panelsType) convertToMap(maps *panelsMapType) {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
@@ -140,7 +140,7 @@ func PanelsInit() {
 	panels := panelsType{}
 	panelsMu.Unlock()
 
-	panels.CheckFile().LoadFile().ConvertToMap(UsePanelMaps())
+	panels.checkFile().loadFile().convertToMap(UsePanelMaps())
 }
 
 func SavePanels() bool {
@@ -148,7 +148,7 @@ func SavePanels() bool {
 	panels := panelsType{}
 	panelsMu.RUnlock()
 
-	return panels.SaveFile(UsePanelMaps())
+	return panels.saveFile(UsePanelMaps())
 }
 
 func RemovePanel(uuid string) bool {

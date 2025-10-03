@@ -37,7 +37,7 @@ func TestCryptosLoaderConvertToMap(t *testing.T) {
 		},
 	}
 
-	cm := loader.ConvertToMap()
+	cm := loader.convertToMap()
 	if cm.IsEmpty() {
 		t.Error("Expected map to be populated")
 	}
@@ -59,7 +59,7 @@ func TestCryptosLoaderLoadFileEmpty(t *testing.T) {
 	JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), `{"values":[]}`)
 
 	loader := &cryptosLoaderType{}
-	loader.LoadFile()
+	loader.loadFile()
 
 	if len(loader.Values) != 0 {
 		t.Errorf("Expected empty values, got: %d", len(loader.Values))

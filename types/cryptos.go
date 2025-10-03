@@ -20,7 +20,7 @@ type cryptosLoaderType struct {
 	Values []cryptoType `json:"values"`
 }
 
-func (c *cryptosLoaderType) LoadFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) loadFile() *cryptosLoaderType {
 	JC.PrintMemUsage("Start loading cryptos.json")
 
 	content, ok := JC.LoadFile("cryptos.json")
@@ -41,7 +41,7 @@ func (c *cryptosLoaderType) LoadFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) CreateFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) createFile() *cryptosLoaderType {
 	status := c.GetCryptos()
 	switch status {
 	case JC.NETWORKING_FAILED_CREATE_FILE:
@@ -53,11 +53,11 @@ func (c *cryptosLoaderType) CreateFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) CheckFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) checkFile() *cryptosLoaderType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 
 	if !exists {
-		if c.CreateFile() == nil {
+		if c.createFile() == nil {
 			JC.Logln("Failed to create cryptos.json with default values")
 			JC.Notify("Failed to create cryptos data file")
 			c = &cryptosLoaderType{}
@@ -74,7 +74,7 @@ func (c *cryptosLoaderType) CheckFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) ConvertToMap() *cryptosMapType {
+func (c *cryptosLoaderType) convertToMap() *cryptosMapType {
 	JC.PrintMemUsage("Start populating cryptos")
 
 	CM := &cryptosMapType{}
@@ -87,7 +87,7 @@ func (c *cryptosLoaderType) ConvertToMap() *cryptosMapType {
 
 	for _, crypto := range c.Values {
 		if crypto.Status != 0 || crypto.IsActive != 0 {
-			CM.Insert(strconv.FormatInt(crypto.Id, 10), crypto.CreateKey())
+			CM.Insert(strconv.FormatInt(crypto.Id, 10), crypto.createKey())
 		}
 	}
 
@@ -172,10 +172,10 @@ func CryptosLoaderInit() {
 	cryptosLoaderStorage = &cryptosLoaderType{}
 	cryptosMu.Unlock()
 
-	CM := cryptosLoaderStorage.CheckFile().LoadFile().ConvertToMap()
-	CM.ClearMapCache()
+	cm := cryptosLoaderStorage.checkFile().loadFile().convertToMap()
+	cm.ClearMapCache()
 
-	UsePanelMaps().SetMaps(CM)
+	UsePanelMaps().SetMaps(cm)
 	UsePanelMaps().GetOptions()
 }
 

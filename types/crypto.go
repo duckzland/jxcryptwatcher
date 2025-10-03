@@ -82,6 +82,6 @@ func (cp *cryptoType) validate(v []interface{}) bool {
 	return true
 }
 
-func (cp *cryptoType) CreateKey() string {
+func (cp *cryptoType) createKey() string {
 	return fmt.Sprintf("%d|%s - %s", cp.Id, cp.Symbol, cp.Name)
 }

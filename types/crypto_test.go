@@ -81,7 +81,7 @@ func TestCryptoTypeCreateKey(t *testing.T) {
 		Name:   "Ethereum",
 		Symbol: "ETH",
 	}
-	key := c.CreateKey()
+	key := c.createKey()
 	expected := "42|ETH - Ethereum"
 	if key != expected {
 		t.Errorf("Unexpected key. Got: %s, Want: %s", key, expected)
