@@ -134,9 +134,39 @@ func (pc *tickersMapType) Hydrate(data []TickerData) {
 				tkt.SetOldKey(tkd.GetOldKey())
 			}
 		} else {
-			pc.mu.Lock()
-			pc.data = append(pc.data, tkd)
-			pc.mu.Unlock()
+			switch tkd.GetType() {
+			case "market_cap":
+				if UseConfig().CanDoMarketCap() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+			case "cmc100":
+				if UseConfig().CanDoCMC100() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+			case "altcoin_index":
+				if UseConfig().CanDoAltSeason() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+			case "feargreed":
+				if UseConfig().CanDoFearGreed() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+			case "rsi", "pulse":
+				if UseConfig().CanDoRSI() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+
+			}
 		}
 	}
 
