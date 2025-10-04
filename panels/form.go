@@ -198,13 +198,18 @@ func NewPanelForm(
 					nkt := JT.NewPanelKey()
 					nkt.Set(newKey)
 
-					// Coin change, need to refresh data and invalidate the rates
 					if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
+						// Coin change, need to refresh data and invalidate the rates
 						ns.SetStatus(JC.STATE_LOADING)
-						ns.Set(newKey)
+						ns.Set(nkt.GetRawValue())
+						ns.Update(nkt.GetRawValue())
+					} else {
+						// No coin change, just update the value and decimals
+						opk := ns.GetOldKey()
+						nkt.UpdateValue(pkt.GetValueFloat())
+						ns.Set(nkt.GetRawValue())
+						ns.SetOldKey(opk)
 					}
-
-					ns.Update(newKey)
 				}
 
 				if onSave != nil {
