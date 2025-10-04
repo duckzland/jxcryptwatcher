@@ -23,7 +23,11 @@ type notificationDisplay struct {
 
 func (w *notificationDisplay) UpdateText(msg string) {
 	maxWidth := w.text.Size().Width
-	w.text.Text = JC.TruncateText(msg, maxWidth, w.text.TextSize, w.text.TextStyle)
+	txt := JC.TruncateText(msg, maxWidth, w.text.TextSize, w.text.TextStyle)
+	if txt == w.text.Text {
+		return
+	}
+	w.text.Text = txt
 	w.text.Color = w.txtcolor
 	w.text.Refresh()
 	w.Refresh()
