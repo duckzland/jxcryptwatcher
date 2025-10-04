@@ -9,7 +9,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-func FadeOutBackground(
+func StartFadeOutBackground(
 	rect *canvas.Rectangle,
 	duration time.Duration,
 	callback func(),

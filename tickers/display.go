@@ -65,7 +65,7 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 
 	ticker.updateContent()
 
-	JA.FadeInBackground(ticker.background, 100*time.Millisecond, nil)
+	JA.StartFadeInBackground(ticker.background, 100*time.Millisecond, nil)
 
 	return ticker
 }
