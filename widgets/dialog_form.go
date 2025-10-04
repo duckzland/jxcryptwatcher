@@ -8,8 +8,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-
-	JC "jxwatcher/core"
 )
 
 type DialogForm interface {
@@ -75,26 +73,10 @@ func NewDialogForm(
 		"Save and Close Form",
 		"normal",
 		func(ActionButton) {
-			fd.hideWithResponse(true)
+			fd.Submit()
 		},
 		nil,
 	)
-
-	delay := 300 * time.Millisecond
-	if JC.IsMobile {
-		delay = 1000 * time.Millisecond
-	}
-
-	fd.setSubmitState(fd.form.Validate())
-
-	fd.form.SetOnValidationChanged(func(err error) {
-		if fd.validationTimer != nil {
-			fd.validationTimer.Stop()
-		}
-		fd.validationTimer = time.AfterFunc(delay, func() {
-			fd.setSubmitState(err)
-		})
-	})
 
 	innerLayout := &dialogContentLayout{
 		background:    canvas.NewRectangle(theme.DefaultTheme().Color(theme.ColorNameBackground, theme.VariantDark)),
@@ -161,30 +143,16 @@ func (d *dialogForm) Hide() {
 }
 
 func (d *dialogForm) Submit() {
-	if d.confirm.IsDisabled() {
+	if err := d.form.Validate(); err != nil {
 		return
 	}
-	d.hideWithResponse(true)
-}
 
-func (d *dialogForm) GetContent() *fyne.Container {
-	return d.content
-}
-
-func (d *dialogForm) GetForm() *widget.Form {
-	return d.form
-}
-
-func (d *dialogForm) hideWithResponse(resp bool) {
-	err := d.form.Validate()
-	d.setSubmitState(err)
-
-	if err != nil {
+	if d.confirm.IsDisabled() {
 		return
 	}
 
 	if d.callback != nil {
-		if d.callback(resp) {
+		if d.callback(true) {
 			d.Hide()
 			return
 		}
@@ -193,10 +161,10 @@ func (d *dialogForm) hideWithResponse(resp bool) {
 	d.Hide()
 }
 
-func (d *dialogForm) setSubmitState(err error) {
-	if err != nil {
-		d.confirm.Disable()
-	} else {
-		d.confirm.Enable()
-	}
+func (d *dialogForm) GetContent() *fyne.Container {
+	return d.content
+}
+
+func (d *dialogForm) GetForm() *widget.Form {
+	return d.form
 }

@@ -34,8 +34,6 @@ type completionEntry struct {
 	canvas              fyne.Canvas
 	lastInput           string
 	uuid                string
-	userValidator       func(string) error
-	skipValidation      bool
 	dispatcher          JC.Dispatcher
 }
 
@@ -60,9 +58,7 @@ func NewCompletionEntry(
 
 	c.ExtendBaseWidget(c)
 
-	c.OnChanged = func(s string) {
-		c.searchSuggestions(s)
-	}
+	c.OnChanged = c.searchSuggestions
 
 	c.dispatcher = JC.NewDispatcher(1000, c.searchableChunkSize, 16*time.Millisecond)
 	c.dispatcher.Start()
@@ -97,7 +93,6 @@ func NewCompletionEntry(
 
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
-	c.skipValidation = true
 }
 
 func (c *completionEntry) FocusLost() {
@@ -105,8 +100,6 @@ func (c *completionEntry) FocusLost() {
 }
 
 func (c *completionEntry) FocusGained() {
-
-	c.SetValidationError(nil)
 
 	c.Entry.FocusGained()
 
@@ -129,7 +122,6 @@ func (c *completionEntry) Refresh() {
 }
 
 func (c *completionEntry) Resize(size fyne.Size) {
-
 	c.Entry.Resize(size)
 	if c.popup != nil && c.popup.Visible() {
 		c.popupPosition = fyne.NewPos(-1, -1)
@@ -139,22 +131,7 @@ func (c *completionEntry) Resize(size fyne.Size) {
 }
 
 func (c *completionEntry) SetValidator(fn func(string) error) {
-	c.Validator = func(s string) error {
-		if c.skipValidation {
-			c.SetValidationError(nil)
-			return nil
-		}
-
-		return fn(s)
-	}
-}
-
-func (c *completionEntry) Validate() error {
-	c.skipValidation = false
-	err := c.Validator(c.Entry.Text)
-	c.SetValidationError(err)
-
-	return err
+	c.Validator = fn
 }
 
 func (c *completionEntry) SetParent(parent DialogForm) {
@@ -162,17 +139,13 @@ func (c *completionEntry) SetParent(parent DialogForm) {
 }
 
 func (c *completionEntry) setOptions(itemList []string) {
-
 	c.options = itemList
-
 	if c.completionList != nil {
 		c.completionList.SetData(c.options)
 	}
 }
 
 func (c *completionEntry) hideCompletion() {
-
-	c.skipValidation = false
 
 	if c.popup != nil {
 		c.popup.Hide()
@@ -196,8 +169,6 @@ func (c *completionEntry) dynamicResize() {
 }
 
 func (c *completionEntry) showCompletion() {
-
-	c.skipValidation = true
 
 	if c.pause {
 		return
@@ -408,8 +379,4 @@ func (c *completionEntry) setTextFromMenu(s string) {
 	c.Entry.Refresh()
 	c.popup.Hide()
 	c.pause = false
-
-	c.skipValidation = false
-	c.SetValidationError(c.Validator(c.Text))
-
 }

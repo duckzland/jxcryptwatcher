@@ -30,10 +30,10 @@ func NewPanelForm(
 	pte := container.NewStack()
 	pop := []*fyne.Container{pse, pte}
 
-	valueEntry := JW.NewNumericalEntry(true)
-	sourceEntry := JW.NewCompletionEntry(cm, cs, pse)
-	targetEntry := JW.NewCompletionEntry(cm, cs, pte)
-	decimalsEntry := JW.NewNumericalEntry(false)
+	ve := JW.NewNumericalEntry(true)
+	se := JW.NewCompletionEntry(cm, cs, pse)
+	te := JW.NewCompletionEntry(cm, cs, pte)
+	de := JW.NewNumericalEntry(false)
 
 	title := "Adding New Panel"
 
@@ -44,7 +44,7 @@ func NewPanelForm(
 
 		title = "Editing Panel"
 
-		valueEntry.SetDefaultValue(
+		ve.SetDefaultValue(
 			strconv.FormatFloat(
 				pko.GetSourceValueFloat(),
 				'f',
@@ -53,17 +53,17 @@ func NewPanelForm(
 			),
 		)
 
-		sourceEntry.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetSourceCoinString()))
+		se.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetSourceCoinString()))
 
-		targetEntry.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetTargetCoinString()))
+		te.SetDefaultValue(JT.UsePanelMaps().GetDisplayById(pko.GetTargetCoinString()))
 
-		decimalsEntry.SetDefaultValue(pko.GetDecimalsString())
+		de.SetDefaultValue(pko.GetDecimalsString())
 
 	} else {
-		decimalsEntry.SetText("6")
+		de.SetText("6")
 	}
 
-	valueEntry.SetValidator(func(s string) error {
+	ve.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
@@ -82,7 +82,7 @@ func NewPanelForm(
 		return nil
 	})
 
-	sourceEntry.SetValidator(func(s string) error {
+	se.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("Please select a cryptocurrency.")
@@ -94,7 +94,7 @@ func NewPanelForm(
 			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
-		xid := JT.UsePanelMaps().GetIdByDisplay(targetEntry.Text)
+		xid := JT.UsePanelMaps().GetIdByDisplay(te.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err == nil && JT.UsePanelMaps().ValidateId(bid) && bid == id {
 			return fmt.Errorf("Source and target cryptocurrencies must be different.")
@@ -103,7 +103,7 @@ func NewPanelForm(
 		return nil
 	})
 
-	targetEntry.SetValidator(func(s string) error {
+	te.SetValidator(func(s string) error {
 
 		if len(s) == 0 {
 			return fmt.Errorf("Please select a cryptocurrency.")
@@ -115,7 +115,7 @@ func NewPanelForm(
 			return fmt.Errorf("Please select a valid cryptocurrency.")
 		}
 
-		xid := JT.UsePanelMaps().GetIdByDisplay(sourceEntry.Text)
+		xid := JT.UsePanelMaps().GetIdByDisplay(se.Text)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err == nil && JT.UsePanelMaps().ValidateId(bid) && bid == id {
 			return fmt.Errorf("Source and target cryptocurrencies must be different.")
@@ -124,7 +124,7 @@ func NewPanelForm(
 		return nil
 	})
 
-	decimalsEntry.SetValidator(func(s string) error {
+	de.SetValidator(func(s string) error {
 		if len(s) == 0 {
 			return fmt.Errorf("This field cannot be empty")
 		}
@@ -145,36 +145,36 @@ func NewPanelForm(
 		return nil
 	})
 
-	formItems := []*widget.FormItem{
-		widget.NewFormItem("Value", valueEntry),
-		widget.NewFormItem("Source", sourceEntry),
-		widget.NewFormItem("Target", targetEntry),
-		widget.NewFormItem("Decimals", decimalsEntry),
+	fi := []*widget.FormItem{
+		widget.NewFormItem("Value", ve),
+		widget.NewFormItem("Source", se),
+		widget.NewFormItem("Target", te),
+		widget.NewFormItem("Decimals", de),
 	}
 
-	parent := JW.NewDialogForm(title, formItems, nil, nil, pop,
+	parent := JW.NewDialogForm(title, fi, nil, nil, pop,
 		func(b bool) bool {
 			if b {
 				npk := JT.NewPanelKey()
 				var ns JT.PanelData
 
-				sid := JT.UsePanelMaps().GetIdByDisplay(sourceEntry.Text)
-				tid := JT.UsePanelMaps().GetIdByDisplay(targetEntry.Text)
+				sid := JT.UsePanelMaps().GetIdByDisplay(se.Text)
+				tid := JT.UsePanelMaps().GetIdByDisplay(te.Text)
 				bid := JT.UsePanelMaps().GetSymbolById(sid)
 				mid := JT.UsePanelMaps().GetSymbolById(tid)
 
-				newKey := npk.GenerateKey(
+				npk.Set(npk.GenerateKey(
 					sid,
 					tid,
-					valueEntry.Text,
+					ve.Text,
 					bid,
 					mid,
-					decimalsEntry.Text,
+					de.Text,
 					JC.ToBigFloat(-1),
-				)
+				))
 
 				if panelKey == "new" {
-					ns = JT.UsePanelMaps().Append(newKey)
+					ns = JT.UsePanelMaps().Append(npk.GetRawValue())
 
 					if ns == nil {
 						JC.Notify("Unable to add new panel. Please try again.")
@@ -195,19 +195,17 @@ func NewPanelForm(
 					}
 
 					pkt := ns.UsePanelKey()
-					nkt := JT.NewPanelKey()
-					nkt.Set(newKey)
 
-					if pkt.GetSourceCoinInt() != nkt.GetSourceCoinInt() || pkt.GetTargetCoinInt() != nkt.GetTargetCoinInt() {
+					if pkt.GetSourceCoinInt() != npk.GetSourceCoinInt() || pkt.GetTargetCoinInt() != npk.GetTargetCoinInt() {
 						// Coin change, need to refresh data and invalidate the rates
 						ns.SetStatus(JC.STATE_LOADING)
-						ns.Set(nkt.GetRawValue())
-						ns.Update(nkt.GetRawValue())
+						ns.Set(npk.GetRawValue())
+						ns.Update(npk.GetRawValue())
 					} else {
 						// No coin change, just update the value and decimals
 						opk := ns.GetOldKey()
-						nkt.UpdateValue(pkt.GetValueFloat())
-						ns.Set(nkt.GetRawValue())
+						npk.UpdateValue(pkt.GetValueFloat())
+						ns.Set(npk.GetRawValue())
 						ns.SetOldKey(opk)
 					}
 				}
@@ -223,8 +221,8 @@ func NewPanelForm(
 		onDestroy,
 		JC.Window)
 
-	sourceEntry.SetParent(parent)
-	targetEntry.SetParent(parent)
+	se.SetParent(parent)
+	te.SetParent(parent)
 
 	return parent
 }
