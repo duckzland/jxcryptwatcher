@@ -16,11 +16,13 @@ func StartFlashingText(
 	visibleColor color.Color,
 	flashes int,
 ) {
-	JC.UseDispatcher().Submit(func() {
-		if JC.IsMobile {
-			interval = interval / 2
-		}
 
+	r, g, b, _ := visibleColor.RGBA()
+	baseR := float64(r >> 8)
+	baseG := float64(g >> 8)
+	baseB := float64(b >> 8)
+
+	JC.UseDispatcher().Submit(func() {
 		alphaSequence := make([]uint8, flashes*2)
 		for i := range alphaSequence {
 			if i%2 == 0 {
@@ -35,19 +37,19 @@ func StartFlashingText(
 		go func() {
 			defer ticker.Stop()
 
-			var lastAlpha uint8 = 0
-
 			for _, alpha := range alphaSequence {
 				<-ticker.C
 
-				if alpha != lastAlpha {
-					lastAlpha = alpha
-
-					fyne.Do(func() {
-						JC.SetTextAlpha(text, alpha)
-						text.Refresh()
-					})
-				}
+				fyne.Do(func() {
+					a := float64(alpha) / 255.0
+					text.Color = color.RGBA{
+						R: uint8(baseR * a),
+						G: uint8(baseG * a),
+						B: uint8(baseB * a),
+						A: 255,
+					}
+					text.Refresh()
+				})
 			}
 		}()
 	})

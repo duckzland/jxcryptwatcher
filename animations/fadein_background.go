@@ -15,11 +15,7 @@ func FadeInBackground(
 	callback func(),
 ) {
 	JC.UseDispatcher().Submit(func() {
-		alphaSteps := []uint8{20, 64, 128, 192, 255}
-		if JC.IsMobile {
-			alphaSteps = []uint8{20, 128, 255}
-		}
-
+		alphaSteps := []uint8{100, 128, 192, 255}
 		interval := duration / time.Duration(len(alphaSteps))
 		ticker := time.NewTicker(interval)
 

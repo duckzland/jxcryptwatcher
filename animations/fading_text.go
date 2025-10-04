@@ -17,16 +17,11 @@ func StartFadingText(
 	JC.UseDispatcher().Submit(func() {
 		if fadeAlphas == nil || len(*fadeAlphas) == 0 {
 			fadeAlphas = &[]uint8{
-				255, 200, 160, 120, 80, 40, 0,
+				255, 160, 80, 0,
 			}
 		}
 
-		delay := 80 * time.Millisecond
-		if JC.IsMobile {
-			delay = 40 * time.Millisecond
-		}
-
-		ticker := time.NewTicker(delay)
+		ticker := time.NewTicker(80 * time.Millisecond)
 
 		go func() {
 			defer ticker.Stop()
