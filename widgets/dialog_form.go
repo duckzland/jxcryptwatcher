@@ -81,7 +81,7 @@ func NewDialogForm(
 	)
 
 	innerLayout := &dialogContentLayout{
-		background:    canvas.NewRectangle(JC.UseTheme().BackgroundColor()),
+		background:    canvas.NewRectangle(JC.UseTheme().GetColor(theme.ColorNameBackground)),
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
