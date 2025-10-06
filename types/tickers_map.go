@@ -250,7 +250,7 @@ func TickersInit() {
 		tdt := NewTickerData()
 		tdt.SetTitle("ETF Flow")
 		tdt.SetType("etf")
-		tdt.SetFormat("shortcurrency")
+		tdt.SetFormat("shortcurrency_withsign")
 		UseTickerMaps().Add(tdt)
 	}
 

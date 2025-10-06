@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"fyne.io/fyne/v2/data/binding"
@@ -294,6 +295,12 @@ func (p *tickerDataType) FormatContent() string {
 		return printer.Sprintf("$%.2f", val)
 	case "shortcurrency":
 		return JC.FormatShortCurrency(raw)
+	case "shortcurrency_withsign":
+		sign := "+"
+		if val < 0 {
+			sign = "-"
+		}
+		return sign + JC.FormatShortCurrency(strings.TrimPrefix(raw, "-"))
 	case "percentage":
 		return fmt.Sprintf("%s/100", raw)
 	case "shortpercentage":

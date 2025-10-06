@@ -135,7 +135,7 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	case 5, 4, 6, 7:
 		r = 2
 	case 2, 3:
-		r = 3
+		r = 4
 	default:
 		r = 1
 	}
