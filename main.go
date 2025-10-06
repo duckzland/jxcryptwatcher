@@ -21,7 +21,8 @@ func main() {
 	JC.RegisterThemeManager().Init()
 
 	JC.App = app.NewWithID(JC.AppID)
-	JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
+	// Comment this out for now, as we dont have real settings to force DarkTheme
+	// JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
 
 	JC.App.Settings().SetTheme(JC.UseTheme())
 
