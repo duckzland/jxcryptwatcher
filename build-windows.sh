@@ -9,7 +9,7 @@
 ##   sudo apt install gcc-mingw-w64 wixl uuid-runtime
 ##   go install github.com/tc-hib/go-winres@latest
 ##
-## For debugging, run: ./build-debian.sh debug
+## For debugging, run: ./build-windows.sh debug
 ##
 ## Notes:
 ## - 'uuid-runtime' is only needed if you want to generate new UUIDs.
@@ -113,8 +113,8 @@ fi
 # Change component GUIDs only when necessary: A new component GUID is required if the key path of 
 # the component changes (e.g., a file is renamed or moved to a different location) 
 # or if the component's content fundamentally changes such that it's no longer the same logical entity.
-# component_guid=$(uuidgen)
-component_guid="900c3a3d-77b4-468c-8a2d-8a6eb9dd838e"
+component_guid=$(uuidgen)
+# component_guid="900c3a3d-77b4-468c-8a2d-8a6eb9dd838e"
 if [[ -z "$component_guid" ]]; then
     echo_error "Command uuidgen not found, install with 'sudo apt install uuid-runtime'"
     exit 1
@@ -185,7 +185,7 @@ cat > "$wxs_file" <<EOF
 
     <!-- Define upgrade behavior -->
     <Upgrade Id="$upgrade_guid">
-      <UpgradeVersion Minimum="0.0.0" Maximum="$version" OnlyDetect="no" Property="OLD_VERSION_FOUND" />
+      <UpgradeVersion Minimum="0.0.0" Maximum="99.0.0" OnlyDetect="no" Property="OLD_VERSION_FOUND" />
       <UpgradeVersion Minimum="$version" IncludeMinimum="yes" OnlyDetect="yes" Property="NEWER_VERSION_FOUND" />
     </Upgrade>
 
