@@ -185,12 +185,13 @@ cat > "$wxs_file" <<EOF
 
     <!-- Define upgrade behavior -->
     <Upgrade Id="$upgrade_guid">
-      <UpgradeVersion Minimum="0.0.0" Maximum="99.0.0" OnlyDetect="no" Property="OLD_VERSION_FOUND" />
+      <UpgradeVersion Minimum="0.0.0" Maximum="99.0.0" IncludeMaximum="no" OnlyDetect="no" Property="OLD_VERSION_FOUND" />
       <UpgradeVersion Minimum="$version" IncludeMinimum="yes" OnlyDetect="yes" Property="NEWER_VERSION_FOUND" />
     </Upgrade>
 
     <InstallExecuteSequence>
-      <RemoveExistingProducts After="InstallInitialize" />
+      <!-- <RemoveExistingProducts After="InstallInitialize" /> -->
+      <RemoveExistingProducts Before="CostFinalize" />
     </InstallExecuteSequence>
 
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
