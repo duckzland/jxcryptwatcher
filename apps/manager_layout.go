@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 
@@ -200,7 +201,7 @@ func (m *layoutManager) setTickers(container *fyne.Container) {
 
 	m.mu.Lock()
 	m.tickers = container
-	m.container.Objects[1] = container
+	m.container.Objects[2] = container
 
 	if layout, ok := m.container.Layout.(*mainLayout); ok {
 		layout.tickers = container
@@ -251,11 +252,13 @@ func NewAppLayout() fyne.CanvasObject {
 		tickers:     manager.tickers,
 		content:     manager.scroll,
 		placeholder: manager.placeholder,
+		background:  canvas.NewRectangle(JC.UseTheme().GetColor(theme.ColorNameBackground)),
 		overlay:     nil,
 	}
 
 	manager.container = container.New(
 		layout,
+		layout.background,
 		layout.topBar,
 		layout.tickers,
 		layout.content,

@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
@@ -15,6 +16,7 @@ type mainLayout struct {
 	overlay     *fyne.Container
 	content     *container.Scroll
 	placeholder *dragPlaceholder
+	background  *canvas.Rectangle
 }
 
 func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
@@ -30,6 +32,11 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	var topHeight fyne.Size
 	var tickerHeight fyne.Size
 	var contentY float32 = padding
+
+	if a.background != nil && a.background.Size() != size {
+		a.background.Resize(size)
+		a.background.Move(fyne.NewPos(0, 0))
+	}
 
 	if size.Width >= splitThreshold {
 		tickerWidth := size.Width * 0.4

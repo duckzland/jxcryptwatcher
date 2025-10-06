@@ -8,6 +8,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	JC "jxwatcher/core"
 )
 
 type DialogForm interface {
@@ -79,7 +81,7 @@ func NewDialogForm(
 	)
 
 	innerLayout := &dialogContentLayout{
-		background:    canvas.NewRectangle(theme.DefaultTheme().Color(theme.ColorNameBackground, theme.VariantDark)),
+		background:    canvas.NewRectangle(JC.UseTheme().BackgroundColor()),
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,

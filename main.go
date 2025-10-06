@@ -21,7 +21,10 @@ func main() {
 	JC.RegisterThemeManager().Init()
 
 	JC.App = app.NewWithID(JC.AppID)
+	JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
+
 	JC.App.Settings().SetTheme(JC.UseTheme())
+
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
 	SetAppIcon()
