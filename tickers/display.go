@@ -2,6 +2,7 @@ package tickers
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -183,19 +184,17 @@ func (h *tickerDisplay) updateContent() {
 		}
 
 		if pkt.IsType("pulse") {
-			raw := JT.UseTickerCache().Get("rsi")
-			index, _ := strconv.ParseFloat(raw, 64)
-			switch {
-			case index >= 70:
-				background = JC.UseTheme().GetColor(JC.ColorNameRed)
-			case index >= 55:
-				background = JC.UseTheme().GetColor(JC.ColorNameDarkRed)
-			case index >= 45:
-				background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
-			case index >= 30:
-				background = JC.UseTheme().GetColor(JC.ColorNameDarkGreen)
-			default:
-				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+			raw := JT.UseTickerCache().Get("pulse")
+			pulseValue, err := strconv.ParseFloat(strings.TrimSuffix(raw, "%"), 64)
+			if err == nil {
+				switch {
+				case pulseValue > 0:
+					background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+				case pulseValue < 0:
+					background = JC.UseTheme().GetColor(JC.ColorNameRed)
+				default:
+					background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
+				}
 			}
 		}
 	}

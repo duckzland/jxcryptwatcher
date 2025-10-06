@@ -127,9 +127,6 @@ func (pc *tickersMapType) Hydrate(data []TickerData) {
 		if len(ex) > 0 {
 			for _, tkt := range ex {
 				tkt.Set(tkd.Get())
-				tkt.SetType(tkd.GetType())
-				tkt.SetTitle(tkd.GetTitle())
-				tkt.SetFormat(tkd.GetFormat())
 				tkt.SetStatus(tkd.GetStatus())
 				tkt.SetOldKey(tkd.GetOldKey())
 			}
@@ -197,6 +194,14 @@ func TickersInit() {
 		UseTickerMaps().Add(tdt)
 	}
 
+	if UseConfig().CanDoRSI() {
+		tdt := NewTickerData()
+		tdt.SetTitle("Market Bias")
+		tdt.SetType("pulse")
+		tdt.SetFormat("pulse")
+		UseTickerMaps().Add(tdt)
+	}
+
 	if UseConfig().CanDoCMC100() {
 		tdt := NewTickerData()
 		tdt.SetTitle("CMC100")
@@ -226,14 +231,6 @@ func TickersInit() {
 		tdt.SetTitle("Crypto RSI")
 		tdt.SetType("rsi")
 		tdt.SetFormat("number")
-		UseTickerMaps().Add(tdt)
-	}
-
-	if UseConfig().CanDoRSI() {
-		tdt := NewTickerData()
-		tdt.SetTitle("Market Pulse")
-		tdt.SetType("pulse")
-		tdt.SetFormat("pulse")
 		UseTickerMaps().Add(tdt)
 	}
 }
