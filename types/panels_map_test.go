@@ -1,12 +1,13 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type panelsMapNullWriter struct{}
@@ -39,12 +40,18 @@ func TestPanelsMapInitAndAppend(t *testing.T) {
 	RegisterExchangeCache().Init()
 	UseExchangeCache().Insert(dummy)
 
-	// Now safely call Append
 	pm := &panelsMapType{}
 	pm.Init()
+
 	ref := pm.Append("1-2-0.5-BTC-ETH-4|15.5")
 	if ref == nil {
-		t.Error("Expected non-nil PanelData from Append")
+		t.Fatal("Expected non-nil PanelData from Append")
+	}
+	if !ref.HasParent() {
+		t.Error("Expected PanelData to have parent set")
+	}
+	if ref.GetStatus() != JC.STATE_FETCHING_NEW {
+		t.Errorf("Expected status FETCHING_NEW, got %d", ref.GetStatus())
 	}
 	if pm.TotalData() != 1 {
 		t.Errorf("Expected 1 panel, got %d", pm.TotalData())
@@ -81,27 +88,40 @@ func TestPanelsMapHydrateAndSerialize(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	// Initialize panelsMapType
 	pm := &panelsMapType{}
 	pm.Init()
 
-	// ✅ Initialize cryptosMapType with matching coin IDs
 	cm := &cryptosMapType{}
 	cm.Init()
-	cm.Insert("1", "BTC - Bitcoin")  // Source coin
-	cm.Insert("2", "ETH - Ethereum") // Target coin
+	cm.Insert("1", "BTC - Bitcoin")
+	cm.Insert("2", "ETH - Ethereum")
 	pm.SetMaps(cm)
 
-	// Create panel data
-	p1 := NewPanelData()
-	p1.Init()
-	p1.Set("1-2-0.5-BTC-ETH-4|15.5")
-	p1.SetID("x")
+	original := NewPanelData()
+	original.Init()
+	original.Set("1-2-0.5-BTC-ETH-4|15.5")
+	original.SetID("x")
+	original.SetParent(pm)
+	original.SetStatus(JC.STATE_LOADING)
+	pm.SetData([]PanelData{original})
 
-	// Hydrate and serialize
-	pm.Hydrate([]PanelData{p1})
-	if pm.TotalData() != 1 {
-		t.Errorf("Expected 1 panel after hydrate, got %d", pm.TotalData())
+	hydrated := NewPanelData()
+	hydrated.Init()
+	hydrated.Set("1-2-0.5-BTC-ETH-4|15.5")
+	hydrated.SetID("x")
+	hydrated.SetStatus(JC.STATE_LOADING)
+
+	pm.Hydrate([]PanelData{hydrated})
+
+	ref := pm.GetDataByID("x")
+	if ref == nil {
+		t.Fatal("Expected hydrated panel to exist")
+	}
+	if ref.GetStatus() != JC.STATE_LOADING {
+		t.Errorf("Expected status LOADING after hydrate, got %d", ref.GetStatus())
+	}
+	if !ref.HasParent() {
+		t.Error("Expected hydrated panel to have parent set")
 	}
 
 	serialized := pm.Serialize()

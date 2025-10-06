@@ -1,13 +1,14 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 	"time"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type tickerMapNullWriter struct{}
@@ -23,30 +24,6 @@ func tickerMapTurnOffLogs() {
 func tickerMapTurnOnLogs() {
 	log.SetOutput(os.Stdout)
 }
-
-// func TestTickersMapInitAndAdd(t *testing.T) {
-// 	tickerMapTurnOffLogs()
-// 	t.Setenv("FYNE_STORAGE", t.TempDir())
-// 	test.NewApp()
-
-// 	tm := &tickersMapType{}
-// 	tm.Init()
-
-// 	td := NewTickerData()
-// 	td.SetID("btc")
-// 	td.SetType("price")
-// 	td.SetTitle("BTC Price")
-// 	td.SetFormat("currency")
-
-// 	tm.Add(td)
-// 	if tm.IsEmpty() {
-// 		t.Error("Expected tickers map to have data after Add")
-// 	}
-// 	if len(tm.Get()) != 1 {
-// 		t.Errorf("Expected 1 ticker, got %d", len(tm.Get()))
-// 	}
-// 	tickerMapTurnOnLogs()
-// }
 
 func TestTickersMapUpdateAndGetData(t *testing.T) {
 	tickerMapTurnOffLogs()
