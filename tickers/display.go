@@ -171,15 +171,15 @@ func (h *tickerDisplay) updateContent() {
 			index, _ := strconv.ParseFloat(raw, 64)
 			switch {
 			case index >= 70:
-				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
 			case index >= 55:
-				background = JC.UseTheme().GetColor(JC.ColorNameDarkRed)
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkGreen)
 			case index >= 45:
 				background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
 			case index >= 30:
-				background = JC.UseTheme().GetColor(JC.ColorNameDarkGreen)
+				background = JC.UseTheme().GetColor(JC.ColorNameDarkRed)
 			default:
-				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+				background = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 		}
 
