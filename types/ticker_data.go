@@ -296,6 +296,8 @@ func (p *tickerDataType) FormatContent() string {
 		return JC.FormatShortCurrency(raw)
 	case "percentage":
 		return fmt.Sprintf("%s/100", raw)
+	case "shortpercentage":
+		return fmt.Sprintf("%.1f%%", val)
 	default:
 		return raw
 	}

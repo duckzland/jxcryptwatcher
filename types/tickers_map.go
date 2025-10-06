@@ -162,6 +162,18 @@ func (pc *tickersMapType) Hydrate(data []TickerData) {
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
+			case "etf":
+				if UseConfig().CanDoETF() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
+			case "dominance":
+				if UseConfig().CanDoDominance() {
+					pc.mu.Lock()
+					pc.data = append(pc.data, tkd)
+					pc.mu.Unlock()
+				}
 
 			}
 		}
@@ -231,6 +243,22 @@ func TickersInit() {
 		tdt.SetTitle("Crypto RSI")
 		tdt.SetType("rsi")
 		tdt.SetFormat("number")
+		UseTickerMaps().Add(tdt)
+	}
+
+	if UseConfig().CanDoETF() {
+		tdt := NewTickerData()
+		tdt.SetTitle("ETF Flow")
+		tdt.SetType("etf")
+		tdt.SetFormat("shortcurrency")
+		UseTickerMaps().Add(tdt)
+	}
+
+	if UseConfig().CanDoDominance() {
+		tdt := NewTickerData()
+		tdt.SetTitle("Dominance")
+		tdt.SetType("dominance")
+		tdt.SetFormat("shortpercentage")
 		UseTickerMaps().Add(tdt)
 	}
 }

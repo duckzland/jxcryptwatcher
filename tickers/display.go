@@ -197,6 +197,33 @@ func (h *tickerDisplay) updateContent() {
 				}
 			}
 		}
+
+		if pkt.IsType("etf") {
+			raw := JT.UseTickerCache().Get("etf")
+			etfValue, err := strconv.ParseFloat(raw, 64)
+			if err == nil {
+				switch {
+				case etfValue > 0:
+					background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+				case etfValue < 0:
+					background = JC.UseTheme().GetColor(JC.ColorNameRed)
+				default:
+					background = JC.UseTheme().GetColor(JC.ColorNameDarkGrey)
+				}
+			}
+		}
+
+		if pkt.IsType("dominance") {
+			raw := JT.UseTickerCache().Get("dominance")
+			btcDom, err := strconv.ParseFloat(raw, 64)
+			if err == nil {
+				if btcDom >= 50 {
+					background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+				} else {
+					background = JC.UseTheme().GetColor(JC.ColorNameRed)
+				}
+			}
+		}
 	}
 
 	h.title.SetText(title)

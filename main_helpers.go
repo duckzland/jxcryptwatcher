@@ -71,6 +71,12 @@ func UpdateTickerDisplay() bool {
 	if JT.UseConfig().CanDoRSI() {
 		tickers = append(tickers, "rsi", "pulse")
 	}
+	if JT.UseConfig().CanDoETF() {
+		tickers = append(tickers, "etf")
+	}
+	if JT.UseConfig().CanDoDominance() {
+		tickers = append(tickers, "dominance")
+	}
 
 	for _, key := range tickers {
 		tktt := JT.UseTickerMaps().GetDataByType(key)
@@ -200,6 +206,12 @@ func UpdateTickers() bool {
 	}
 	if JT.UseConfig().CanDoRSI() {
 		payloads["rsi"] = []string{"rsi"}
+	}
+	if JT.UseConfig().CanDoETF() {
+		payloads["etf"] = []string{"etf"}
+	}
+	if JT.UseConfig().CanDoDominance() {
+		payloads["dominance"] = []string{"dominance"}
 	}
 
 	if len(payloads) == 0 {

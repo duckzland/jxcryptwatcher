@@ -591,6 +591,60 @@ func RegisterFetchers() {
 	)
 
 	JC.UseFetcher().Register(
+		"etf", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Results is processed at GetRate()
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch etf: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch etf: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoETF() {
+				JC.Logln("Unable to fetch etf: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
+
+	JC.UseFetcher().Register(
+		"dominance", delay,
+		JC.NewGenericFetcher(
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(), nil), nil
+			},
+		),
+		func(fr JC.FetchResultInterface) {
+			// Results is processed at GetRate()
+		},
+		func() bool {
+			if !JA.UseStatus().IsReady() {
+				JC.Logln("Unable to fetch dominance: app is not ready yet")
+				return false
+			}
+			if JA.UseStatus().IsPaused() {
+				JC.Logln("Unable to fetch dominance: app is paused")
+				return false
+			}
+			if !JT.UseConfig().CanDoDominance() {
+				JC.Logln("Unable to fetch dominance: Invalid config")
+				return false
+			}
+			return true
+		},
+	)
+
+	JC.UseFetcher().Register(
 		"rates", delay,
 		JC.NewDynamicPayloadFetcher(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {

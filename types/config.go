@@ -18,6 +18,8 @@ type configType struct {
 	CMC100Endpoint    string `json:"cmc100_endpoint"`
 	MarketCapEndpoint string `json:"marketcap_endpoint"`
 	RSIEndpoint       string `json:"rsi_endpoint"`
+	ETFEndpoint       string `json:"etf_endpoint"`
+	DominanceEndpoint string `json:"dominance_endpoint"`
 	Delay             int64  `json:"delay"`
 	Version           string `json:"version"`
 }
@@ -52,9 +54,9 @@ func (c *configType) loadFile() bool {
 
 func (c *configType) updateDefault() bool {
 
-	if c.Version != "1.6.0" {
-		JC.Logln("Updating old config to 1.6.0")
-		c.Version = "1.6.0"
+	if c.Version != "1.7.0" {
+		JC.Logln("Updating old config to 1.7.0")
+		c.Version = "1.7.0"
 
 		if c.AltSeasonEndpoint == "" {
 			c.AltSeasonEndpoint = "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart"
@@ -70,6 +72,12 @@ func (c *configType) updateDefault() bool {
 		}
 		if c.RSIEndpoint == "" {
 			c.RSIEndpoint = "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall"
+		}
+		if c.ETFEndpoint == "" {
+			c.ETFEndpoint = "https://api.coinmarketcap.com/data-api/v3/etf/overview/netflow/chart"
+		}
+		if c.DominanceEndpoint == "" {
+			c.DominanceEndpoint = "https://api.coinmarketcap.com/data-api/v3/global-metrics/dominance/overview"
 		}
 
 		return true
@@ -125,7 +133,7 @@ func (c *configType) IsValid() bool {
 func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != "" || c.RSIEndpoint != ""
+	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != "" || c.RSIEndpoint != "" || c.ETFEndpoint != "" || c.DominanceEndpoint != ""
 }
 
 func (c *configType) CanDoCMC100() bool {
@@ -156,6 +164,18 @@ func (c *configType) CanDoRSI() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	return c.RSIEndpoint != ""
+}
+
+func (c *configType) CanDoETF() bool {
+	configMu.RLock()
+	defer configMu.RUnlock()
+	return c.RSIEndpoint != ""
+}
+
+func (c *configType) CanDoDominance() bool {
+	configMu.RLock()
+	defer configMu.RUnlock()
+	return c.DominanceEndpoint != ""
 }
 
 func ConfigInit() bool {

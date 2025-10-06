@@ -51,9 +51,9 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		g.colCount = int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
 
 		switch g.colCount {
-		case 5, 4, 3:
-			g.colCount = 3
-		case 2:
+		case 5, 4, 6, 7:
+			g.colCount = 4
+		case 3, 2:
 			g.colCount = 2
 		default:
 			g.colCount = len(objects)
@@ -132,9 +132,9 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	r := 1
 
 	switch c {
-	case 5, 4, 3:
+	case 5, 4, 6, 7:
 		r = 2
-	case 2:
+	case 2, 3:
 		r = 3
 	default:
 		r = 1
