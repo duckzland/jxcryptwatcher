@@ -356,10 +356,10 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 6
 
 	case SizeTickerWidth:
-		return 80
+		return 120
 
 	case SizeTickerHeight:
-		return 45
+		return 46
 
 	case SizeTickerTitle:
 		return 11
@@ -380,10 +380,7 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 8
 
 	case SizePaddingPanelTop:
-		if IsMobile {
-			return 6
-		}
-		return 8
+		return 2
 
 	case SizePaddingPanelRight:
 		if IsMobile {
@@ -393,33 +390,21 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 
 	case SizePaddingPanelBottom:
 		if IsMobile {
-			return 6
+			return 10
 		}
-		return 8
+		return 14
 
 	case SizePaddingTickerLeft:
-		if IsMobile {
-			return 3
-		}
 		return 4
 
 	case SizePaddingTickerTop:
-		if IsMobile {
-			return 4
-		}
-		return 6
+		return 0
 
 	case SizePaddingTickerRight:
-		if IsMobile {
-			return 3
-		}
 		return 4
 
 	case SizePaddingTickerBottom:
-		if IsMobile {
-			return 4
-		}
-		return 6
+		return 8
 
 	default:
 		return 0

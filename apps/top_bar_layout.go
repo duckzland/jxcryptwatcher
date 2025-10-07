@@ -34,7 +34,7 @@ func (s *topBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	// First object fills the rest of the space
 	remaining := s.cWidth - (s.fixedWidth+s.spacer)*float32(count-1)
 
-	if remaining < 500 {
+	if remaining < 340 {
 
 		s.rows = 2
 

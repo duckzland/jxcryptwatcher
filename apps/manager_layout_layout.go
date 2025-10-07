@@ -24,8 +24,8 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	const splitThreshold = 1600.0
-	const minTickerWidth = 800.0
+	const splitThreshold = 1900.0
+	const minTickerWidth = 1200.0
 
 	padding := a.padding
 
@@ -45,10 +45,10 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		}
 
 		topBarWidth := size.Width - tickerWidth - 3*padding
-		topHeight := fyne.NewSize(topBarWidth, fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height))
+		topHeight := fyne.NewSize(topBarWidth, fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height)+padding)
 
 		tickerSize := fyne.NewSize(tickerWidth, topHeight.Height)
-		tickerPos := fyne.NewPos(padding, 0)
+		tickerPos := fyne.NewPos(padding, padding)
 
 		if a.tickers.Size() != tickerSize {
 			a.tickers.Resize(tickerSize)
