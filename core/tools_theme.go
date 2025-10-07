@@ -18,8 +18,8 @@ type appTheme struct {
 func (t *appTheme) Init() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	// t.variant = theme.VariantDark
-	t.variant = theme.VariantLight
+	t.variant = theme.VariantDark
+	//t.variant = theme.VariantLight
 }
 
 func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
