@@ -246,7 +246,7 @@ func NewAppLayout() fyne.CanvasObject {
 	manager.placeholder = NewDragPlaceholder()
 
 	layout := &mainLayout{
-		padding:     10,
+		padding:     JC.UseTheme().Size(JC.SizeLayoutPadding),
 		parent:      manager,
 		topBar:      manager.topBar,
 		tickers:     manager.tickers,

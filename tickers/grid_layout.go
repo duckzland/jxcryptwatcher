@@ -86,7 +86,7 @@ func (g *tickerGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		g.dynCellSize.Width = g.cWidth
 	}
 
-	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
+	i, x, y := 0, g.innerPadding[3], float32(0)
 
 	for _, child := range objects {
 		if !child.Visible() {
@@ -145,6 +145,7 @@ func (g *tickerGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	width := (g.dynCellSize.Width * float32(cols)) + (g.innerPadding[1] + g.innerPadding[3])
 	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
+	height -= g.innerPadding[0] + g.innerPadding[2]
 
 	g.minSize = fyne.NewSize(width, height)
 

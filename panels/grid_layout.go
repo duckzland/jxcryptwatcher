@@ -94,7 +94,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		}
 	}
 
-	i, x, y := 0, g.innerPadding[3], g.innerPadding[0]
+	i, x, y := 0, g.innerPadding[3], float32(0)
 
 	JA.UseLayout().UsePlaceholder().Resize(g.dynCellSize)
 
@@ -175,6 +175,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	rows := max(g.rowCount, 1)
 	width := g.dynCellSize.Width
 	height := (g.dynCellSize.Height * float32(rows)) + (float32(rows) * (g.innerPadding[0] + g.innerPadding[2]))
+	height -= g.innerPadding[0] + g.innerPadding[2]
 
 	// Battling scrollbar, when we have scrollbar give space for it
 	if height > JA.UseLayout().UseScroll().Size().Height {

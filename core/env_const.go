@@ -56,6 +56,7 @@ const ColorNamePanelBG fyne.ThemeColorName = "panelBG"
 const ColorNamePanelPlaceholder fyne.ThemeColorName = "panelPlaceholder"
 const ColorNameTickerBG fyne.ThemeColorName = "tickerBG"
 
+const SizeLayoutPadding fyne.ThemeSizeName = "layoutPadding"
 const SizePanelBorderRadius fyne.ThemeSizeName = "panelBorderRadius"
 const SizePanelTitle fyne.ThemeSizeName = "panelTitle"
 const SizePanelSubTitle fyne.ThemeSizeName = "panelSubTitle"

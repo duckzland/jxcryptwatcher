@@ -313,6 +313,9 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNameWindowTitleBarHeight:
 		return 26
 
+	case SizeLayoutPadding:
+		return 12
+
 	case SizePanelBorderRadius:
 		return 6
 
@@ -374,40 +377,28 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 14
 
 	case SizePaddingPanelLeft:
-		if IsMobile {
-			return 6
-		}
-		return 8
+		return 6
 
 	case SizePaddingPanelTop:
-		if IsMobile {
-			return 2
-		}
 		return 6
 
 	case SizePaddingPanelRight:
-		if IsMobile {
-			return 6
-		}
-		return 8
+		return 6
 
 	case SizePaddingPanelBottom:
-		if IsMobile {
-			return 10
-		}
-		return 10
+		return 6
 
 	case SizePaddingTickerLeft:
 		return 4
 
 	case SizePaddingTickerTop:
-		return 0
+		return 4
 
 	case SizePaddingTickerRight:
 		return 4
 
 	case SizePaddingTickerBottom:
-		return 8
+		return 4
 
 	default:
 		return 0
