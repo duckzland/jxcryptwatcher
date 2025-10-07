@@ -18,7 +18,8 @@ type appTheme struct {
 func (t *appTheme) Init() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.variant = theme.VariantDark
+	// t.variant = theme.VariantDark
+	t.variant = theme.VariantLight
 }
 
 func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
@@ -39,90 +40,90 @@ func (t *appTheme) lightColor(name fyne.ThemeColorName) color.Color {
 	case theme.ColorNameBackground:
 		return color.RGBA{255, 255, 255, 255}
 	case theme.ColorNameButton:
-		return color.RGBA{245, 245, 245, 255}
+		return color.RGBA{240, 243, 246, 255}
 	case theme.ColorNameDisabledButton:
 		return color.RGBA{245, 245, 245, 255}
 	case theme.ColorNameMenuBackground:
-		return color.RGBA{245, 245, 245, 255}
+		return color.RGBA{240, 243, 246, 255}
 	case theme.ColorNameDisabled:
-		return color.RGBA{227, 227, 227, 255}
+		return color.RGBA{230, 230, 230, 255}
 	case theme.ColorNameInputBorder:
-		return color.RGBA{227, 227, 227, 255}
+		return color.RGBA{230, 230, 230, 255}
 	case theme.ColorNameError:
-		return color.RGBA{244, 67, 54, 255}
+		return color.RGBA{235, 100, 100, 255}
 	case theme.ColorNameFocus:
-		return color.RGBA{0, 108, 255, 42}
+		return color.RGBA{100, 160, 255, 64}
 	case theme.ColorNamePrimary:
-		return color.RGBA{0, 108, 255, 42}
+		return color.RGBA{190, 220, 255, 255}
 	case theme.ColorNameSelection:
-		return color.RGBA{0, 108, 255, 64}
+		return color.RGBA{140, 180, 230, 64}
 	case theme.ColorNameForeground:
-		return color.RGBA{13, 13, 13, 255}
+		return color.RGBA{45, 45, 45, 255}
 	case theme.ColorNameForegroundOnError:
-		return color.RGBA{86, 86, 86, 255}
+		return color.RGBA{74, 74, 74, 255}
 	case theme.ColorNameForegroundOnPrimary:
-		return color.RGBA{86, 86, 86, 255}
+		return color.RGBA{74, 74, 74, 255}
 	case theme.ColorNameForegroundOnSuccess:
-		return color.RGBA{86, 86, 86, 255}
+		return color.RGBA{74, 74, 74, 255}
 	case theme.ColorNameForegroundOnWarning:
-		return color.RGBA{86, 86, 86, 255}
+		return color.RGBA{74, 74, 74, 255}
 	case theme.ColorNameHeaderBackground:
-		return color.RGBA{249, 249, 249, 255}
+		return color.RGBA{250, 250, 250, 255}
 	case theme.ColorNameHover:
 		return color.RGBA{0, 0, 0, 15}
 	case theme.ColorNameHyperlink:
-		return color.RGBA{0, 108, 255, 255}
+		return color.RGBA{100, 160, 255, 255}
 	case theme.ColorNameInputBackground:
-		return color.RGBA{243, 243, 243, 255}
+		return color.RGBA{245, 245, 245, 255}
 	case theme.ColorNameOverlayBackground:
 		return color.RGBA{128, 128, 128, 128}
 	case theme.ColorNamePlaceHolder:
-		return color.RGBA{136, 136, 136, 255}
+		return color.RGBA{150, 150, 150, 255}
 	case theme.ColorNamePressed:
 		return color.RGBA{0, 0, 0, 25}
 	case theme.ColorNameScrollBar:
-		return color.RGBA{76, 76, 76, 102}
+		return color.RGBA{160, 160, 160, 180}
 	case theme.ColorNameScrollBarBackground:
 		return color.RGBA{0, 0, 0, 0}
 	case theme.ColorNameShadow:
 		return color.RGBA{0, 0, 0, 0}
 	case theme.ColorNameSeparator:
-		return color.RGBA{227, 227, 227, 255}
+		return color.RGBA{230, 230, 230, 255}
 	case theme.ColorNameSuccess:
-		return color.RGBA{67, 244, 54, 255}
+		return color.RGBA{200, 250, 195, 255}
 	case theme.ColorNameWarning:
-		return color.RGBA{255, 152, 0, 255}
+		return color.RGBA{250, 220, 170, 255}
 
 	case ColorNamePanelBG:
-		return color.RGBA{245, 245, 245, 255}
+		return color.RGBA{240, 243, 246, 255}
 	case ColorNamePanelPlaceholder:
-		return color.RGBA{250, 250, 250, 200}
+		return color.RGBA{160, 160, 160, 168}
 	case ColorNameTickerBG:
-		return color.RGBA{255, 255, 255, 255}
+		return color.RGBA{240, 243, 246, 255}
 	case ColorNameRed:
-		return color.RGBA{255, 180, 180, 255}
+		return color.RGBA{255, 190, 190, 255}
 	case ColorNameDarkRed:
 		return color.RGBA{240, 150, 150, 255}
 	case ColorNameGreen:
-		return color.RGBA{200, 255, 200, 255}
+		return color.RGBA{190, 245, 190, 255}
 	case ColorNameDarkGreen:
-		return color.RGBA{180, 230, 180, 255}
+		return color.RGBA{160, 230, 160, 255}
 	case ColorNameBlue:
-		return color.RGBA{210, 245, 255, 255}
-	case ColorNameLightBlue:
-		return color.RGBA{240, 250, 255, 255}
+		return color.RGBA{180, 225, 245, 255}
 	case ColorNameLightPurple:
-		return color.RGBA{250, 240, 255, 255}
+		return color.RGBA{240, 225, 250, 255}
+	case ColorNameLightBlue:
+		return color.RGBA{220, 240, 255, 255}
 	case ColorNameLightOrange:
-		return color.RGBA{255, 245, 230, 255}
+		return color.RGBA{255, 230, 210, 255}
 	case ColorNameOrange:
-		return color.RGBA{255, 235, 210, 255}
+		return color.RGBA{255, 225, 200, 255}
 	case ColorNameYellow:
 		return color.RGBA{255, 255, 210, 255}
 	case ColorNameTeal:
-		return color.RGBA{240, 255, 255, 255}
+		return color.RGBA{225, 245, 245, 255}
 	case ColorNameDarkGrey:
-		return color.RGBA{240, 240, 240, 255}
+		return color.RGBA{235, 235, 235, 255}
 	case ColorNameTransparent:
 		return color.RGBA{0, 0, 0, 0}
 
