@@ -102,8 +102,12 @@ func TestPanelsMapHydrateAndSerialize(t *testing.T) {
 	original.Set("1-2-0.5-BTC-ETH-4|15.5")
 	original.SetID("x")
 	original.SetParent(pm)
-	original.SetStatus(JC.STATE_LOADING)
+	original.SetStatus(JC.STATE_ERROR)
 	pm.SetData([]PanelData{original})
+
+	if original.GetStatus() != JC.STATE_ERROR {
+		t.Errorf("Expected status ERROR after SetData, got %d", original.GetStatus())
+	}
 
 	hydrated := NewPanelData()
 	hydrated.Init()

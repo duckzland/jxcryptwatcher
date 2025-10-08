@@ -26,7 +26,6 @@ func (pc *panelsMapType) SetData(data []PanelData) {
 		if !pk.HasParent() {
 			pk.SetParent(pc)
 		}
-		pk.SetStatus(JC.STATE_LOADING)
 	}
 	pc.data = data
 }
@@ -237,7 +236,17 @@ func (pc *panelsMapType) Hydrate(data []PanelData) {
 
 		pdt.Set(pkn.Get())
 		pdt.SetOldKey(pkn.GetOldKey())
-		pdt.SetStatus(pkn.GetStatus())
+
+		switch pkn.GetStatus() {
+		case JC.STATE_ERROR:
+			if pkn.UsePanelKey().IsValueMatchingFloat(0, ">=") {
+				pdt.SetStatus(JC.STATE_LOADED)
+			} else {
+				pdt.SetStatus(JC.STATE_FETCHING_NEW)
+			}
+		default:
+			pdt.SetStatus(pkn.GetStatus())
+		}
 
 		if !pdt.HasParent() {
 			pdt.SetParent(pc)

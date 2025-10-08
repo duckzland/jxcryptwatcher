@@ -77,22 +77,22 @@ func (c *cryptosLoaderType) checkFile() *cryptosLoaderType {
 func (c *cryptosLoaderType) convertToMap() *cryptosMapType {
 	JC.PrintMemUsage("Start populating cryptos")
 
-	CM := &cryptosMapType{}
-	CM.Init()
+	cm := &cryptosMapType{}
+	cm.Init()
 
 	if c == nil || len(c.Values) == 0 {
 		JC.Logln("No cryptos found in the data")
-		return CM
+		return cm
 	}
 
 	for _, crypto := range c.Values {
 		if crypto.Status != 0 || crypto.IsActive != 0 {
-			CM.Insert(strconv.FormatInt(crypto.Id, 10), crypto.createKey())
+			cm.Insert(strconv.FormatInt(crypto.Id, 10), crypto.createKey())
 		}
 	}
 
 	JC.PrintMemUsage("End populating cryptos")
-	return CM
+	return cm
 }
 
 func (c *cryptosLoaderType) GetCryptos() int64 {

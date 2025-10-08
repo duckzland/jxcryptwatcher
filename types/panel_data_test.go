@@ -1,12 +1,13 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type panelDataNullWriter struct{}
@@ -30,9 +31,6 @@ func TestPanelDataInitAndSet(t *testing.T) {
 
 	p := NewPanelData()
 	p.Init()
-	if p.GetStatus() != JC.STATE_LOADING {
-		t.Error("Expected initial status to be STATE_LOADING")
-	}
 
 	p.Set("123|BTC - ETH|0.5")
 	if p.Get() != "123|BTC - ETH|0.5" {

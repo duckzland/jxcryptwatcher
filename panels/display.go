@@ -48,7 +48,8 @@ func NewPanelDisplay(
 
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
-	str := pdt.GetData()
+	pv := pdt.UseData()
+	ps := pdt.UseStatus()
 
 	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
@@ -64,7 +65,7 @@ func NewPanelDisplay(
 
 	pl.action = NewPanelAction(
 		func() {
-			dynpk, _ := str.Get()
+			dynpk, _ := pv.Get()
 			if onEdit != nil {
 				onEdit(dynpk, uuid)
 			}
@@ -110,7 +111,8 @@ func NewPanelDisplay(
 
 	pd.status = pdt.GetStatus()
 
-	str.AddListener(binding.NewDataListener(pd.updateContent))
+	pv.AddListener(binding.NewDataListener(pd.updateContent))
+	ps.AddListener(binding.NewDataListener(pd.updateContent))
 
 	JA.StartFadeInBackground(pd.background, 100*time.Millisecond, nil)
 

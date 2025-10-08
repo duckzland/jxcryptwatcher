@@ -5,44 +5,45 @@ import (
 	"strconv"
 	"sync"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2/data/binding"
+
+	JC "jxwatcher/core"
 )
 
 type PanelData interface {
 	Init()
 	Set(val string)
-	Insert(panel panelType, rate float64)
-	Get() string
-	GetData() binding.String
-	GetStatus() int
 	SetStatus(val int)
-	GetID() string
 	SetID(val string)
-	GetOldKey() string
 	SetOldKey(val string)
-	GetParent() *panelsMapType
 	SetParent(val *panelsMapType)
+	Get() string
+	GetStatus() int
+	GetID() string
+	GetOldKey() string
+	GetParent() *panelsMapType
+	GetValueString() string
+	GetOldValueString() string
+	UseData() binding.String
+	UseStatus() binding.Int
+	UsePanelKey() *panelKeyType
 	IsStatus(val int) bool
 	IsID(val string) bool
 	IsKey(val string) bool
 	IsOldKey(val string) bool
+	IsEqualContentString(pk string) bool
+	IsOnInitialValue() bool
+	IsValueIncrease() int
 	HasParent() bool
-	GetValueString() string
-	GetOldValueString() string
 	RefreshData()
-	UsePanelKey() *panelKeyType
+	RefreshKey(key string) string
+	Insert(panel panelType, rate float64)
 	Update(pk string) bool
 	FormatTitle() string
 	FormatSubtitle() string
 	FormatBottomText() string
 	FormatContent() string
 	DidChange() bool
-	IsOnInitialValue() bool
-	IsValueIncrease() int
-	IsEqualContentString(pk string) bool
-	RefreshKey(key string) string
 	Serialize() panelDataCache
 }
 
@@ -57,16 +58,16 @@ type panelDataType struct {
 	data   binding.String
 	oldKey string
 	id     string
-	status int
+	status binding.Int
 	parent *panelsMapType
 }
 
 func (p *panelDataType) Init() {
 	p.mu.Lock()
 	p.data = binding.NewString()
+	p.status = binding.NewInt()
 	p.id = ""
 	p.oldKey = ""
-	p.status = JC.STATE_LOADING
 	p.mu.Unlock()
 }
 
@@ -80,15 +81,30 @@ func (p *panelDataType) Set(val string) {
 	p.mu.Unlock()
 }
 
-func (p *panelDataType) Insert(panel panelType, rate float64) {
-	p.mu.Lock()
-	old, err := p.data.Get()
-	if err == nil {
-		p.oldKey = old
+func (p *panelDataType) SetStatus(val int) {
+	if p.IsStatus(val) {
+		return
 	}
-	pkt := &panelKeyType{}
-	r := JC.ToBigFloat(rate)
-	p.data.Set(pkt.GenerateKeyFromPanel(panel, r))
+	p.mu.Lock()
+	p.status.Set(val)
+	p.mu.Unlock()
+}
+
+func (p *panelDataType) SetID(val string) {
+	p.mu.Lock()
+	p.id = val
+	p.mu.Unlock()
+}
+
+func (p *panelDataType) SetOldKey(val string) {
+	p.mu.Lock()
+	p.oldKey = val
+	p.mu.Unlock()
+}
+
+func (p *panelDataType) SetParent(val *panelsMapType) {
+	p.mu.Lock()
+	p.parent = val
 	p.mu.Unlock()
 }
 
@@ -105,24 +121,12 @@ func (p *panelDataType) Get() string {
 	return val
 }
 
-func (p *panelDataType) GetData() binding.String {
-	p.mu.RLock()
-	d := p.data
-	p.mu.RUnlock()
-	return d
-}
-
 func (p *panelDataType) GetStatus() int {
 	p.mu.RLock()
-	v := p.status
+	s := p.status
 	p.mu.RUnlock()
+	v, _ := s.Get()
 	return v
-}
-
-func (p *panelDataType) SetStatus(val int) {
-	p.mu.Lock()
-	p.status = val
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) GetID() string {
@@ -132,23 +136,11 @@ func (p *panelDataType) GetID() string {
 	return v
 }
 
-func (p *panelDataType) SetID(val string) {
-	p.mu.Lock()
-	p.id = val
-	p.mu.Unlock()
-}
-
 func (p *panelDataType) GetOldKey() string {
 	p.mu.RLock()
 	v := p.oldKey
 	p.mu.RUnlock()
 	return v
-}
-
-func (p *panelDataType) SetOldKey(val string) {
-	p.mu.Lock()
-	p.oldKey = val
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) GetParent() *panelsMapType {
@@ -157,16 +149,42 @@ func (p *panelDataType) GetParent() *panelsMapType {
 	return p.parent
 }
 
-func (p *panelDataType) SetParent(val *panelsMapType) {
-	p.mu.Lock()
-	p.parent = val
-	p.mu.Unlock()
+func (p *panelDataType) GetValueString() string {
+	return p.UsePanelKey().GetValueString()
+}
+
+func (p *panelDataType) GetOldValueString() string {
+	p.mu.RLock()
+	old := p.oldKey
+	p.mu.RUnlock()
+	pko := panelKeyType{value: old}
+	return pko.GetValueString()
+}
+
+func (p *panelDataType) UseData() binding.String {
+	p.mu.RLock()
+	d := p.data
+	p.mu.RUnlock()
+	return d
+}
+
+func (p *panelDataType) UseStatus() binding.Int {
+	p.mu.RLock()
+	d := p.status
+	p.mu.RUnlock()
+	return d
+}
+
+func (p *panelDataType) UsePanelKey() *panelKeyType {
+	return &panelKeyType{value: p.Get()}
 }
 
 func (p *panelDataType) IsStatus(val int) bool {
 	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.status == val
+	s := p.status
+	p.mu.RUnlock()
+	v, _ := s.Get()
+	return v == val
 }
 
 func (p *panelDataType) IsID(val string) bool {
@@ -194,22 +212,48 @@ func (p *panelDataType) IsOldKey(val string) bool {
 	return p.oldKey == val
 }
 
+func (p *panelDataType) IsEqualContentString(pk string) bool {
+	return p.IsKey(pk)
+}
+
+func (p *panelDataType) IsOnInitialValue() bool {
+	p.mu.RLock()
+	old := p.oldKey
+	p.mu.RUnlock()
+	opt := &panelKeyType{value: old}
+	return opt.IsValueMatchingFloat(-1, "==") && p.IsStatus(JC.STATE_LOADED)
+}
+
+func (p *panelDataType) IsValueIncrease() int {
+	b := p.GetValueString()
+	a := p.GetOldValueString()
+
+	if a == b {
+		return JC.VALUE_NO_CHANGE
+	}
+
+	numA, errA := strconv.ParseFloat(a, 64)
+	numB, errB := strconv.ParseFloat(b, 64)
+
+	if errA != nil || errB != nil {
+		return JC.VALUE_NO_CHANGE
+	}
+
+	if numA > numB {
+		return JC.VALUE_DECREASE
+	}
+
+	if numA < numB {
+		return JC.VALUE_INCREASE
+	}
+
+	return JC.VALUE_NO_CHANGE
+}
+
 func (p *panelDataType) HasParent() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.parent != nil
-}
-
-func (p *panelDataType) GetValueString() string {
-	return p.UsePanelKey().GetValueString()
-}
-
-func (p *panelDataType) GetOldValueString() string {
-	p.mu.RLock()
-	old := p.oldKey
-	p.mu.RUnlock()
-	pko := panelKeyType{value: old}
-	return pko.GetValueString()
 }
 
 func (p *panelDataType) RefreshData() {
@@ -219,8 +263,31 @@ func (p *panelDataType) RefreshData() {
 	p.mu.Unlock()
 }
 
-func (p *panelDataType) UsePanelKey() *panelKeyType {
-	return &panelKeyType{value: p.Get()}
+func (p *panelDataType) RefreshKey(key string) string {
+	if !p.parent.ValidateKey(key) {
+		return key
+	}
+
+	pkt := &panelKeyType{value: key}
+	source := pkt.GetSourceCoinString()
+	target := pkt.GetTargetCoinString()
+	value := pkt.GetSourceValueString()
+	sourceSymbol := pkt.GetSourceSymbolString()
+	targetSymbol := pkt.GetTargetSymbolString()
+	decimals := pkt.GetDecimalsString()
+	rate := pkt.GetValueFloat()
+
+	parent := p.GetParent()
+
+	if parent != nil && sourceSymbol == "" {
+		sourceSymbol = parent.GetSymbolById(source)
+	}
+
+	if parent != nil && targetSymbol == "" {
+		targetSymbol = parent.GetSymbolById(target)
+	}
+
+	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 }
 
 func (p *panelDataType) Update(pk string) bool {
@@ -304,85 +371,24 @@ func (p *panelDataType) FormatContent() string {
 func (p *panelDataType) DidChange() bool {
 	p.mu.RLock()
 	old := p.oldKey
-	status := p.status
 	p.mu.RUnlock()
-
 	opt := &panelKeyType{value: old}
-	return old != p.Get() &&
-		opt.IsValueMatchingFloat(-1, "!=") &&
-		status == JC.STATE_LOADED
+	return old != p.Get() && opt.IsValueMatchingFloat(-1, "!=") && p.IsStatus(JC.STATE_LOADED)
 }
 
-func (p *panelDataType) IsOnInitialValue() bool {
-	p.mu.RLock()
-	old := p.oldKey
-	status := p.status
-	p.mu.RUnlock()
-
-	opt := &panelKeyType{value: old}
-	return opt.IsValueMatchingFloat(-1, "==") && status == JC.STATE_LOADED
-}
-
-func (p *panelDataType) IsValueIncrease() int {
-	b := p.GetValueString()
-	a := p.GetOldValueString()
-
-	if a == b {
-		return JC.VALUE_NO_CHANGE
+func (p *panelDataType) Insert(panel panelType, rate float64) {
+	p.mu.Lock()
+	old, err := p.data.Get()
+	if err == nil {
+		p.oldKey = old
 	}
-
-	numA, errA := strconv.ParseFloat(a, 64)
-	numB, errB := strconv.ParseFloat(b, 64)
-
-	if errA != nil || errB != nil {
-		return JC.VALUE_NO_CHANGE
-	}
-
-	if numA > numB {
-		return JC.VALUE_DECREASE
-	}
-
-	if numA < numB {
-		return JC.VALUE_INCREASE
-	}
-
-	return JC.VALUE_NO_CHANGE
-}
-
-func (p *panelDataType) IsEqualContentString(pk string) bool {
-	return p.IsKey(pk)
-}
-
-func (p *panelDataType) RefreshKey(key string) string {
-
-	if !p.parent.ValidateKey(key) {
-		return key
-	}
-
-	pkt := &panelKeyType{value: key}
-	source := pkt.GetSourceCoinString()
-	target := pkt.GetTargetCoinString()
-	value := pkt.GetSourceValueString()
-	sourceSymbol := pkt.GetSourceSymbolString()
-	targetSymbol := pkt.GetTargetSymbolString()
-	decimals := pkt.GetDecimalsString()
-	rate := pkt.GetValueFloat()
-
-	parent := p.GetParent()
-
-	if parent != nil && sourceSymbol == "" {
-		sourceSymbol = parent.GetSymbolById(source)
-	}
-
-	if parent != nil && targetSymbol == "" {
-		targetSymbol = parent.GetSymbolById(target)
-	}
-
-	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
+	pkt := &panelKeyType{}
+	r := JC.ToBigFloat(rate)
+	p.data.Set(pkt.GenerateKeyFromPanel(panel, r))
+	p.mu.Unlock()
 }
 
 func (p *panelDataType) Serialize() panelDataCache {
-
 	return panelDataCache{
 		Status: p.GetStatus(),
 		Key:    p.RefreshKey(p.Get()),
