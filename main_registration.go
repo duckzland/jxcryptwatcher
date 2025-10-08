@@ -157,6 +157,11 @@ func RegisterActions() {
 				return
 			}
 
+			if JA.UseStatus().IsDraggable() {
+				btn.Disable()
+				return
+			}
+
 			if !JA.UseStatus().IsGoodNetworkStatus() {
 				btn.Error()
 				return
@@ -178,11 +183,6 @@ func RegisterActions() {
 			}
 
 			if JA.UseStatus().IsFetchingRates() {
-				btn.Disable()
-				return
-			}
-
-			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
 				return
 			}
