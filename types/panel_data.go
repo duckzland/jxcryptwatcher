@@ -240,6 +240,7 @@ func (p *panelDataType) Update(pk string) bool {
 
 	nso := panelKeyType{value: npk}
 	nst := p.GetStatus()
+	ost := p.GetStatus()
 
 	switch nst {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
@@ -251,8 +252,8 @@ func (p *panelDataType) Update(pk string) bool {
 
 	p.SetStatus(nst)
 
-	if npk != opk {
-		JC.Logln("Updating panel:", npk, opk)
+	if npk != opk || nst != ost {
+		JC.Logln("Updating panel:", npk, opk, nst, ost)
 		p.Set(npk)
 		p.SetOldKey(opk)
 		return true

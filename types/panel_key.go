@@ -36,16 +36,17 @@ func (p *panelKeyType) IsValueMatching(rate *big.Float, op string) bool {
 	case "!=":
 		return cmp != 0
 	case "<":
-		return cmp < 0
+		return cmp == -1
 	case "<=":
-		return cmp <= 0
+		return cmp == -1 || cmp == 0
 	case ">":
-		return cmp > 0
+		return cmp == 1
 	case ">=":
-		return cmp >= 0
+		return cmp == 1 || cmp == 0
 	default:
-		return false // unsupported operator
+		return false
 	}
+
 }
 
 func (p *panelKeyType) IsValueMatchingFloat(val float64, op string) bool {
