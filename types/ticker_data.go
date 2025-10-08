@@ -45,6 +45,7 @@ type TickerData interface {
 	DidChange() bool
 	Serialize() tickerDataCache
 }
+
 type tickerDataCache struct {
 	Type   string
 	Title  string
