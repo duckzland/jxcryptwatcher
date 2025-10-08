@@ -125,7 +125,10 @@ func (p *panelDataType) GetStatus() int {
 	p.mu.RLock()
 	s := p.status
 	p.mu.RUnlock()
-	v, _ := s.Get()
+	v, err := s.Get()
+	if err != nil {
+		return JC.STATE_ERROR
+	}
 	return v
 }
 

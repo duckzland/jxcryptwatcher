@@ -127,8 +127,14 @@ func (pc *tickersMapType) Hydrate(data []TickerData) {
 		if len(ex) > 0 {
 			for _, tkt := range ex {
 				tkt.Set(tkd.Get())
-				tkt.SetStatus(tkd.GetStatus())
 				tkt.SetOldKey(tkd.GetOldKey())
+
+				switch tkd.GetStatus() {
+				case JC.STATE_ERROR:
+					tkt.SetStatus(JC.STATE_FETCHING_NEW)
+				default:
+					tkt.SetStatus(tkd.GetStatus())
+				}
 			}
 		} else {
 			switch tkd.GetType() {

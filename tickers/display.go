@@ -44,8 +44,10 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 
 	tl.background.CornerRadius = JC.UseTheme().Size(JC.SizeTickerBorderRadius)
 
-	str := tdt.GetData()
-	ticker := &tickerDisplay{
+	tv := tdt.UseData()
+	ts := tdt.UseStatus()
+
+	tk := &tickerDisplay{
 		tag: uuid,
 		container: container.New(
 			tl,
@@ -60,15 +62,16 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 		status:     tl.status,
 	}
 
-	ticker.ExtendBaseWidget(ticker)
+	tk.ExtendBaseWidget(tk)
 
-	str.AddListener(binding.NewDataListener(ticker.updateContent))
+	tv.AddListener(binding.NewDataListener(tk.updateContent))
+	ts.AddListener(binding.NewDataListener(tk.updateContent))
 
-	ticker.updateContent()
+	tk.updateContent()
 
-	JA.StartFadeInBackground(ticker.background, 100*time.Millisecond, nil)
+	JA.StartFadeInBackground(tk.background, 100*time.Millisecond, nil)
 
-	return ticker
+	return tk
 }
 
 func (h *tickerDisplay) GetTag() string {

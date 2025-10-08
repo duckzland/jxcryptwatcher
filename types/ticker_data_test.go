@@ -1,13 +1,14 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 	"time"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type tickerDataNullWriter struct{}
