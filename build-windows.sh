@@ -140,10 +140,10 @@ if [[ -z "$shortcut_guid" ]]; then
 fi
 
 # Copy Windows resource file
-rsrc_file="assets/windows/rsrc_windows_amd64.syso"
+rsrc_file="static/windows/rsrc_windows_amd64.syso"
 
 # Update the syso file
-cd assets/windows/
+cd static/windows/
 output=$(go-winres simply --icon jxwatcher.ico --manifest gui --product-version "$version" --file-version "$version" --product-name "$app_name" 2>&1)
 
 if [ -n "$output" ]; then
@@ -157,7 +157,7 @@ cd ../../
 cp "$rsrc_file" rsrc_windows_amd64.syso
 
 # Dont store copy
-rm -f assets/windows/rsrc_windows*
+rm -f static/windows/rsrc_windows*
 
 echo_success "Successfully generated windows assets: $rsrc_file"
 
@@ -229,7 +229,7 @@ cat > "$wxs_file" <<EOF
       <ComponentRef Id="AppShortcut" />
     </Feature>
 
-    <Icon Id="jxwatcher.ico" SourceFile="assets/windows/jxwatcher.ico" />
+    <Icon Id="jxwatcher.ico" SourceFile="static/windows/jxwatcher.ico" />
 
   </Product>
 </Wix>

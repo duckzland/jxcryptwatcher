@@ -90,9 +90,9 @@ CGO_LDFLAGS="${cldflags}" \
 go build -tags="${tags}" -ldflags="${ldflags}" -gcflags="${gcflags}" -o "${pkg_root}/jxwatcher" .
 
 # Copy assets
-cp assets/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
-cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
-cp assets/256x256/jxwatcher.png "${icons_path}/256x256/apps/"
+cp static/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
+cp static/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
+cp static/256x256/jxwatcher.png "${icons_path}/256x256/apps/"
 
 # Create desktop entry
 cat > "${desktop_path}/jxwatcher.desktop" <<EOF

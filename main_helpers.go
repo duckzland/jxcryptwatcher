@@ -16,7 +16,7 @@ import (
 	_ "embed"
 )
 
-//go:embed assets/256x256/jxwatcher.png
+//go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
 func UpdateDisplay() bool {

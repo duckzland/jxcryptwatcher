@@ -119,8 +119,8 @@ Terminal=false
 EOF
 
 # Copy assets
-cp assets/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
-cp assets/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
+cp static/scalable/jxwatcher.svg "${icons_path}/scalable/apps/"
+cp static/32x32/jxwatcher.png "${icons_path}/32x32/apps/"
 
 # Build the Debian package
 dpkg-deb --build "${pkg_dir}" "${deb_output}" &> /dev/null

@@ -52,16 +52,41 @@ if [ ! -f version.txt ]; then
     exit 1
 fi
 
-# Ubuntu will install android ndk to this folder
-android_sdk="/usr/lib/android-ndk/"
-if [ ! -d "$android_sdk" ]; then
-    echo_error "Android NDK not found at $android_sdk. Please ensure the Android NDK is installed (e.g., via 'sudo apt install google-android-ndk-r26c-installer') and the path is correct."
+# Check for local NDK first
+local_ndk="$(pwd)/build/libs/android-ndk-r29"
+system_ndk="/usr/lib/android-ndk"
+
+if [ -d "$local_ndk" ]; then
+    echo_success "Using local NDK at $local_ndk"
+    android_sdk="$local_ndk"
+elif [ -d "$system_ndk" ]; then
+    echo_success "Using system-installed NDK at $system_ndk"
+    android_sdk="$system_ndk"
+else
+    echo_error "Android NDK not found in either location:"
+    echo_error "  - $local_ndk"
+    echo_error "  - $system_ndk"
+    echo "Please ensure the NDK is downloaded or installed via:"
+    echo "  sudo apt install google-android-ndk-r26c-installer"
     exit 1
 fi
 
+# BUGFIX: fyne always bunldles the whole folder!
+# Create destination folder if it doesn't exist
+mkdir -p assets/32x32/
+mkdir -p assets/256x256/
+mkdir -p assets/scalable/
+
+
+# Copy contents from assets/android to android_assets
+cp -r static/android/* assets/
+cp -r static/32x32/* assets/32x32/
+cp -r static/256x256/* assets/256x256/
+cp -r static/scalable/* assets/scalable/
+
 # Options
 name="JXWatcher"
-icon="assets/android/jxwatcher.png"
+icon="assets/jxwatcher.png"
 
 # Dynamic variable based on source code
 id=$(grep -oP 'const\s+AppID\s*=\s*"\K[^"]+' core/build_android.go)
@@ -171,5 +196,6 @@ fi
 
 mv JXWatcher.apk $apk_output
 rm -f AndroidManifest.xml
+rm -rf assets
 
 echo_success "APK package successfully created at: ${apk_output}"

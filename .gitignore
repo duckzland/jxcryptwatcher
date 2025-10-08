@@ -15,9 +15,11 @@ fetcher
 fetcher/*
 data_json
 data_json/*
-assets/windows/rsrc_windows*
-assets/rsrc_windows*
-assets/jxwatcher.zip
+static/windows/rsrc_windows*
+static/rsrc_windows*
+static/jxwatcher.zip
+static/android-ndk*
+static/android-sdk*
 rsrc_windows*
 experimental
 fyne_metadata_init.go
