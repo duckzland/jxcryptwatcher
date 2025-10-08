@@ -40,7 +40,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download and prepare Android NDK
-        run: ./download-android-ndk.sh r29
+        run: ./download-ndk.sh r29
           
       - name: Cross-compile and packages
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
