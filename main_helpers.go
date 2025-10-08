@@ -300,7 +300,6 @@ func ProcessUpdatePanelComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-			JC.Logln("Attempting to change status for", pdt.UsePanelKey().GetRawValue(), pdt.GetStatus(), pdt.UsePanelKey().IsValueMatchingFloat(0, "<"))
 			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<") || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
