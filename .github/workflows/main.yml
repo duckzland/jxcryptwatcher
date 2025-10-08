@@ -45,6 +45,9 @@ jobs:
       - name: Cross-compile and packages
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
 
+      - name: Clean build folders
+        run: rm -rf build/libs
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
