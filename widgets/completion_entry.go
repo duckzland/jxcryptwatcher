@@ -181,23 +181,33 @@ func (c *completionEntry) hideCompletion() {
 func (c *completionEntry) shiftEntry() {
 	cp := c.Entry.Position()
 	cs := c.Size()
+	np := fyne.NewPos(36, cp.Y)
 
-	if cp.X == 0 {
+	if c.popup != nil && c.popup.Visible() {
 		cs.Width -= 36
-		c.Entry.Resize(cs)
-		c.Entry.Move(fyne.NewPos(36, cp.Y))
+		if c.Entry.Size() != cs {
+			c.Entry.Resize(cs)
+		}
+		if c.Entry.Position() != np {
+			c.Entry.Move(np)
+		}
 	}
 
 }
 
 func (c *completionEntry) unshiftEntry() {
-	cp := c.Entry.Position()
+	//cp := c.Entry.Position()
 	cs := c.Size()
+	np := fyne.NewPos(0, 0)
 
-	if cp.X != 0 {
+	if c.popup != nil && !c.popup.Visible() {
 		cs.Width += 36
-		c.Entry.Resize(cs)
-		c.Entry.Move(fyne.NewPos(0, 0))
+		if c.Entry.Size() != cs {
+			c.Entry.Resize(cs)
+		}
+		if c.Entry.Position() != np {
+			c.Entry.Move(np)
+		}
 	}
 }
 
