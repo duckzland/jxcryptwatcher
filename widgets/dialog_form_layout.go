@@ -45,5 +45,5 @@ func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (l *dialogFormLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return l.form.MinSize()
+	return fyne.NewSize(0, l.form.MinSize().Height)
 }

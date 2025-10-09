@@ -96,7 +96,7 @@ func NewDialogForm(
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
-		content:       container.NewVScroll(container.New(formLayout, formLayout.form, formLayout.dispatcher)),
+		content:       container.NewVScroll(container.New(formLayout, container.NewThemeOverride(formLayout.form, &dialogFormTheme{base: JC.UseTheme()}), formLayout.dispatcher)),
 		buttons:       container.NewHBox(fd.cancel, widget.NewLabel(" "), fd.confirm),
 		bottomContent: bottomContent,
 		padding:       16,
