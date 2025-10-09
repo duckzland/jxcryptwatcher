@@ -32,7 +32,7 @@ func (l *completionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyn
 		closeBtn.Resize(newCloseSize)
 	}
 
-	newClosePos := fyne.NewPos(-closeWidth-2, 2)
+	newClosePos := fyne.NewPos(0, -closeWidth-3)
 	if closeBtn.Position() != newClosePos {
 		closeBtn.Move(newClosePos)
 	}
@@ -54,13 +54,11 @@ func (l *completionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Si
 	}
 
 	listEntry := objects[0]
-	closeBtn := objects[1]
 
 	listMin := listEntry.MinSize()
-	closeMin := closeBtn.MinSize()
 
-	width := listMin.Width + closeMin.Width
-	height := fyne.Max(listMin.Height, closeMin.Height)
+	width := listMin.Width
+	height := listMin.Height
 
 	l.cSize = fyne.NewSize(width, height)
 

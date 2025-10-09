@@ -135,11 +135,20 @@ func (c *completionEntry) Refresh() {
 }
 
 func (c *completionEntry) Resize(size fyne.Size) {
-	c.Entry.Resize(size)
+
 	if c.popup != nil && c.popup.Visible() {
+
+		cp := c.Entry.Position()
+		size.Width -= 36
+		if cp.X != 0 {
+			c.Entry.Resize(size)
+		}
+
 		c.popupPosition = fyne.NewPos(-1, -1)
 		c.popup.Move(c.popUpPos())
 		c.dynamicResize()
+	} else {
+		c.Entry.Resize(size)
 	}
 }
 
@@ -169,6 +178,24 @@ func (c *completionEntry) hideCompletion() {
 	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
+
+	c.toggleEntry()
+}
+
+func (c *completionEntry) toggleEntry() {
+	cp := c.Entry.Position()
+	cs := c.Size()
+
+	if cp.X != 0 {
+		cs.Width += 36
+		c.Entry.Resize(cs)
+		c.Entry.Move(fyne.NewPos(0, 0))
+	} else {
+		cs.Width -= 36
+		c.Entry.Resize(cs)
+		c.Entry.Move(fyne.NewPos(36, cp.Y))
+	}
+
 }
 
 func (c *completionEntry) dynamicResize() {
@@ -226,6 +253,8 @@ func (c *completionEntry) showCompletion() {
 	}
 
 	c.popup.Show()
+
+	c.toggleEntry()
 
 	activeEntry = c
 }
@@ -358,8 +387,10 @@ func (c *completionEntry) maxSize() fyne.Size {
 	}
 
 	width := size.Width
-	if size.Width < 300 {
-		width = (c.popupPosition.X - c.entryPosition.X) + width - 20
+
+	cp := c.Entry.Position()
+	if cp.X != 0 {
+		width += 36
 	}
 
 	return fyne.NewSize(width, listHeight)
@@ -371,13 +402,11 @@ func (c *completionEntry) popUpPos() fyne.Position {
 	}
 
 	size := c.Size()
+
 	entryPos := c.popupPosition
 	entryPos.Y += size.Height
 	entryPos.Y += 2
-
-	if size.Width < 300 {
-		entryPos.X = c.entryPosition.X + 20
-	}
+	entryPos.X = 16
 
 	return entryPos
 
