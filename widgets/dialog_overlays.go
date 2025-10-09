@@ -31,6 +31,9 @@ func (h *dialogOverlays) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(canvas.NewRectangle(h.bgcolor))
 }
 
+func (h *dialogOverlays) Scrolled(e *fyne.ScrollEvent) {
+}
+
 func (h *dialogOverlays) Tapped(e *fyne.PointEvent) {
 }
 

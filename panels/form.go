@@ -30,14 +30,14 @@ func NewPanelForm(
 			return nil
 		}
 		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
+			return fmt.Errorf("This field is required")
 		}
 		value, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return fmt.Errorf("Only numerical number with decimals allowed")
+			return fmt.Errorf("No decimals allowed")
 		}
 		if math.Abs(value) < JC.EPSILON || value <= 0 {
-			return fmt.Errorf("Only number larger than zero allowed")
+			return fmt.Errorf("Must larger than zero")
 		}
 		return nil
 	}
@@ -47,17 +47,17 @@ func NewPanelForm(
 			return nil
 		}
 		if len(s) == 0 {
-			return fmt.Errorf("Please select a cryptocurrency.")
+			return fmt.Errorf("Please select a cryptocurrency")
 		}
 		tid := JT.UsePanelMaps().GetIdByDisplay(s)
 		id, err := strconv.ParseInt(tid, 10, 64)
 		if err != nil || !JT.UsePanelMaps().ValidateId(id) {
-			return fmt.Errorf("Please select a valid cryptocurrency.")
+			return fmt.Errorf("Invalid cryptocurrency selected")
 		}
 		xid := JT.UsePanelMaps().GetIdByDisplay(other)
 		bid, err := strconv.ParseInt(xid, 10, 64)
 		if err == nil && JT.UsePanelMaps().ValidateId(bid) && bid == id {
-			return fmt.Errorf("Source and target cryptocurrencies must be different.")
+			return fmt.Errorf("Source and target must different")
 		}
 		return nil
 	}
@@ -71,13 +71,13 @@ func NewPanelForm(
 		}
 		x, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return fmt.Errorf("Only numerical value without decimals allowed")
+			return fmt.Errorf("No decimals allowed")
 		}
 		if x < 0 {
-			return fmt.Errorf("Only number larger than zero allowed")
+			return fmt.Errorf("Must larger than zero")
 		}
 		if x > 20 {
-			return fmt.Errorf("Maximum supported precision is 20 decimal digits")
+			return fmt.Errorf("Maximum 20 decimal digits")
 		}
 		return nil
 	}

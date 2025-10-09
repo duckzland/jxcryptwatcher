@@ -55,6 +55,11 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 
 	dialogHeight := l.dialogBox.MinSize().Height
 	maxHeight := l.cHeight * 0.95
+
+	if JC.IsMobile {
+		maxHeight = l.cHeight * 0.65
+	}
+
 	if dialogHeight > maxHeight {
 		dialogHeight = maxHeight
 	}
@@ -65,6 +70,10 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 
 	if posY < 0 {
 		posY = 0
+	}
+
+	if JC.IsMobile && posY > 20 {
+		posY = 20
 	}
 
 	dialogSize := fyne.NewSize(dialogWidth, dialogHeight)

@@ -35,6 +35,7 @@ type completionEntry struct {
 	lastInput           string
 	uuid                string
 	dispatcher          JC.Dispatcher
+	action              func(active bool)
 }
 
 func NewCompletionEntry(
@@ -91,12 +92,20 @@ func NewCompletionEntry(
 	return c
 }
 
+func (c *completionEntry) SetAction(fn func(active bool)) {
+	c.action = fn
+}
+
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 }
 
 func (c *completionEntry) FocusLost() {
 	c.Entry.FocusLost()
+
+	if c.action != nil {
+		c.action(false)
+	}
 }
 
 func (c *completionEntry) FocusGained() {
@@ -110,6 +119,10 @@ func (c *completionEntry) FocusGained() {
 	if len(c.Text) > 0 {
 		c.completionList.SetData(c.options)
 		c.showCompletion()
+	}
+
+	if c.action != nil {
+		c.action(true)
 	}
 }
 

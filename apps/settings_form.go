@@ -25,14 +25,14 @@ func NewSettingsForm(
 			return nil
 		}
 		if s == "" {
-			return errors.New("This field cannot be empty")
+			return errors.New("This field is required")
 		}
 		u, err := url.ParseRequestURI(s)
 		if err != nil {
 			return errors.New("Invalid URL format")
 		}
 		if u.Scheme != "http" && u.Scheme != "https" {
-			return errors.New("Only http or https URLs are allowed")
+			return errors.New("Only http or https allowed")
 		}
 
 		return nil
@@ -43,28 +43,28 @@ func NewSettingsForm(
 			return nil
 		}
 		if s == "" {
-			return errors.New("This field cannot be empty")
+			return errors.New("This field is required")
 		}
 		val, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return errors.New("Only numerical value without decimals allowed")
+			return errors.New("No decimals allowed")
 		}
 		if val < 0 {
-			return errors.New("Only number larger than zero allowed")
+			return errors.New("Must larger than zero")
 		}
 		return nil
 	}
 
 	delay := JW.NewNumericalEntry(false)
-	cryptos := widget.NewEntry()
-	exchange := widget.NewEntry()
-	altindex := widget.NewEntry()
-	feargreed := widget.NewEntry()
-	cmc100 := widget.NewEntry()
-	marketcap := widget.NewEntry()
-	rsi := widget.NewEntry()
-	etf := widget.NewEntry()
-	dominance := widget.NewEntry()
+	cryptos := JW.NewTextEntry()
+	exchange := JW.NewTextEntry()
+	altindex := JW.NewTextEntry()
+	feargreed := JW.NewTextEntry()
+	cmc100 := JW.NewTextEntry()
+	marketcap := JW.NewTextEntry()
+	rsi := JW.NewTextEntry()
+	etf := JW.NewTextEntry()
+	dominance := JW.NewTextEntry()
 
 	delay.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
 	cryptos.SetText(JT.UseConfig().DataEndpoint)

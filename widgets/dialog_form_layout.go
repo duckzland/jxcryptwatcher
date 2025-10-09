@@ -7,9 +7,10 @@ import (
 )
 
 type dialogFormLayout struct {
-	form      *widget.Form
-	container *container.Scroll
-	cSize     *fyne.Size
+	form       *widget.Form
+	container  *container.Scroll
+	dispatcher *scrollDispatcher
+	cSize      *fyne.Size
 }
 
 func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -31,6 +32,14 @@ func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 	if l.form.Size() != formTargetSize {
 		l.form.Resize(formTargetSize)
+	}
+
+	if l.dispatcher.Size() != formTargetSize {
+		l.dispatcher.Resize(formTargetSize)
+	}
+
+	if l.dispatcher.Position() != formTargetPos {
+		l.dispatcher.Move(formTargetPos)
 	}
 
 }

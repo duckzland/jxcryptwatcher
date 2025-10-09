@@ -12,6 +12,10 @@ import (
 	JC "jxwatcher/core"
 )
 
+type actionEntry interface {
+	SetAction(func(bool))
+}
+
 type DialogForm interface {
 	Show()
 	Hide()
@@ -56,6 +60,8 @@ func NewDialogForm(
 		destroy:  destroy,
 	}
 
+	fd.form.Orientation = widget.Vertical
+
 	fd.cancel = NewActionButton(
 		"cancel_save_panel",
 		"Cancel",
@@ -81,7 +87,8 @@ func NewDialogForm(
 	)
 
 	formLayout := &dialogFormLayout{
-		form: fd.form,
+		form:       fd.form,
+		dispatcher: NewScrollDispatcher(),
 	}
 
 	innerLayout := &dialogContentLayout{
@@ -89,13 +96,31 @@ func NewDialogForm(
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
-		content:       container.NewVScroll(container.New(formLayout, formLayout.form)),
+		content:       container.NewVScroll(container.New(formLayout, formLayout.form, formLayout.dispatcher)),
 		buttons:       container.NewHBox(fd.cancel, widget.NewLabel(" "), fd.confirm),
 		bottomContent: bottomContent,
 		padding:       16,
 	}
 
 	formLayout.container = innerLayout.content
+	formLayout.dispatcher.SetScroller(innerLayout.content)
+
+	for _, item := range items {
+		if item.HintText == "" {
+			item.HintText = " "
+		}
+
+		if ae, ok := item.Widget.(actionEntry); ok {
+			ae.SetAction(func(active bool) {
+				if active {
+					formLayout.dispatcher.Hide()
+					return
+				}
+
+				formLayout.dispatcher.Show()
+			})
+		}
+	}
 
 	content := []fyne.CanvasObject{innerLayout.background}
 	content = append(content, innerLayout.title)

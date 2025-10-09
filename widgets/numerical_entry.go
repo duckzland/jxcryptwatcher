@@ -12,6 +12,7 @@ import (
 type numericalEntry struct {
 	widget.Entry
 	allow_decimals bool
+	action         func(active bool)
 }
 
 func NewNumericalEntry(allow_decimals bool) *numericalEntry {
@@ -19,6 +20,24 @@ func NewNumericalEntry(allow_decimals bool) *numericalEntry {
 	entry.ExtendBaseWidget(entry)
 	entry.allow_decimals = allow_decimals
 	return entry
+}
+
+func (e *numericalEntry) SetAction(fn func(active bool)) {
+	e.action = fn
+}
+
+func (e *numericalEntry) FocusGained() {
+	e.Entry.FocusGained()
+	if e.action != nil {
+		e.action(true)
+	}
+}
+
+func (e *numericalEntry) FocusLost() {
+	e.Entry.FocusLost()
+	if e.action != nil {
+		e.action(false)
+	}
 }
 
 func (e *numericalEntry) TypedRune(r rune) {
@@ -35,7 +54,6 @@ func (e *numericalEntry) TypedShortcut(shortcut fyne.Shortcut) {
 		e.Entry.TypedShortcut(shortcut)
 		return
 	}
-
 	content := paste.Clipboard.Content()
 	if _, err := strconv.ParseFloat(content, 64); err == nil {
 		e.Entry.TypedShortcut(shortcut)
@@ -43,9 +61,6 @@ func (e *numericalEntry) TypedShortcut(shortcut fyne.Shortcut) {
 }
 
 func (e *numericalEntry) Keyboard() mobile.KeyboardType {
-	// Fyne has bug, on android the dot key cant be pressed!
-	// return mobile.NumberKeyboard
-
 	return mobile.DefaultKeyboard
 }
 
