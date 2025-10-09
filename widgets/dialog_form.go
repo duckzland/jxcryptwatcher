@@ -25,7 +25,7 @@ type dialogForm struct {
 	confirm         ActionButton
 	cancel          ActionButton
 	items           []*widget.FormItem
-	callback        func(bool) bool
+	callback        func() bool
 	form            *widget.Form
 	parent          fyne.Window
 	validationTimer *time.Timer
@@ -41,7 +41,7 @@ func NewDialogForm(
 	topContent []*fyne.Container,
 	bottomContent []*fyne.Container,
 	absolutePositionedContent []*fyne.Container,
-	callback func(bool) bool,
+	callback func() bool,
 	render func(*fyne.Container),
 	destroy func(*fyne.Container),
 	parent fyne.Window,
@@ -154,10 +154,12 @@ func (d *dialogForm) Submit() {
 	}
 
 	if d.callback != nil {
-		if d.callback(true) {
+		if d.callback() {
 			d.Hide()
 			return
 		}
+
+		return
 	}
 
 	d.Hide()

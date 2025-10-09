@@ -1,7 +1,7 @@
 package apps
 
 import (
-	"fmt"
+	"errors"
 	"net/url"
 	"strconv"
 
@@ -19,176 +19,144 @@ func NewSettingsForm(
 	onDestroy func(layer *fyne.Container),
 ) JW.DialogForm {
 
-	delayEntry := JW.NewNumericalEntry(false)
-	dataEndPointEntry := widget.NewEntry()
-	exchangeEndPointEntry := widget.NewEntry()
-	altSeasonsEndpointEntry := widget.NewEntry()
-	fearGreedEndpointEntry := widget.NewEntry()
-	CMC100EndpointEntry := widget.NewEntry()
-	marketCapEndpointEntry := widget.NewEntry()
-	rsiEndpointEntry := widget.NewEntry()
-	etfEndpointEntry := widget.NewEntry()
-	dominanceEndpointEntry := widget.NewEntry()
-
-	// Prefill with config data
-	delayEntry.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
-	dataEndPointEntry.SetText(JT.UseConfig().DataEndpoint)
-	exchangeEndPointEntry.SetText(JT.UseConfig().ExchangeEndpoint)
-	altSeasonsEndpointEntry.SetText(JT.UseConfig().AltSeasonEndpoint)
-	fearGreedEndpointEntry.SetText(JT.UseConfig().FearGreedEndpoint)
-	CMC100EndpointEntry.SetText(JT.UseConfig().CMC100Endpoint)
-	marketCapEndpointEntry.SetText(JT.UseConfig().MarketCapEndpoint)
-	rsiEndpointEntry.SetText(JT.UseConfig().RSIEndpoint)
-	etfEndpointEntry.SetText(JT.UseConfig().ETFEndpoint)
-	dominanceEndpointEntry.SetText(JT.UseConfig().DominanceEndpoint)
-
-	delayEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
+	var allowValidation bool = false
+	validateURL := func(s string) error {
+		if !allowValidation {
+			return nil
 		}
-		x, err := strconv.ParseInt(s, 10, 64)
+		if s == "" {
+			return errors.New("This field cannot be empty")
+		}
+		u, err := url.ParseRequestURI(s)
 		if err != nil {
-			return fmt.Errorf("Only numerical value without decimals allowed")
+			return errors.New("Invalid URL format")
 		}
-		if x < 0 {
-			return fmt.Errorf("Only number larger than zero allowed")
+		if u.Scheme != "http" && u.Scheme != "https" {
+			return errors.New("Only http or https URLs are allowed")
+		}
+
+		return nil
+	}
+
+	validateDelay := func(s string) error {
+		if !allowValidation {
+			return nil
+		}
+		if s == "" {
+			return errors.New("This field cannot be empty")
+		}
+		val, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return errors.New("Only numerical value without decimals allowed")
+		}
+		if val < 0 {
+			return errors.New("Only number larger than zero allowed")
 		}
 		return nil
 	}
 
-	dataEndPointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
+	delay := JW.NewNumericalEntry(false)
+	cryptos := widget.NewEntry()
+	exchange := widget.NewEntry()
+	altindex := widget.NewEntry()
+	feargreed := widget.NewEntry()
+	cmc100 := widget.NewEntry()
+	marketcap := widget.NewEntry()
+	rsi := widget.NewEntry()
+	etf := widget.NewEntry()
+	dominance := widget.NewEntry()
+
+	delay.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
+	cryptos.SetText(JT.UseConfig().DataEndpoint)
+	exchange.SetText(JT.UseConfig().ExchangeEndpoint)
+	altindex.SetText(JT.UseConfig().AltSeasonEndpoint)
+	feargreed.SetText(JT.UseConfig().FearGreedEndpoint)
+	cmc100.SetText(JT.UseConfig().CMC100Endpoint)
+	marketcap.SetText(JT.UseConfig().MarketCapEndpoint)
+	rsi.SetText(JT.UseConfig().RSIEndpoint)
+	etf.SetText(JT.UseConfig().ETFEndpoint)
+	dominance.SetText(JT.UseConfig().DominanceEndpoint)
+
+	delay.Validator = validateDelay
+	cryptos.Validator = validateURL
+	exchange.Validator = validateURL
+	altindex.Validator = validateURL
+	feargreed.Validator = validateURL
+	cmc100.Validator = validateURL
+	marketcap.Validator = validateURL
+	rsi.Validator = validateURL
+	etf.Validator = validateURL
+	dominance.Validator = validateURL
+
+	items := []*widget.FormItem{
+		widget.NewFormItem("Crypto Maps URL", cryptos),
+		widget.NewFormItem("Exchange URL", exchange),
+		widget.NewFormItem("AltSeason URL", altindex),
+		widget.NewFormItem("Fear&Greed URL", feargreed),
+		widget.NewFormItem("CMC100 URL", cmc100),
+		widget.NewFormItem("MarketCap URL", marketcap),
+		widget.NewFormItem("RSI URL", rsi),
+		widget.NewFormItem("ETF URL", etf),
+		widget.NewFormItem("Dominance URL", dominance),
+		widget.NewFormItem("Delay (seconds)", delay),
 	}
 
-	exchangeEndPointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
+	return JW.NewDialogForm("Settings", items, nil, nil, nil,
+		func() bool {
+			defer func() { allowValidation = false }()
 
-	altSeasonsEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
+			allowValidation = true
+			hasError := false
 
-	fearGreedEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
+			if cryptos.Validate() != nil {
+				hasError = true
+			}
+			if exchange.Validate() != nil {
+				hasError = true
+			}
+			if altindex.Validate() != nil {
+				hasError = true
+			}
+			if feargreed.Validate() != nil {
+				hasError = true
+			}
+			if cmc100.Validate() != nil {
+				hasError = true
+			}
+			if marketcap.Validate() != nil {
+				hasError = true
+			}
+			if rsi.Validate() != nil {
+				hasError = true
+			}
+			if etf.Validate() != nil {
+				hasError = true
+			}
+			if dominance.Validate() != nil {
+				hasError = true
+			}
+			if delay.Validate() != nil {
+				hasError = true
+			}
 
-	CMC100EndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
+			if hasError {
+				return false
+			}
 
-	marketCapEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
+			val, _ := strconv.ParseInt(delay.Text, 10, 64)
+			JT.UseConfig().Delay = val
+			JT.UseConfig().DataEndpoint = cryptos.Text
+			JT.UseConfig().ExchangeEndpoint = exchange.Text
+			JT.UseConfig().AltSeasonEndpoint = altindex.Text
+			JT.UseConfig().FearGreedEndpoint = feargreed.Text
+			JT.UseConfig().CMC100Endpoint = cmc100.Text
+			JT.UseConfig().MarketCapEndpoint = marketcap.Text
+			JT.UseConfig().RSIEndpoint = rsi.Text
+			JT.UseConfig().ETFEndpoint = etf.Text
+			JT.UseConfig().DominanceEndpoint = dominance.Text
 
-	rsiEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
-
-	etfEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
-
-	dominanceEndpointEntry.Validator = func(s string) error {
-		if len(s) == 0 {
-			return fmt.Errorf("This field cannot be empty")
-		}
-		_, err := url.ParseRequestURI(s)
-		if err != nil {
-			return fmt.Errorf("Invalid URL format")
-		}
-		return nil
-	}
-
-	formItems := []*widget.FormItem{
-		widget.NewFormItem("Crypto Maps URL", dataEndPointEntry),
-		widget.NewFormItem("Exchange URL", exchangeEndPointEntry),
-		widget.NewFormItem("AltSeason URL", altSeasonsEndpointEntry),
-		widget.NewFormItem("Fear&Greed URL", fearGreedEndpointEntry),
-		widget.NewFormItem("CMC100 URL", CMC100EndpointEntry),
-		widget.NewFormItem("MarketCap URL", marketCapEndpointEntry),
-		widget.NewFormItem("RSI URL", rsiEndpointEntry),
-		widget.NewFormItem("ETF URL", etfEndpointEntry),
-		widget.NewFormItem("Dominance URL", dominanceEndpointEntry),
-		widget.NewFormItem("Delay (seconds)", delayEntry),
-	}
-
-	return JW.NewDialogForm("Settings", formItems, nil, nil, nil,
-		func(b bool) bool {
-			if b {
-
-				delay, _ := strconv.ParseInt(delayEntry.Text, 10, 64)
-
-				JT.UseConfig().DataEndpoint = dataEndPointEntry.Text
-				JT.UseConfig().ExchangeEndpoint = exchangeEndPointEntry.Text
-				JT.UseConfig().AltSeasonEndpoint = altSeasonsEndpointEntry.Text
-				JT.UseConfig().FearGreedEndpoint = fearGreedEndpointEntry.Text
-				JT.UseConfig().CMC100Endpoint = CMC100EndpointEntry.Text
-				JT.UseConfig().MarketCapEndpoint = marketCapEndpointEntry.Text
-				JT.UseConfig().RSIEndpoint = rsiEndpointEntry.Text
-				JT.UseConfig().ETFEndpoint = etfEndpointEntry.Text
-				JT.UseConfig().DominanceEndpoint = dominanceEndpointEntry.Text
-
-				JT.UseConfig().Delay = delay
-
-				if onSave != nil {
-					onSave()
-				}
+			if onSave != nil {
+				onSave()
 			}
 
 			return true
