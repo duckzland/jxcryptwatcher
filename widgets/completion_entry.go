@@ -179,9 +179,8 @@ func (c *completionEntry) hideCompletion() {
 }
 
 func (c *completionEntry) shiftEntry() {
-	cp := c.Entry.Position()
 	cs := c.Size()
-	np := fyne.NewPos(36, cp.Y)
+	np := fyne.NewPos(36, 0)
 
 	if c.popup != nil && c.popup.Visible() {
 		cs.Width -= 36
@@ -196,7 +195,6 @@ func (c *completionEntry) shiftEntry() {
 }
 
 func (c *completionEntry) unshiftEntry() {
-	//cp := c.Entry.Position()
 	cs := c.Size()
 	np := fyne.NewPos(0, 0)
 
