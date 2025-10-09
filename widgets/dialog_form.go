@@ -22,14 +22,14 @@ type DialogForm interface {
 
 type dialogForm struct {
 	layer           *fyne.Container
+	content         *fyne.Container
 	confirm         ActionButton
 	cancel          ActionButton
+	form            *widget.Form
 	items           []*widget.FormItem
 	callback        func() bool
-	form            *widget.Form
 	parent          fyne.Window
 	validationTimer *time.Timer
-	content         *fyne.Container
 	render          func(*fyne.Container)
 	destroy         func(*fyne.Container)
 	validationDone  chan struct{}
@@ -80,15 +80,22 @@ func NewDialogForm(
 		nil,
 	)
 
+	formLayout := &dialogFormLayout{
+		form: fd.form,
+	}
+
 	innerLayout := &dialogContentLayout{
 		background:    canvas.NewRectangle(JC.UseTheme().GetColor(theme.ColorNameBackground)),
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
+		content:       container.NewVScroll(container.New(formLayout, formLayout.form)),
 		buttons:       container.NewHBox(fd.cancel, widget.NewLabel(" "), fd.confirm),
 		bottomContent: bottomContent,
 		padding:       16,
 	}
+
+	formLayout.container = innerLayout.content
 
 	content := []fyne.CanvasObject{innerLayout.background}
 	content = append(content, innerLayout.title)
@@ -97,7 +104,7 @@ func NewDialogForm(
 		content = append(content, c)
 	}
 
-	content = append(content, fd.form)
+	content = append(content, innerLayout.content)
 
 	for _, c := range bottomContent {
 		content = append(content, c)

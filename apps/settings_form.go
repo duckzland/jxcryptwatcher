@@ -66,16 +66,16 @@ func NewSettingsForm(
 	etf := widget.NewEntry()
 	dominance := widget.NewEntry()
 
-	delay.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
-	cryptos.SetText(JT.UseConfig().DataEndpoint)
-	exchange.SetText(JT.UseConfig().ExchangeEndpoint)
-	altindex.SetText(JT.UseConfig().AltSeasonEndpoint)
-	feargreed.SetText(JT.UseConfig().FearGreedEndpoint)
-	cmc100.SetText(JT.UseConfig().CMC100Endpoint)
-	marketcap.SetText(JT.UseConfig().MarketCapEndpoint)
-	rsi.SetText(JT.UseConfig().RSIEndpoint)
-	etf.SetText(JT.UseConfig().ETFEndpoint)
-	dominance.SetText(JT.UseConfig().DominanceEndpoint)
+	// delay.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
+	// cryptos.SetText(JT.UseConfig().DataEndpoint)
+	// exchange.SetText(JT.UseConfig().ExchangeEndpoint)
+	// altindex.SetText(JT.UseConfig().AltSeasonEndpoint)
+	// feargreed.SetText(JT.UseConfig().FearGreedEndpoint)
+	// cmc100.SetText(JT.UseConfig().CMC100Endpoint)
+	// marketcap.SetText(JT.UseConfig().MarketCapEndpoint)
+	// rsi.SetText(JT.UseConfig().RSIEndpoint)
+	// etf.SetText(JT.UseConfig().ETFEndpoint)
+	// dominance.SetText(JT.UseConfig().DominanceEndpoint)
 
 	delay.Validator = validateDelay
 	cryptos.Validator = validateURL

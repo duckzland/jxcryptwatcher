@@ -3,14 +3,16 @@ package widgets
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 )
 
 type dialogContentLayout struct {
 	background    *canvas.Rectangle
-	title         fyne.CanvasObject
-	topContent    []*fyne.Container
+	content       *container.Scroll
 	form          fyne.CanvasObject
 	buttons       fyne.CanvasObject
+	title         fyne.CanvasObject
+	topContent    []*fyne.Container
 	bottomContent []*fyne.Container
 	padding       float32
 	cWidth        float32
@@ -40,6 +42,16 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	x := l.padding
 	y := l.padding
 	w := size.Width - 2*l.padding
+
+	// Calculate available height for the form
+	ch := size.Height - (l.title.MinSize().Height + l.padding) - (l.buttons.MinSize().Height + l.padding) - 2*l.padding
+	for _, x := range l.bottomContent {
+		ch -= (x.MinSize().Height + l.padding)
+	}
+
+	for _, x := range l.topContent {
+		ch -= (x.MinSize().Height + l.padding)
+	}
 
 	// Title
 	titleSize := l.title.MinSize()
@@ -73,20 +85,19 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		y += topSize.Height + l.padding
 	}
 
-	// Form
-	formSize := l.form.MinSize()
-	formTargetSize := fyne.NewSize(w, formSize.Height)
-	formTargetPos := fyne.NewPos(x, y)
+	// Main content
+	contentTargetSize := fyne.NewSize(w, ch)
+	contentTargetPos := fyne.NewPos(x, y)
 
-	if l.form.Size() != formTargetSize {
-		l.form.Resize(formTargetSize)
+	if l.content.Size() != contentTargetSize {
+		l.content.Resize(contentTargetSize)
 	}
 
-	if l.form.Position() != formTargetPos {
-		l.form.Move(formTargetPos)
+	if l.content.Position() != contentTargetPos {
+		l.content.Move(contentTargetPos)
 	}
 
-	y += formSize.Height + l.padding
+	y += contentTargetSize.Height + l.padding
 
 	// Bottom content
 	for _, bottom := range l.bottomContent {
@@ -117,8 +128,6 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	if l.buttons.Position() != buttonTargetPos {
 		l.buttons.Move(buttonTargetPos)
 	}
-
-	y += buttonSize.Height + l.padding
 }
 
 func (l *dialogContentLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
