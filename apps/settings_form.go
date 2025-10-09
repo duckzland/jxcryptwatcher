@@ -89,16 +89,16 @@ func NewSettingsForm(
 	dominance.Validator = validateURL
 
 	items := []*widget.FormItem{
-		widget.NewFormItem("Crypto Maps URL", cryptos),
-		widget.NewFormItem("Exchange URL", exchange),
-		widget.NewFormItem("AltSeason URL", altindex),
-		widget.NewFormItem("Fear&Greed URL", feargreed),
-		widget.NewFormItem("CMC100 URL", cmc100),
-		widget.NewFormItem("MarketCap URL", marketcap),
-		widget.NewFormItem("RSI URL", rsi),
-		widget.NewFormItem("ETF URL", etf),
-		widget.NewFormItem("Dominance URL", dominance),
-		widget.NewFormItem("Delay (seconds)", delay),
+		widget.NewFormItem("Crypto Maps Endpoint", cryptos),
+		widget.NewFormItem("Exchange Endpoint", exchange),
+		widget.NewFormItem("AltSeason Endpoint", altindex),
+		widget.NewFormItem("Fear & Greed Endpoint", feargreed),
+		widget.NewFormItem("CMC100 Endpoint", cmc100),
+		widget.NewFormItem("MarketCap Endpoint", marketcap),
+		widget.NewFormItem("RSI Endpoint", rsi),
+		widget.NewFormItem("ETF Endpoint", etf),
+		widget.NewFormItem("Dominance Endpoint", dominance),
+		widget.NewFormItem("Delay (sec)", delay),
 	}
 
 	return JW.NewDialogForm("Settings", items, nil, nil, nil,

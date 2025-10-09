@@ -132,10 +132,10 @@ func NewPanelForm(
 	de.Validator = validateDecimals
 
 	fi := []*widget.FormItem{
-		widget.NewFormItem("Value", ve),
-		widget.NewFormItem("Source", se),
-		widget.NewFormItem("Target", te),
-		widget.NewFormItem("Decimals", de),
+		widget.NewFormItem("Source Amount", ve),
+		widget.NewFormItem("From Cryptocurrency", se),
+		widget.NewFormItem("To Cryptocurrency", te),
+		widget.NewFormItem("Decimal Precision", de),
 	}
 
 	parent := JW.NewDialogForm(title, fi, nil, nil, pop,

@@ -138,11 +138,7 @@ func (c *completionEntry) Resize(size fyne.Size) {
 
 	if c.popup != nil && c.popup.Visible() {
 
-		cp := c.Entry.Position()
-		size.Width -= 36
-		if cp.X != 0 {
-			c.Entry.Resize(size)
-		}
+		c.unshiftEntry()
 
 		c.popupPosition = fyne.NewPos(-1, -1)
 		c.popup.Move(c.popUpPos())
@@ -179,10 +175,22 @@ func (c *completionEntry) hideCompletion() {
 
 	c.popupPosition = fyne.NewPos(-1, -1)
 
-	c.toggleEntry()
+	c.unshiftEntry()
 }
 
-func (c *completionEntry) toggleEntry() {
+func (c *completionEntry) shiftEntry() {
+	cp := c.Entry.Position()
+	cs := c.Size()
+
+	if cp.X == 0 {
+		cs.Width -= 36
+		c.Entry.Resize(cs)
+		c.Entry.Move(fyne.NewPos(36, cp.Y))
+	}
+
+}
+
+func (c *completionEntry) unshiftEntry() {
 	cp := c.Entry.Position()
 	cs := c.Size()
 
@@ -190,12 +198,7 @@ func (c *completionEntry) toggleEntry() {
 		cs.Width += 36
 		c.Entry.Resize(cs)
 		c.Entry.Move(fyne.NewPos(0, 0))
-	} else {
-		cs.Width -= 36
-		c.Entry.Resize(cs)
-		c.Entry.Move(fyne.NewPos(36, cp.Y))
 	}
-
 }
 
 func (c *completionEntry) dynamicResize() {
@@ -254,7 +257,7 @@ func (c *completionEntry) showCompletion() {
 
 	c.popup.Show()
 
-	c.toggleEntry()
+	c.shiftEntry()
 
 	activeEntry = c
 }
@@ -420,5 +423,6 @@ func (c *completionEntry) setTextFromMenu(s string) {
 	c.Entry.CursorColumn = len([]rune(s))
 	c.Entry.Refresh()
 	c.popup.Hide()
+	c.unshiftEntry()
 	c.pause = false
 }
