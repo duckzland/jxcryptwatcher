@@ -11,6 +11,7 @@ var coreDebouncer *debouncer = nil
 type debouncer struct {
 	mu          sync.Mutex
 	generations map[string]int
+	callbacks   map[string]func()
 	cancelMap   map[string]context.CancelFunc
 }
 
@@ -18,6 +19,7 @@ func (d *debouncer) Init() {
 	d.mu.Lock()
 	d.generations = make(map[string]int)
 	d.cancelMap = make(map[string]context.CancelFunc)
+	d.callbacks = make(map[string]func())
 	d.mu.Unlock()
 }
 
@@ -35,6 +37,7 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	d.cancelMap[key] = cancel
+	d.callbacks[key] = fn
 	d.mu.Unlock()
 
 	go func(gen int, ctx context.Context) {
@@ -47,7 +50,10 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 			if gen != currentGen {
 				return
 			}
+
+			fn := d.callbacks[key]
 			fn()
+
 		case <-ctx.Done():
 			return
 		}
@@ -61,6 +67,7 @@ func (d *debouncer) Cancel(key string) {
 		cancel()
 		delete(d.cancelMap, key)
 	}
+	d.callbacks[key] = func() {}
 	d.mu.Unlock()
 }
 

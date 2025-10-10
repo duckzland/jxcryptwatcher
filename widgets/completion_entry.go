@@ -65,7 +65,11 @@ func NewCompletionEntry(
 
 	c.OnChanged = c.searchSuggestions
 
-	c.dispatcher = JC.NewDispatcher(1000, c.searchableChunkSize, 16*time.Millisecond)
+	if c.searchableChunkSize < 5000 {
+		c.searchableChunkSize = 5000
+	}
+
+	c.dispatcher = JC.NewDispatcher(1000, 2, 16*time.Millisecond)
 	c.dispatcher.Start()
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
@@ -278,8 +282,7 @@ func (c *completionEntry) getCurrentInput() string {
 
 func (c *completionEntry) searchSuggestions(s string) {
 
-	c.dispatcher.Drain()
-	c.dispatcher.Pause()
+	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
 
 	if s == c.lastInput || c.pause {
 		return
@@ -291,17 +294,21 @@ func (c *completionEntry) searchSuggestions(s string) {
 	}
 
 	results := []string{}
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
 	lowerInput := strings.ToLower(s)
 	c.lastInput = s
 	input := s
-	delay := 10 * time.Millisecond
+	delay := 5 * time.Millisecond
 
 	if c.popup.Visible() {
-		delay = 20 * time.Millisecond
+		delay = 10 * time.Millisecond
 	}
+
+	if JC.IsMobile {
+		delay = 50 * time.Millisecond
+	}
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 
 	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
 		start := i
@@ -310,7 +317,6 @@ func (c *completionEntry) searchSuggestions(s string) {
 		wg.Add(1)
 		c.dispatcher.Submit(func() {
 			defer wg.Done()
-
 			local := []string{}
 			for j := start; j < end; j++ {
 				if strings.Contains(c.searchable[j], lowerInput) {
@@ -324,26 +330,27 @@ func (c *completionEntry) searchSuggestions(s string) {
 		})
 	}
 
-	c.dispatcher.Resume()
-
 	wg.Wait()
 
-	if len(results) == 0 {
-		c.hideCompletion()
-		return
-	}
-
-	results = JC.ReorderSearchable(results)
-
 	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
-		if input != c.getCurrentInput() {
+		if len(results) == 0 {
+			fyne.Do(func() {
+				c.hideCompletion()
+			})
+			return
+		}
+
+		results = JC.ReorderSearchable(results)
+		if input != c.getCurrentInput() || c.lastInput != input {
 			return
 		}
 
 		fyne.Do(func() {
-			c.setOptions(results)
-			c.showCompletion()
-			c.dynamicResize()
+			if input == c.getCurrentInput() {
+				c.setOptions(results)
+				c.showCompletion()
+				c.dynamicResize()
+			}
 		})
 	})
 
