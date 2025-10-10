@@ -117,7 +117,7 @@ func (c *completionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
-		c.completionList.SetData(c.options, c.getCurrentInput())
+		c.completionList.SetData(c.options)
 		c.showCompletion()
 	}
 
@@ -174,7 +174,7 @@ func (c *completionEntry) SetParent(parent DialogForm) {
 func (c *completionEntry) setOptions(itemList []string) {
 	c.options = itemList
 	if c.completionList != nil {
-		c.completionList.SetData(c.options, c.getCurrentInput())
+		c.completionList.SetData(c.options)
 	}
 }
 
@@ -226,10 +226,6 @@ func (c *completionEntry) hideCompletion() {
 
 	if c.popup != nil {
 		c.popup.Hide()
-	}
-
-	if c.completionList != nil {
-		c.completionList.SetData([]string{}, "")
 	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
