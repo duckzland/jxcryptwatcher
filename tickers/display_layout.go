@@ -1,11 +1,13 @@
 package tickers
 
 import (
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+
+	JC "jxwatcher/core"
 )
+
+var tickerDisplayLayoutCachedSize fyne.Size
 
 type tickerLayout struct {
 	background *canvas.Rectangle
@@ -67,5 +69,8 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (tl *tickerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight))
+	if tickerDisplayLayoutCachedSize.Height == 0 {
+		tickerDisplayLayoutCachedSize = fyne.NewSize(JC.UseTheme().Size(JC.SizeTickerWidth), JC.UseTheme().Size(JC.SizeTickerHeight))
+	}
+	return tickerDisplayLayoutCachedSize
 }

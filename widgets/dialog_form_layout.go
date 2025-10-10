@@ -10,7 +10,7 @@ type dialogFormLayout struct {
 	form       *widget.Form
 	container  *container.Scroll
 	dispatcher *scrollDispatcher
-	cSize      *fyne.Size
+	cSize      fyne.Size
 }
 
 func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -21,6 +21,10 @@ func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	formSize := l.form.MinSize()
 	formTargetSize := fyne.NewSize(size.Width, formSize.Height)
 	formTargetPos := fyne.NewPos(0, 0)
+
+	if formSize != l.cSize {
+		l.cSize = formSize
+	}
 
 	if formTargetSize.Height > l.container.Size().Height {
 		formTargetSize.Width -= 18
@@ -45,5 +49,9 @@ func (l *dialogFormLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (l *dialogFormLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(0, l.form.MinSize().Height)
+	if l.cSize.Height == 0 {
+		l.cSize = fyne.NewSize(0, l.form.MinSize().Height)
+	}
+
+	return l.cSize
 }

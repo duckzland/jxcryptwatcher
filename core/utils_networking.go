@@ -57,7 +57,7 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	}
 
 	req.URL.RawQuery = q.Encode()
-	Logf("Fetching data from %v", req.URL)
+	// Logf("Fetching data from %v", req.URL)
 
 	resp, err := client.Do(req)
 	if err != nil {

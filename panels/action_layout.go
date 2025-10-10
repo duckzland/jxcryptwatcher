@@ -1,6 +1,10 @@
 package panels
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+)
+
+var panelActionLayoutCachedSize fyne.Size
 
 type panelActionLayout struct {
 	margin float32
@@ -19,14 +23,21 @@ func (r *panelActionLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) 
 }
 
 func (r *panelActionLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	totalWidth := float32(0)
-	maxHeight := float32(0)
-	for _, obj := range objects {
-		size := obj.MinSize()
-		totalWidth += size.Width
-		if size.Height > maxHeight {
-			maxHeight = size.Height
+
+	if panelActionLayoutCachedSize.Height == 0 {
+		totalWidth := float32(0)
+		maxHeight := float32(0)
+
+		for _, obj := range objects {
+			size := obj.MinSize()
+			totalWidth += size.Width
+			if size.Height > maxHeight {
+				maxHeight = size.Height
+			}
 		}
+
+		panelActionLayoutCachedSize = fyne.NewSize(totalWidth, r.height+r.margin)
 	}
-	return fyne.NewSize(totalWidth, r.height+r.margin)
+
+	return panelActionLayoutCachedSize
 }

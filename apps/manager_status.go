@@ -427,8 +427,14 @@ func (a *statusManager) Refresh() *statusManager {
 	if shouldUpdate {
 		// Always protect fyne.Do as this most likely called inside go routine
 		fyne.Do(func() {
-			UseLayout().Refresh()
-			UseAction().Refresh()
+			UseLayout().UpdateState()
+		})
+
+		// Have to use debouncer as too many refresh called and its expensive to relayout!
+		JC.UseDebouncer().Call("refreshing_main_layout", 60*time.Millisecond, func() {
+			fyne.Do(func() {
+				UseAction().Refresh()
+			})
 		})
 	}
 

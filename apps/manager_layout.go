@@ -42,6 +42,7 @@ func (m *layoutManager) Init() {
 }
 
 func (m *layoutManager) RefreshLayout() {
+
 	m.mu.RLock()
 	scroll := m.scroll
 	m.mu.RUnlock()
@@ -51,7 +52,7 @@ func (m *layoutManager) RefreshLayout() {
 	}
 }
 
-func (m *layoutManager) Refresh() {
+func (m *layoutManager) UpdateState() {
 	if m == nil {
 		return
 	}
@@ -239,7 +240,7 @@ func NewAppLayout() fyne.CanvasObject {
 	})
 
 	manager.scroll = container.NewVScroll(nil)
-	manager.Refresh()
+	manager.UpdateState()
 
 	manager.tickers = container.NewWithoutLayout()
 

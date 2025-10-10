@@ -107,7 +107,9 @@ func (c *configType) checkFile() *configType {
 			CMC100Endpoint:    "https://api.coinmarketcap.com/data-api/v3/top100/supplement",
 			MarketCapEndpoint: "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical",
 			RSIEndpoint:       "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall",
-			Version:           "1.6.0",
+			ETFEndpoint:       "https://api.coinmarketcap.com/data-api/v3/etf/overview/netflow/chart",
+			DominanceEndpoint: "https://api.coinmarketcap.com/data-api/v3/global-metrics/dominance/overview",
+			Version:           "1.7.0",
 			Delay:             60,
 		}
 

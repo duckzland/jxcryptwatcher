@@ -18,6 +18,7 @@ type completionList struct {
 	widget.BaseWidget
 	uuid             string
 	data             []string
+	dataKey          string
 	itemVisible      int
 	itemHeight       float32
 	itemTotal        int
@@ -85,13 +86,18 @@ func (n *completionList) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(n.root)
 }
 
-func (n *completionList) SetData(items []string) {
+func (n *completionList) SetData(items []string, dataKey string) {
+
+	if n.dataKey == dataKey {
+		return
+	}
 
 	if JC.EqualStringSlices(n.data, items) {
 		return
 	}
 
 	n.data = items
+	n.dataKey = dataKey
 	n.scrollOffset = 0
 	n.prepareForScroll()
 	scaledHeight := n.scaledItemHeight * float32(n.itemTotal)

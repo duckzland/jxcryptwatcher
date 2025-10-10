@@ -29,16 +29,16 @@ func (w *notificationDisplay) UpdateText(msg string) {
 	}
 	w.text.Text = txt
 	w.text.Color = w.txtcolor
-	w.text.Refresh()
-	w.Refresh()
+	canvas.Refresh(w.text)
+	canvas.Refresh(w)
 }
 
 func (w *notificationDisplay) ClearText() {
 	JA.StartFadingText(w.text, func() {
 		w.text.Text = ""
 		w.text.Color = w.txtcolor
-		w.text.Refresh()
-		w.Refresh()
+		canvas.Refresh(w.text)
+		canvas.Refresh(w)
 	}, nil)
 }
 

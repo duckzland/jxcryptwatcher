@@ -15,6 +15,7 @@ type panelGridLayout struct {
 	innerPadding [4]float32 // top, right, bottom, left
 	objectCount  int
 	cWidth       float32
+	cHeight      float32
 	minSize      fyne.Size
 	dirty        bool
 }
@@ -26,11 +27,12 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	if g.cWidth == size.Width && g.objectCount == len(objects) {
+	if g.cWidth == size.Width && g.cHeight == size.Height && g.objectCount == len(objects) {
 		return
 	}
 
 	g.cWidth = size.Width
+	g.cHeight = size.Height
 	g.objectCount = len(objects)
 	g.dirty = true
 
@@ -167,10 +169,11 @@ func (g *panelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 }
 
 func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-
 	if !g.dirty {
 		return g.minSize
 	}
+
+	g.dirty = false
 
 	rows := max(g.rowCount, 1)
 	width := g.dynCellSize.Width

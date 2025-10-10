@@ -11,6 +11,7 @@ type dialogOverlaysLayout struct {
 	dialogBox  fyne.CanvasObject
 	cHeight    float32
 	cWidth     float32
+	cSize      fyne.Size
 }
 
 func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -88,5 +89,8 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 }
 
 func (l *dialogOverlaysLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(300, 300)
+	if l.cSize.Height == 0 {
+		l.cSize = fyne.NewSize(300, 300)
+	}
+	return l.cSize
 }

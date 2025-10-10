@@ -125,7 +125,7 @@ func (p *panelsType) convertToMap(maps *panelsMapType) {
 		pp.SourceSymbol = maps.GetSymbolById(pko.GetSourceCoinString())
 		pp.TargetSymbol = maps.GetSymbolById(pko.GetTargetCoinString())
 
-		JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
+		// JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
 
 		maps.Append(pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
 	}

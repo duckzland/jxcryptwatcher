@@ -1,6 +1,8 @@
 package apps
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+)
 
 type topBarLayout struct {
 	fixedWidth float32
@@ -103,6 +105,7 @@ func (s *topBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	}
 
 	s.dirty = false
+
 	count := len(objects)
 	remaining := s.cWidth - (s.fixedWidth+s.spacer)*float32(count-1)
 	rows := 1

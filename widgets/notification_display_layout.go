@@ -8,6 +8,7 @@ import (
 type notificationDisplayLayout struct {
 	text      *canvas.Text
 	container *notificationDisplay
+	cSize     fyne.Size
 }
 
 func (r *notificationDisplayLayout) Layout(size fyne.Size) {
@@ -24,11 +25,14 @@ func (r *notificationDisplayLayout) Layout(size fyne.Size) {
 }
 
 func (r *notificationDisplayLayout) MinSize() fyne.Size {
-	return fyne.NewSize(200, 20)
+	if r.cSize.Height == 0 {
+		r.cSize = fyne.NewSize(200, 20)
+	}
+	return r.cSize
 }
 
 func (r *notificationDisplayLayout) Refresh() {
-	r.text.Refresh()
+	canvas.Refresh(r.text)
 }
 
 func (r *notificationDisplayLayout) Objects() []fyne.CanvasObject {

@@ -9,6 +9,7 @@ type pageLayout struct {
 	background *canvas.Rectangle
 	icon       *fyne.Container
 	content    *canvas.Text
+	cSize      fyne.Size
 }
 
 func (p *pageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -56,22 +57,26 @@ func (p *pageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (p *pageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	width := float32(0)
-	height := float32(0)
+	if p.cSize.Height == 0 {
+		width := float32(0)
+		height := float32(0)
 
-	if p.icon != nil {
-		ic := p.icon.MinSize()
-		width += ic.Width
-		height += ic.Height
-	}
-
-	if p.content != nil {
-		co := p.content.MinSize()
-		if width < co.Width {
-			width = co.Width
+		if p.icon != nil {
+			ic := p.icon.MinSize()
+			width += ic.Width
+			height += ic.Height
 		}
-		height += co.Height
+
+		if p.content != nil {
+			co := p.content.MinSize()
+			if width < co.Width {
+				width = co.Width
+			}
+			height += co.Height
+		}
+
+		p.cSize = fyne.NewSize(width, height)
 	}
 
-	return fyne.NewSize(width, height)
+	return p.cSize
 }

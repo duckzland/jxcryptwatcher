@@ -108,7 +108,7 @@ func main() {
 			JA.UseStatus().InitData()
 			JA.UseLayout().RegisterContent(JP.UsePanelGrid())
 			JP.UsePanelGrid().Refresh()
-			JA.UseLayout().Refresh()
+			JA.UseLayout().UpdateState()
 
 			JC.Logln("App is ready: ", JA.UseStatus().IsReady())
 

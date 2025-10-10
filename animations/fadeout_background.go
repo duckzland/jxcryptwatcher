@@ -27,7 +27,7 @@ func StartFadeOutBackground(
 
 				fyne.Do(func() {
 					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
-					rect.Refresh()
+					canvas.Refresh(rect)
 				})
 			}
 

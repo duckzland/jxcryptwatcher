@@ -7,6 +7,8 @@ import (
 	JC "jxwatcher/core"
 )
 
+var panelDisplayLayoutCachedSize fyne.Size
+
 type panelDisplayLayout struct {
 	background *canvas.Rectangle
 	title      *panelText
@@ -80,5 +82,9 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 }
 
 func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight))
+	if panelDisplayLayoutCachedSize.Height == 0 {
+		panelDisplayLayoutCachedSize = fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight))
+	}
+
+	return panelDisplayLayoutCachedSize
 }

@@ -31,7 +31,7 @@ func StartFadingText(
 
 				fyne.Do(func() {
 					JC.SetTextAlpha(text, alpha)
-					text.Refresh()
+					canvas.Refresh(text)
 				})
 			}
 

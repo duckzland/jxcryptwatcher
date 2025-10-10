@@ -12,6 +12,8 @@ type completionTextLayout struct {
 	separator  *canvas.Line
 	background *canvas.Rectangle
 	height     float32
+	width      float32
+	cSize      fyne.Size
 }
 
 func (r *completionTextLayout) Layout(size fyne.Size) {
@@ -34,7 +36,9 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 		r.text.Move(newPos)
 	}
 
-	r.text.Text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
+	if r.width != size.Width {
+		r.text.Text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
+	}
 
 	posY := r.height - 1
 	pos1 := fyne.NewPos(0, posY)
@@ -47,10 +51,15 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	if r.separator.Position2 != pos2 {
 		r.separator.Position2 = pos2
 	}
+
+	r.width = size.Width
 }
 
 func (r *completionTextLayout) MinSize() fyne.Size {
-	return fyne.NewSize(0, r.height-4)
+	if r.cSize.Height == 0 {
+		r.cSize = fyne.NewSize(0, r.height-4)
+	}
+	return r.cSize
 }
 
 func (r *completionTextLayout) Refresh() {

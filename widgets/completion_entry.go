@@ -23,7 +23,9 @@ type completionEntry struct {
 	completionList      *completionList
 	parent              DialogForm
 	pause               bool
+	shifted             bool
 	itemHeight          float32
+	shiftX              float32
 	options             []string
 	suggestions         []string
 	searchable          []string
@@ -55,6 +57,8 @@ func NewCompletionEntry(
 		popupPosition:       fyne.NewPos(-1, -1),
 		entryPosition:       fyne.NewPos(-1, -1),
 		itemHeight:          40,
+		shifted:             false,
+		shiftX:              36,
 	}
 
 	c.ExtendBaseWidget(c)
@@ -92,10 +96,6 @@ func NewCompletionEntry(
 	return c
 }
 
-func (c *completionEntry) SetAction(fn func(active bool)) {
-	c.action = fn
-}
-
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 }
@@ -117,7 +117,7 @@ func (c *completionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
-		c.completionList.SetData(c.options)
+		c.completionList.SetData(c.options, c.getCurrentInput())
 		c.showCompletion()
 	}
 
@@ -126,26 +126,41 @@ func (c *completionEntry) FocusGained() {
 	}
 }
 
-func (c *completionEntry) SetDefaultValue(s string) {
-	c.Text = s
-}
-
 func (c *completionEntry) Refresh() {
 	c.Entry.Refresh()
 }
 
 func (c *completionEntry) Resize(size fyne.Size) {
 
-	if c.popup != nil && c.popup.Visible() {
+	if c.shifted {
+		size.Width -= c.shiftX
+	}
 
-		c.unshiftEntry()
-
-		c.popupPosition = fyne.NewPos(-1, -1)
-		c.popup.Move(c.popUpPos())
-		c.dynamicResize()
-	} else {
+	if c.Entry.Size() != size {
 		c.Entry.Resize(size)
 	}
+
+	if c.popup != nil && c.popup.Visible() {
+		c.shiftEntry()
+
+		c.popupPosition = fyne.NewPos(-1, -1)
+		np := c.popUpPos()
+
+		if c.popup.Position() != np {
+			c.popup.Move(np)
+		}
+
+		c.dynamicResize()
+
+	}
+}
+
+func (c *completionEntry) SetDefaultValue(s string) {
+	c.Text = s
+}
+
+func (c *completionEntry) SetAction(fn func(active bool)) {
+	c.action = fn
 }
 
 func (c *completionEntry) SetValidator(fn func(string) error) {
@@ -159,7 +174,51 @@ func (c *completionEntry) SetParent(parent DialogForm) {
 func (c *completionEntry) setOptions(itemList []string) {
 	c.options = itemList
 	if c.completionList != nil {
-		c.completionList.SetData(c.options)
+		c.completionList.SetData(c.options, c.getCurrentInput())
+	}
+}
+
+func (c *completionEntry) shiftEntry() {
+	cs := c.Size()
+	np := fyne.NewPos(c.shiftX, 0)
+
+	if c.popup != nil && c.popup.Visible() && !c.shifted {
+		cs.Width -= c.shiftX
+		if c.Entry.Size() != cs {
+			c.Entry.Resize(cs)
+		}
+		if c.Entry.Position() != np {
+			c.Entry.Move(np)
+		}
+
+		c.shifted = true
+	}
+
+}
+
+func (c *completionEntry) unshiftEntry() {
+	cs := c.Size()
+	np := fyne.NewPos(0, 0)
+
+	if c.popup != nil && !c.popup.Visible() && c.shifted {
+		cs.Width += c.shiftX
+		if c.Entry.Size() != cs {
+			c.Entry.Resize(cs)
+		}
+		if c.Entry.Position() != np {
+			c.Entry.Move(np)
+		}
+
+		c.shifted = false
+	}
+}
+
+func (c *completionEntry) dynamicResize() {
+	mx := c.maxSize()
+	ox := c.popup.Size()
+
+	if mx != ox {
+		c.popup.Resize(mx)
 	}
 }
 
@@ -170,53 +229,12 @@ func (c *completionEntry) hideCompletion() {
 	}
 
 	if c.completionList != nil {
-		c.completionList.SetData([]string{})
+		c.completionList.SetData([]string{}, "")
 	}
 
 	c.popupPosition = fyne.NewPos(-1, -1)
 
 	c.unshiftEntry()
-}
-
-func (c *completionEntry) shiftEntry() {
-	cs := c.Size()
-	np := fyne.NewPos(36, 0)
-
-	if c.popup != nil && c.popup.Visible() {
-		cs.Width -= 36
-		if c.Entry.Size() != cs {
-			c.Entry.Resize(cs)
-		}
-		if c.Entry.Position() != np {
-			c.Entry.Move(np)
-		}
-	}
-
-}
-
-func (c *completionEntry) unshiftEntry() {
-	cs := c.Size()
-	np := fyne.NewPos(0, 0)
-
-	if c.popup != nil && !c.popup.Visible() {
-		cs.Width += 36
-		if c.Entry.Size() != cs {
-			c.Entry.Resize(cs)
-		}
-		if c.Entry.Position() != np {
-			c.Entry.Move(np)
-		}
-	}
-}
-
-func (c *completionEntry) dynamicResize() {
-	mx := c.maxSize()
-	ox := c.popup.Size()
-
-	if mx.Width != ox.Width || mx.Height != ox.Height {
-		c.popup.Resize(mx)
-		canvas.Refresh(c.popup)
-	}
 }
 
 func (c *completionEntry) showCompletion() {
@@ -243,24 +261,12 @@ func (c *completionEntry) showCompletion() {
 	mp := c.popUpPos()
 	op := c.popup.Position()
 
-	refresh := false
-
 	if mx.Width != ox.Width {
 		c.popup.Resize(mx)
-		refresh = true
 	}
 
-	if mp.X != op.X || mp.Y != op.Y {
-		c.popup.Move(c.popUpPos())
-		refresh = true
-	}
-
-	if len(c.popup.Objects) == 0 {
-		c.popup.Add(c.container)
-	}
-
-	if refresh {
-		canvas.Refresh(c.popup)
+	if mp != op {
+		c.popup.Move(mp)
 	}
 
 	c.popup.Show()
@@ -295,9 +301,10 @@ func (c *completionEntry) searchSuggestions(s string) {
 	lowerInput := strings.ToLower(s)
 	c.lastInput = s
 	input := s
-	delay := 5 * time.Millisecond
+	delay := 10 * time.Millisecond
+
 	if c.popup.Visible() {
-		delay = 10 * time.Millisecond
+		delay = 20 * time.Millisecond
 	}
 
 	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
@@ -399,9 +406,8 @@ func (c *completionEntry) maxSize() fyne.Size {
 
 	width := size.Width
 
-	cp := c.Entry.Position()
-	if cp.X != 0 {
-		width += 36
+	if c.shifted {
+		width += c.shiftX
 	}
 
 	return fyne.NewSize(width, listHeight)

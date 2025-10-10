@@ -124,7 +124,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Expires", "0")
 
-	JC.Logf("Fetching data from %v", req.URL)
+	// JC.Logf("Fetching data from %v", req.URL)
 
 	resp, err := client.Do(req)
 	if err != nil {

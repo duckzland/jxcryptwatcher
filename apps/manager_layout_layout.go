@@ -17,6 +17,7 @@ type mainLayout struct {
 	content     *container.Scroll
 	placeholder *dragPlaceholder
 	background  *canvas.Rectangle
+	cSize       fyne.Size
 }
 
 func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
@@ -71,7 +72,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 			a.topBar.Move(topBarPos)
 		}
 
-		contentY += topHeight.Height
+		contentY += topHeight.Height + padding
 
 	} else {
 		topHeight = a.topBar.MinSize()
@@ -100,11 +101,9 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 			if a.tickers.Position() != tickerPos {
 				a.tickers.Move(tickerPos)
 			}
-			contentY += tickerHeight.Height
+			contentY += tickerHeight.Height + padding
 		}
 	}
-
-	contentY += padding
 
 	contentSize := fyne.NewSize(size.Width-2*padding, size.Height-contentY-padding)
 	contentPos := fyne.NewPos(padding, contentY)
@@ -126,22 +125,26 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 }
 
 func (a *mainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
-	var top fyne.Size
-	if a.topBar != nil {
-		top = a.topBar.MinSize()
+	if a.cSize.Height == 0 {
+		var top fyne.Size
+		if a.topBar != nil {
+			top = a.topBar.MinSize()
+		}
+
+		var content fyne.Size
+		if a.content != nil {
+			content = a.content.MinSize()
+		}
+
+		width := fyne.Max(top.Width, content.Width) + 2*a.padding
+		height := top.Height + content.Height + 3*a.padding
+
+		if a.tickers != nil && len(a.tickers.Objects) > 0 {
+			height += a.tickers.MinSize().Height
+		}
+
+		a.cSize = fyne.NewSize(width, height)
 	}
 
-	var content fyne.Size
-	if a.content != nil {
-		content = a.content.MinSize()
-	}
-
-	width := fyne.Max(top.Width, content.Width) + 2*a.padding
-	height := top.Height + content.Height + 3*a.padding
-
-	if a.tickers != nil && len(a.tickers.Objects) > 0 {
-		height += a.tickers.MinSize().Height
-	}
-
-	return fyne.NewSize(width, height)
+	return a.cSize
 }

@@ -17,6 +17,7 @@ type dialogContentLayout struct {
 	padding       float32
 	cWidth        float32
 	cHeight       float32
+	cSize         fyne.Size
 }
 
 func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -131,10 +132,14 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 }
 
 func (l *dialogContentLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	h := l.title.MinSize().Height +
-		l.form.MinSize().Height +
-		l.buttons.MinSize().Height +
-		4*l.padding
+	if l.cHeight == 0 {
+		l.cHeight = l.title.MinSize().Height +
+			l.form.MinSize().Height +
+			l.buttons.MinSize().Height +
+			4*l.padding
 
-	return fyne.NewSize(0, h)
+		l.cSize = fyne.NewSize(0, l.cHeight)
+	}
+
+	return l.cSize
 }

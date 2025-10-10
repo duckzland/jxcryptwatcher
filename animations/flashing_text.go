@@ -48,7 +48,7 @@ func StartFlashingText(
 						B: uint8(baseB * a),
 						A: 255,
 					}
-					text.Refresh()
+					canvas.Refresh(text)
 				})
 			}
 		}()

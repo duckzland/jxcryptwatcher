@@ -1,7 +1,6 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"sync"
 	"time"
 )
@@ -75,7 +74,7 @@ func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *t
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(&timestamp)
 
-	JC.Logf("Ticker received: [%s] = %s", key, value)
+	// JC.Logf("Ticker received: [%s] = %s", key, value)
 
 	return tc
 }

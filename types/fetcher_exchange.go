@@ -219,13 +219,13 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 				// Debug to force display refresh!
 				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
 
-				JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)",
-					ex.SourceSymbol,
-					ex.SourceId,
-					ex.TargetAmount.Text('f', -1),
-					ex.TargetSymbol,
-					ex.TargetId,
-				)
+				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)",
+				// 	ex.SourceSymbol,
+				// 	ex.SourceId,
+				// 	ex.TargetAmount.Text('f', -1),
+				// 	ex.TargetSymbol,
+				// 	ex.TargetId,
+				// )
 
 				UseExchangeCache().Insert(&ex)
 			}
