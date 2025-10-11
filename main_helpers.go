@@ -456,9 +456,12 @@ func RemovePanel(uuid string) {
 
 			JA.UseLayout().RefreshLayout()
 
-			if JT.SavePanels() {
-				JC.Notify("Panel removed successfully.")
-			}
+			// Prevent UX locking
+			go func() {
+				if JT.SavePanels() {
+					JC.Notify("Panel removed successfully.")
+				}
+			}()
 		}
 	}
 
@@ -477,55 +480,57 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 
-	if JT.SavePanels() {
+	go func() {
+		if JT.SavePanels() {
 
-		if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
-			return
-		}
+			if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
+				return
+			}
 
-		// Only fetch new rates if no cache exists!
-		if !ValidateRatesCache() {
+			// Only fetch new rates if no cache exists!
+			if !ValidateRatesCache() {
 
-			// Force refresh without fail!
-			pkt := pdt.UsePanelKey()
+				// Force refresh without fail!
+				pkt := pdt.UsePanelKey()
 
-			sid := pkt.GetSourceCoinString()
-			tid := pkt.GetTargetCoinString()
+				sid := pkt.GetSourceCoinString()
+				tid := pkt.GetTargetCoinString()
 
-			payloads := map[string][]string{}
-			payloads["rates"] = []string{sid + "|" + tid}
+				payloads := map[string][]string{}
+				payloads["rates"] = []string{sid + "|" + tid}
 
-			JC.UseFetcher().Dispatch(payloads,
-				func(totalScheduled int) {
-				},
-				func(results map[string]JC.FetchResultInterface) {
-					for _, result := range results {
-						JT.UseExchangeCache().SoftReset()
+				JC.UseFetcher().Dispatch(payloads,
+					func(totalScheduled int) {
+					},
+					func(results map[string]JC.FetchResultInterface) {
+						for _, result := range results {
+							JT.UseExchangeCache().SoftReset()
 
-						status := DetectHTTPResponse(result.Code())
+							status := DetectHTTPResponse(result.Code())
 
-						switch status {
-						case JC.STATUS_SUCCESS:
+							switch status {
+							case JC.STATUS_SUCCESS:
 
-							opk := pdt.Get()
-							if opk != "" {
-								pdt.Update(opk)
+								opk := pdt.Get()
+								if opk != "" {
+									pdt.Update(opk)
+								}
+
+							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
+								pdt.SetStatus(JC.STATE_ERROR)
 							}
 
-						case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
-							pdt.SetStatus(JC.STATE_ERROR)
+							ProcessUpdatePanelComplete(status)
 						}
+					})
+			}
 
-						ProcessUpdatePanelComplete(status)
-					}
-				})
+			JC.Notify("Panel settings saved.")
+
+		} else {
+			JC.Notify("Failed to save panel settings.")
 		}
-
-		JC.Notify("Panel settings saved.")
-
-	} else {
-		JC.Notify("Failed to save panel settings.")
-	}
+	}()
 
 }
 
@@ -604,31 +609,33 @@ func OpenSettingForm() {
 		func() {
 			JC.Notify("Saving configuration...")
 
-			if JT.ConfigSave() {
-				JC.Notify("Configuration saved successfully.")
-				JA.UseStatus().DetectData()
+			go func() {
+				if JT.ConfigSave() {
+					JC.Notify("Configuration saved successfully.")
+					JA.UseStatus().DetectData()
 
-				if JT.UseConfig().IsValidTickers() {
-					if JT.UseTickerMaps().IsEmpty() {
-						JC.Logln("Rebuilding tickers due to empty ticker list")
-						JT.TickersInit()
+					if JT.UseConfig().IsValidTickers() {
+						if JT.UseTickerMaps().IsEmpty() {
+							JC.Logln("Rebuilding tickers due to empty ticker list")
+							JT.TickersInit()
 
-						JX.RegisterTickerGrid()
+							JX.RegisterTickerGrid()
+						}
+
+						JC.UseWorker().Reload()
+
+						JA.UseStatus().SetConfigStatus(true)
+
+						JT.UseTickerCache().SoftReset()
+						JC.UseWorker().Call("update_tickers", JC.CallQueued)
+
+						JT.UseExchangeCache().SoftReset()
+						JC.UseWorker().Call("update_rates", JC.CallQueued)
 					}
-
-					JC.UseWorker().Reload()
-
-					JA.UseStatus().SetConfigStatus(true)
-
-					JT.UseTickerCache().SoftReset()
-					JC.UseWorker().Call("update_tickers", JC.CallQueued)
-
-					JT.UseExchangeCache().SoftReset()
-					JC.UseWorker().Call("update_rates", JC.CallQueued)
+				} else {
+					JC.Notify("Failed to save configuration.")
 				}
-			} else {
-				JC.Notify("Failed to save configuration.")
-			}
+			}()
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RegisterOverlay(layer)
