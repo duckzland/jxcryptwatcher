@@ -22,6 +22,7 @@ type ActionButton interface {
 	Progress()
 	Active()
 	Call()
+	Destroy()
 	Refresh()
 	GetTag() string
 }
@@ -33,6 +34,7 @@ type actionButton struct {
 	state         string
 	disabled      bool
 	allow_actions bool
+	hastip        bool
 	validate      func(ActionButton)
 }
 
@@ -54,6 +56,7 @@ func NewActionButton(
 		},
 		tag:      tag,
 		disabled: false,
+		hastip:   false,
 		validate: validate,
 	}
 
@@ -69,6 +72,7 @@ func NewActionButton(
 	if tip != "" {
 		b.ExtendToolTipWidget(b)
 		b.SetToolTip(tip)
+		b.hastip = true
 	}
 
 	b.Button.ExtendBaseWidget(b)
@@ -87,7 +91,9 @@ func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
 		return
 	}
 
-	b.ToolTipWidgetExtend.MouseIn(e)
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseIn(e)
+	}
 
 	if !b.disabled {
 		b.Button.MouseIn(e)
@@ -96,11 +102,14 @@ func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
 
 func (b *actionButton) MouseOut() {
 	if !b.allow_actions {
-		b.ToolTipWidgetExtend.MouseOut()
+		if b.hastip {
+			b.ToolTipWidgetExtend.MouseOut()
+		}
 		return
 	}
-
-	b.ToolTipWidgetExtend.MouseOut()
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseOut()
+	}
 
 	if !b.disabled {
 		b.Button.MouseOut()
@@ -112,7 +121,9 @@ func (b *actionButton) MouseMoved(e *desktop.MouseEvent) {
 		return
 	}
 
-	b.ToolTipWidgetExtend.MouseMoved(e)
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseMoved(e)
+	}
 
 	if !b.disabled {
 		b.Button.MouseMoved(e)
@@ -127,6 +138,11 @@ func (b *actionButton) Tapped(_ *fyne.PointEvent) {
 	if b.disabled {
 		return
 	}
+
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseOut()
+	}
+
 	b.Button.Tapped(nil)
 }
 
@@ -178,6 +194,12 @@ func (b *actionButton) Refresh() {
 		b.validate(b)
 	}
 	fyne.Do(b.Button.Refresh)
+}
+
+func (b *actionButton) Destroy() {
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseOut()
+	}
 }
 
 func (b *actionButton) Call() {

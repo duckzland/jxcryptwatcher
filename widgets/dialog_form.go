@@ -168,6 +168,10 @@ func (d *dialogForm) Show() {
 }
 
 func (d *dialogForm) Hide() {
+
+	d.confirm.Destroy()
+	d.cancel.Destroy()
+
 	if d.destroy != nil {
 		d.destroy(d.layer)
 		return
