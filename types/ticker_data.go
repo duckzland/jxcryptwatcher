@@ -191,9 +191,7 @@ func (p *tickerDataType) UseStatus() binding.Int {
 }
 
 func (p *tickerDataType) HasData() bool {
-	raw := p.Get()
-	val, err := strconv.ParseFloat(raw, 64)
-	return err == nil && val >= 0
+	return p.Get() != ""
 }
 
 func (p *tickerDataType) IsType(val string) bool {
@@ -271,15 +269,12 @@ func (p *tickerDataType) Update() bool {
 		}
 	}
 
-	nso := panelKeyType{value: npk}
 	ost, _ := p.status.Get()
 	nst := ost
 
 	switch ost {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.IsValueMatchingFloat(0, ">=") {
-			nst = JC.STATE_LOADED
-		}
+		nst = JC.STATE_LOADED
 	case JC.STATE_LOADED:
 	}
 
