@@ -19,14 +19,10 @@ func (pc *tickersMapType) Init() {
 	pc.data = []TickerData{}
 }
 
-func (pc *tickersMapType) Set(data []TickerData) {
+func (pc *tickersMapType) SetData(data []TickerData) {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	for _, tdt := range data {
-		tdt.Init()
-		tdt.SetStatus(JC.STATE_LOADING)
-	}
 	pc.data = data
 }
 
@@ -48,14 +44,16 @@ func (pc *tickersMapType) Update(uuid string) bool {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	tdt := pc.getDataUnsafe(uuid)
-	if tdt != nil {
-		return tdt.Update()
+	for _, tdt := range pc.data {
+		if tdt.IsID(uuid) {
+			return tdt.Update()
+		}
 	}
+
 	return false
 }
 
-func (pc *tickersMapType) Get() []TickerData {
+func (pc *tickersMapType) GetData() []TickerData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
@@ -64,13 +62,9 @@ func (pc *tickersMapType) Get() []TickerData {
 	return dataCopy
 }
 
-func (pc *tickersMapType) GetData(uuid string) TickerData {
+func (pc *tickersMapType) GetDataByID(uuid string) TickerData {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
-	return pc.getDataUnsafe(uuid)
-}
-
-func (pc *tickersMapType) getDataUnsafe(uuid string) TickerData {
 	for _, tdt := range pc.data {
 		if tdt.IsID(uuid) {
 			return tdt

@@ -47,8 +47,8 @@ func TestTickersMapUpdateAndGetData(t *testing.T) {
 	if tm.IsEmpty() {
 		t.Error("Expected tickers map to have data after Add")
 	}
-	if len(tm.Get()) != 1 {
-		t.Errorf("Expected 1 ticker, got %d", len(tm.Get()))
+	if len(tm.GetData()) != 1 {
+		t.Errorf("Expected 1 ticker, got %d", len(tm.GetData()))
 	}
 	tickerMapTurnOnLogs()
 }
@@ -75,7 +75,7 @@ func TestTickersMapFilterAndReset(t *testing.T) {
 	td2.Set("678.90")
 	td2.SetStatus(JC.STATE_LOADED)
 
-	tm.Set([]TickerData{td1, td2})
+	tm.SetData([]TickerData{td1, td2})
 
 	filtered := tm.GetDataByType("price")
 	if len(filtered) != 1 {
@@ -83,7 +83,7 @@ func TestTickersMapFilterAndReset(t *testing.T) {
 	}
 
 	tm.Reset()
-	for _, td := range tm.Get() {
+	for _, td := range tm.GetData() {
 		if td.Get() != "" || !td.IsStatus(JC.STATE_LOADING) {
 			t.Error("Expected ticker to be reset")
 		}

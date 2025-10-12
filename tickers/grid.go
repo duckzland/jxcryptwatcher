@@ -14,7 +14,7 @@ var tickerGrid *tickerContainer = &tickerContainer{}
 func RegisterTickerGrid() {
 	JC.PrintMemUsage("Start building tickers")
 
-	list := JT.UseTickerMaps().Get()
+	list := JT.UseTickerMaps().GetData()
 	p := []*tickerDisplay{}
 
 	for _, pot := range list {

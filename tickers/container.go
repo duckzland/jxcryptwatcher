@@ -36,7 +36,7 @@ func (c *tickerContainer) UpdateTickersContent(shouldUpdate func(pdt JT.TickerDa
 	for _, obj := range c.Objects {
 		if ticker, ok := obj.(*tickerDisplay); ok {
 
-			pdt := JT.UseTickerMaps().GetData(ticker.GetTag())
+			pdt := JT.UseTickerMaps().GetDataByID(ticker.GetTag())
 
 			if shouldUpdate != nil && !shouldUpdate(pdt) {
 				continue

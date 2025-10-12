@@ -88,7 +88,7 @@ func (h *tickerDisplay) Cursor() desktop.Cursor {
 
 func (h *tickerDisplay) updateContent() {
 
-	pkt := JT.UseTickerMaps().GetData(h.GetTag())
+	pkt := JT.UseTickerMaps().GetDataByID(h.GetTag())
 
 	if pkt == nil {
 		return
