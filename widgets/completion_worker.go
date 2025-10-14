@@ -58,7 +58,7 @@ func (c *completionWorker) Search(s string, fn func(input string, results []stri
 	c.done = fn
 	c.mu.Unlock()
 
-	go c.run(s)
+	go c.run()
 }
 
 func (c *completionWorker) Cancel() {
@@ -97,7 +97,7 @@ func (c *completionWorker) drain() {
 	}
 }
 
-func (c *completionWorker) run(s string) {
+func (c *completionWorker) run() {
 
 	cancel := &runState{state: false}
 	timer := time.NewTimer(c.delay)
