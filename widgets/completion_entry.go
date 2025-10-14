@@ -314,9 +314,6 @@ func (c *completionEntry) searchSuggestions(s string) {
 			}
 		})
 	})
-
-	JC.TraceGoroutines()
-
 }
 
 func (c *completionEntry) calculatePosition(force bool) bool {

@@ -114,7 +114,9 @@ func NewPanelDisplay(
 	pv.AddListener(binding.NewDataListener(pd.updateContent))
 	ps.AddListener(binding.NewDataListener(pd.updateContent))
 
-	JA.StartFadeInBackground(pd.background, 100*time.Millisecond, nil)
+	if !JC.IsMobile {
+		JA.StartFadeInBackground(pd.background, 100*time.Millisecond, nil)
+	}
 
 	return pd
 }
@@ -454,7 +456,9 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil)
+	if !JC.IsMobile {
+		JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil)
+	}
 
 	return result
 }
