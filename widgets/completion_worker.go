@@ -62,10 +62,8 @@ func (c *completionWorker) Search(s string, fn func(input string, results []stri
 }
 
 func (c *completionWorker) Cancel() {
-	select {
-	case c.doneChan <- struct{}{}:
-	default:
-	}
+
+	c.close()
 
 	// Allow doneChan to complete
 	time.Sleep(15 * time.Millisecond)
@@ -79,6 +77,13 @@ func (c *completionWorker) Cancel() {
 	c.results = []string{}
 	c.counter = 0
 	c.mu.Unlock()
+
+}
+func (c *completionWorker) close() {
+	select {
+	case c.doneChan <- struct{}{}:
+	default:
+	}
 
 }
 
@@ -131,16 +136,11 @@ func (c *completionWorker) run() {
 func (c *completionWorker) worker(start, end int, cancel *runState) {
 	local := []string{}
 	for j := start; j < end; j++ {
-		select {
-		case <-c.doneChan:
+		if cancel.IsCancelled() {
 			return
-		default:
-			if cancel.IsCancelled() {
-				return
-			}
-			if strings.Contains(c.searchable[j], c.searchKey) {
-				local = append(local, c.data[j])
-			}
+		}
+		if strings.Contains(c.searchable[j], c.searchKey) {
+			local = append(local, c.data[j])
 		}
 	}
 
@@ -152,15 +152,16 @@ func (c *completionWorker) worker(start, end int, cancel *runState) {
 		return
 	}
 
-	select {
-	case <-c.doneChan:
-		return
-	case chanRef <- local:
-	}
+	chanRef <- local
 }
 
 func (c *completionWorker) listener(cancel *runState) {
 	for {
+		if cancel.IsCancelled() {
+			c.drain()
+			return
+		}
+
 		select {
 		case <-c.doneChan:
 			c.drain()
@@ -191,6 +192,9 @@ func (c *completionWorker) listener(cancel *runState) {
 				c.mu.Unlock()
 
 				c.done(current, c.results)
+
+				// Important to close the run
+				c.close()
 			}
 
 		}
