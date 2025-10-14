@@ -40,7 +40,6 @@ func NewCompletionEntry(
 	popup *fyne.Container,
 ) *completionEntry {
 
-	// To fully debounce must at least 150ms!
 	delay := 16 * time.Millisecond
 	if JC.IsMobile {
 		delay = 50 * time.Millisecond
