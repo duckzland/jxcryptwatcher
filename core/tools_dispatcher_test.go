@@ -22,15 +22,10 @@ func TestDispatcherInit(t *testing.T) {
 	if d.delay != 16*time.Millisecond {
 		t.Errorf("Expected default delay 16ms, got %v", d.delay)
 	}
-
-	if d.ctx == nil {
-		t.Error("Expected context to be initialized")
-	}
-	if d.cancel == nil {
-		t.Error("Expected cancel function to be initialized")
+	if d.ctx == nil || d.cancel == nil {
+		t.Error("Expected context and cancel to be initialized")
 	}
 
-	// Test that cancel actually cancels the context
 	done := make(chan struct{})
 	go func() {
 		select {
@@ -40,16 +35,13 @@ func TestDispatcherInit(t *testing.T) {
 			t.Error("Expected context to be canceled")
 		}
 	}()
-
 	d.cancel()
 
 	select {
 	case <-done:
-		// success
 	case <-time.After(200 * time.Millisecond):
 		t.Error("Context cancellation did not propagate")
 	}
-
 }
 
 func TestNewDispatcher(t *testing.T) {
@@ -64,26 +56,9 @@ func TestNewDispatcher(t *testing.T) {
 	if d.delay != 50*time.Millisecond {
 		t.Errorf("Expected delay 50ms, got %v", d.delay)
 	}
-
-	// Check internal fields
-	if d.queue == nil {
-		t.Error("Expected queue to be initialized")
+	if d.queue == nil || d.ctx == nil || d.cancel == nil {
+		t.Error("Expected internal fields to be initialized")
 	}
-	if d.ctx == nil || d.cancel == nil {
-		t.Error("Expected context and cancel to be initialized")
-	}
-
-	// Check mutex behavior: lock/unlock without panic
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("Mutex caused panic: %v", r)
-			}
-		}()
-		d.mu.Lock()
-		d.paused = true // simulate protected access
-		d.mu.Unlock()
-	}()
 }
 
 func TestRegisterAndUseDispatcher(t *testing.T) {
@@ -177,4 +152,28 @@ func TestDispatcherConcurrentAccess(t *testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+func TestDispatcherDrain(t *testing.T) {
+	d := NewDispatcher(10, 1, 0)
+
+	// Submit 5 dummy functions
+	for i := 0; i < 5; i++ {
+		d.Submit(func() {})
+	}
+
+	drained := false
+	d.SetDrainer(func() {
+		drained = true
+	})
+
+	d.Drain()
+
+	if len(d.queue) != 0 {
+		t.Errorf("Expected queue to be empty after drain, got %d", len(d.queue))
+	}
+
+	if !drained {
+		t.Error("Expected drainer function to be called")
+	}
 }

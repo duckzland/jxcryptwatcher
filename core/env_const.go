@@ -37,6 +37,7 @@ const STATUS_SUCCESS = 0
 const STATUS_NETWORK_ERROR = 1
 const STATUS_CONFIG_ERROR = 2
 const STATUS_BAD_DATA_RECEIVED = 3
+const STATUS_CANCELLED = 4
 
 const ColorNameError fyne.ThemeColorName = "error"
 const ColorNameTransparent fyne.ThemeColorName = "transparent"

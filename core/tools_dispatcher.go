@@ -14,6 +14,7 @@ type Dispatcher interface {
 	Resume()
 	Start()
 	Drain()
+	SetDrainer(fn func())
 }
 
 var coreDispatcher *dispatcher = nil
@@ -27,6 +28,8 @@ type dispatcher struct {
 	delay         time.Duration
 	ctx           context.Context
 	cancel        context.CancelFunc
+	drainer       func()
+	ticker        *time.Ticker
 }
 
 func (d *dispatcher) Init() {
@@ -58,6 +61,7 @@ func (d *dispatcher) Start() {
 		if d.IsPaused() {
 			return
 		}
+
 		go d.worker()
 	}
 }
@@ -70,6 +74,9 @@ func (d *dispatcher) Drain() {
 		select {
 		case <-queue:
 		default:
+			if d.drainer != nil {
+				d.drainer()
+			}
 			return
 		}
 	}
@@ -94,6 +101,9 @@ func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
 	d.mu.Unlock()
+	if d.ticker != nil {
+		d.ticker.Stop()
+	}
 	if d.cancel != nil {
 		d.cancel()
 	}
@@ -106,6 +116,12 @@ func (d *dispatcher) Resume() {
 	d.mu.Unlock()
 
 	d.Start()
+}
+
+func (d *dispatcher) SetDrainer(fn func()) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.drainer = fn
 }
 
 func (d *dispatcher) SetBufferSize(size int) {
@@ -138,16 +154,42 @@ func (d *dispatcher) IsPaused() bool {
 	return d.paused
 }
 
+func (d *dispatcher) newTicker() *time.Ticker {
+	if d.GetDelay() > 0 {
+		return time.NewTicker(d.GetDelay())
+	}
+	return &time.Ticker{C: make(chan time.Time)}
+}
+
 func (d *dispatcher) worker() {
-	ctx := d.ctx
+	d.ticker = d.newTicker()
+	defer d.ticker.Stop()
+
 	for {
-		select {
-		case <-ctx.Done():
+		if d.ctx == nil {
 			return
-		case fn := <-d.queue:
-			fn()
-			time.Sleep(d.GetDelay())
 		}
+
+		if d.IsPaused() {
+			d.ticker.Stop()
+		}
+
+		select {
+		case <-d.ctx.Done():
+			d.ticker.Stop()
+			return
+
+		case <-d.ticker.C:
+			select {
+			case fn := <-d.queue:
+				if d.IsPaused() {
+					continue
+				}
+				fn()
+			default:
+			}
+		}
+
 	}
 }
 

@@ -2,7 +2,6 @@ package widgets
 
 import (
 	"strings"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -18,26 +17,21 @@ var activeEntry *completionEntry = nil
 
 type completionEntry struct {
 	widget.Entry
-	popup               *fyne.Container
-	container           *fyne.Container
-	completionList      *completionList
-	parent              DialogForm
-	pause               bool
-	shifted             bool
-	itemHeight          float32
-	shiftX              float32
-	options             []string
-	suggestions         []string
-	searchable          []string
-	searchableTotal     int
-	searchableChunkSize int
-	popupPosition       fyne.Position
-	entryPosition       fyne.Position
-	canvas              fyne.Canvas
-	lastInput           string
-	uuid                string
-	dispatcher          JC.Dispatcher
-	action              func(active bool)
+	popup          *fyne.Container
+	container      *fyne.Container
+	completionList *completionList
+	parent         DialogForm
+	pause          bool
+	shifted        bool
+	itemHeight     float32
+	shiftX         float32
+	options        []string
+	popupPosition  fyne.Position
+	entryPosition  fyne.Position
+	canvas         fyne.Canvas
+	lastInput      string
+	action         func(active bool)
+	worker         *completionWorker
 }
 
 func NewCompletionEntry(
@@ -46,31 +40,34 @@ func NewCompletionEntry(
 	popup *fyne.Container,
 ) *completionEntry {
 
+	// To fully debounce must at least 150ms!
+	delay := 16 * time.Millisecond
+	if JC.IsMobile {
+		delay = 50 * time.Millisecond
+	}
+
 	c := &completionEntry{
-		uuid:                JC.CreateUUID(),
-		options:             options,
-		suggestions:         options,
-		searchable:          searchOptions,
-		searchableTotal:     len(searchOptions),
-		searchableChunkSize: (len(searchOptions) + JC.TotalCPU() - 1) / JC.TotalCPU(),
-		popup:               popup,
-		popupPosition:       fyne.NewPos(-1, -1),
-		entryPosition:       fyne.NewPos(-1, -1),
-		itemHeight:          40,
-		shifted:             false,
-		shiftX:              36,
+		options:       options,
+		popup:         popup,
+		popupPosition: fyne.NewPos(-1, -1),
+		entryPosition: fyne.NewPos(-1, -1),
+		itemHeight:    40,
+		shifted:       false,
+		shiftX:        36,
+		worker: &completionWorker{
+			searchable: searchOptions,
+			data:       options,
+			total:      len(searchOptions),
+			chunk:      len(searchOptions) / JC.MaximumThreads(4),
+			delay:      delay,
+		},
 	}
 
 	c.ExtendBaseWidget(c)
 
 	c.OnChanged = c.searchSuggestions
 
-	if c.searchableChunkSize < 5000 {
-		c.searchableChunkSize = 5000
-	}
-
-	c.dispatcher = JC.NewDispatcher(1000, 2, 16*time.Millisecond)
-	c.dispatcher.Start()
+	c.worker.Init()
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
 
@@ -282,9 +279,9 @@ func (c *completionEntry) getCurrentInput() string {
 
 func (c *completionEntry) searchSuggestions(s string) {
 
-	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
+	c.worker.Cancel()
 
-	if s == c.lastInput || c.pause {
+	if c.pause {
 		return
 	}
 
@@ -293,46 +290,9 @@ func (c *completionEntry) searchSuggestions(s string) {
 		return
 	}
 
-	results := []string{}
-	lowerInput := strings.ToLower(s)
-	c.lastInput = s
-	input := s
-	delay := 5 * time.Millisecond
+	c.lastInput = strings.ToLower(s)
 
-	if c.popup.Visible() {
-		delay = 10 * time.Millisecond
-	}
-
-	if JC.IsMobile {
-		delay = 50 * time.Millisecond
-	}
-
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	for i := 0; i < c.searchableTotal; i += c.searchableChunkSize {
-		start := i
-		end := min(i+c.searchableChunkSize, c.searchableTotal)
-
-		wg.Add(1)
-		c.dispatcher.Submit(func() {
-			defer wg.Done()
-			local := []string{}
-			for j := start; j < end; j++ {
-				if strings.Contains(c.searchable[j], lowerInput) {
-					local = append(local, c.suggestions[j])
-				}
-			}
-
-			mu.Lock()
-			results = append(results, local...)
-			mu.Unlock()
-		})
-	}
-
-	wg.Wait()
-
-	JC.UseDebouncer().Call("show_suggestion_"+c.uuid, delay, func() {
+	c.worker.Search(s, func(input string, results []string) {
 		if len(results) == 0 {
 			fyne.Do(func() {
 				c.hideCompletion()
@@ -340,19 +300,23 @@ func (c *completionEntry) searchSuggestions(s string) {
 			return
 		}
 
-		results = JC.ReorderSearchable(results)
-		if input != c.getCurrentInput() || c.lastInput != input {
+		if input != c.getCurrentInput() {
 			return
 		}
 
 		fyne.Do(func() {
 			if input == c.getCurrentInput() {
+
+				JC.Logln("Performing UX Update", input, len(results))
+
 				c.setOptions(results)
 				c.showCompletion()
 				c.dynamicResize()
 			}
 		})
 	})
+
+	JC.TraceGoroutines()
 
 }
 
@@ -433,7 +397,7 @@ func (c *completionEntry) popUpPos() fyne.Position {
 }
 
 func (c *completionEntry) setTextFromMenu(s string) {
-	JC.UseDebouncer().Cancel("show_suggestion_" + c.uuid)
+	c.worker.Cancel()
 
 	c.pause = true
 	c.Entry.SetText(s)
