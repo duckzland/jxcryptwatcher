@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"context"
 	"strings"
 	"sync"
 	"time"
@@ -36,7 +37,7 @@ type completionWorker struct {
 	searchKey  string
 	delay      time.Duration
 	resultChan chan []string
-	doneChan   chan struct{}
+	closeChan  chan struct{}
 	done       func(string, []string)
 	mu         sync.Mutex
 }
@@ -44,7 +45,7 @@ type completionWorker struct {
 func (c *completionWorker) Init() {
 	c.expected = (c.total + c.chunk - 1) / c.chunk
 	c.resultChan = make(chan []string, c.expected)
-	c.doneChan = make(chan struct{}, 100000)
+	c.closeChan = make(chan struct{}, 100000)
 }
 
 func (c *completionWorker) Search(s string, fn func(input string, results []string)) {
@@ -81,7 +82,7 @@ func (c *completionWorker) Cancel() {
 }
 func (c *completionWorker) close() {
 	select {
-	case c.doneChan <- struct{}{}:
+	case c.closeChan <- struct{}{}:
 	default:
 	}
 
@@ -94,7 +95,7 @@ func (c *completionWorker) drain() {
 
 	for {
 		select {
-		case <-c.doneChan:
+		case <-c.closeChan:
 		case <-c.resultChan:
 		default:
 			return
@@ -104,36 +105,64 @@ func (c *completionWorker) drain() {
 
 func (c *completionWorker) run() {
 
-	cancel := &runState{state: false}
+	// If stale after the delay and additional expected operational duration
+	// Force close to prevent ghost go routine
+	to := 500 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), c.delay+to)
+
+	state := &runState{state: false}
 	timer := time.NewTimer(c.delay)
 
 	go func() {
-		<-c.doneChan
-		cancel.SetCancel()
-		timer.Stop()
+		select {
+		case <-ctx.Done():
+			state.SetCancel()
+			return
+
+		case <-c.closeChan:
+			state.SetCancel()
+			cancel()
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return
+		}
 	}()
 
-	<-timer.C
+	select {
+	case <-ctx.Done():
+		return
 
+	case <-timer.C:
+		if state.IsCancelled() {
+			return
+		}
+
+		c.mu.Lock()
+		c.results = []string{}
+		c.counter = 0
+		c.mu.Unlock()
+
+		go c.listener(state)
+
+		for i := 0; i < c.total; i += c.chunk {
+			start := i
+			end := min(i+c.chunk, c.total)
+			go c.worker(start, end, state)
+		}
+	}
+
+	JC.TraceGoroutines()
+}
+
+func (c *completionWorker) worker(start, end int, cancel *runState) {
 	if cancel.IsCancelled() {
 		return
 	}
 
-	c.mu.Lock()
-	c.results = []string{}
-	c.counter = 0
-	c.mu.Unlock()
-
-	go c.listener(cancel)
-
-	for i := 0; i < c.total; i += c.chunk {
-		start := i
-		end := min(i+c.chunk, c.total)
-		go c.worker(start, end, cancel)
-	}
-}
-
-func (c *completionWorker) worker(start, end int, cancel *runState) {
 	local := []string{}
 	for j := start; j < end; j++ {
 		if cancel.IsCancelled() {
@@ -144,15 +173,15 @@ func (c *completionWorker) worker(start, end int, cancel *runState) {
 		}
 	}
 
-	c.mu.Lock()
-	chanRef := c.resultChan
-	c.mu.Unlock()
-
-	if cancel.IsCancelled() || chanRef == nil {
+	if cancel.IsCancelled() {
 		return
 	}
 
-	chanRef <- local
+	c.mu.Lock()
+	if c.resultChan != nil {
+		c.resultChan <- local
+	}
+	c.mu.Unlock()
 }
 
 func (c *completionWorker) listener(cancel *runState) {
@@ -163,7 +192,7 @@ func (c *completionWorker) listener(cancel *runState) {
 		}
 
 		select {
-		case <-c.doneChan:
+		case <-c.closeChan:
 			c.drain()
 			return
 
@@ -193,10 +222,10 @@ func (c *completionWorker) listener(cancel *runState) {
 
 				c.done(current, c.results)
 
-				// Important to close the run
+				// Important to close the run and go routine!
 				c.close()
+				return
 			}
-
 		}
 	}
 }
