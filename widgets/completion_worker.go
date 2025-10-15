@@ -32,13 +32,10 @@ func (c *completionWorker) Init() {
 }
 
 func (c *completionWorker) Search(s string, fn func(input string, results []string)) {
-	s = strings.ToLower(s)
-	JC.Logln("Search triggered:", s)
-
 	c.Cancel()
 
 	c.mu.Lock()
-	c.searchKey = s
+	c.searchKey = strings.ToLower(s)
 	c.done = fn
 	c.mu.Unlock()
 
@@ -137,8 +134,6 @@ func (c *completionWorker) run() {
 			go c.worker(start, end, state)
 		}
 	}
-
-	JC.TraceGoroutines()
 }
 
 func (c *completionWorker) worker(start, end int, state *completionWorkerState) {
