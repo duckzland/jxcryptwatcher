@@ -169,7 +169,8 @@ func (c *completionWorker) worker(start, end int, state *completionWorkerState) 
 
 func (c *completionWorker) listener(state *completionWorkerState) {
 
-	ctx, _ := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
 
 	for {
 		if state.IsCancelled() {
