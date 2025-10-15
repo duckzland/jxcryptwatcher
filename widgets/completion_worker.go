@@ -9,23 +9,6 @@ import (
 	JC "jxwatcher/core"
 )
 
-type runState struct {
-	mu    sync.Mutex
-	state bool
-}
-
-func (s *runState) SetCancel() {
-	s.mu.Lock()
-	s.state = true
-	s.mu.Unlock()
-}
-
-func (s *runState) IsCancelled() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.state
-}
-
 type completionWorker struct {
 	searchable []string
 	data       []string
@@ -66,7 +49,7 @@ func (c *completionWorker) Cancel() {
 
 	c.close()
 
-	// Allow doneChan to complete
+	// Allow closeChan to complete
 	time.Sleep(15 * time.Millisecond)
 
 	c.drain()
@@ -110,7 +93,7 @@ func (c *completionWorker) run() {
 	to := 500 * time.Millisecond
 	ctx, cancel := context.WithTimeout(context.Background(), c.delay+to)
 
-	state := &runState{state: false}
+	state := &completionWorkerState{state: false}
 	timer := time.NewTimer(c.delay)
 
 	go func() {
@@ -158,14 +141,14 @@ func (c *completionWorker) run() {
 	JC.TraceGoroutines()
 }
 
-func (c *completionWorker) worker(start, end int, cancel *runState) {
-	if cancel.IsCancelled() {
+func (c *completionWorker) worker(start, end int, state *completionWorkerState) {
+	if state.IsCancelled() {
 		return
 	}
 
 	local := []string{}
 	for j := start; j < end; j++ {
-		if cancel.IsCancelled() {
+		if state.IsCancelled() {
 			return
 		}
 		if strings.Contains(c.searchable[j], c.searchKey) {
@@ -173,7 +156,7 @@ func (c *completionWorker) worker(start, end int, cancel *runState) {
 		}
 	}
 
-	if cancel.IsCancelled() {
+	if state.IsCancelled() {
 		return
 	}
 
@@ -184,14 +167,20 @@ func (c *completionWorker) worker(start, end int, cancel *runState) {
 	c.mu.Unlock()
 }
 
-func (c *completionWorker) listener(cancel *runState) {
+func (c *completionWorker) listener(state *completionWorkerState) {
+
+	ctx, _ := context.WithTimeout(context.Background(), 500*time.Millisecond)
+
 	for {
-		if cancel.IsCancelled() {
+		if state.IsCancelled() {
 			c.drain()
 			return
 		}
 
 		select {
+		case <-ctx.Done():
+			return
+
 		case <-c.closeChan:
 			c.drain()
 			return
@@ -202,7 +191,7 @@ func (c *completionWorker) listener(cancel *runState) {
 				return
 			}
 
-			if cancel.IsCancelled() {
+			if state.IsCancelled() {
 				c.drain()
 				return
 			}
@@ -215,7 +204,7 @@ func (c *completionWorker) listener(cancel *runState) {
 			current := c.searchKey
 			c.mu.Unlock()
 
-			if shouldFire && !cancel.IsCancelled() {
+			if shouldFire && !state.IsCancelled() {
 				c.mu.Lock()
 				c.results = JC.ReorderSearchable(c.results)
 				c.mu.Unlock()
