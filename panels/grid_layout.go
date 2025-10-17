@@ -152,19 +152,12 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 func (g *panelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne.CanvasObject) int {
 
 	r := 0
-	i := 0
 	c := int(math.Floor(float64(size.Width+hPad) / float64(g.minCellSize.Width+hPad)))
 
-	for _, child := range objects {
-		if !child.Visible() {
-			// continue
-		}
-
+	for i := range objects {
 		if c != 0 && i%c == 0 {
 			r++
 		}
-
-		i++
 	}
 
 	return r
@@ -199,15 +192,21 @@ func (g *panelGridLayout) Reset() {
 
 func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 
+	sHeight := JA.UseLayout().UseScroll().Size().Height
 	vPad := g.innerPadding[0] + g.innerPadding[2]
 	miny := pos.Y - g.dynCellSize.Height
-	maxy := g.cHeight + pos.Y - (vPad * 2)
+	maxy := sHeight + pos.Y + vPad
+
 	for _, child := range g.objects {
 		y := child.Position().Y
 		if y > maxy || miny > y {
-			child.Hide()
+			if child.Visible() {
+				child.Hide()
+			}
 		} else {
-			child.Show()
+			if !child.Visible() {
+				child.Show()
+			}
 		}
 	}
 }
