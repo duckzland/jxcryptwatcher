@@ -114,6 +114,7 @@ func (c *completionEntry) FocusGained() {
 	}
 
 	if len(c.Text) > 0 {
+		c.searchSuggestions(c.Text)
 		c.completionList.SetData(c.options)
 		c.showCompletion()
 	}
