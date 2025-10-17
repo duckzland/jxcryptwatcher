@@ -62,7 +62,10 @@ func (l *dialogOverlaysLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 	}
 
 	if dialogHeight > maxHeight {
-		dialogHeight = maxHeight
+		diff := dialogHeight - maxHeight
+		if diff > 60 {
+			dialogHeight = maxHeight
+		}
 	}
 
 	emptySpace := l.cHeight - dialogHeight
