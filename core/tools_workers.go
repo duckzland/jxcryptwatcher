@@ -78,10 +78,10 @@ func (w *worker) Call(key string, mode CallMode) {
 
 	switch mode {
 	case CallImmediate:
-		unit.Call(nil)
+		go unit.Call(nil)
 
 	case CallBypassImmediate:
-		unit.Call(CallBypassImmediate)
+		go unit.Call(CallBypassImmediate)
 
 	case CallQueued:
 		unit.Push(nil)
