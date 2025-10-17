@@ -12,7 +12,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var flashRegistry sync.Map // map[*canvas.Text]context.CancelFunc
+var flashRegistry sync.Map
 
 func StartFlashingText(
 	text *canvas.Text,
@@ -20,14 +20,13 @@ func StartFlashingText(
 	visibleColor color.Color,
 	flashes int,
 ) {
-	// Cancel any existing animation for this text
+
 	if val, ok := flashRegistry.Load(text); ok {
 		if cancel, ok := val.(context.CancelFunc); ok {
 			cancel()
 		}
 	}
 
-	// Create new context for this animation
 	ctx, cancel := context.WithCancel(context.Background())
 	flashRegistry.Store(text, cancel)
 
@@ -51,6 +50,7 @@ func StartFlashingText(
 		go func() {
 			defer ticker.Stop()
 			defer flashRegistry.Delete(text)
+			defer cancel()
 
 			for _, alpha := range alphaSequence {
 				select {

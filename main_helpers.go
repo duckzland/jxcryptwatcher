@@ -472,15 +472,22 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JC.Notify("Saving panel settings...")
 
+	hasCache := ValidateRatesCache()
+
 	JP.UsePanelGrid().ForceRefresh()
 
 	if !JT.UsePanelMaps().ValidatePanel(pdt.Get()) {
 		pdt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
+	if hasCache {
+		pdt.SetStatus(JC.STATE_LOADED)
+	}
+
 	JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
 
 	go func() {
+
 		if JT.SavePanels() {
 
 			if pdt.IsStatus(JC.STATE_BAD_CONFIG) {
@@ -488,7 +495,7 @@ func SavePanelForm(pdt JT.PanelData) {
 			}
 
 			// Only fetch new rates if no cache exists!
-			if !ValidateRatesCache() {
+			if !hasCache {
 
 				// Force refresh without fail!
 				pkt := pdt.UsePanelKey()

@@ -11,21 +11,20 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeRegistry sync.Map // map[*canvas.Rectangle]context.CancelFunc
+var fadeRegistry sync.Map
 
 func StartFadeOutBackground(
 	rect *canvas.Rectangle,
 	duration time.Duration,
 	callback func(),
 ) {
-	// Cancel any existing fade-out for this rectangle
+
 	if val, ok := fadeRegistry.Load(rect); ok {
 		if cancel, ok := val.(context.CancelFunc); ok {
 			cancel()
 		}
 	}
 
-	// Create new context for this animation
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeRegistry.Store(rect, cancel)
 
@@ -37,6 +36,7 @@ func StartFadeOutBackground(
 		go func() {
 			defer ticker.Stop()
 			defer fadeRegistry.Delete(rect)
+			defer cancel()
 
 			for _, alpha := range alphaSteps {
 				select {

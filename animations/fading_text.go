@@ -11,21 +11,20 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeTextRegistry sync.Map // map[*canvas.Text]context.CancelFunc
+var fadeTextRegistry sync.Map
 
 func StartFadingText(
 	text *canvas.Text,
 	callback func(),
 	fadeAlphas *[]uint8,
 ) {
-	// Cancel any existing fade for this text
+
 	if val, ok := fadeTextRegistry.Load(text); ok {
 		if cancel, ok := val.(context.CancelFunc); ok {
 			cancel()
 		}
 	}
 
-	// Create new context for this animation
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeTextRegistry.Store(text, cancel)
 
@@ -39,6 +38,7 @@ func StartFadingText(
 		go func() {
 			defer ticker.Stop()
 			defer fadeTextRegistry.Delete(text)
+			defer cancel()
 
 			for _, alpha := range *fadeAlphas {
 				select {
