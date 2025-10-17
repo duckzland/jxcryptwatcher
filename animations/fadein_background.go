@@ -43,6 +43,12 @@ func StartFadeInBackground(
 				case <-ctx.Done():
 					return
 				case <-ticker.C:
+
+					if !rect.Visible() {
+						cancel()
+						return
+					}
+
 					fyne.Do(func() {
 						rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 						canvas.Refresh(rect)

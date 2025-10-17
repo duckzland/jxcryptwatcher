@@ -45,6 +45,12 @@ func StartFadingText(
 				case <-ctx.Done():
 					return
 				case <-ticker.C:
+
+					if !text.Visible() {
+						cancel()
+						return
+					}
+
 					fyne.Do(func() {
 						JC.SetTextAlpha(text, alpha)
 						canvas.Refresh(text)

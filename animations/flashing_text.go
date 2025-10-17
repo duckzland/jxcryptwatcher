@@ -57,6 +57,12 @@ func StartFlashingText(
 				case <-ctx.Done():
 					return
 				case <-ticker.C:
+
+					if !text.Visible() {
+						cancel()
+						return
+					}
+
 					fyne.Do(func() {
 						a := float64(alpha) / 255.0
 						text.Color = color.RGBA{

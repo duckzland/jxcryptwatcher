@@ -3,6 +3,7 @@ package panels
 import (
 	"fyne.io/fyne/v2"
 
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
@@ -47,24 +48,28 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 		panels[i] = p[i]
 	}
 
-	panelGrid = NewPanelContainer(
-		&panelGridLayout{
-			minCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
-			dynCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
-			colCount:    1,
-			rowCount:    1,
-			innerPadding: [4]float32{
-				JC.UseTheme().Size(JC.SizePaddingPanelTop),
-				JC.UseTheme().Size(JC.SizePaddingPanelRight),
-				JC.UseTheme().Size(JC.SizePaddingPanelBottom),
-				JC.UseTheme().Size(JC.SizePaddingPanelLeft),
-			},
+	layout := &panelGridLayout{
+		minCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
+		dynCellSize: fyne.NewSize(JC.UseTheme().Size(JC.SizePanelWidth), JC.UseTheme().Size(JC.SizePanelHeight)),
+		colCount:    1,
+		rowCount:    1,
+		innerPadding: [4]float32{
+			JC.UseTheme().Size(JC.SizePaddingPanelTop),
+			JC.UseTheme().Size(JC.SizePaddingPanelRight),
+			JC.UseTheme().Size(JC.SizePaddingPanelBottom),
+			JC.UseTheme().Size(JC.SizePaddingPanelLeft),
 		},
+	}
+
+	panelGrid = NewPanelContainer(
+		layout,
 		panels,
 	)
 
 	// Global dummy panel for placeholder
 	dragDropZones = []*panelDropZone{}
+
+	JA.UseLayout().UseScroll().OnScrolled = layout.OnScrolled
 
 	JC.PrintMemUsage("End building panels")
 }

@@ -14,6 +14,7 @@ type panelGridLayout struct {
 	rowCount     int
 	innerPadding [4]float32 // top, right, bottom, left
 	objectCount  int
+	objects      []fyne.CanvasObject
 	cWidth       float32
 	cHeight      float32
 	minSize      fyne.Size
@@ -34,6 +35,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	g.cWidth = size.Width
 	g.cHeight = size.Height
 	g.objectCount = len(objects)
+	g.objects = objects
 	g.dirty = true
 
 	hPad := g.innerPadding[1] + g.innerPadding[3] // right + left
@@ -101,9 +103,9 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	JA.UseLayout().UsePlaceholder().Resize(g.dynCellSize)
 
 	for _, child := range objects {
-		if !child.Visible() {
-			continue
-		}
+		// if !child.Visible() {
+		// 	continue
+		// }
 
 		// First in column, move to 0 horizontally
 		if i%g.colCount == 0 {
@@ -155,7 +157,7 @@ func (g *panelGridLayout) countRows(size fyne.Size, hPad float32, objects []fyne
 
 	for _, child := range objects {
 		if !child.Visible() {
-			continue
+			// continue
 		}
 
 		if c != 0 && i%c == 0 {
@@ -193,4 +195,19 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 func (g *panelGridLayout) Reset() {
 	g.cWidth = 0
 	g.objectCount = 0
+}
+
+func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
+
+	vPad := g.innerPadding[0] + g.innerPadding[2]
+	miny := pos.Y - g.dynCellSize.Height
+	maxy := g.cHeight + pos.Y - (vPad * 2)
+	for _, child := range g.objects {
+		y := child.Position().Y
+		if y > maxy || miny > y {
+			child.Hide()
+		} else {
+			child.Show()
+		}
+	}
 }
