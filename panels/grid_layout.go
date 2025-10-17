@@ -6,20 +6,23 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
+	JC "jxwatcher/core"
 )
 
 type panelGridLayout struct {
-	minCellSize  fyne.Size
-	dynCellSize  fyne.Size
-	colCount     int
-	rowCount     int
-	innerPadding [4]float32 // top, right, bottom, left
-	objectCount  int
-	objects      []fyne.CanvasObject
-	cWidth       float32
-	cHeight      float32
-	minSize      fyne.Size
-	dirty        bool
+	minCellSize    fyne.Size
+	dynCellSize    fyne.Size
+	minSize        fyne.Size
+	offset         fyne.Position
+	objects        []fyne.CanvasObject
+	visibleObjects []fyne.CanvasObject
+	innerPadding   [4]float32 // top, right, bottom, left
+	colCount       int
+	rowCount       int
+	objectCount    int
+	cWidth         float32
+	cHeight        float32
+	dirty          bool
 }
 
 func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -29,10 +32,13 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	if g.cWidth == size.Width && g.cHeight == size.Height && g.objectCount == len(objects) {
-		return
+	if g.offset != JA.UseLayout().UseScroll().Offset {
+		if g.cWidth == size.Width && g.cHeight == size.Height && g.objectCount == len(objects) {
+			return
+		}
 	}
 
+	g.offset = JA.UseLayout().UseScroll().Offset
 	g.cWidth = size.Width
 	g.cHeight = size.Height
 	g.objectCount = len(objects)
@@ -123,6 +129,8 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 		pos := fyne.NewPos(x, y)
 
+		child.Hide()
+
 		if child.Position() != pos {
 			child.Move(pos)
 		}
@@ -144,7 +152,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		i++
 	}
 
-	g.OnScrolled(JA.UseLayout().UseScroll().Offset)
+	g.OnScrolled(g.offset)
 }
 
 // Count approx how many rows will be, this isn't accurate and should be only used at the beginning of layouting
@@ -188,25 +196,42 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 func (g *panelGridLayout) Reset() {
 	g.cWidth = 0
 	g.objectCount = 0
+	g.visibleObjects = []fyne.CanvasObject{}
 }
 
 func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
-
 	sHeight := JA.UseLayout().UseScroll().Size().Height
 	vPad := g.innerPadding[0] + g.innerPadding[2]
-	miny := pos.Y - g.dynCellSize.Height
-	maxy := sHeight + pos.Y + vPad
 
-	for _, child := range g.objects {
-		y := child.Position().Y
-		if y > maxy || miny > y {
-			if child.Visible() {
-				child.Hide()
-			}
-		} else {
-			if !child.Visible() {
-				child.Show()
-			}
+	minY := pos.Y - g.dynCellSize.Height
+	maxY := pos.Y + sHeight + vPad
+
+	cellHeight := g.dynCellSize.Height + vPad
+	startRow := int(minY / cellHeight)
+	endRow := int(maxY / cellHeight)
+
+	startIndex := max(0, startRow*g.colCount)
+	endIndex := min(len(g.objects), (endRow+1)*g.colCount)
+
+	newVisible := make([]fyne.CanvasObject, 0, endIndex-startIndex)
+	visibleSet := make(map[fyne.CanvasObject]bool)
+
+	for i := startIndex; i < endIndex; i++ {
+		obj := g.objects[i]
+		newVisible = append(newVisible, obj)
+		visibleSet[obj] = true
+		if !obj.Visible() {
+			JC.Logln("Showing object", obj)
+			obj.Show()
 		}
 	}
+
+	for _, obj := range g.visibleObjects {
+		if !visibleSet[obj] && obj.Visible() {
+			obj.Hide()
+			JC.Logln("Hiding object", obj)
+		}
+	}
+
+	g.visibleObjects = newVisible
 }
