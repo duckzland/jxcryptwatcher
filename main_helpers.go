@@ -446,6 +446,20 @@ func ValidateRatesCache() bool {
 	return true
 }
 
+func ValidateRateCache(pot JT.PanelData) bool {
+
+	// Always get linked data! do not use the copied
+	pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
+	pks := pkt.UsePanelKey()
+	ck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+
+	if !JT.UseExchangeCache().Has(ck) {
+		return false
+	}
+
+	return true
+}
+
 func RemovePanel(uuid string) {
 
 	if JP.UsePanelGrid().RemoveByID(uuid) {
@@ -472,21 +486,24 @@ func SavePanelForm(pdt JT.PanelData) {
 
 	JC.Notify("Saving panel settings...")
 
-	hasCache := ValidateRatesCache()
-
 	JP.UsePanelGrid().ForceRefresh()
 
 	if !JT.UsePanelMaps().ValidatePanel(pdt.Get()) {
 		pdt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
-	if hasCache {
-		pdt.SetStatus(JC.STATE_LOADED)
-	}
-
-	JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
-
+	// Prevent UX locking
 	go func() {
+
+		hasCache := ValidateRateCache(pdt)
+
+		if hasCache && !pdt.IsStatus(JC.STATE_BAD_CONFIG) {
+			pdt.SetStatus(JC.STATE_LOADED)
+			opk := pdt.Get()
+			if opk != "" {
+				pdt.Update(opk)
+			}
+		}
 
 		if JT.SavePanels() {
 
@@ -704,18 +721,8 @@ func ScheduledNotificationReset() {
 }
 
 func SetAppIcon() {
-
 	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
 	JC.Window.SetIcon(icon)
-
-	// icon, err := fyne.LoadResourceFromPath(a)
-	// if err != nil {
-	// 	JC.Logln("Failed to load icon", err)
-	// } else {
-	// 	JC.Logln("App Icon loaded from:", a)
-	// 	JC.Window.SetIcon(icon)
-	// }
-
 }
 
 func CreatePanel(pkt JT.PanelData) fyne.CanvasObject {
