@@ -25,10 +25,18 @@ func StartFadeInBackground(
 		}
 	}
 
+	if !rect.Visible() {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeInRegistry.Store(rect, cancel)
 
 	JC.UseDispatcher().Submit(func() {
+		if !rect.Visible() {
+			return
+		}
+
 		alphaSteps := []uint8{100, 128, 192, 255}
 		interval := duration / time.Duration(len(alphaSteps))
 		ticker := time.NewTicker(interval)
@@ -41,6 +49,13 @@ func StartFadeInBackground(
 			for _, alpha := range alphaSteps {
 				select {
 				case <-ctx.Done():
+					if !JC.IsAlpha(rect.FillColor, 255) {
+						fyne.Do(func() {
+							rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
+							canvas.Refresh(rect)
+						})
+					}
+					ticker.Stop()
 					return
 				case <-ticker.C:
 

@@ -25,10 +25,19 @@ func StartFadingText(
 		}
 	}
 
+	if !text.Visible() {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeTextRegistry.Store(text, cancel)
 
 	JC.UseDispatcher().Submit(func() {
+
+		if !text.Visible() {
+			return
+		}
+
 		if fadeAlphas == nil || len(*fadeAlphas) == 0 {
 			fadeAlphas = &[]uint8{255, 160, 80, 0}
 		}
@@ -43,6 +52,13 @@ func StartFadingText(
 			for _, alpha := range *fadeAlphas {
 				select {
 				case <-ctx.Done():
+					if !JC.IsTextAlpha(text, 255) {
+						fyne.Do(func() {
+							JC.SetTextAlpha(text, 255)
+							canvas.Refresh(text)
+						})
+					}
+					ticker.Stop()
 					return
 				case <-ticker.C:
 

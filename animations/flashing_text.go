@@ -27,6 +27,10 @@ func StartFlashingText(
 		}
 	}
 
+	if !text.Visible() {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	flashRegistry.Store(text, cancel)
 
@@ -36,6 +40,11 @@ func StartFlashingText(
 	baseB := float64(b >> 8)
 
 	JC.UseDispatcher().Submit(func() {
+
+		if !text.Visible() {
+			return
+		}
+
 		alphaSequence := make([]uint8, flashes*2)
 		for i := range alphaSequence {
 			if i%2 == 0 {
@@ -55,6 +64,13 @@ func StartFlashingText(
 			for _, alpha := range alphaSequence {
 				select {
 				case <-ctx.Done():
+					if !JC.IsTextAlpha(text, 255) {
+						fyne.Do(func() {
+							text.Color = visibleColor
+							canvas.Refresh(text)
+						})
+					}
+					ticker.Stop()
 					return
 				case <-ticker.C:
 

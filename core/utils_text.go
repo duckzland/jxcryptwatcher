@@ -29,6 +29,26 @@ func SetTextAlpha(text *canvas.Text, alpha uint8) {
 	}
 }
 
+func IsTextAlpha(text *canvas.Text, alpha uint8) bool {
+	switch c := text.Color.(type) {
+	case color.RGBA:
+		if c.A == alpha {
+			return true
+		}
+	case color.NRGBA:
+		if c.A == alpha {
+			return true
+		}
+	default:
+	}
+	return false
+}
+
+func IsAlpha(c color.Color, alpha uint32) bool {
+	_, _, _, a := c.RGBA()
+	return a == alpha
+}
+
 func SetAlpha(c color.Color, alpha float32) color.Color {
 	r, g, b, _ := c.RGBA()
 
