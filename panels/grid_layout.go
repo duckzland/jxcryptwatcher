@@ -103,9 +103,6 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	JA.UseLayout().UsePlaceholder().Resize(g.dynCellSize)
 
 	for _, child := range objects {
-		// if !child.Visible() {
-		// 	continue
-		// }
 
 		// First in column, move to 0 horizontally
 		if i%g.colCount == 0 {
@@ -145,6 +142,8 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 		i++
 	}
+
+	g.OnScrolled(JA.UseLayout().UseScroll().Offset)
 }
 
 // Count approx how many rows will be, this isn't accurate and should be only used at the beginning of layouting
