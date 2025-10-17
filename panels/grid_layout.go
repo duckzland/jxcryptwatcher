@@ -1,10 +1,11 @@
 package panels
 
 import (
-	JA "jxwatcher/apps"
 	"math"
 
 	"fyne.io/fyne/v2"
+
+	JA "jxwatcher/apps"
 )
 
 type panelGridLayout struct {
