@@ -6,7 +6,6 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
-	JC "jxwatcher/core"
 )
 
 type panelGridLayout struct {
@@ -221,7 +220,6 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 		newVisible = append(newVisible, obj)
 		visibleSet[obj] = true
 		if !obj.Visible() {
-			JC.Logln("Showing object", obj)
 			obj.Show()
 		}
 	}
@@ -229,7 +227,6 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 	for _, obj := range g.visibleObjects {
 		if !visibleSet[obj] && obj.Visible() {
 			obj.Hide()
-			JC.Logln("Hiding object", obj)
 		}
 	}
 
