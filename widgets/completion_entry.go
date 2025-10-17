@@ -70,23 +70,20 @@ func NewCompletionEntry(
 
 	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
 
-	closeBtn := NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
-		c.hideCompletion()
-	}, nil)
+	cLayout := &completionListEntryLayout{
+		background: canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
+		listEntry:  c.completionList,
+		closeSize:  fyne.NewSize(32, 32),
+		closeBtn: NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
+			c.hideCompletion()
+		}, nil),
+	}
 
-	closeBtn.Resize(fyne.NewSize(32, 32))
-	closeBtn.Move(fyne.NewPos(0, 0))
-
-	bg := canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground))
-	bg.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-
-	c.container = container.NewStack(
-		bg,
-		container.New(
-			&completionListEntryLayout{},
-			c.completionList,
-			closeBtn,
-		),
+	c.container = container.New(
+		cLayout,
+		cLayout.background,
+		cLayout.listEntry,
+		cLayout.closeBtn,
 	)
 
 	c.popup.Add(c.container)
@@ -179,16 +176,11 @@ func (c *completionEntry) setOptions(itemList []string) {
 }
 
 func (c *completionEntry) shiftEntry() {
-	cs := c.Size()
-	np := fyne.NewPos(c.shiftX, 0)
-
 	if c.popup != nil && c.popup.Visible() && !c.shifted {
+		cs := c.Size()
 		cs.Width -= c.shiftX
 		if c.Entry.Size() != cs {
 			c.Entry.Resize(cs)
-		}
-		if c.Entry.Position() != np {
-			c.Entry.Move(np)
 		}
 
 		c.shifted = true
@@ -197,16 +189,12 @@ func (c *completionEntry) shiftEntry() {
 }
 
 func (c *completionEntry) unshiftEntry() {
-	cs := c.Size()
-	np := fyne.NewPos(0, 0)
-
 	if c.popup != nil && !c.popup.Visible() && c.shifted {
+		cs := c.Size()
 		cs.Width += c.shiftX
+
 		if c.Entry.Size() != cs {
 			c.Entry.Resize(cs)
-		}
-		if c.Entry.Position() != np {
-			c.Entry.Move(np)
 		}
 
 		c.shifted = false
@@ -336,11 +324,9 @@ func (c *completionEntry) calculatePosition(force bool) bool {
 
 	p := fyne.CurrentApp().Driver().AbsolutePositionForObject(c)
 	x := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetContent())
-	z := fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetForm())
-	px := p.Subtract(x)
 
-	c.entryPosition = z
-	c.popupPosition = px
+	c.entryPosition = fyne.CurrentApp().Driver().AbsolutePositionForObject(c.parent.GetForm())
+	c.popupPosition = p.Subtract(x)
 
 	return true
 }
@@ -355,7 +341,6 @@ func (c *completionEntry) maxSize() fyne.Size {
 		return fyne.NewSize(0, 0)
 	}
 
-	size := c.Size()
 	listHeight := float32(len(c.options)) * c.itemHeight
 	maxHeight := c.canvas.Size().Height - c.popupPosition.Y - c.Size().Height
 
@@ -367,7 +352,7 @@ func (c *completionEntry) maxSize() fyne.Size {
 		listHeight = maxHeight
 	}
 
-	width := size.Width
+	width := c.Size().Width
 
 	if c.shifted {
 		width += c.shiftX
@@ -381,12 +366,9 @@ func (c *completionEntry) popUpPos() fyne.Position {
 		return fyne.NewPos(0, 0)
 	}
 
-	size := c.Size()
-
 	entryPos := c.popupPosition
-	entryPos.Y += size.Height
+	entryPos.Y += c.Size().Height
 	entryPos.Y += 2
-	entryPos.X = 16
 
 	return entryPos
 

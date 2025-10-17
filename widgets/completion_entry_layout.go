@@ -1,17 +1,22 @@
 package widgets
 
-import "fyne.io/fyne/v2"
+import (
+	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+)
 
 type completionListEntryLayout struct {
-	cSize fyne.Size
+	cSize      fyne.Size
+	closeSize  fyne.Size
+	background *canvas.Rectangle
+	listEntry  *completionList
+	closeBtn   ActionButton
 }
 
 func (l *completionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if size.Width == 0 && size.Height == 0 {
-		return
-	}
-
-	if len(objects) < 2 {
 		return
 	}
 
@@ -20,31 +25,38 @@ func (l *completionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyn
 	}
 
 	l.cSize = size
+	tlPos := fyne.NewPos(0, 0)
 
-	listEntry := objects[0]
-	closeBtn := objects[1]
+	if l.background != nil {
+		l.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
+		if l.background.Size() != size {
+			l.background.Resize(size)
+		}
 
-	height := size.Height
-	closeWidth := closeBtn.Size().Width
-
-	newCloseSize := fyne.NewSize(closeWidth, closeWidth)
-	if closeBtn.Size() != newCloseSize {
-		closeBtn.Resize(newCloseSize)
+		if l.background.Position() != tlPos {
+			l.background.Move(tlPos)
+		}
 	}
 
-	newClosePos := fyne.NewPos(0, -closeWidth-3)
-	if closeBtn.Position() != newClosePos {
-		closeBtn.Move(newClosePos)
+	if l.closeBtn != nil {
+		if l.closeBtn.Size() != l.closeSize {
+			l.closeBtn.Resize(l.closeSize)
+		}
+
+		newClosePos := fyne.NewPos(size.Width-l.closeSize.Width, -l.closeSize.Width-3)
+		if l.closeBtn.Position() != newClosePos {
+			l.closeBtn.Move(newClosePos)
+		}
 	}
 
-	newEntrySize := fyne.NewSize(size.Width, height)
-	if listEntry.Size() != newEntrySize {
-		listEntry.Resize(newEntrySize)
-	}
+	if l.listEntry != nil {
+		if l.listEntry.Size() != size {
+			l.listEntry.Resize(size)
+		}
 
-	newEntryPos := fyne.NewPos(0, 0)
-	if listEntry.Position() != newEntryPos {
-		listEntry.Move(newEntryPos)
+		if l.listEntry.Position() != tlPos {
+			l.listEntry.Move(tlPos)
+		}
 	}
 }
 
