@@ -22,10 +22,6 @@ type panelContainer struct {
 	activeAction     *panelDisplay
 }
 
-func (c *panelContainer) GetVisibleObjects() []PanelDisplay {
-	return c.layout.GetVisibleObjects()
-}
-
 func (c *panelContainer) Add(obj fyne.CanvasObject) {
 	c.Objects = append(c.Objects, obj)
 }

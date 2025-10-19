@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
+	JT "jxwatcher/types"
 )
 
 type panelGridLayout struct {
@@ -212,6 +213,7 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 
 	newVisible := make([]PanelDisplay, 0, endIndex-startIndex)
 	visibleSet := make(map[PanelDisplay]bool)
+	visibleIds := []string{}
 
 	for i := startIndex; i < endIndex; i++ {
 		obj := g.objects[i]
@@ -222,6 +224,7 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 		}
 
 		newVisible = append(newVisible, panel)
+		visibleIds = append(visibleIds, panel.GetTag())
 		visibleSet[panel] = true
 
 		if !panel.Visible() {
@@ -236,8 +239,5 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 	}
 
 	g.visibleObjects = newVisible
-}
-
-func (g *panelGridLayout) GetVisibleObjects() []PanelDisplay {
-	return g.visibleObjects
+	JT.UsePanelMaps().SetVisiblePanels(visibleIds)
 }

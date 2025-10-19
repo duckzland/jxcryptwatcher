@@ -28,10 +28,10 @@ func UpdateDisplay() bool {
 	var mu sync.Mutex
 
 	registered := make(map[string]bool)
-	priority := JP.UsePanelGrid().GetVisibleObjects()
+	priority := JT.UsePanelMaps().GetVisiblePanels()
+	panels := JT.UsePanelMaps().GetData()
 
-	for _, panel := range priority {
-		tag := panel.GetTag()
+	for _, tag := range priority {
 		if JT.UsePanelMaps().GetDataByID(tag) == nil {
 			continue
 		}
@@ -42,7 +42,7 @@ func UpdateDisplay() bool {
 		}
 	}
 
-	for _, pot := range JT.UsePanelMaps().GetData() {
+	for _, pot := range panels {
 		id := pot.GetID()
 		if !registered[id] {
 			allIDs = append(allIDs, id)
@@ -72,8 +72,9 @@ func UpdateDisplay() bool {
 
 				if pkt.Update(pk) {
 					mu.Lock()
-					updateCount++
-					if updateCount == 1 {
+
+					if updateCount == 0 {
+						updateCount++
 						JC.Notify("Panel display refreshed with latest rates")
 					}
 					mu.Unlock()

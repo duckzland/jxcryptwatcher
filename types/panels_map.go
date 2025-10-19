@@ -9,13 +9,18 @@ import (
 var panelMapsStorage *panelsMapType = &panelsMapType{}
 
 type panelsMapType struct {
-	mu   sync.RWMutex
-	data []PanelData
-	maps *cryptosMapType
+	mu            sync.RWMutex
+	data          []PanelData
+	maps          *cryptosMapType
+	visiblePanels []string
 }
 
 func (pc *panelsMapType) Init() {
-	pc.SetData([]PanelData{})
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	pc.data = []PanelData{}
+	pc.visiblePanels = []string{}
 }
 
 func (pc *panelsMapType) SetData(data []PanelData) {
@@ -36,6 +41,7 @@ func (pc *panelsMapType) GetData() []PanelData {
 
 	dataCopy := make([]PanelData, len(pc.data))
 	copy(dataCopy, pc.data)
+
 	return dataCopy
 }
 
@@ -55,6 +61,23 @@ func (pc *panelsMapType) HasMaps() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 	return pc.maps != nil
+}
+
+func (pc *panelsMapType) SetVisiblePanels(panels []string) {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	pc.visiblePanels = panels
+}
+
+func (pc *panelsMapType) GetVisiblePanels() []string {
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
+
+	panelsCopy := make([]string, len(pc.visiblePanels))
+	copy(panelsCopy, pc.visiblePanels)
+
+	return panelsCopy
 }
 
 func (pc *panelsMapType) Remove(uuid string) bool {
