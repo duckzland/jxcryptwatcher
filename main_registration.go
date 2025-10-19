@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 
+	JX "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -749,15 +750,29 @@ func RegisterLifecycle() {
 
 func RegisterDispatcher() {
 	JC.PrintPerfStats("Creating Dispatcher Buffer", time.Now())
+	ad := JX.UseAnimationDispatcher()
+	ad.SetBufferSize(1000000)
+
+	if JC.IsMobile {
+		ad.SetDelayBetween(200 * time.Millisecond)
+		ad.SetMaxConcurrent(2)
+
+	} else {
+		ad.SetDelayBetween(50 * time.Millisecond)
+		ad.SetMaxConcurrent(JC.MaximumThreads(6))
+	}
+
+	ad.Start()
+
 	d := JC.UseDispatcher()
 	d.SetBufferSize(1000000)
 
 	if JC.IsMobile {
-		d.SetDelayBetween(200 * time.Millisecond)
+		d.SetDelayBetween(10 * time.Millisecond)
 		d.SetMaxConcurrent(2)
 
 	} else {
-		d.SetDelayBetween(50 * time.Millisecond)
+		d.SetDelayBetween(5 * time.Millisecond)
 		d.SetMaxConcurrent(JC.MaximumThreads(6))
 	}
 

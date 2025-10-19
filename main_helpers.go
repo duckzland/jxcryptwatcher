@@ -20,40 +20,73 @@ import (
 var appIconData []byte
 
 func UpdateDisplay() bool {
-	list := JT.UsePanelMaps().GetData()
-	var updateDisplay int
-	var wg sync.WaitGroup
+	const chunkSize = 100
+
+	var allIDs []string
+	var chunks [][]string
+	var updateCount int
 	var mu sync.Mutex
 
-	for _, pot := range list {
-		potID := pot.GetID()
-		wg.Add(1)
+	registered := make(map[string]bool)
+	priority := JP.UsePanelGrid().GetVisibleObjects()
 
-		JC.UseDispatcher().Submit(func() {
-			defer wg.Done()
-			pkt := JT.UsePanelMaps().GetDataByID(potID)
-			pk := pkt.Get()
-			if pkt.Update(pk) {
-				mu.Lock()
-				updateDisplay++
-				mu.Unlock()
-			}
-		})
+	for _, panel := range priority {
+		tag := panel.GetTag()
+		if JT.UsePanelMaps().GetDataByID(tag) == nil {
+			continue
+		}
+
+		if !registered[tag] {
+			allIDs = append(allIDs, tag)
+			registered[tag] = true
+		}
 	}
 
-	wg.Wait()
+	for _, pot := range JT.UsePanelMaps().GetData() {
+		id := pot.GetID()
+		if !registered[id] {
+			allIDs = append(allIDs, id)
+			registered[id] = true
+		}
+	}
 
-	if updateDisplay != 0 {
-		JC.Notify("Panel display refreshed with latest rates")
+	for i := 0; i < len(allIDs); i += chunkSize {
+		end := i + chunkSize
+		if end > len(allIDs) {
+			end = len(allIDs)
+		}
+		chunks = append(chunks, allIDs[i:end])
+	}
+
+	for _, chunk := range chunks {
+		ids := chunk
+		JC.UseDispatcher().Submit(func() {
+			JC.TraceGoroutines()
+			for _, id := range ids {
+				pkt := JT.UsePanelMaps().GetDataByID(id)
+
+				if pkt == nil {
+					continue
+				}
+
+				pk := pkt.Get()
+
+				if pkt.Update(pk) {
+					mu.Lock()
+					updateCount++
+					if updateCount == 1 {
+						JC.Notify("Panel display refreshed with latest rates")
+					}
+					mu.Unlock()
+				}
+			}
+		})
 	}
 
 	return true
 }
 
 func UpdateTickerDisplay() bool {
-
-	var mu sync.Mutex
-	var updateDisplay int = 0
 
 	tickers := []string{}
 	if JT.UseConfig().CanDoCMC100() {
@@ -82,15 +115,9 @@ func UpdateTickerDisplay() bool {
 		tktt := JT.UseTickerMaps().GetDataByType(key)
 		for _, tkt := range tktt {
 			if tkt.Update() {
-				mu.Lock()
-				updateDisplay++
-				mu.Unlock()
+				JC.Notify("Ticker display refreshed with new rates")
 			}
 		}
-	}
-
-	if updateDisplay != 0 {
-		JC.Notify("Ticker display refreshed with new rates")
 	}
 
 	return true

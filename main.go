@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
+	JN "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
@@ -51,6 +52,8 @@ func main() {
 	JA.RegisterStatusManager().Init()
 
 	JA.RegisterSnapshotManager().Init()
+
+	JN.RegisterAnimationDispatcher().Init()
 
 	RegisterCache()
 

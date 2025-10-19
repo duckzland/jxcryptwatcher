@@ -14,7 +14,7 @@ type panelGridLayout struct {
 	minSize        fyne.Size
 	offset         fyne.Position
 	objects        []fyne.CanvasObject
-	visibleObjects []fyne.CanvasObject
+	visibleObjects []PanelDisplay
 	innerPadding   [4]float32 // top, right, bottom, left
 	colCount       int
 	rowCount       int
@@ -128,8 +128,6 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 
 		pos := fyne.NewPos(x, y)
 
-		child.Hide()
-
 		if child.Position() != pos {
 			child.Move(pos)
 		}
@@ -195,7 +193,7 @@ func (g *panelGridLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 func (g *panelGridLayout) Reset() {
 	g.cWidth = 0
 	g.objectCount = 0
-	g.visibleObjects = []fyne.CanvasObject{}
+	g.visibleObjects = []PanelDisplay{}
 }
 
 func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
@@ -212,23 +210,34 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 	startIndex := max(0, startRow*g.colCount)
 	endIndex := min(len(g.objects), (endRow+1)*g.colCount)
 
-	newVisible := make([]fyne.CanvasObject, 0, endIndex-startIndex)
-	visibleSet := make(map[fyne.CanvasObject]bool)
+	newVisible := make([]PanelDisplay, 0, endIndex-startIndex)
+	visibleSet := make(map[PanelDisplay]bool)
 
 	for i := startIndex; i < endIndex; i++ {
 		obj := g.objects[i]
-		newVisible = append(newVisible, obj)
-		visibleSet[obj] = true
-		if !obj.Visible() {
-			obj.Show()
+
+		panel, ok := obj.(PanelDisplay)
+		if !ok {
+			continue
+		}
+
+		newVisible = append(newVisible, panel)
+		visibleSet[panel] = true
+
+		if !panel.Visible() {
+			panel.Show()
 		}
 	}
 
-	for _, obj := range g.visibleObjects {
-		if !visibleSet[obj] && obj.Visible() {
-			obj.Hide()
+	for _, panel := range g.visibleObjects {
+		if !visibleSet[panel] && panel.Visible() {
+			panel.Hide()
 		}
 	}
 
 	g.visibleObjects = newVisible
+}
+
+func (g *panelGridLayout) GetVisibleObjects() []PanelDisplay {
+	return g.visibleObjects
 }

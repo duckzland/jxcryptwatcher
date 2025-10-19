@@ -7,6 +7,7 @@ import (
 )
 
 type Dispatcher interface {
+	Init()
 	Submit(fn func())
 	GetDelay() time.Duration
 	IsPaused() bool
@@ -15,6 +16,9 @@ type Dispatcher interface {
 	Start()
 	Drain()
 	SetDrainer(fn func())
+	SetBufferSize(int)
+	SetDelayBetween(time.Duration)
+	SetMaxConcurrent(int)
 }
 
 var coreDispatcher *dispatcher = nil

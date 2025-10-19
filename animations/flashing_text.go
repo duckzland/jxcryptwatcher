@@ -39,7 +39,7 @@ func StartFlashingText(
 	baseG := float64(g >> 8)
 	baseB := float64(b >> 8)
 
-	JC.UseDispatcher().Submit(func() {
+	UseAnimationDispatcher().Submit(func() {
 
 		if !text.Visible() {
 			return

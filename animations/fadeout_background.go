@@ -32,7 +32,7 @@ func StartFadeOutBackground(
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeRegistry.Store(rect, cancel)
 
-	JC.UseDispatcher().Submit(func() {
+	UseAnimationDispatcher().Submit(func() {
 
 		if !rect.Visible() {
 			return

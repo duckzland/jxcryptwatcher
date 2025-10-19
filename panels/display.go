@@ -20,13 +20,22 @@ import (
 
 var activeDragging *panelDisplay = nil
 
+type PanelDisplay interface {
+	GetTag() string
+	Visible() bool
+	Show()
+	Hide()
+	ShowTarget()
+	HideTarget()
+}
+
 type panelDisplay struct {
 	widget.BaseWidget
 	tag          string
 	fps          time.Duration
 	status       int
+	shown        int
 	visible      bool
-	disabled     bool
 	container    fyne.CanvasObject
 	dragScroll   float32
 	dragPosition fyne.Position
@@ -40,11 +49,7 @@ type panelDisplay struct {
 	bottomText   *panelText
 }
 
-func NewPanelDisplay(
-	pdt JT.PanelData,
-	onEdit func(pk string, uuid string),
-	onDelete func(uuid string),
-) *panelDisplay {
+func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string)) *panelDisplay {
 
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
@@ -91,9 +96,9 @@ func NewPanelDisplay(
 			pl.bottomText,
 			pl.action,
 		),
+		shown:      0,
 		action:     pl.action,
 		visible:    false,
-		disabled:   false,
 		background: pl.background,
 		title:      pl.title,
 		content:    pl.content,
@@ -114,9 +119,7 @@ func NewPanelDisplay(
 	pv.AddListener(binding.NewDataListener(pd.updateContent))
 	ps.AddListener(binding.NewDataListener(pd.updateContent))
 
-	if !JC.IsMobile {
-		JA.StartFadeInBackground(pd.background, 100*time.Millisecond, nil)
-	}
+	pd.Hide()
 
 	return pd
 }
@@ -144,16 +147,35 @@ func (h *panelDisplay) HideTarget() {
 	UsePanelGrid().ResetActiveAction()
 }
 
-func (h *panelDisplay) DisableClick() {
-	h.disabled = true
-}
-
-func (h *panelDisplay) EnableClick() {
-	h.disabled = false
-}
-
 func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.container)
+}
+
+func (h *panelDisplay) Show() {
+	h.BaseWidget.Show()
+	h.background.Show()
+	h.title.Show()
+	h.subtitle.Show()
+	h.content.Show()
+	h.bottomText.Show()
+
+	if h.shown == 0 {
+		h.shown++
+		if !JC.IsMobile {
+			if JM.UseLayout().UseScroll().Offset.X == 0 {
+				JA.StartFadeInBackground(h.background, 100*time.Millisecond, nil)
+			}
+		}
+	}
+}
+
+func (h *panelDisplay) Hide() {
+	h.BaseWidget.Hide()
+	h.background.Hide()
+	h.title.Hide()
+	h.subtitle.Hide()
+	h.content.Hide()
+	h.bottomText.Hide()
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
@@ -164,10 +186,6 @@ func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 	}
 
 	if activeDragging != nil {
-		return
-	}
-
-	if h.disabled {
 		return
 	}
 
@@ -277,24 +295,28 @@ func (h *panelDisplay) updateContent() {
 		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize, h.content.GetText().TextStyle)
 	}
 
-	h.EnableClick()
-
 	h.title.SetText(title)
 	h.subtitle.SetText(subtitle)
 	h.bottomText.SetText(bottomText)
 	h.content.SetText(content)
 
 	if pkt.DidChange() {
-		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
+		if h.Visible() {
+			JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
+		}
 	}
 
 	if h.background.FillColor != background {
 		h.background.FillColor = background
-		canvas.Refresh(h.background)
+		if h.Visible() {
+			canvas.Refresh(h.background)
+		}
 	}
 
 	if h.status != status {
-		h.Refresh()
+		if h.Visible() {
+			h.Refresh()
+		}
 	}
 }
 

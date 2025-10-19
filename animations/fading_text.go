@@ -32,7 +32,7 @@ func StartFadingText(
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeTextRegistry.Store(text, cancel)
 
-	JC.UseDispatcher().Submit(func() {
+	UseAnimationDispatcher().Submit(func() {
 
 		if !text.Visible() {
 			return

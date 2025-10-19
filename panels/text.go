@@ -52,9 +52,11 @@ func (s *panelText) SetText(t string) {
 
 	s.text = t
 	s.label.Text = t
-	canvas.Refresh(s.label)
+	if s.Visible() {
+		canvas.Refresh(s.label)
+	}
 }
 
 func (s *panelText) Visible() bool {
-	return s.label.Visible()
+	return s.BaseWidget.Visible() && s.label.Visible()
 }
