@@ -61,7 +61,6 @@ func UpdateDisplay() bool {
 	for _, chunk := range chunks {
 		ids := chunk
 		JC.UseDispatcher().Submit(func() {
-			JC.TraceGoroutines()
 			for _, id := range ids {
 				pkt := JT.UsePanelMaps().GetDataByID(id)
 
@@ -189,8 +188,6 @@ func UpdateRates() bool {
 				}
 				mu.Unlock()
 			}
-
-			JC.Logln("Exchange fetching has error:", hasError)
 
 			ProcessUpdatePanelComplete(hasError)
 
