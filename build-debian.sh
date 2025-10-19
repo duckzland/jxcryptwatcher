@@ -61,7 +61,7 @@ deb_output="build/jxwatcher_${version}_amd64.deb"
 # Production compiling flags
 ldflags="-w -s"
 gcflags="-l"
-tags="production,desktop"
+tags="production,desktop,no_emoji,no_animations"
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
@@ -69,18 +69,18 @@ cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     ldflags=""
     gcflags="-l"
-    tags="desktop"
+    tags="desktop,no_emoji,no_animations"
     cflags="-pipe -Wall -g -pthread"
     cldflags="-pthread"
     echo_success "Debug mode enabled: building with debug flags"
 fi
 
 if [[ $1 == "local" ]]; then
-    tags="production,desktop,local"
+    tags="production,desktop,local,no_emoji,no_animations"
 fi
 
 if [[ $1 == "local-debug" ]]; then
-    tags="desktop,local"
+    tags="desktop,local,no_emoji,no_animations"
 fi
 
 # Create necessary directories

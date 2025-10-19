@@ -274,8 +274,6 @@ func UpdateTickers() bool {
 				mu.Unlock()
 			}
 
-			JC.Logln("Tickers fetching has error:", hasError)
-
 			ProcessUpdateTickerComplete(hasError)
 
 			JC.Logf("Tickers Rate updated: %v/%v", successCount, len(payloads))
