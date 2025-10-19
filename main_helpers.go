@@ -88,6 +88,7 @@ func UpdateDisplay() bool {
 
 func UpdateTickerDisplay() bool {
 
+	success := 0
 	tickers := []string{}
 	if JT.UseConfig().CanDoCMC100() {
 		tickers = append(tickers, "cmc100")
@@ -115,7 +116,10 @@ func UpdateTickerDisplay() bool {
 		tktt := JT.UseTickerMaps().GetDataByType(key)
 		for _, tkt := range tktt {
 			if tkt.Update() {
-				JC.Notify("Ticker display refreshed with new rates")
+				if success == 0 {
+					success++
+					JC.Notify("Ticker display refreshed with new rates")
+				}
 			}
 		}
 	}
