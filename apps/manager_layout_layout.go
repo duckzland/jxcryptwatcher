@@ -107,12 +107,14 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 
 	contentSize := fyne.NewSize(size.Width-2*padding, size.Height-contentY-padding)
 	contentPos := fyne.NewPos(padding, contentY)
-	if a.content.Size() != contentSize {
-		a.content.Resize(contentSize)
-	}
 
 	if a.content.Position() != contentPos {
 		a.content.Move(contentPos)
+	}
+
+	if a.content.Size() != contentSize {
+		a.content.Resize(contentSize)
+		a.content.Refresh()
 	}
 
 	if a.placeholder != nil {

@@ -187,14 +187,20 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 		return JC.NETWORKING_BAD_PAYLOAD
 	}
 
-	rkt := strings.Split(rko[1], ",")
+	rwt := strings.Split(rko[1], ",")
+	cks := make(map[string]bool)
+	rkt := []string{}
 
-	var sid string = rko[0]
-	var tid string = strings.Join(rkt, ",")
-
-	if len(rko) != 2 {
-		return JC.NETWORKING_BAD_PAYLOAD
+	for _, id := range rwt {
+		id = strings.TrimSpace(id)
+		if id != "" && !cks[id] {
+			cks[id] = true
+			rkt = append(rkt, id)
+		}
 	}
+
+	sid := strings.TrimSpace(rko[0])
+	tid := strings.Join(rkt, ",")
 
 	if sid == "" || tid == "" {
 		return JC.NETWORKING_BAD_PAYLOAD
