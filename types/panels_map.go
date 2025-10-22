@@ -246,6 +246,8 @@ func (pc *panelsMapType) Hydrate(data []PanelData) {
 
 	for i := 0; i < dataLen; i++ {
 		pdt := pc.GetDataByIndex(i)
+		pdt.UpdateRate()
+
 		if pdt == nil || i < 0 || i >= len(data) {
 			continue
 		}

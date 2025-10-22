@@ -87,20 +87,20 @@ func main() {
 			JT.CryptosLoaderInit()
 		}
 
-		if JA.UseSnapshot().LoadPanels() == JC.NO_SNAPSHOT {
-			JT.PanelsInit()
-		}
-
-		if JA.UseSnapshot().LoadTickers() == JC.NO_SNAPSHOT {
-			JT.TickersInit()
-		}
-
 		if JA.UseSnapshot().LoadExchangeData() == JC.NO_SNAPSHOT {
 			JT.UseExchangeCache().Reset()
 		}
 
 		if JA.UseSnapshot().LoadTickerData() == JC.NO_SNAPSHOT {
 			JT.UseTickerCache().Reset()
+		}
+
+		if JA.UseSnapshot().LoadPanels() == JC.NO_SNAPSHOT {
+			JT.PanelsInit()
+		}
+
+		if JA.UseSnapshot().LoadTickers() == JC.NO_SNAPSHOT {
+			JT.TickersInit()
 		}
 
 		fyne.Do(func() {

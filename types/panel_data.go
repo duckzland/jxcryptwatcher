@@ -39,6 +39,7 @@ type PanelData interface {
 	RefreshKey(key string) string
 	Insert(panel panelType, rate float64)
 	Update(pk string) bool
+	UpdateRate() bool
 	FormatTitle() string
 	FormatSubtitle() string
 	FormatBottomText() string
@@ -296,6 +297,45 @@ func (p *panelDataType) RefreshKey(key string) string {
 func (p *panelDataType) Update(pk string) bool {
 	opk := p.Get()
 	npk := pk
+	pks := p.UsePanelKey()
+
+	ck := UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+
+	if UseExchangeCache().Has(ck) {
+		Data := UseExchangeCache().Get(ck)
+		if Data != nil && Data.TargetAmount != nil {
+			pko := panelKeyType{value: npk}
+			npk = pko.UpdateValue(Data.TargetAmount)
+		}
+	}
+
+	nso := panelKeyType{value: npk}
+	nst := p.GetStatus()
+	ost := p.GetStatus()
+
+	switch nst {
+	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
+		if nso.IsValueMatchingFloat(0, ">=") {
+			nst = JC.STATE_LOADED
+		}
+	case JC.STATE_LOADED:
+	}
+
+	p.SetStatus(nst)
+
+	if npk != opk || nst != ost {
+		// JC.Logln("Updating panel:", npk, opk, p.status)
+		p.Set(npk)
+		p.SetOldKey(opk)
+		return true
+	}
+
+	return false
+}
+
+func (p *panelDataType) UpdateRate() bool {
+	opk := p.GetOldKey()
+	npk := p.Get()
 	pks := p.UsePanelKey()
 
 	ck := UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
