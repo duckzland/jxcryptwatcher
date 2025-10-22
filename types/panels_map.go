@@ -175,6 +175,11 @@ func (pc *panelsMapType) RefreshData() bool {
 		}
 
 		pdt.Update(pko.GenerateKeyFromPanel(npk, pko.GetValueFloat()))
+
+		if !pc.ValidateKey(pdt.Get()) {
+			pdt.SetStatus(JC.STATE_BAD_CONFIG)
+		}
+
 		JC.Logln("Panel refreshed: ", pdt.Get())
 	}
 
@@ -247,6 +252,7 @@ func (pc *panelsMapType) Hydrate(data []PanelData) {
 	for i := 0; i < dataLen; i++ {
 		pdt := pc.GetDataByIndex(i)
 		pdt.UpdateRate()
+		pdt.UpdateStatus()
 
 		if pdt == nil || i < 0 || i >= len(data) {
 			continue

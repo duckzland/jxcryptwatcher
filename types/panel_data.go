@@ -40,6 +40,7 @@ type PanelData interface {
 	Insert(panel panelType, rate float64)
 	Update(pk string) bool
 	UpdateRate() bool
+	UpdateStatus() bool
 	FormatTitle() string
 	FormatSubtitle() string
 	FormatBottomText() string
@@ -334,38 +335,32 @@ func (p *panelDataType) Update(pk string) bool {
 }
 
 func (p *panelDataType) UpdateRate() bool {
-	opk := p.GetOldKey()
-	npk := p.Get()
-	pks := p.UsePanelKey()
 
-	ck := UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+	pk := p.UsePanelKey()
+	ck := UseExchangeCache().CreateKeyFromInt(pk.GetSourceCoinInt(), pk.GetTargetCoinInt())
 
 	if UseExchangeCache().Has(ck) {
-		Data := UseExchangeCache().Get(ck)
-		if Data != nil && Data.TargetAmount != nil {
-			pko := panelKeyType{value: npk}
-			npk = pko.UpdateValue(Data.TargetAmount)
+		dt := UseExchangeCache().Get(ck)
+		if dt != nil && dt.TargetAmount != nil {
+			if pk.IsValueMatching(dt.TargetAmount, "!=") {
+				p.Set(pk.UpdateValue(dt.TargetAmount))
+				return true
+			}
 		}
 	}
 
-	nso := panelKeyType{value: npk}
-	nst := p.GetStatus()
-	ost := p.GetStatus()
+	return false
+}
 
-	switch nst {
+func (p *panelDataType) UpdateStatus() bool {
+
+	switch p.GetStatus() {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.IsValueMatchingFloat(0, ">=") {
-			nst = JC.STATE_LOADED
+		if p.UsePanelKey().IsValueMatchingFloat(0, ">=") {
+			p.SetStatus(JC.STATE_LOADED)
+			return true
 		}
 	case JC.STATE_LOADED:
-	}
-
-	p.SetStatus(nst)
-
-	if npk != opk || nst != ost {
-		// JC.Logln("Updating panel:", npk, opk, p.status)
-		p.Set(npk)
-		p.SetOldKey(opk)
 		return true
 	}
 

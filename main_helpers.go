@@ -68,11 +68,11 @@ func UpdateDisplay() bool {
 					continue
 				}
 
-				pk := pkt.Get()
+				if pkt.UpdateRate() {
 
-				if pkt.Update(pk) {
+					pkt.UpdateStatus()
+
 					mu.Lock()
-
 					if updateCount == 0 {
 						updateCount++
 						JC.Notify("Panel display refreshed with latest rates")
@@ -130,6 +130,10 @@ func UpdateTickerDisplay() bool {
 func UpdateRates() bool {
 
 	if JA.UseStatus().IsFetchingRates() {
+		return false
+	}
+
+	if JT.UsePanelMaps().IsEmpty() {
 		return false
 	}
 
@@ -213,6 +217,10 @@ func UpdateRates() bool {
 func UpdateTickers() bool {
 
 	if JA.UseStatus().IsFetchingTickers() {
+		return false
+	}
+
+	if !JT.UseConfig().IsValidTickers() {
 		return false
 	}
 
@@ -525,10 +533,8 @@ func SavePanelForm(pdt JT.PanelData) {
 		hasCache := ValidateRateCache(pdt)
 
 		if hasCache && !pdt.IsStatus(JC.STATE_BAD_CONFIG) {
-			pdt.SetStatus(JC.STATE_LOADED)
-			opk := pdt.Get()
-			if opk != "" {
-				pdt.Update(opk)
+			if pdt.UpdateRate() {
+				pdt.UpdateStatus()
 			}
 		}
 
@@ -561,10 +567,8 @@ func SavePanelForm(pdt JT.PanelData) {
 
 							switch status {
 							case JC.STATUS_SUCCESS:
-
-								opk := pdt.Get()
-								if opk != "" {
-									pdt.Update(opk)
+								if pdt.UpdateRate() {
+									pdt.UpdateStatus()
 								}
 
 							case JC.STATUS_NETWORK_ERROR, JC.STATUS_CONFIG_ERROR, JC.STATUS_BAD_DATA_RECEIVED:
