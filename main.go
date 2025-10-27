@@ -67,6 +67,8 @@ func main() {
 
 	RegisterDispatcher()
 
+	RegisterShutdown()
+
 	JC.Window.SetContent(JA.NewAppLayout())
 
 	JC.Window.Resize(fyne.NewSize(920, 600))

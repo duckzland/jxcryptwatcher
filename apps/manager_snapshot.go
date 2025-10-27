@@ -9,9 +9,21 @@ import (
 
 var snapshotManagerStorage *snapshotManager = nil
 
-type snapshotManager struct{}
+type snapshotManager struct {
+	snapshotted bool
+}
 
-func (sm *snapshotManager) Init() {}
+func (sm *snapshotManager) Init() {
+	sm.snapshotted = false
+}
+
+func (sm *snapshotManager) Reset() {
+	sm.snapshotted = false
+}
+
+func (sm *snapshotManager) IsSnapshotted() bool {
+	return sm.snapshotted
+}
 
 func (sm *snapshotManager) LoadPanels() int {
 	raw, ok := JC.LoadFile("snapshots-panels.json")
@@ -153,6 +165,7 @@ func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
 	JC.SaveFile("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
+	sm.snapshotted = true
 }
 
 func RegisterSnapshotManager() *snapshotManager {

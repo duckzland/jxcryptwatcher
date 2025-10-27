@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -678,17 +681,30 @@ func RegisterFetchers() {
 	)
 }
 
+func RegisterShutdown() {
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-signals
+		JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
+
+		if !JA.UseSnapshot().IsSnapshotted() {
+			JA.UseSnapshot().Save()
+		}
+	}()
+}
+
 func RegisterLifecycle() {
 
 	// Hook into lifecycle events
 	if lc := JC.App.Lifecycle(); lc != nil {
 
-		var snapshotSaved bool = false
-
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
 
-			snapshotSaved = false
+			JA.UseSnapshot().Reset()
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
@@ -727,9 +743,8 @@ func RegisterLifecycle() {
 				return
 			}
 
-			if !snapshotSaved && JC.IsMobile {
+			if !JA.UseSnapshot().IsSnapshotted() && JC.IsMobile {
 				JA.UseSnapshot().Save()
-				snapshotSaved = true
 			}
 		})
 		lc.SetOnStopped(func() {
@@ -740,9 +755,8 @@ func RegisterLifecycle() {
 				return
 			}
 
-			if !snapshotSaved {
+			if !JA.UseSnapshot().IsSnapshotted() {
 				JA.UseSnapshot().Save()
-				snapshotSaved = true
 			}
 		})
 	}
