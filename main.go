@@ -24,7 +24,7 @@ func main() {
 
 	setAppIcon()
 
-	registerDebouncer()
+	registerUtility()
 
 	registerCache()
 

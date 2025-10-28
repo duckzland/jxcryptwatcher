@@ -17,14 +17,14 @@ type snapshotManager struct {
 
 func (sm *snapshotManager) Init() {
 	sm.mu.Lock()
-	defer sm.mu.Unlock()
 	sm.snapshotted = false
+	sm.mu.Unlock()
 }
 
 func (sm *snapshotManager) Reset() {
 	sm.mu.Lock()
-	defer sm.mu.Unlock()
 	sm.snapshotted = false
+	sm.mu.Unlock()
 }
 
 func (sm *snapshotManager) IsSnapshotted() bool {

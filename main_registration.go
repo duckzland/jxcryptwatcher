@@ -21,8 +21,10 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-func registerDebouncer() {
+func registerUtility() {
 	JC.RegisterDebouncer().Init()
+	JA.RegisterSnapshotManager().Init()
+	JA.RegisterStatusManager().Init()
 }
 
 func registerActions() {
@@ -714,19 +716,22 @@ func registerShutdown() {
 
 func registerLifecycle() {
 
+	var isAppStarted bool = false
+
 	// Hook into lifecycle events
 	if lc := JC.App.Lifecycle(); lc != nil {
 
 		lc.SetOnStarted(func() {
 
+			if isAppStarted {
+				JC.Logln("App is already started, refused to restart it again")
+				return
+			}
+
 			JC.Logln("App started")
 			JC.Notify("Application is starting...")
 
 			JA.RegisterLayoutManager().Init()
-
-			JA.RegisterStatusManager().Init()
-
-			JA.RegisterSnapshotManager().Init()
 
 			JC.Window.SetContent(JA.NewAppLayout())
 
@@ -779,10 +784,17 @@ func registerLifecycle() {
 						JC.UseWorker().Call("update_tickers", JC.CallImmediate)
 					}
 				})
+
+				isAppStarted = true
 			})
 		})
 
 		lc.SetOnEnteredForeground(func() {
+			if !isAppStarted {
+				JC.Logln("App is not started yet, refuse to init app entered foreground")
+				return
+			}
+
 			JC.Logln("App entered foreground")
 
 			JA.UseSnapshot().Reset()
@@ -810,6 +822,11 @@ func registerLifecycle() {
 			}
 		})
 		lc.SetOnExitedForeground(func() {
+			if !isAppStarted {
+				JC.Logln("App is not started yet, refuse to init app exited foreground")
+				return
+			}
+
 			JC.Logln("App exited foreground")
 
 			if JC.IsMobile {
@@ -829,6 +846,11 @@ func registerLifecycle() {
 			}
 		})
 		lc.SetOnStopped(func() {
+			if !isAppStarted {
+				JC.Logln("App is not started yet, refuse to init app stopped")
+				return
+			}
+
 			JC.Logln("App stopped")
 
 			if !JA.UseStatus().IsReady() {
