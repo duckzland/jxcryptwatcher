@@ -2,9 +2,10 @@ package types
 
 import (
 	"fmt"
-	JC "jxwatcher/core"
 	"sync"
 	"time"
+
+	JC "jxwatcher/core"
 )
 
 const exchangeCacheUpdateThreshold = 10 * time.Second
@@ -31,10 +32,9 @@ type exchangeDataCacheType struct {
 	data        sync.Map
 	timestamp   time.Time
 	lastUpdated *time.Time
-	metaLock    sync.RWMutex
+	mu          sync.RWMutex
 }
 
-// Initialization
 func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	ec.data = sync.Map{}
 	ec.SetTimestamp(time.Now())
@@ -42,32 +42,30 @@ func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	return ec
 }
 
-// Getters and Setters
 func (ec *exchangeDataCacheType) GetTimestamp() time.Time {
-	ec.metaLock.RLock()
-	defer ec.metaLock.RUnlock()
+	ec.mu.RLock()
+	defer ec.mu.RUnlock()
 	return ec.timestamp
 }
 
 func (ec *exchangeDataCacheType) SetTimestamp(t time.Time) {
-	ec.metaLock.Lock()
+	ec.mu.Lock()
 	ec.timestamp = t
-	ec.metaLock.Unlock()
+	ec.mu.Unlock()
 }
 
 func (ec *exchangeDataCacheType) GetLastUpdated() *time.Time {
-	ec.metaLock.RLock()
-	defer ec.metaLock.RUnlock()
+	ec.mu.RLock()
+	defer ec.mu.RUnlock()
 	return ec.lastUpdated
 }
 
 func (ec *exchangeDataCacheType) SetLastUpdated(t *time.Time) {
-	ec.metaLock.Lock()
+	ec.mu.Lock()
 	ec.lastUpdated = t
-	ec.metaLock.Unlock()
+	ec.mu.Unlock()
 }
 
-// Core operations
 func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 	if val, ok := ec.data.Load(ck); ok {
 		ex := val.(exchangeDataType)
@@ -129,7 +127,6 @@ func (ec *exchangeDataCacheType) ShouldRefresh() bool {
 	return time.Now().After(last.Add(exchangeCacheUpdateThreshold))
 }
 
-// Serialization
 func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 	var result []exchangeDataSnapshot
 	cutoff := time.Now().Add(-24 * time.Hour)
@@ -207,7 +204,6 @@ func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 	ec.SetLastUpdated(&snapshot.LastUpdated)
 }
 
-// Key generation
 func (ec *exchangeDataCacheType) CreateKeyFromExchangeData(ex *exchangeDataType) string {
 	return ec.CreateKeyFromInt(ex.SourceId, ex.TargetId)
 }

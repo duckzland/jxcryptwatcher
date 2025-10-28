@@ -34,65 +34,6 @@ type completionEntry struct {
 	worker         *completionWorker
 }
 
-func NewCompletionEntry(
-	options []string,
-	searchOptions []string,
-	popup *fyne.Container,
-) *completionEntry {
-
-	delay := 16 * time.Millisecond
-	if JC.IsMobile {
-		delay = 50 * time.Millisecond
-	}
-
-	c := &completionEntry{
-		options:       options,
-		popup:         popup,
-		popupPosition: fyne.NewPos(-1, -1),
-		entryPosition: fyne.NewPos(-1, -1),
-		itemHeight:    40,
-		shifted:       false,
-		shiftX:        36,
-		worker: &completionWorker{
-			searchable: searchOptions,
-			data:       options,
-			total:      len(searchOptions),
-			chunk:      len(searchOptions) / JC.MaximumThreads(4),
-			delay:      delay,
-		},
-	}
-
-	c.ExtendBaseWidget(c)
-
-	c.OnChanged = c.searchSuggestions
-
-	c.worker.Init()
-
-	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
-
-	cLayout := &completionListEntryLayout{
-		background: canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
-		listEntry:  c.completionList,
-		closeSize:  fyne.NewSize(32, 32),
-		closeBtn: NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
-			c.hideCompletion()
-		}, nil),
-	}
-
-	c.container = container.New(
-		cLayout,
-		cLayout.background,
-		cLayout.listEntry,
-		cLayout.closeBtn,
-	)
-
-	c.popup.Add(c.container)
-
-	c.popup.Hide()
-
-	return c
-}
-
 func (c *completionEntry) TypedKey(event *fyne.KeyEvent) {
 	c.Entry.TypedKey(event)
 }
@@ -385,4 +326,59 @@ func (c *completionEntry) setTextFromMenu(s string) {
 	c.popup.Hide()
 	c.unshiftEntry()
 	c.pause = false
+}
+
+func NewCompletionEntry(options []string, searchOptions []string, popup *fyne.Container) *completionEntry {
+
+	delay := 16 * time.Millisecond
+	if JC.IsMobile {
+		delay = 50 * time.Millisecond
+	}
+
+	c := &completionEntry{
+		options:       options,
+		popup:         popup,
+		popupPosition: fyne.NewPos(-1, -1),
+		entryPosition: fyne.NewPos(-1, -1),
+		itemHeight:    40,
+		shifted:       false,
+		shiftX:        36,
+		worker: &completionWorker{
+			searchable: searchOptions,
+			data:       options,
+			total:      len(searchOptions),
+			chunk:      len(searchOptions) / JC.MaximumThreads(4),
+			delay:      delay,
+		},
+	}
+
+	c.ExtendBaseWidget(c)
+
+	c.OnChanged = c.searchSuggestions
+
+	c.worker.Init()
+
+	c.completionList = NewCompletionList(c.setTextFromMenu, c.hideCompletion, c.itemHeight)
+
+	cLayout := &completionListEntryLayout{
+		background: canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
+		listEntry:  c.completionList,
+		closeSize:  fyne.NewSize(32, 32),
+		closeBtn: NewActionButton("close_entry", "", theme.CancelIcon(), "", "normal", func(btn ActionButton) {
+			c.hideCompletion()
+		}, nil),
+	}
+
+	c.container = container.New(
+		cLayout,
+		cLayout.background,
+		cLayout.listEntry,
+		cLayout.closeBtn,
+	)
+
+	c.popup.Add(c.container)
+
+	c.popup.Hide()
+
+	return c
 }

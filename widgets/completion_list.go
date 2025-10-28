@@ -40,47 +40,6 @@ type completionList struct {
 	done             chan struct{}
 }
 
-func NewCompletionList(
-	onChange func(string),
-	onClose func(),
-	itemHeight float32,
-) *completionList {
-	n := &completionList{
-		uuid:             JC.CreateUUID(),
-		onChange:         onChange,
-		onClose:          onClose,
-		itemHeight:       itemHeight,
-		scaledItemHeight: itemHeight,
-		scaledHeight:     0,
-		itemTotal:        0,
-		lastSize:         fyne.NewSize(0, 0),
-		scrollContent:    canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
-		contentBox:       container.New(layout.NewVBoxLayout()),
-		fps:              time.Millisecond * 32,
-		maxOffset:        0,
-		scrollLimiter:    0,
-		scrollOffset:     0,
-		dragging:         false,
-	}
-
-	n.scrollBox = container.NewVScroll(n.scrollContent)
-	n.scrollBox.OnScrolled = n.scrollingContent
-
-	n.root = container.New(
-		&completionListLayout{
-			itemHeight: n.itemHeight,
-			parent:     n,
-			lastSize:   fyne.NewSize(0, 0),
-		},
-		n.contentBox,
-		n.scrollBox,
-	)
-
-	n.ExtendBaseWidget(n)
-
-	return n
-}
-
 func (n *completionList) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(n.root)
 }
@@ -265,4 +224,41 @@ func (n *completionList) FocusGained() {
 }
 
 func (n *completionList) FocusLost() {
+}
+
+func NewCompletionList(onChange func(string), onClose func(), itemHeight float32) *completionList {
+	n := &completionList{
+		uuid:             JC.CreateUUID(),
+		onChange:         onChange,
+		onClose:          onClose,
+		itemHeight:       itemHeight,
+		scaledItemHeight: itemHeight,
+		scaledHeight:     0,
+		itemTotal:        0,
+		lastSize:         fyne.NewSize(0, 0),
+		scrollContent:    canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
+		contentBox:       container.New(layout.NewVBoxLayout()),
+		fps:              time.Millisecond * 32,
+		maxOffset:        0,
+		scrollLimiter:    0,
+		scrollOffset:     0,
+		dragging:         false,
+	}
+
+	n.scrollBox = container.NewVScroll(n.scrollContent)
+	n.scrollBox.OnScrolled = n.scrollingContent
+
+	n.root = container.New(
+		&completionListLayout{
+			itemHeight: n.itemHeight,
+			parent:     n,
+			lastSize:   fyne.NewSize(0, 0),
+		},
+		n.contentBox,
+		n.scrollBox,
+	)
+
+	n.ExtendBaseWidget(n)
+
+	return n
 }

@@ -15,13 +15,6 @@ type numericalEntry struct {
 	action         func(active bool)
 }
 
-func NewNumericalEntry(allow_decimals bool) *numericalEntry {
-	entry := &numericalEntry{}
-	entry.ExtendBaseWidget(entry)
-	entry.allow_decimals = allow_decimals
-	return entry
-}
-
 func (e *numericalEntry) SetAction(fn func(active bool)) {
 	e.action = fn
 }
@@ -70,4 +63,11 @@ func (e *numericalEntry) SetDefaultValue(s string) {
 
 func (e *numericalEntry) SetValidator(fn func(string) error) {
 	e.Validator = fn
+}
+
+func NewNumericalEntry(allow_decimals bool) *numericalEntry {
+	entry := &numericalEntry{}
+	entry.ExtendBaseWidget(entry)
+	entry.allow_decimals = allow_decimals
+	return entry
 }

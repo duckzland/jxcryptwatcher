@@ -65,6 +65,67 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (er *exchangeResults) GetRate(rk string) int64 {
+
+	rko := strings.Split(rk, "|")
+
+	if len(rko) != 2 {
+		return JC.NETWORKING_BAD_PAYLOAD
+	}
+
+	rwt := strings.Split(rko[1], ",")
+	cks := make(map[string]bool)
+	rkt := []string{}
+
+	for _, id := range rwt {
+		id = strings.TrimSpace(id)
+		if id != "" && !cks[id] {
+			cks[id] = true
+			rkt = append(rkt, id)
+		}
+	}
+
+	sid := strings.TrimSpace(rko[0])
+	tid := strings.Join(rkt, ",")
+
+	if sid == "" || tid == "" {
+		return JC.NETWORKING_BAD_PAYLOAD
+	}
+
+	return JC.GetRequest(
+		UseConfig().ExchangeEndpoint,
+		er,
+		func(url url.Values, req *http.Request) {
+			url.Add("amount", "1")
+			url.Add("id", sid)
+			url.Add("convert_id", tid)
+		},
+		func(cc any) int64 {
+			dec, ok := cc.(*exchangeResults)
+			if !ok {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+
+			for _, ex := range dec.Rates {
+
+				// Debug to force display refresh!
+				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+
+				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)",
+				// 	ex.SourceSymbol,
+				// 	ex.SourceId,
+				// 	ex.TargetAmount.Text('f', -1),
+				// 	ex.TargetSymbol,
+				// 	ex.TargetId,
+				// )
+
+				UseExchangeCache().Insert(&ex)
+			}
+
+			return JC.NETWORKING_SUCCESS
+		})
+}
+
 func (er *exchangeResults) validateData(v map[string]any) bool {
 
 	if _, ok := v["data"]; !ok {
@@ -177,67 +238,6 @@ func (er *exchangeResults) validateRate(rate any) bool {
 	}
 
 	return true
-}
-
-func (er *exchangeResults) GetRate(rk string) int64 {
-
-	rko := strings.Split(rk, "|")
-
-	if len(rko) != 2 {
-		return JC.NETWORKING_BAD_PAYLOAD
-	}
-
-	rwt := strings.Split(rko[1], ",")
-	cks := make(map[string]bool)
-	rkt := []string{}
-
-	for _, id := range rwt {
-		id = strings.TrimSpace(id)
-		if id != "" && !cks[id] {
-			cks[id] = true
-			rkt = append(rkt, id)
-		}
-	}
-
-	sid := strings.TrimSpace(rko[0])
-	tid := strings.Join(rkt, ",")
-
-	if sid == "" || tid == "" {
-		return JC.NETWORKING_BAD_PAYLOAD
-	}
-
-	return JC.GetRequest(
-		UseConfig().ExchangeEndpoint,
-		er,
-		func(url url.Values, req *http.Request) {
-			url.Add("amount", "1")
-			url.Add("id", sid)
-			url.Add("convert_id", tid)
-		},
-		func(cc any) int64 {
-			dec, ok := cc.(*exchangeResults)
-			if !ok {
-				return JC.NETWORKING_BAD_DATA_RECEIVED
-			}
-
-			for _, ex := range dec.Rates {
-
-				// Debug to force display refresh!
-				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
-
-				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)",
-				// 	ex.SourceSymbol,
-				// 	ex.SourceId,
-				// 	ex.TargetAmount.Text('f', -1),
-				// 	ex.TargetSymbol,
-				// 	ex.TargetId,
-				// )
-
-				UseExchangeCache().Insert(&ex)
-			}
-
-			return JC.NETWORKING_SUCCESS
-		})
 }
 
 func NewExchangeResults() *exchangeResults {

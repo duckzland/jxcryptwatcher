@@ -20,10 +20,10 @@ type cryptosLoaderType struct {
 	Values []cryptoType `json:"values"`
 }
 
-func (c *cryptosLoaderType) loadFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) load() *cryptosLoaderType {
 	JC.PrintMemUsage("Start loading cryptos.json")
 
-	content, ok := JC.LoadFile("cryptos.json")
+	content, ok := JC.LoadFileFromStorage("cryptos.json")
 	if !ok {
 		JC.Logln("Failed to open cryptos.json")
 		JC.Notify("Failed to load cryptos data")
@@ -41,7 +41,7 @@ func (c *cryptosLoaderType) loadFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) createFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) create() *cryptosLoaderType {
 	status := c.GetCryptos()
 	switch status {
 	case JC.NETWORKING_FAILED_CREATE_FILE:
@@ -53,11 +53,11 @@ func (c *cryptosLoaderType) createFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) checkFile() *cryptosLoaderType {
+func (c *cryptosLoaderType) check() *cryptosLoaderType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}))
 
 	if !exists {
-		if c.createFile() == nil {
+		if c.create() == nil {
 			JC.Logln("Failed to create cryptos.json with default values")
 			JC.Notify("Failed to create cryptos data file")
 			c = &cryptosLoaderType{}
@@ -74,7 +74,7 @@ func (c *cryptosLoaderType) checkFile() *cryptosLoaderType {
 	return c
 }
 
-func (c *cryptosLoaderType) convertToMap() *cryptosMapType {
+func (c *cryptosLoaderType) convert() *cryptosMapType {
 	JC.PrintMemUsage("Start populating cryptos")
 
 	cm := &cryptosMapType{}
@@ -172,7 +172,7 @@ func CryptosLoaderInit() {
 	cryptosLoaderStorage = &cryptosLoaderType{}
 	cryptosMu.Unlock()
 
-	cm := cryptosLoaderStorage.checkFile().loadFile().convertToMap()
+	cm := cryptosLoaderStorage.check().load().convert()
 	cm.ClearMapCache()
 
 	UsePanelMaps().SetMaps(cm)

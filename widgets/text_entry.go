@@ -11,12 +11,6 @@ type textEntry struct {
 	action func(active bool)
 }
 
-func NewTextEntry() *textEntry {
-	entry := &textEntry{}
-	entry.ExtendBaseWidget(entry)
-	return entry
-}
-
 func (e *textEntry) SetAction(fn func(active bool)) {
 	e.action = fn
 }
@@ -49,4 +43,10 @@ func (e *textEntry) SetDefaultValue(s string) {
 
 func (e *textEntry) SetValidator(fn func(string) error) {
 	e.Validator = fn
+}
+
+func NewTextEntry() *textEntry {
+	entry := &textEntry{}
+	entry.ExtendBaseWidget(entry)
+	return entry
 }

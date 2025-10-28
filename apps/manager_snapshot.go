@@ -34,7 +34,7 @@ func (sm *snapshotManager) IsSnapshotted() bool {
 }
 
 func (sm *snapshotManager) LoadPanels() int {
-	raw, ok := JC.LoadFile("snapshots-panels.json")
+	raw, ok := JC.LoadFileFromStorage("snapshots-panels.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
 	}
@@ -66,7 +66,7 @@ func (sm *snapshotManager) LoadPanels() int {
 }
 
 func (sm *snapshotManager) LoadCryptos() int {
-	raw, ok := JC.LoadFile("snapshots-cryptos.json")
+	raw, ok := JC.LoadFileFromStorage("snapshots-cryptos.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
 	}
@@ -86,7 +86,7 @@ func (sm *snapshotManager) LoadCryptos() int {
 }
 
 func (sm *snapshotManager) LoadTickers() int {
-	raw, ok := JC.LoadFile("snapshots-tickers.json")
+	raw, ok := JC.LoadFileFromStorage("snapshots-tickers.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
 	}
@@ -116,7 +116,7 @@ func (sm *snapshotManager) LoadTickers() int {
 }
 
 func (sm *snapshotManager) LoadExchangeData() int {
-	raw, ok := JC.LoadFile("snapshots-exchange.json")
+	raw, ok := JC.LoadFileFromStorage("snapshots-exchange.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
 	}
@@ -131,7 +131,7 @@ func (sm *snapshotManager) LoadExchangeData() int {
 }
 
 func (sm *snapshotManager) LoadTickerData() int {
-	raw, ok := JC.LoadFile("snapshots-ticker-cache.json")
+	raw, ok := JC.LoadFileFromStorage("snapshots-ticker-cache.json")
 	if !ok || raw == "" || raw == "null" {
 		return JC.NO_SNAPSHOT
 	}
@@ -156,7 +156,7 @@ func (sm *snapshotManager) Delete() int {
 
 	success := true
 	for _, file := range files {
-		if !JC.EraseFile(file) {
+		if !JC.EraseFileFromStorage(file) {
 			success = false
 		}
 	}
@@ -168,11 +168,11 @@ func (sm *snapshotManager) Delete() int {
 }
 
 func (sm *snapshotManager) Save() {
-	JC.SaveFile("snapshots-panels.json", JT.UsePanelMaps().Serialize())
-	JC.SaveFile("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
-	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
-	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
-	JC.SaveFile("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
+	JC.SaveFileToStorage("snapshots-panels.json", JT.UsePanelMaps().Serialize())
+	JC.SaveFileToStorage("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
+	JC.SaveFileToStorage("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
+	JC.SaveFileToStorage("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
+	JC.SaveFileToStorage("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
 
 	sm.mu.Lock()
 	sm.snapshotted = true

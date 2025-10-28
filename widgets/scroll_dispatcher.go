@@ -15,14 +15,6 @@ type scrollDispatcher struct {
 	scroller *container.Scroll
 }
 
-func NewScrollDispatcher() *scrollDispatcher {
-	s := &scrollDispatcher{
-		content: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
-	}
-	s.ExtendBaseWidget(s)
-	return s
-}
-
 func (s *scrollDispatcher) SetScroller(scroller *container.Scroll) {
 	s.scroller = scroller
 }
@@ -55,4 +47,12 @@ func (s *scrollDispatcher) DragEnd() {
 	if s.scroller != nil {
 		s.scroller.DragEnd()
 	}
+}
+
+func NewScrollDispatcher() *scrollDispatcher {
+	s := &scrollDispatcher{
+		content: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
+	}
+	s.ExtendBaseWidget(s)
+	return s
 }

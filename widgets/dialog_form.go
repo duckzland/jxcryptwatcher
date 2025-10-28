@@ -39,6 +39,56 @@ type dialogForm struct {
 	validationDone  chan struct{}
 }
 
+func (d *dialogForm) Resize(size fyne.Size) {
+	d.layer.Resize(d.parent.Canvas().Size())
+}
+
+func (d *dialogForm) Show() {
+	d.layer.Refresh()
+}
+
+func (d *dialogForm) Hide() {
+
+	d.confirm.Destroy()
+	d.cancel.Destroy()
+
+	if d.destroy != nil {
+		d.destroy(d.layer)
+		return
+	}
+
+	d.parent.Canvas().Overlays().Remove(d.layer)
+}
+
+func (d *dialogForm) Submit() {
+	if err := d.form.Validate(); err != nil {
+		return
+	}
+
+	if d.confirm.IsDisabled() {
+		return
+	}
+
+	if d.callback != nil {
+		if d.callback() {
+			d.Hide()
+			return
+		}
+
+		return
+	}
+
+	d.Hide()
+}
+
+func (d *dialogForm) GetContent() *fyne.Container {
+	return d.content
+}
+
+func (d *dialogForm) GetForm() *widget.Form {
+	return d.form
+}
+
 func NewDialogForm(
 	titleText string,
 	items []*widget.FormItem,
@@ -157,54 +207,4 @@ func NewDialogForm(
 	}
 
 	return fd
-}
-
-func (d *dialogForm) Resize(size fyne.Size) {
-	d.layer.Resize(d.parent.Canvas().Size())
-}
-
-func (d *dialogForm) Show() {
-	d.layer.Refresh()
-}
-
-func (d *dialogForm) Hide() {
-
-	d.confirm.Destroy()
-	d.cancel.Destroy()
-
-	if d.destroy != nil {
-		d.destroy(d.layer)
-		return
-	}
-
-	d.parent.Canvas().Overlays().Remove(d.layer)
-}
-
-func (d *dialogForm) Submit() {
-	if err := d.form.Validate(); err != nil {
-		return
-	}
-
-	if d.confirm.IsDisabled() {
-		return
-	}
-
-	if d.callback != nil {
-		if d.callback() {
-			d.Hide()
-			return
-		}
-
-		return
-	}
-
-	d.Hide()
-}
-
-func (d *dialogForm) GetContent() *fyne.Container {
-	return d.content
-}
-
-func (d *dialogForm) GetForm() *widget.Form {
-	return d.form
 }

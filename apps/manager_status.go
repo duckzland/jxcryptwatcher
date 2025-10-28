@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
+	"fyne.io/fyne/v2"
+
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
-
-	"fyne.io/fyne/v2"
 )
 
 var statusManagerStorage *statusManager = nil

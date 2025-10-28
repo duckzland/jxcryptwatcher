@@ -24,35 +24,7 @@ type configType struct {
 	Version           string `json:"version"`
 }
 
-func (c *configType) loadFile() bool {
-	configMu.Lock()
-	defer configMu.Unlock()
-
-	content, ok := JC.LoadFile("config.json")
-	if !ok {
-		JC.Logf("Failed to load config.json")
-		configStorage.checkFile()
-
-		return c.IsValid() && c.IsValidTickers()
-	}
-
-	if err := json.Unmarshal([]byte(content), c); err != nil {
-		JC.Logf("Failed to unmarshal config.json: %v", err)
-		return false
-	}
-
-	if c.updateDefault() {
-		// Call directly!, using c.SaveConfig() will cause double lock!
-		JC.SaveFile("config.json", configStorage)
-		return false
-	}
-
-	JC.Logln("Configuration Loaded")
-
-	return true
-}
-
-func (c *configType) updateDefault() bool {
+func (c *configType) update() bool {
 
 	if c.Version != "1.7.0" {
 		JC.Logln("Updating old config to 1.7.0")
@@ -86,14 +58,42 @@ func (c *configType) updateDefault() bool {
 	return false
 }
 
-func (c *configType) saveFile() bool {
+func (c *configType) load() bool {
+	configMu.Lock()
+	defer configMu.Unlock()
+
+	content, ok := JC.LoadFileFromStorage("config.json")
+	if !ok {
+		JC.Logf("Failed to load config.json")
+		configStorage.check()
+
+		return c.IsValid() && c.IsValidTickers()
+	}
+
+	if err := json.Unmarshal([]byte(content), c); err != nil {
+		JC.Logf("Failed to unmarshal config.json: %v", err)
+		return false
+	}
+
+	if c.update() {
+		// Call directly!, using c.SaveConfig() will cause double lock!
+		JC.SaveFileToStorage("config.json", configStorage)
+		return false
+	}
+
+	JC.Logln("Configuration Loaded")
+
+	return true
+}
+
+func (c *configType) save() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 
-	return JC.SaveFile("config.json", configStorage)
+	return JC.SaveFileToStorage("config.json", configStorage)
 }
 
-func (c *configType) checkFile() *configType {
+func (c *configType) check() *configType {
 	configMu.Lock()
 	defer configMu.Unlock()
 
@@ -113,7 +113,7 @@ func (c *configType) checkFile() *configType {
 			Delay:             60,
 		}
 
-		if !JC.SaveFile("config.json", data) {
+		if !JC.SaveFileToStorage("config.json", data) {
 			JC.Logln("Failed to create config.json with default values")
 			configStorage = &data
 			return configStorage
@@ -185,7 +185,7 @@ func ConfigInit() bool {
 	configStorage = &configType{}
 	configMu.Unlock()
 
-	return UseConfig().checkFile().loadFile()
+	return UseConfig().check().load()
 }
 
 func UseConfig() *configType {
@@ -193,5 +193,5 @@ func UseConfig() *configType {
 }
 
 func ConfigSave() bool {
-	return UseConfig().saveFile()
+	return UseConfig().save()
 }

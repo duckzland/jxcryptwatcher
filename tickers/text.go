@@ -15,18 +15,6 @@ type tickerText struct {
 	label *canvas.Text
 }
 
-func NewTickerText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *tickerText {
-	s := &tickerText{
-		label: canvas.NewText(text, color),
-	}
-
-	s.label.TextSize = size
-	s.label.Alignment = alignment
-	s.label.TextStyle = style
-	s.ExtendBaseWidget(s)
-	return s
-}
-
 func (s *tickerText) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(s.label)
 }
@@ -57,4 +45,16 @@ func (s *tickerText) SetText(t string) {
 
 func (s *tickerText) Visible() bool {
 	return s.label.Visible()
+}
+
+func NewTickerText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *tickerText {
+	s := &tickerText{
+		label: canvas.NewText(text, color),
+	}
+
+	s.label.TextSize = size
+	s.label.Alignment = alignment
+	s.label.TextStyle = style
+	s.ExtendBaseWidget(s)
+	return s
 }

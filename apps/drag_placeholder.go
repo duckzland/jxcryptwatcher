@@ -17,18 +17,6 @@ type dragPlaceholder struct {
 	canvas  *canvas.Rectangle
 }
 
-func NewDragPlaceholder() *dragPlaceholder {
-	wrapper := &dragPlaceholder{
-		bgcolor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
-		canvas:  canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
-	}
-
-	wrapper.canvas.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-	wrapper.ExtendBaseWidget(wrapper)
-
-	return wrapper
-}
-
 func (h *dragPlaceholder) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.canvas)
 }
@@ -64,4 +52,16 @@ func (h *dragPlaceholder) IsColor(c color.Color) bool {
 		return false
 	}
 	return h.canvas.FillColor == c
+}
+
+func NewDragPlaceholder() *dragPlaceholder {
+	wrapper := &dragPlaceholder{
+		bgcolor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
+		canvas:  canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTransparent)),
+	}
+
+	wrapper.canvas.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
+	wrapper.ExtendBaseWidget(wrapper)
+
+	return wrapper
 }

@@ -19,7 +19,7 @@ import (
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
-func UpdateDisplay() bool {
+func updateDisplay() bool {
 	const chunkSize = 100
 
 	var allIDs []string
@@ -86,7 +86,7 @@ func UpdateDisplay() bool {
 	return true
 }
 
-func UpdateTickerDisplay() bool {
+func updateTickerDisplay() bool {
 
 	success := 0
 	tickers := []string{}
@@ -127,7 +127,7 @@ func UpdateTickerDisplay() bool {
 	return true
 }
 
-func UpdateRates() bool {
+func updateRates() bool {
 
 	if JA.UseStatus().IsFetchingRates() {
 		return false
@@ -186,7 +186,7 @@ func UpdateRates() bool {
 
 			for _, result := range results {
 
-				ns := DetectHTTPResponse(result.Code())
+				ns := detectHTTPResponse(result.Code())
 				mu.Lock()
 				if hasError == JC.STATUS_SUCCESS || hasError < ns {
 					hasError = ns
@@ -198,7 +198,7 @@ func UpdateRates() bool {
 				mu.Unlock()
 			}
 
-			ProcessUpdatePanelComplete(hasError)
+			processUpdatePanelComplete(hasError)
 
 			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(jb))
 
@@ -214,7 +214,7 @@ func UpdateRates() bool {
 	return true
 }
 
-func UpdateTickers() bool {
+func updateTickers() bool {
 
 	if JA.UseStatus().IsFetchingTickers() {
 		return false
@@ -271,7 +271,7 @@ func UpdateTickers() bool {
 			defer JA.UseStatus().EndFetchingTickers()
 
 			for _, result := range results {
-				ns := DetectHTTPResponse(result.Code())
+				ns := detectHTTPResponse(result.Code())
 				switch ns {
 				case JC.STATUS_SUCCESS:
 
@@ -287,12 +287,12 @@ func UpdateTickers() bool {
 				mu.Unlock()
 			}
 
-			ProcessUpdateTickerComplete(hasError)
+			processUpdateTickerComplete(hasError)
 
 			JC.Logf("Tickers Rate updated: %v/%v", successCount, len(payloads))
 
 			if successCount > 0 {
-				UpdateTickerDisplay()
+				updateTickerDisplay()
 			}
 
 			JC.UseWorker().Reset("update_tickers")
@@ -301,7 +301,7 @@ func UpdateTickers() bool {
 	return true
 }
 
-func DetectHTTPResponse(rs int64) int {
+func detectHTTPResponse(rs int64) int {
 
 	switch rs {
 	case JC.NETWORKING_SUCCESS:
@@ -321,7 +321,7 @@ func DetectHTTPResponse(rs int64) int {
 	return JC.STATUS_SUCCESS
 }
 
-func ProcessUpdatePanelComplete(status int) {
+func processUpdatePanelComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
@@ -367,7 +367,7 @@ func ProcessUpdatePanelComplete(status int) {
 	}
 }
 
-func ProcessUpdateTickerComplete(status int) {
+func processUpdateTickerComplete(status int) {
 
 	switch status {
 	case JC.STATUS_SUCCESS:
@@ -414,7 +414,7 @@ func ProcessUpdateTickerComplete(status int) {
 	}
 }
 
-func ProcessFetchingCryptosComplete(status int) {
+func processFetchingCryptosComplete(status int) {
 
 	switch status {
 	case JC.STATUS_SUCCESS:
@@ -463,7 +463,7 @@ func ProcessFetchingCryptosComplete(status int) {
 	}
 }
 
-func ValidateRatesCache() bool {
+func validateRatesCache() bool {
 
 	list := JT.UsePanelMaps().GetData()
 	for _, pot := range list {
@@ -481,7 +481,7 @@ func ValidateRatesCache() bool {
 	return true
 }
 
-func ValidateRateCache(pot JT.PanelData) bool {
+func validateRateCache(pot JT.PanelData) bool {
 
 	// Always get linked data! do not use the copied
 	pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
@@ -495,7 +495,7 @@ func ValidateRateCache(pot JT.PanelData) bool {
 	return true
 }
 
-func RemovePanel(uuid string) {
+func removePanel(uuid string) {
 
 	if JP.UsePanelGrid().RemoveByID(uuid) {
 		JC.Logf("Removing panel %s", uuid)
@@ -517,7 +517,7 @@ func RemovePanel(uuid string) {
 	JA.UseStatus().DetectData()
 }
 
-func SavePanelForm(pdt JT.PanelData) {
+func savePanelForm(pdt JT.PanelData) {
 
 	JC.Notify("Saving panel settings...")
 
@@ -530,7 +530,7 @@ func SavePanelForm(pdt JT.PanelData) {
 	// Prevent UX locking
 	go func() {
 
-		hasCache := ValidateRateCache(pdt)
+		hasCache := validateRateCache(pdt)
 
 		if hasCache && !pdt.IsStatus(JC.STATE_BAD_CONFIG) {
 			if pdt.UpdateRate() {
@@ -563,7 +563,7 @@ func SavePanelForm(pdt JT.PanelData) {
 						for _, result := range results {
 							JT.UseExchangeCache().SoftReset()
 
-							status := DetectHTTPResponse(result.Code())
+							status := detectHTTPResponse(result.Code())
 
 							switch status {
 							case JC.STATUS_SUCCESS:
@@ -575,7 +575,7 @@ func SavePanelForm(pdt JT.PanelData) {
 								pdt.SetStatus(JC.STATE_ERROR)
 							}
 
-							ProcessUpdatePanelComplete(status)
+							processUpdatePanelComplete(status)
 						}
 					})
 			}
@@ -589,7 +589,7 @@ func SavePanelForm(pdt JT.PanelData) {
 
 }
 
-func OpenNewPanelForm() {
+func openNewPanelForm() {
 	if JA.UseStatus().IsOverlayShown() {
 		return
 	}
@@ -600,11 +600,11 @@ func OpenNewPanelForm() {
 		"new",
 		"",
 		func(npdt JT.PanelData) {
-			SavePanelForm(npdt)
+			savePanelForm(npdt)
 		},
 		func(npdt JT.PanelData) {
 
-			JP.UsePanelGrid().Add(CreatePanel(npdt))
+			JP.UsePanelGrid().Add(createPanel(npdt))
 			JP.UsePanelGrid().ForceRefresh()
 			JA.UseStatus().DetectData()
 
@@ -633,7 +633,7 @@ func OpenNewPanelForm() {
 
 }
 
-func OpenPanelEditForm(pk string, uuid string) {
+func openPanelEditForm(pk string, uuid string) {
 
 	if JA.UseStatus().IsOverlayShown() {
 		return
@@ -643,7 +643,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 	d := JP.NewPanelForm(pk, uuid,
 		func(npdt JT.PanelData) {
-			SavePanelForm(npdt)
+			savePanelForm(npdt)
 		},
 		nil,
 		func(layer *fyne.Container) {
@@ -660,7 +660,7 @@ func OpenPanelEditForm(pk string, uuid string) {
 
 }
 
-func OpenSettingForm() {
+func openSettingForm() {
 
 	if JA.UseStatus().IsOverlayShown() {
 		return
@@ -713,7 +713,7 @@ func OpenSettingForm() {
 	}
 }
 
-func ToggleDraggable() {
+func toggleDraggable() {
 
 	if JA.UseStatus().IsDraggable() {
 		JA.UseStatus().DisallowDragging()
@@ -727,7 +727,7 @@ func ToggleDraggable() {
 	}
 }
 
-func ScheduledNotificationReset() {
+func scheduledNotificationReset() {
 	JC.UseDebouncer().Call("notification_clear", 6000*time.Millisecond, func() {
 
 		// Break loop once notification is empty
@@ -746,7 +746,7 @@ func ScheduledNotificationReset() {
 			JW.UseNotification().ClearText()
 
 		} else {
-			ScheduledNotificationReset()
+			scheduledNotificationReset()
 		}
 	})
 }
@@ -756,6 +756,6 @@ func setAppIcon() {
 	JC.Window.SetIcon(icon)
 }
 
-func CreatePanel(pkt JT.PanelData) fyne.CanvasObject {
-	return JP.NewPanelDisplay(pkt, OpenPanelEditForm, RemovePanel)
+func createPanel(pkt JT.PanelData) fyne.CanvasObject {
+	return JP.NewPanelDisplay(pkt, openPanelEditForm, removePanel)
 }

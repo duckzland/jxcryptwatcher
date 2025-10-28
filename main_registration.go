@@ -11,7 +11,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 
-	JN "jxwatcher/animations"
 	JX "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
@@ -159,7 +158,7 @@ func registerActions() {
 	// Open settings
 	JA.UseAction().Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn JW.ActionButton) {
-			OpenSettingForm()
+			openSettingForm()
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatus().IsReady() {
@@ -208,7 +207,7 @@ func registerActions() {
 	// Panel drag toggle
 	JA.UseAction().Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn JW.ActionButton) {
-			ToggleDraggable()
+			toggleDraggable()
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatus().IsReady() {
@@ -256,7 +255,7 @@ func registerActions() {
 	// Add new panel
 	JA.UseAction().Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn JW.ActionButton) {
-			OpenNewPanelForm()
+			openNewPanelForm()
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatus().IsReady() {
@@ -299,7 +298,7 @@ func registerWorkers() {
 		},
 		nil,
 		func(any) bool {
-			if UpdateDisplay() {
+			if updateDisplay() {
 				JA.UseLayout().RegisterDisplayUpdate(time.Now())
 				return true
 			}
@@ -341,7 +340,7 @@ func registerWorkers() {
 			return max(JT.UseConfig().Delay*1000, 30000)
 		},
 		func(any) bool {
-			return UpdateRates()
+			return updateRates()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -379,7 +378,7 @@ func registerWorkers() {
 			return max(JT.UseConfig().Delay*1000, 30000)
 		},
 		func(any) bool {
-			return UpdateTickers()
+			return updateTickers()
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -414,7 +413,7 @@ func registerWorkers() {
 				JW.UseNotification().UpdateText(latest)
 			})
 
-			ScheduledNotificationReset()
+			scheduledNotificationReset()
 			return true
 		},
 		func() bool {
@@ -449,8 +448,8 @@ func registerFetchers() {
 		func(result JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingCryptos()
 
-			status := DetectHTTPResponse(result.Code())
-			ProcessFetchingCryptosComplete(status)
+			status := detectHTTPResponse(result.Code())
+			processFetchingCryptosComplete(status)
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
@@ -764,7 +763,7 @@ func registerLifecycle() {
 				fyne.Do(func() {
 
 					JS.RegisterTickerGrid()
-					JP.RegisterPanelGrid(CreatePanel)
+					JP.RegisterPanelGrid(createPanel)
 
 					JA.UseStatus().InitData()
 					JA.UseLayout().RegisterContent(JP.UsePanelGrid())
@@ -869,7 +868,7 @@ func registerDispatcher() {
 	JC.PrintPerfStats("Creating Dispatcher Buffer", time.Now())
 
 	JC.RegisterDispatcher().Init()
-	JN.RegisterAnimationDispatcher().Init()
+	JX.RegisterAnimationDispatcher().Init()
 
 	ad := JX.UseAnimationDispatcher()
 	ad.SetBufferSize(1000000)

@@ -29,53 +29,6 @@ type tickerDisplay struct {
 	state      int
 }
 
-func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
-	uuid := JC.CreateUUID()
-	tdt.SetID(uuid)
-
-	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
-
-	tl := &tickerLayout{
-		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTickerBG)),
-		title:      NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		status:     NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		content:    NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-	}
-
-	tl.background.CornerRadius = JC.UseTheme().Size(JC.SizeTickerBorderRadius)
-
-	tv := tdt.UseData()
-	ts := tdt.UseStatus()
-
-	tk := &tickerDisplay{
-		tag: uuid,
-		container: container.New(
-			tl,
-			tl.background,
-			tl.title,
-			tl.content,
-			tl.status,
-		),
-		background: tl.background,
-		title:      tl.title,
-		content:    tl.content,
-		status:     tl.status,
-	}
-
-	tk.ExtendBaseWidget(tk)
-
-	tv.AddListener(binding.NewDataListener(tk.updateContent))
-	ts.AddListener(binding.NewDataListener(tk.updateContent))
-
-	tk.updateContent()
-
-	if !JC.IsMobile {
-		JA.StartFadeInBackground(tk.background, 100*time.Millisecond, nil)
-	}
-
-	return tk
-}
-
 func (h *tickerDisplay) GetTag() string {
 	return h.tag
 }
@@ -247,4 +200,51 @@ func (h *tickerDisplay) updateContent() {
 	if h.state != state {
 		h.Refresh()
 	}
+}
+
+func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
+	uuid := JC.CreateUUID()
+	tdt.SetID(uuid)
+
+	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
+
+	tl := &tickerLayout{
+		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTickerBG)),
+		title:      NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		status:     NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		content:    NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+	}
+
+	tl.background.CornerRadius = JC.UseTheme().Size(JC.SizeTickerBorderRadius)
+
+	tv := tdt.UseData()
+	ts := tdt.UseStatus()
+
+	tk := &tickerDisplay{
+		tag: uuid,
+		container: container.New(
+			tl,
+			tl.background,
+			tl.title,
+			tl.content,
+			tl.status,
+		),
+		background: tl.background,
+		title:      tl.title,
+		content:    tl.content,
+		status:     tl.status,
+	}
+
+	tk.ExtendBaseWidget(tk)
+
+	tv.AddListener(binding.NewDataListener(tk.updateContent))
+	ts.AddListener(binding.NewDataListener(tk.updateContent))
+
+	tk.updateContent()
+
+	if !JC.IsMobile {
+		JA.StartFadeInBackground(tk.background, 100*time.Millisecond, nil)
+	}
+
+	return tk
 }

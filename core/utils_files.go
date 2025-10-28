@@ -125,7 +125,7 @@ func GetUserDirectory() string {
 	return filepath.Join(path...)
 }
 
-func SaveFile(filename string, data any) bool {
+func SaveFileToStorage(filename string, data any) bool {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		Logln("Error marshaling", filename, err)
@@ -134,7 +134,7 @@ func SaveFile(filename string, data any) bool {
 	return CreateFile(BuildPathRelatedToUserDirectory([]string{filename}), string(jsonData))
 }
 
-func LoadFile(filename string) (string, bool) {
+func LoadFileFromStorage(filename string) (string, bool) {
 	fileURI, err := storage.ParseURI(BuildPathRelatedToUserDirectory([]string{filename}))
 	if err != nil {
 		Logln("Error parsing URI for", filename, err)
@@ -157,7 +157,7 @@ func LoadFile(filename string) (string, bool) {
 	return buffer.String(), true
 }
 
-func EraseFile(filename string) bool {
+func EraseFileFromStorage(filename string) bool {
 	path := BuildPathRelatedToUserDirectory([]string{filename})
 	return DeleteFile(path)
 }

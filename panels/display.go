@@ -49,81 +49,6 @@ type panelDisplay struct {
 	bottomText   *panelText
 }
 
-func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string)) *panelDisplay {
-
-	uuid := JC.CreateUUID()
-	pdt.SetID(uuid)
-	pv := pdt.UseData()
-	ps := pdt.UseStatus()
-
-	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
-
-	pl := &panelDisplayLayout{
-		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
-		title:      NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		subtitle:   NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		content:    NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		bottomText: NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-	}
-
-	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-
-	pl.action = NewPanelAction(
-		func() {
-			dynpk, _ := pv.Get()
-			if onEdit != nil {
-				onEdit(dynpk, uuid)
-			}
-		},
-		func() {
-			if onDelete != nil {
-				JA.StartFadeOutBackground(pl.background, 300*time.Millisecond, func() {
-					onDelete(uuid)
-				})
-			}
-		},
-	)
-
-	pd := &panelDisplay{
-		tag: uuid,
-		fps: 3 * time.Millisecond,
-		container: container.New(
-			pl,
-			pl.background,
-			pl.title,
-			pl.content,
-			pl.subtitle,
-			pl.bottomText,
-			pl.action,
-		),
-		shown:      0,
-		action:     pl.action,
-		visible:    false,
-		background: pl.background,
-		title:      pl.title,
-		content:    pl.content,
-		subtitle:   pl.subtitle,
-		bottomText: pl.bottomText,
-	}
-
-	if JC.IsMobile {
-		pd.fps = 6 * time.Millisecond
-	}
-
-	pd.ExtendBaseWidget(pd)
-
-	pd.action.Hide()
-
-	pd.status = pdt.GetStatus()
-
-	pv.AddListener(binding.NewDataListener(pd.updateContent))
-	ps.AddListener(binding.NewDataListener(pd.updateContent))
-
-	pd.Hide()
-
-	return pd
-}
-
 func (h *panelDisplay) GetTag() string {
 	return h.tag
 }
@@ -501,4 +426,79 @@ func (h *panelDisplay) syncData() bool {
 	JT.UsePanelMaps().SetData(nd)
 
 	return true
+}
+
+func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string)) *panelDisplay {
+
+	uuid := JC.CreateUUID()
+	pdt.SetID(uuid)
+	pv := pdt.UseData()
+	ps := pdt.UseStatus()
+
+	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
+
+	pl := &panelDisplayLayout{
+		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
+		title:      NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		subtitle:   NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		content:    NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		bottomText: NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+	}
+
+	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
+
+	pl.action = NewPanelAction(
+		func() {
+			dynpk, _ := pv.Get()
+			if onEdit != nil {
+				onEdit(dynpk, uuid)
+			}
+		},
+		func() {
+			if onDelete != nil {
+				JA.StartFadeOutBackground(pl.background, 300*time.Millisecond, func() {
+					onDelete(uuid)
+				})
+			}
+		},
+	)
+
+	pd := &panelDisplay{
+		tag: uuid,
+		fps: 3 * time.Millisecond,
+		container: container.New(
+			pl,
+			pl.background,
+			pl.title,
+			pl.content,
+			pl.subtitle,
+			pl.bottomText,
+			pl.action,
+		),
+		shown:      0,
+		action:     pl.action,
+		visible:    false,
+		background: pl.background,
+		title:      pl.title,
+		content:    pl.content,
+		subtitle:   pl.subtitle,
+		bottomText: pl.bottomText,
+	}
+
+	if JC.IsMobile {
+		pd.fps = 6 * time.Millisecond
+	}
+
+	pd.ExtendBaseWidget(pd)
+
+	pd.action.Hide()
+
+	pd.status = pdt.GetStatus()
+
+	pv.AddListener(binding.NewDataListener(pd.updateContent))
+	ps.AddListener(binding.NewDataListener(pd.updateContent))
+
+	pd.Hide()
+
+	return pd
 }

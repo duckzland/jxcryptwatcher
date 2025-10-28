@@ -26,26 +26,6 @@ type completionText struct {
 	traColor   color.Color
 }
 
-func NewCompletionText(height float32, parent *completionList) *completionText {
-	s := &completionText{
-		label:    canvas.NewText("", JC.UseTheme().GetColor(theme.ColorNameForeground)),
-		height:   height,
-		parent:   parent,
-		bgcolor:  JC.UseTheme().GetColor(theme.ColorNameHover),
-		sepcolor: JC.UseTheme().GetColor(theme.ColorNameSeparator),
-		traColor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
-	}
-
-	if !JC.IsMobile {
-		s.background = canvas.NewRectangle(s.traColor)
-	}
-
-	s.label.TextSize = JC.UseTheme().Size(JC.SizeCompletionText)
-	s.label.Alignment = fyne.TextAlignLeading
-	s.ExtendBaseWidget(s)
-	return s
-}
-
 func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
 	separator := canvas.NewLine(s.sepcolor)
 	separator.StrokeWidth = 1
@@ -120,3 +100,23 @@ func (s *completionText) MouseOut() {
 }
 
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
+
+func NewCompletionText(height float32, parent *completionList) *completionText {
+	s := &completionText{
+		label:    canvas.NewText("", JC.UseTheme().GetColor(theme.ColorNameForeground)),
+		height:   height,
+		parent:   parent,
+		bgcolor:  JC.UseTheme().GetColor(theme.ColorNameHover),
+		sepcolor: JC.UseTheme().GetColor(theme.ColorNameSeparator),
+		traColor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
+	}
+
+	if !JC.IsMobile {
+		s.background = canvas.NewRectangle(s.traColor)
+	}
+
+	s.label.TextSize = JC.UseTheme().Size(JC.SizeCompletionText)
+	s.label.Alignment = fyne.TextAlignLeading
+	s.ExtendBaseWidget(s)
+	return s
+}

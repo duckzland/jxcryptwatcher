@@ -7,16 +7,16 @@ import (
 	"io"
 	"sync"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2/storage"
+
+	JC "jxwatcher/core"
 )
 
 var panelsMu sync.RWMutex
 
 type panelsType []panelType
 
-func (p *panelsType) loadFile() *panelsType {
+func (p *panelsType) load() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -53,7 +53,7 @@ func (p *panelsType) loadFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) saveFile(maps *panelsMapType) bool {
+func (p *panelsType) save(maps *panelsMapType) bool {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
@@ -91,7 +91,7 @@ func (p *panelsType) saveFile(maps *panelsMapType) bool {
 	return JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}), string(jsonData))
 }
 
-func (p *panelsType) createFile() *panelsType {
+func (p *panelsType) create() *panelsType {
 	panelsMu.Lock()
 	defer panelsMu.Unlock()
 
@@ -99,10 +99,10 @@ func (p *panelsType) createFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) checkFile() *panelsType {
+func (p *panelsType) check() *panelsType {
 	exists, err := JC.FileExists(JC.BuildPathRelatedToUserDirectory([]string{"panels.json"}))
 	if !exists {
-		p.createFile()
+		p.create()
 	}
 
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *panelsType) checkFile() *panelsType {
 	return p
 }
 
-func (p *panelsType) convertToMap(maps *panelsMapType) {
+func (p *panelsType) convert(maps *panelsMapType) {
 	panelsMu.RLock()
 	defer panelsMu.RUnlock()
 
@@ -140,7 +140,7 @@ func PanelsInit() {
 	panels := panelsType{}
 	panelsMu.Unlock()
 
-	panels.checkFile().loadFile().convertToMap(UsePanelMaps())
+	panels.check().load().convert(UsePanelMaps())
 }
 
 func SavePanels() bool {
@@ -148,7 +148,7 @@ func SavePanels() bool {
 	panels := panelsType{}
 	panelsMu.RUnlock()
 
-	return panels.saveFile(UsePanelMaps())
+	return panels.save(UsePanelMaps())
 }
 
 func RemovePanel(uuid string) bool {

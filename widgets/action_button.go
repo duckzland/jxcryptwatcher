@@ -38,50 +38,6 @@ type actionButton struct {
 	validate      func(ActionButton)
 }
 
-func NewActionButton(
-	tag string,
-	text string,
-	icon fyne.Resource,
-	tip string,
-	state string,
-	onTapped func(ActionButton),
-	validate func(ActionButton),
-) ActionButton {
-
-	b := &actionButton{
-		Button: widget.Button{
-			Text:       text,
-			Icon:       icon,
-			Importance: widget.MediumImportance,
-		},
-		tag:      tag,
-		disabled: false,
-		hastip:   false,
-		validate: validate,
-	}
-
-	b.setState(state)
-
-	b.Button.OnTapped = func() {
-		if !b.disabled && b.allow_actions {
-			onTapped(b)
-		}
-	}
-
-	// Only extend tooltip if tip is non-empty
-	if tip != "" {
-		b.ExtendToolTipWidget(b)
-		b.SetToolTip(tip)
-		b.hastip = true
-	}
-
-	b.Button.ExtendBaseWidget(b)
-
-	b.allow_actions = true
-
-	return b
-}
-
 func (b *actionButton) ExtendBaseWidget(wid fyne.Widget) {
 	b.Button.ExtendBaseWidget(wid)
 }
@@ -257,4 +213,48 @@ func (b *actionButton) changeState(state string) {
 
 	b.setState(state)
 	fyne.Do(b.Button.Refresh)
+}
+
+func NewActionButton(
+	tag string,
+	text string,
+	icon fyne.Resource,
+	tip string,
+	state string,
+	onTapped func(ActionButton),
+	validate func(ActionButton),
+) ActionButton {
+
+	b := &actionButton{
+		Button: widget.Button{
+			Text:       text,
+			Icon:       icon,
+			Importance: widget.MediumImportance,
+		},
+		tag:      tag,
+		disabled: false,
+		hastip:   false,
+		validate: validate,
+	}
+
+	b.setState(state)
+
+	b.Button.OnTapped = func() {
+		if !b.disabled && b.allow_actions {
+			onTapped(b)
+		}
+	}
+
+	// Only extend tooltip if tip is non-empty
+	if tip != "" {
+		b.ExtendToolTipWidget(b)
+		b.SetToolTip(tip)
+		b.hastip = true
+	}
+
+	b.Button.ExtendBaseWidget(b)
+
+	b.allow_actions = true
+
+	return b
 }

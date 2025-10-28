@@ -17,16 +17,6 @@ type dialogOverlays struct {
 	bgcolor color.Color
 }
 
-func NewDialogOverlays() *dialogOverlays {
-	wrapper := &dialogOverlays{
-		bgcolor: JC.UseTheme().GetColor(theme.ColorNameOverlayBackground),
-	}
-
-	wrapper.ExtendBaseWidget(wrapper)
-
-	return wrapper
-}
-
 func (h *dialogOverlays) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(canvas.NewRectangle(h.bgcolor))
 }
@@ -66,4 +56,14 @@ func (h *dialogOverlays) DragEnd() {
 
 func (h *dialogOverlays) Cursor() desktop.StandardCursor {
 	return desktop.HiddenCursor
+}
+
+func NewDialogOverlays() *dialogOverlays {
+	wrapper := &dialogOverlays{
+		bgcolor: JC.UseTheme().GetColor(theme.ColorNameOverlayBackground),
+	}
+
+	wrapper.ExtendBaseWidget(wrapper)
+
+	return wrapper
 }

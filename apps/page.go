@@ -19,18 +19,6 @@ type staticPage struct {
 	content  string
 }
 
-func NewAppPage(icon *fyne.Resource, content string, onTap func()) *staticPage {
-	p := &staticPage{
-		icon:     icon,
-		content:  content,
-		OnTapped: onTap,
-	}
-
-	p.ExtendBaseWidget(p)
-
-	return p
-}
-
 func (p *staticPage) CreateRenderer() fyne.WidgetRenderer {
 	var objects []fyne.CanvasObject
 
@@ -82,4 +70,16 @@ func (p *staticPage) Cursor() desktop.Cursor {
 		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
+}
+
+func NewAppPage(icon *fyne.Resource, content string, onTap func()) *staticPage {
+	p := &staticPage{
+		icon:     icon,
+		content:  content,
+		OnTapped: onTap,
+	}
+
+	p.ExtendBaseWidget(p)
+
+	return p
 }

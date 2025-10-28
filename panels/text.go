@@ -15,18 +15,6 @@ type panelText struct {
 	label *canvas.Text
 }
 
-func NewPanelText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
-	s := &panelText{
-		label: canvas.NewText(text, color),
-	}
-
-	s.label.TextSize = size
-	s.label.Alignment = alignment
-	s.label.TextStyle = style
-	s.ExtendBaseWidget(s)
-	return s
-}
-
 func (s *panelText) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(s.label)
 }
@@ -59,4 +47,16 @@ func (s *panelText) SetText(t string) {
 
 func (s *panelText) Visible() bool {
 	return s.BaseWidget.Visible() && s.label.Visible()
+}
+
+func NewPanelText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
+	s := &panelText{
+		label: canvas.NewText(text, color),
+	}
+
+	s.label.TextSize = size
+	s.label.Alignment = alignment
+	s.label.TextStyle = style
+	s.ExtendBaseWidget(s)
+	return s
 }

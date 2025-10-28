@@ -61,12 +61,12 @@ func TestSaveAndLoadFile(t *testing.T) {
 	filename := "test_save_load.json"
 	testData := map[string]string{"hello": "world"}
 
-	ok := SaveFile(filename, testData)
+	ok := SaveFileToStorage(filename, testData)
 	if !ok {
 		t.Fatal("Failed to save file")
 	}
 
-	content, ok := LoadFile(filename)
+	content, ok := LoadFileFromStorage(filename)
 	if !ok {
 		t.Fatal("Failed to load file")
 	}
