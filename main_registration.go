@@ -11,14 +11,29 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 
+	JN "jxwatcher/animations"
 	JX "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
+	JP "jxwatcher/panels"
+	JS "jxwatcher/tickers"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
 
-func RegisterActions() {
+func registerApps() {
+	JC.RegisterDebouncer().Init()
+
+	JA.RegisterLayoutManager().Init()
+
+	JA.RegisterStatusManager().Init()
+
+	JA.RegisterSnapshotManager().Init()
+}
+
+func registerActions() {
+
+	JA.RegisterActionManager().Init()
 
 	// Refresh ticker data
 	JA.UseAction().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
@@ -277,7 +292,10 @@ func RegisterActions() {
 		}))
 }
 
-func RegisterWorkers() {
+func registerWorkers() {
+
+	JC.RegisterWorkerManager().Init()
+
 	JC.UseWorker().Register(
 		"update_display", 1,
 		func() int64 {
@@ -417,8 +435,10 @@ func RegisterWorkers() {
 	)
 }
 
-func RegisterFetchers() {
+func registerFetchers() {
 	var delay int64 = 100
+
+	JC.RegisterFetcherManager().Init()
 
 	JC.UseFetcher().Register(
 		"cryptos_map", 0,
@@ -681,10 +701,12 @@ func RegisterFetchers() {
 	)
 }
 
-func RegisterShutdown() {
+func registerShutdown() {
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	JC.Logln("Registering shutdown callback")
 
 	go func() {
 		sig := <-signals
@@ -696,10 +718,67 @@ func RegisterShutdown() {
 	}()
 }
 
-func RegisterLifecycle() {
+func registerLifecycle() {
 
 	// Hook into lifecycle events
 	if lc := JC.App.Lifecycle(); lc != nil {
+
+		lc.SetOnStarted(func() {
+
+			JC.Logln("App started")
+			JC.Notify("Application is starting...")
+
+			// Prevent locking when initialized at first install
+			JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
+
+				if !JT.ConfigInit() {
+				}
+
+				if JA.UseSnapshot().LoadCryptos() == JC.NO_SNAPSHOT {
+					JT.CryptosLoaderInit()
+				}
+
+				if JA.UseSnapshot().LoadExchangeData() == JC.NO_SNAPSHOT {
+					JT.UseExchangeCache().Reset()
+				}
+
+				if JA.UseSnapshot().LoadTickerData() == JC.NO_SNAPSHOT {
+					JT.UseTickerCache().Reset()
+				}
+
+				if JA.UseSnapshot().LoadPanels() == JC.NO_SNAPSHOT {
+					JT.PanelsInit()
+				}
+
+				if JA.UseSnapshot().LoadTickers() == JC.NO_SNAPSHOT {
+					JT.TickersInit()
+				}
+
+				fyne.Do(func() {
+
+					JS.RegisterTickerGrid()
+					JP.RegisterPanelGrid(CreatePanel)
+
+					JA.UseStatus().InitData()
+					JA.UseLayout().RegisterContent(JP.UsePanelGrid())
+					JP.UsePanelGrid().Refresh()
+					JA.UseLayout().UpdateState()
+
+					JC.Logln("App is ready: ", JA.UseStatus().IsReady())
+
+					if !JA.UseStatus().HasError() {
+
+						// Force Refresh
+						JT.UseExchangeCache().SoftReset()
+						JC.UseWorker().Call("update_rates", JC.CallImmediate)
+
+						// Force Refresh
+						JT.UseTickerCache().SoftReset()
+						JC.UseWorker().Call("update_tickers", JC.CallImmediate)
+					}
+				})
+			})
+		})
 
 		lc.SetOnEnteredForeground(func() {
 			JC.Logln("App entered foreground")
@@ -762,8 +841,12 @@ func RegisterLifecycle() {
 	}
 }
 
-func RegisterDispatcher() {
+func registerDispatcher() {
 	JC.PrintPerfStats("Creating Dispatcher Buffer", time.Now())
+
+	JC.RegisterDispatcher().Init()
+	JN.RegisterAnimationDispatcher().Init()
+
 	ad := JX.UseAnimationDispatcher()
 	ad.SetBufferSize(1000000)
 
@@ -793,7 +876,14 @@ func RegisterDispatcher() {
 	d.Start()
 }
 
-func RegisterCache() {
+func registerCache() {
+
+	JT.RegisterExchangeCache().Init()
+
+	JT.RegisterTickerCache().Init()
+
+	JC.RegisterCharWidthCache().Init()
+
 	// Prepopulating character sizes
 	sizes := []float32{
 		JC.UseTheme().Size(JC.SizePanelTitle),

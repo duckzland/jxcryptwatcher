@@ -1,17 +1,11 @@
 package main
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
-	JN "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
-	JP "jxwatcher/panels"
-	JX "jxwatcher/tickers"
-	JT "jxwatcher/types"
 )
 
 func main() {
@@ -29,45 +23,23 @@ func main() {
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
-	SetAppIcon()
+	setAppIcon()
 
-	JC.RegisterWorkerManager().Init()
+	registerApps()
 
-	JC.RegisterFetcherManager().Init()
+	registerCache()
 
-	JC.RegisterDispatcher().Init()
+	registerActions()
 
-	JC.RegisterDebouncer().Init()
+	registerFetchers()
 
-	JC.RegisterCharWidthCache().Init()
+	registerWorkers()
 
-	JT.RegisterExchangeCache().Init()
+	registerDispatcher()
 
-	JT.RegisterTickerCache().Init()
+	registerShutdown()
 
-	JA.RegisteLayoutManager().Init()
-
-	JA.RegisterActionManager().Init()
-
-	JA.RegisterStatusManager().Init()
-
-	JA.RegisterSnapshotManager().Init()
-
-	JN.RegisterAnimationDispatcher().Init()
-
-	RegisterCache()
-
-	RegisterActions()
-
-	RegisterFetchers()
-
-	RegisterWorkers()
-
-	RegisterLifecycle()
-
-	RegisterDispatcher()
-
-	RegisterShutdown()
+	registerLifecycle()
 
 	JC.Window.SetContent(JA.NewAppLayout())
 
@@ -76,59 +48,6 @@ func main() {
 	if JC.IsMobile {
 		JC.Window.SetFixedSize(true)
 	}
-
-	JC.Notify("Application is starting...")
-
-	// Prevent locking when initialized at first install
-	JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
-
-		if !JT.ConfigInit() {
-		}
-
-		if JA.UseSnapshot().LoadCryptos() == JC.NO_SNAPSHOT {
-			JT.CryptosLoaderInit()
-		}
-
-		if JA.UseSnapshot().LoadExchangeData() == JC.NO_SNAPSHOT {
-			JT.UseExchangeCache().Reset()
-		}
-
-		if JA.UseSnapshot().LoadTickerData() == JC.NO_SNAPSHOT {
-			JT.UseTickerCache().Reset()
-		}
-
-		if JA.UseSnapshot().LoadPanels() == JC.NO_SNAPSHOT {
-			JT.PanelsInit()
-		}
-
-		if JA.UseSnapshot().LoadTickers() == JC.NO_SNAPSHOT {
-			JT.TickersInit()
-		}
-
-		fyne.Do(func() {
-
-			JX.RegisterTickerGrid()
-			JP.RegisterPanelGrid(CreatePanel)
-
-			JA.UseStatus().InitData()
-			JA.UseLayout().RegisterContent(JP.UsePanelGrid())
-			JP.UsePanelGrid().Refresh()
-			JA.UseLayout().UpdateState()
-
-			JC.Logln("App is ready: ", JA.UseStatus().IsReady())
-
-			if !JA.UseStatus().HasError() {
-
-				// Force Refresh
-				JT.UseExchangeCache().SoftReset()
-				JC.UseWorker().Call("update_rates", JC.CallImmediate)
-
-				// Force Refresh
-				JT.UseTickerCache().SoftReset()
-				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
-			}
-		})
-	})
 
 	JC.Window.ShowAndRun()
 }

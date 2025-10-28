@@ -18,7 +18,8 @@ const PProfDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	log.SetPrefix("[" + APPID + "] ")
+	log.SetFlags(log.Ltime | log.Lmicroseconds)
 
 	if PProfDebug {
 		go func() {

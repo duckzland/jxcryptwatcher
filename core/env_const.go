@@ -6,6 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 )
 
+const APPID = "JXWatcher"
+
 const EPSILON = 1e-9
 const NETWORKING_SUCCESS = 0
 const NETWORKING_ERROR_CONNECTION = -1

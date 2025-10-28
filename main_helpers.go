@@ -751,7 +751,7 @@ func ScheduledNotificationReset() {
 	})
 }
 
-func SetAppIcon() {
+func setAppIcon() {
 	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
 	JC.Window.SetIcon(icon)
 }

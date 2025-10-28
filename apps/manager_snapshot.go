@@ -2,6 +2,7 @@ package apps
 
 import (
 	"encoding/json"
+	"sync"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -10,18 +11,25 @@ import (
 var snapshotManagerStorage *snapshotManager = nil
 
 type snapshotManager struct {
+	mu          sync.RWMutex
 	snapshotted bool
 }
 
 func (sm *snapshotManager) Init() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 	sm.snapshotted = false
 }
 
 func (sm *snapshotManager) Reset() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 	sm.snapshotted = false
 }
 
 func (sm *snapshotManager) IsSnapshotted() bool {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 	return sm.snapshotted
 }
 
@@ -165,7 +173,10 @@ func (sm *snapshotManager) Save() {
 	JC.SaveFile("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
 	JC.SaveFile("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
 	JC.SaveFile("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
+
+	sm.mu.Lock()
 	sm.snapshotted = true
+	sm.mu.Unlock()
 }
 
 func RegisterSnapshotManager() *snapshotManager {
