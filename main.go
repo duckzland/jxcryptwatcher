@@ -4,7 +4,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
-	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 )
 
@@ -25,7 +24,7 @@ func main() {
 
 	setAppIcon()
 
-	registerApps()
+	registerDebouncer()
 
 	registerCache()
 
@@ -40,8 +39,6 @@ func main() {
 	registerShutdown()
 
 	registerLifecycle()
-
-	JC.Window.SetContent(JA.NewAppLayout())
 
 	JC.Window.Resize(fyne.NewSize(920, 600))
 

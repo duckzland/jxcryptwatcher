@@ -21,14 +21,8 @@ import (
 	JW "jxwatcher/widgets"
 )
 
-func registerApps() {
+func registerDebouncer() {
 	JC.RegisterDebouncer().Init()
-
-	JA.RegisterLayoutManager().Init()
-
-	JA.RegisterStatusManager().Init()
-
-	JA.RegisterSnapshotManager().Init()
 }
 
 func registerActions() {
@@ -727,6 +721,14 @@ func registerLifecycle() {
 
 			JC.Logln("App started")
 			JC.Notify("Application is starting...")
+
+			JA.RegisterLayoutManager().Init()
+
+			JA.RegisterStatusManager().Init()
+
+			JA.RegisterSnapshotManager().Init()
+
+			JC.Window.SetContent(JA.NewAppLayout())
 
 			// Prevent locking when initialized at first install
 			JC.UseDebouncer().Call("initializing", 1*time.Millisecond, func() {
