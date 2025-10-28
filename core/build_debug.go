@@ -18,7 +18,7 @@ const PProfDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
-	log.SetPrefix("[" + APPID + "] ")
+	log.SetPrefix("[JX] ")
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
 
 	if PProfDebug {
