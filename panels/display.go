@@ -165,11 +165,18 @@ func (h *panelDisplay) updateContent() {
 	}
 
 	pwidth := h.Size().Width
-	if pwidth != 0 && pwidth < JC.UseTheme().Size(JC.SizePanelWidth) {
-		h.title.SetTextSize(JC.UseTheme().Size(JC.SizePanelTitleSmall))
-		h.subtitle.SetTextSize(JC.UseTheme().Size(JC.SizePanelSubTitleSmall))
-		h.bottomText.SetTextSize(JC.UseTheme().Size(JC.SizePanelBottomTextSmall))
-		h.content.SetTextSize(JC.UseTheme().Size(JC.SizePanelContentSmall))
+	if pwidth != 0 {
+		if pwidth < JC.UseTheme().Size(JC.SizePanelWidth) {
+			h.title.SetTextSize(JC.UseTheme().Size(JC.SizePanelTitleSmall))
+			h.subtitle.SetTextSize(JC.UseTheme().Size(JC.SizePanelSubTitleSmall))
+			h.bottomText.SetTextSize(JC.UseTheme().Size(JC.SizePanelBottomTextSmall))
+			h.content.SetTextSize(JC.UseTheme().Size(JC.SizePanelContentSmall))
+		} else {
+			h.title.SetTextSize(JC.UseTheme().Size(JC.SizePanelTitle))
+			h.subtitle.SetTextSize(JC.UseTheme().Size(JC.SizePanelSubTitle))
+			h.bottomText.SetTextSize(JC.UseTheme().Size(JC.SizePanelBottomText))
+			h.content.SetTextSize(JC.UseTheme().Size(JC.SizePanelContent))
+		}
 	}
 
 	if !JT.UsePanelMaps().ValidatePanel(pkt.Get()) {

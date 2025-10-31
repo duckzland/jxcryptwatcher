@@ -35,6 +35,190 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 	return t.darkColor(name)
 }
 
+func (t *appTheme) Font(style fyne.TextStyle) fyne.Resource {
+	if style.Monospace {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Monospace: true})
+	}
+	if style.Bold && style.Italic {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true, Italic: true})
+	}
+	if style.Bold {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true})
+	}
+	if style.Italic {
+		return theme.DefaultTheme().Font(fyne.TextStyle{Italic: true})
+	}
+	return theme.DefaultTheme().Font(fyne.TextStyle{})
+}
+
+func (t *appTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
+	return theme.DefaultTheme().Icon(name)
+}
+
+func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
+	switch name {
+
+	case theme.SizeNameSeparatorThickness:
+		return 1
+
+	case theme.SizeNameInlineIcon:
+		return 20
+
+	case theme.SizeNameInnerPadding:
+		return 8
+
+	case theme.SizeNameLineSpacing:
+		return 4
+
+	case theme.SizeNamePadding:
+		return 4
+
+	case theme.SizeNameScrollBar:
+		if IsMobile {
+			return 4
+		}
+		return 12
+
+	case theme.SizeNameScrollBarSmall:
+		if IsMobile {
+			return 4
+		}
+		return 12
+
+	case theme.SizeNameText:
+		return 14
+
+	case theme.SizeNameHeadingText:
+		return 24
+
+	case theme.SizeNameSubHeadingText:
+		return 18
+
+	case theme.SizeNameCaptionText:
+		return 11
+
+	case theme.SizeNameInputBorder:
+		return 1
+
+	case theme.SizeNameInputRadius:
+		return 5
+
+	case theme.SizeNameSelectionRadius:
+		return 3
+
+	case theme.SizeNameScrollBarRadius:
+		return 3
+
+	case theme.SizeNameWindowButtonHeight:
+		return 16
+
+	case theme.SizeNameWindowButtonRadius:
+		return 8
+
+	case theme.SizeNameWindowButtonIcon:
+		return 14
+
+	case theme.SizeNameWindowTitleBarHeight:
+		return 26
+
+	case SizeLayoutPadding:
+		return 12
+
+	case SizePanelBorderRadius:
+		return 6
+
+	case SizePanelTitle:
+		return 16
+
+	case SizePanelSubTitle:
+		return 16
+
+	case SizePanelBottomText:
+		return 12
+
+	case SizePanelContent:
+		return 26
+
+	case SizePanelTitleSmall:
+		return 13
+
+	case SizePanelSubTitleSmall:
+		return 13
+
+	case SizePanelBottomTextSmall:
+		return 10
+
+	case SizePanelContentSmall:
+		return 22
+
+	case SizePanelWidth:
+		return 320
+
+	case SizePanelHeight:
+		return 110
+
+	case SizeActionBtnWidth:
+		return 40
+
+	case SizeActionBtnGap:
+		return 6
+
+	case SizeTickerBorderRadius:
+		return 6
+
+	case SizeTickerWidth:
+		return 120
+
+	case SizeTickerHeight:
+		return 46
+
+	case SizeTickerTitle:
+		return 11
+
+	case SizeTickerContent:
+		return 18
+
+	case SizeNotificationText:
+		return 14
+
+	case SizeCompletionText:
+		return 14
+
+	case SizePaddingPanelLeft:
+		return 6
+
+	case SizePaddingPanelTop:
+		return 6
+
+	case SizePaddingPanelRight:
+		return 6
+
+	case SizePaddingPanelBottom:
+		return 6
+
+	case SizePaddingTickerLeft:
+		return 4
+
+	case SizePaddingTickerTop:
+		return 4
+
+	case SizePaddingTickerRight:
+		return 4
+
+	case SizePaddingTickerBottom:
+		return 4
+
+	default:
+		return 0
+	}
+}
+
+func (t *appTheme) GetColor(name fyne.ThemeColorName) color.Color {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Color(name, t.variant)
+}
+
 func (t *appTheme) lightColor(name fyne.ThemeColorName) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
@@ -225,190 +409,6 @@ func (t *appTheme) darkColor(name fyne.ThemeColorName) color.Color {
 	default:
 		return color.RGBA{R: 13, G: 20, B: 33, A: 255}
 	}
-}
-
-func (t *appTheme) Font(style fyne.TextStyle) fyne.Resource {
-	if style.Monospace {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Monospace: true})
-	}
-	if style.Bold && style.Italic {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true, Italic: true})
-	}
-	if style.Bold {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true})
-	}
-	if style.Italic {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Italic: true})
-	}
-	return theme.DefaultTheme().Font(fyne.TextStyle{})
-}
-
-func (t *appTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
-	return theme.DefaultTheme().Icon(name)
-}
-
-func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
-	switch name {
-
-	case theme.SizeNameSeparatorThickness:
-		return 1
-
-	case theme.SizeNameInlineIcon:
-		return 20
-
-	case theme.SizeNameInnerPadding:
-		return 8
-
-	case theme.SizeNameLineSpacing:
-		return 4
-
-	case theme.SizeNamePadding:
-		return 4
-
-	case theme.SizeNameScrollBar:
-		if IsMobile {
-			return 4
-		}
-		return 12
-
-	case theme.SizeNameScrollBarSmall:
-		if IsMobile {
-			return 4
-		}
-		return 12
-
-	case theme.SizeNameText:
-		return 14
-
-	case theme.SizeNameHeadingText:
-		return 24
-
-	case theme.SizeNameSubHeadingText:
-		return 18
-
-	case theme.SizeNameCaptionText:
-		return 11
-
-	case theme.SizeNameInputBorder:
-		return 1
-
-	case theme.SizeNameInputRadius:
-		return 5
-
-	case theme.SizeNameSelectionRadius:
-		return 3
-
-	case theme.SizeNameScrollBarRadius:
-		return 3
-
-	case theme.SizeNameWindowButtonHeight:
-		return 16
-
-	case theme.SizeNameWindowButtonRadius:
-		return 8
-
-	case theme.SizeNameWindowButtonIcon:
-		return 14
-
-	case theme.SizeNameWindowTitleBarHeight:
-		return 26
-
-	case SizeLayoutPadding:
-		return 12
-
-	case SizePanelBorderRadius:
-		return 6
-
-	case SizePanelTitle:
-		return 16
-
-	case SizePanelSubTitle:
-		return 16
-
-	case SizePanelBottomText:
-		return 12
-
-	case SizePanelContent:
-		return 26
-
-	case SizePanelTitleSmall:
-		return 13
-
-	case SizePanelSubTitleSmall:
-		return 13
-
-	case SizePanelBottomTextSmall:
-		return 10
-
-	case SizePanelContentSmall:
-		return 22
-
-	case SizePanelWidth:
-		return 320
-
-	case SizePanelHeight:
-		return 110
-
-	case SizeActionBtnWidth:
-		return 40
-
-	case SizeActionBtnGap:
-		return 6
-
-	case SizeTickerBorderRadius:
-		return 6
-
-	case SizeTickerWidth:
-		return 120
-
-	case SizeTickerHeight:
-		return 46
-
-	case SizeTickerTitle:
-		return 11
-
-	case SizeTickerContent:
-		return 18
-
-	case SizeNotificationText:
-		return 14
-
-	case SizeCompletionText:
-		return 14
-
-	case SizePaddingPanelLeft:
-		return 6
-
-	case SizePaddingPanelTop:
-		return 6
-
-	case SizePaddingPanelRight:
-		return 6
-
-	case SizePaddingPanelBottom:
-		return 6
-
-	case SizePaddingTickerLeft:
-		return 4
-
-	case SizePaddingTickerTop:
-		return 4
-
-	case SizePaddingTickerRight:
-		return 4
-
-	case SizePaddingTickerBottom:
-		return 4
-
-	default:
-		return 0
-	}
-}
-
-func (t *appTheme) GetColor(name fyne.ThemeColorName) color.Color {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Color(name, t.variant)
 }
 
 func RegisterThemeManager() *appTheme {

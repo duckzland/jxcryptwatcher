@@ -141,13 +141,16 @@ func NewDialogForm(
 		dispatcher: NewScrollDispatcher(),
 	}
 
+	spacer := canvas.NewRectangle(nil)
+	spacer.SetMinSize(fyne.NewSize(10, 10))
+
 	innerLayout := &dialogContentLayout{
 		background:    canvas.NewRectangle(JC.UseTheme().GetColor(theme.ColorNameBackground)),
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
 		content:       container.NewVScroll(container.New(formLayout, container.NewThemeOverride(formLayout.form, &dialogFormTheme{base: JC.UseTheme()}), formLayout.dispatcher)),
-		buttons:       container.NewHBox(fd.cancel, widget.NewLabel(" "), fd.confirm),
+		buttons:       container.NewHBox(fd.cancel, spacer, fd.confirm),
 		bottomContent: bottomContent,
 		padding:       16,
 	}

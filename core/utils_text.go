@@ -130,6 +130,27 @@ func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) 
 	return string(runes[:maxChars]) + ellipsis
 }
 
+func MeasureText(text string, fontSize float32, style fyne.TextStyle) float32 {
+
+	// This is memory hungry!
+	// return fyne.MeasureText(text, fontSize, style).Width
+
+	baseFactor := float32(0.58)
+	styleMultiplier := float32(1.0)
+
+	if style.Bold {
+		styleMultiplier += 0.1
+	}
+	if style.Italic {
+		styleMultiplier += 0.05
+	}
+	if style.Monospace {
+		baseFactor = 0.5
+	}
+
+	return fontSize * baseFactor * styleMultiplier * float32(len(text))
+}
+
 func FormatShortCurrency(value string) string {
 	num, err := strconv.ParseFloat(strings.Replace(value, "$", "", 1), 64)
 	if err != nil {

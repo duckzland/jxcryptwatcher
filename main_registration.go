@@ -928,28 +928,28 @@ func registerCache() {
 		styleBits := 0
 		key := int(size)*10 + styleBits
 		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{}).Width)
+			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{}))
 		}
 
 		// Bold
 		styleBits = 1
 		key = int(size)*10 + styleBits
 		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Bold: true}).Width)
+			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Bold: true}))
 		}
 
 		// Italic
 		styleBits = 2
 		key = int(size)*10 + styleBits
 		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Italic: true}).Width)
+			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Italic: true}))
 		}
 
 		// Monospace
 		styleBits = 4
 		key = int(size)*10 + styleBits
 		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, fyne.MeasureText("a", size, fyne.TextStyle{Monospace: true}).Width)
+			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Monospace: true}))
 		}
 	}
 }

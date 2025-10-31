@@ -3,6 +3,8 @@ package apps
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+
+	JC "jxwatcher/core"
 )
 
 type pageLayout struct {
@@ -23,7 +25,7 @@ func (p *pageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		p.background.Move(fyne.NewPos(0, 0))
 	}
 
-	contentSize := p.content.MinSize()
+	contentSize := fyne.NewSize(0, 0)
 	iconSize := fyne.NewSize(64, 64)
 	totalHeight := float32(0)
 
@@ -32,6 +34,8 @@ func (p *pageLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if p.content != nil {
+		textWidth := JC.MeasureText(p.content.Text, p.content.TextSize, p.content.TextStyle)
+		contentSize = fyne.NewSize(textWidth+20, p.content.TextSize*2)
 		totalHeight += contentSize.Height
 	}
 
@@ -62,17 +66,16 @@ func (p *pageLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 		height := float32(0)
 
 		if p.icon != nil {
-			ic := p.icon.MinSize()
-			width += ic.Width
-			height += ic.Height
+			width = 64
+			height += 64
 		}
 
 		if p.content != nil {
-			co := p.content.MinSize()
-			if width < co.Width {
-				width = co.Width
+			textWidth := JC.MeasureText(p.content.Text, p.content.TextSize, p.content.TextStyle)
+			if width < textWidth {
+				width = textWidth
 			}
-			height += co.Height
+			height += p.content.TextSize * 2
 		}
 
 		p.cSize = fyne.NewSize(width, height)

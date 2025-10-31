@@ -31,6 +31,7 @@ func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
 	separator.StrokeWidth = 1
 
 	return &completionTextLayout{
+		parent:     s,
 		text:       s.label,
 		separator:  separator,
 		background: s.background,
@@ -38,12 +39,18 @@ func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
 	}
 }
 
+func (s *completionText) GetText() string {
+	return s.text
+}
+
 func (s *completionText) SetText(t string) {
 	if s.text == t {
 		return
 	}
+	size := s.Size()
+
 	s.text = t
-	s.label.Text = t
+	s.label.Text = JC.TruncateText(s.GetText(), size.Width, s.label.TextSize, s.label.TextStyle)
 	canvas.Refresh(s.label)
 }
 

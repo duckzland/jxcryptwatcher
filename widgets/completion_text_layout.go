@@ -8,6 +8,7 @@ import (
 )
 
 type completionTextLayout struct {
+	parent     *completionText
 	text       *canvas.Text
 	separator  *canvas.Line
 	background *canvas.Rectangle
@@ -37,7 +38,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	}
 
 	if r.width != size.Width {
-		r.text.Text = JC.TruncateText(r.text.Text, size.Width, r.text.TextSize, r.text.TextStyle)
+		r.text.Text = JC.TruncateText(r.parent.GetText(), size.Width, r.text.TextSize, r.text.TextStyle)
 	}
 
 	posY := r.height - 1

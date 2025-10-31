@@ -34,9 +34,21 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	var tickerHeight fyne.Size
 	var contentY float32 = padding
 
-	if a.background != nil && a.background.Size() != size {
-		a.background.Resize(size)
-		a.background.Move(fyne.NewPos(0, 0))
+	// BugFix: Fyne 2.7 allows 0 width and height on resize, limit them!
+	if size.Width < 320 {
+		size.Width = 320
+	}
+	if size.Height < 480 {
+		size.Height = 480
+	}
+
+	if a.background != nil {
+		if a.background.Size() != size {
+			a.background.Resize(size)
+			a.background.Move(fyne.NewPos(0, 0))
+		}
+
+		a.background.SetMinSize(fyne.NewSize(320, 480))
 	}
 
 	if size.Width >= splitThreshold {
