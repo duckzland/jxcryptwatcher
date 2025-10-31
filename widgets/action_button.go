@@ -28,7 +28,7 @@ type ActionButton interface {
 }
 
 type actionButton struct {
-	widget.Button
+	widget.BaseWidget
 	tooltip.ToolTipWidgetExtend
 	tag           string
 	state         string
@@ -36,14 +36,39 @@ type actionButton struct {
 	allow_actions bool
 	hastip        bool
 	validate      func(ActionButton)
+	buttonWidget  fyne.Widget
 }
 
 func (b *actionButton) ExtendBaseWidget(wid fyne.Widget) {
-	b.Button.ExtendBaseWidget(wid)
+	switch btn := b.buttonWidget.(type) {
+	case *widget.Button:
+		btn.ExtendBaseWidget(wid)
+	case *actionButtonIcon:
+		btn.ExtendBaseWidget(wid)
+	default:
+	}
+}
+
+func (b *actionButton) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(b.buttonWidget)
+}
+
+func (b *actionButton) MinSize() fyne.Size {
+	return b.buttonWidget.MinSize()
+}
+
+func (b *actionButton) Resize(size fyne.Size) {
+	b.BaseWidget.Resize(size)
+	b.buttonWidget.Resize(size)
+	b.buttonWidget.Move(fyne.NewPos(0, 0))
+
 }
 
 func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
-	if !b.allow_actions {
+	if !b.allow_actions || b.disabled {
+		if b.hastip {
+			b.ToolTipWidgetExtend.MouseOut()
+		}
 		return
 	}
 
@@ -52,28 +77,29 @@ func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
 	}
 
 	if !b.disabled {
-		b.Button.MouseIn(e)
+		if hoverable, ok := b.buttonWidget.(desktop.Hoverable); ok {
+			hoverable.MouseIn(e)
+		}
 	}
 }
 
 func (b *actionButton) MouseOut() {
-	if !b.allow_actions {
-		if b.hastip {
-			b.ToolTipWidgetExtend.MouseOut()
-		}
-		return
-	}
 	if b.hastip {
 		b.ToolTipWidgetExtend.MouseOut()
 	}
 
 	if !b.disabled {
-		b.Button.MouseOut()
+		if hoverable, ok := b.buttonWidget.(desktop.Hoverable); ok {
+			hoverable.MouseOut()
+		}
 	}
 }
 
 func (b *actionButton) MouseMoved(e *desktop.MouseEvent) {
 	if !b.allow_actions {
+		if b.hastip {
+			b.ToolTipWidgetExtend.MouseOut()
+		}
 		return
 	}
 
@@ -82,16 +108,17 @@ func (b *actionButton) MouseMoved(e *desktop.MouseEvent) {
 	}
 
 	if !b.disabled {
-		b.Button.MouseMoved(e)
+		if hoverable, ok := b.buttonWidget.(desktop.Hoverable); ok {
+			hoverable.MouseMoved(e)
+		}
 	}
 }
 
-func (b *actionButton) Tapped(_ *fyne.PointEvent) {
-	if !b.allow_actions {
-		return
-	}
-
-	if b.disabled {
+func (b *actionButton) Tapped(e *fyne.PointEvent) {
+	if !b.allow_actions || b.disabled {
+		if b.hastip {
+			b.ToolTipWidgetExtend.MouseOut()
+		}
 		return
 	}
 
@@ -99,7 +126,9 @@ func (b *actionButton) Tapped(_ *fyne.PointEvent) {
 		b.ToolTipWidgetExtend.MouseOut()
 	}
 
-	b.Button.Tapped(nil)
+	if tappable, ok := b.buttonWidget.(fyne.Tappable); ok {
+		tappable.Tapped(e)
+	}
 }
 
 func (b *actionButton) Cursor() desktop.Cursor {
@@ -110,7 +139,7 @@ func (b *actionButton) Cursor() desktop.Cursor {
 }
 
 func (b *actionButton) IsDisabled() bool {
-	return b.Disabled()
+	return b.disabled
 }
 
 func (b *actionButton) DisallowActions() {
@@ -149,7 +178,7 @@ func (b *actionButton) Refresh() {
 	if b.validate != nil {
 		b.validate(b)
 	}
-	fyne.Do(b.Button.Refresh)
+	fyne.Do(b.buttonWidget.Refresh)
 }
 
 func (b *actionButton) Destroy() {
@@ -163,11 +192,37 @@ func (b *actionButton) Call() {
 		return
 	}
 
-	b.Button.OnTapped()
+	switch btn := b.buttonWidget.(type) {
+	case *widget.Button:
+		if btn.OnTapped != nil {
+			btn.OnTapped()
+		}
+	case *actionButtonIcon:
+		if btn.onTapped != nil {
+			btn.onTapped()
+		}
+	}
+}
+
+func (b *actionButton) setImportance(i widget.Importance) {
+	switch btn := b.buttonWidget.(type) {
+	case *widget.Button:
+		btn.Importance = i
+	case *actionButtonIcon:
+		btn.Importance = i
+	}
+}
+
+func (b *actionButton) triggerMouseOut() {
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseOut()
+	}
+	if hoverable, ok := b.buttonWidget.(desktop.Hoverable); ok {
+		hoverable.MouseOut()
+	}
 }
 
 func (b *actionButton) setState(state string) {
-
 	if b.state == state {
 		return
 	}
@@ -175,31 +230,36 @@ func (b *actionButton) setState(state string) {
 	switch state {
 	case "allow_actions":
 		b.allow_actions = true
-		b.Button.Importance = widget.MediumImportance
+		b.setImportance(widget.MediumImportance)
+
 	case "disallow_actions":
-		b.ToolTipWidgetExtend.MouseOut()
-		b.Button.MouseOut()
-		b.Button.Importance = widget.MediumImportance
 		b.allow_actions = false
+		b.triggerMouseOut()
+		b.setImportance(widget.MediumImportance)
+
 	case "disabled":
 		b.allow_actions = true
 		b.disabled = true
-		b.Button.Importance = widget.LowImportance
+		b.setImportance(widget.LowImportance)
+
 	case "in_progress":
 		b.allow_actions = true
 		b.disabled = true
-		b.Button.Importance = widget.HighImportance
+		b.setImportance(widget.HighImportance)
+
 	case "active":
 		b.allow_actions = true
-		b.Button.Importance = widget.HighImportance
+		b.setImportance(widget.HighImportance)
+
 	case "error":
 		b.allow_actions = true
 		b.disabled = false
-		b.Button.Importance = widget.DangerImportance
+		b.setImportance(widget.DangerImportance)
+
 	case "reset", "normal":
 		b.allow_actions = true
 		b.disabled = false
-		b.Button.Importance = widget.MediumImportance
+		b.setImportance(widget.MediumImportance)
 	}
 
 	b.state = state
@@ -212,7 +272,7 @@ func (b *actionButton) changeState(state string) {
 	}
 
 	b.setState(state)
-	fyne.Do(b.Button.Refresh)
+	fyne.Do(b.buttonWidget.Refresh)
 }
 
 func NewActionButton(
@@ -224,37 +284,36 @@ func NewActionButton(
 	onTapped func(ActionButton),
 	validate func(ActionButton),
 ) ActionButton {
-
 	b := &actionButton{
-		Button: widget.Button{
-			Text:       text,
-			Icon:       icon,
-			Importance: widget.MediumImportance,
-		},
-		tag:      tag,
-		disabled: false,
-		hastip:   false,
-		validate: validate,
+		tag:           tag,
+		disabled:      false,
+		hastip:        false,
+		allow_actions: true,
+		validate:      validate,
 	}
 
-	b.setState(state)
-
-	b.Button.OnTapped = func() {
-		if !b.disabled && b.allow_actions {
-			onTapped(b)
+	cb := func() {
+		if b.disabled {
+			return
 		}
+		onTapped(b)
 	}
 
-	// Only extend tooltip if tip is non-empty
+	if text == "" && icon != nil {
+		b.buttonWidget = NewActionButtonIcon(icon, widget.MediumImportance, cb)
+	} else {
+		b.buttonWidget = widget.NewButtonWithIcon(text, icon, cb)
+	}
+
 	if tip != "" {
 		b.ExtendToolTipWidget(b)
 		b.SetToolTip(tip)
 		b.hastip = true
 	}
 
-	b.Button.ExtendBaseWidget(b)
+	b.setState(state)
 
-	b.allow_actions = true
+	b.ExtendBaseWidget(b.buttonWidget)
 
 	return b
 }
