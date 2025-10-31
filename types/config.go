@@ -2,6 +2,8 @@ package types
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 	"sync"
 
 	JC "jxwatcher/core"
@@ -26,7 +28,7 @@ type configType struct {
 
 func (c *configType) update() bool {
 
-	if c.Version != "1.7.0" {
+	if c.IsVersionLessThan("1.7.0") {
 		JC.Logln("Updating old config to 1.7.0")
 		c.Version = "1.7.0"
 
@@ -124,6 +126,39 @@ func (c *configType) check() *configType {
 	}
 
 	return c
+}
+
+func (c *configType) PostInit() {
+	if c.IsVersionLessThan("1.8.0") {
+		JC.Logln("Updating old config to 1.8.0")
+		c.Version = "1.8.0"
+		c.save()
+	}
+}
+
+func (c *configType) IsVersionLessThan(target string) bool {
+	parse := func(s string) []int {
+		parts := strings.Split(s, ".")
+		nums := make([]int, len(parts))
+		for i, p := range parts {
+			n, _ := strconv.Atoi(p)
+			nums[i] = n
+		}
+		return nums
+	}
+
+	a := parse(c.Version)
+	b := parse(target)
+
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] < b[i] {
+			return true
+		} else if a[i] > b[i] {
+			return false
+		}
+	}
+
+	return len(a) < len(b)
 }
 
 func (c *configType) IsValid() bool {

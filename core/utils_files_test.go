@@ -119,3 +119,39 @@ func TestCleanupCreatedFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestSaveAndLoadGob(t *testing.T) {
+	filesTurnOffLogs()
+	defer filesTurnOnLogs()
+
+	filename := "test_gob_save_load.gob"
+	testData := struct {
+		Message string
+		Count   int
+	}{
+		Message: "hello",
+		Count:   42,
+	}
+
+	ok := SaveGobToStorage(filename, testData)
+	if !ok {
+		t.Fatal("Failed to save GOB file")
+	}
+
+	var result struct {
+		Message string
+		Count   int
+	}
+	ok = LoadGobFromStorage(filename, &result)
+	if !ok {
+		t.Fatal("Failed to load GOB file")
+	}
+
+	if result.Message != "hello" || result.Count != 42 {
+		t.Errorf("Expected {hello, 42}, got {%s, %d}", result.Message, result.Count)
+	}
+
+	if !EraseFileFromStorage(filename) {
+		t.Errorf("Failed to erase test GOB file: %s", filename)
+	}
+}

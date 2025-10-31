@@ -760,6 +760,8 @@ func registerLifecycle() {
 					JT.TickersInit()
 				}
 
+				JT.UseConfig().PostInit()
+
 				fyne.Do(func() {
 
 					JS.RegisterTickerGrid()

@@ -58,7 +58,7 @@ func TestCryptosMapHydrateAndOptions(t *testing.T) {
 		"1": "1|BTC - Bitcoin",
 		"2": "2|ETH - Ethereum",
 	}
-	cm.Hydrate(data)
+	cm.Hydrate(cryptosMapCache{Data: data})
 
 	opts := cm.GetOptions()
 	if len(opts) != 2 {
@@ -94,6 +94,27 @@ func TestCryptosMapSerialize(t *testing.T) {
 	}
 	if len(cache.Maps) != 2 {
 		t.Errorf("Expected 2 maps in cache, got %d", len(cache.Maps))
+	}
+	if len(cache.SearchMaps) != 2 {
+		t.Errorf("Expected 2 search maps in cache, got %d", len(cache.SearchMaps))
+	}
+
+	// Round-trip test: hydrate from cache and verify
+	cm2 := NewCryptosMap()
+	cm2.Hydrate(cache)
+
+	if len(cm2.GetOptions()) != 2 {
+		t.Errorf("Expected 2 options after hydration, got %d", len(cm2.GetOptions()))
+	}
+	search := cm2.GetSearchMap()
+	expected := map[string]bool{
+		"1|btc - bitcoin":  true,
+		"2|eth - ethereum": true,
+	}
+	for _, val := range search {
+		if !expected[val] {
+			t.Errorf("Unexpected value in hydrated search map: %s", val)
+		}
 	}
 	cryptosMapTurnOnLogs()
 }

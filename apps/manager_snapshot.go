@@ -34,24 +34,18 @@ func (sm *snapshotManager) IsSnapshotted() bool {
 }
 
 func (sm *snapshotManager) LoadPanels() int {
-	raw, ok := JC.LoadFileFromStorage("snapshots-panels.json")
-	if !ok || raw == "" || raw == "null" {
-		return JC.NO_SNAPSHOT
-	}
+	snapshot := JT.NewPanelDataCache()
 
-	caches := JT.NewPanelDataCache()
-	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
+	if !sm.load("snapshots-panels", &snapshot) {
 		return JC.NO_SNAPSHOT
 	}
 
 	var restored []JT.PanelData
-	for _, c := range caches {
+	for _, c := range snapshot {
 		p := JT.NewPanelData()
-
 		if !p.GetParent().ValidateKey(c.Key) {
 			continue
 		}
-
 		p.Init()
 		p.Set(p.RefreshKey(c.Key))
 		p.SetOldKey(c.OldKey)
@@ -66,18 +60,14 @@ func (sm *snapshotManager) LoadPanels() int {
 }
 
 func (sm *snapshotManager) LoadCryptos() int {
-	raw, ok := JC.LoadFileFromStorage("snapshots-cryptos.json")
-	if !ok || raw == "" || raw == "null" {
-		return JC.NO_SNAPSHOT
-	}
+	snapshot := JT.NewCryptosMapCache()
 
-	cache := JT.NewCryptosMapCache()
-	if err := json.Unmarshal([]byte(raw), &cache); err != nil {
+	if !sm.load("snapshots-cryptos", &snapshot) {
 		return JC.NO_SNAPSHOT
 	}
 
 	cm := JT.NewCryptosMap()
-	cm.Hydrate(cache.Data)
+	cm.Hydrate(*snapshot)
 
 	JT.UsePanelMaps().SetMaps(cm)
 	JT.UsePanelMaps().GetOptions()
@@ -86,18 +76,14 @@ func (sm *snapshotManager) LoadCryptos() int {
 }
 
 func (sm *snapshotManager) LoadTickers() int {
-	raw, ok := JC.LoadFileFromStorage("snapshots-tickers.json")
-	if !ok || raw == "" || raw == "null" {
-		return JC.NO_SNAPSHOT
-	}
+	snapshot := JT.NewTickerDataCache()
 
-	caches := JT.NewTickerDataCache()
-	if err := json.Unmarshal([]byte(raw), &caches); err != nil {
+	if !sm.load("snapshots-tickers", &snapshot) {
 		return JC.NO_SNAPSHOT
 	}
 
 	var restored []JT.TickerData
-	for _, c := range caches {
+	for _, c := range snapshot {
 		t := JT.NewTickerData()
 		t.Init()
 		t.Set(c.Key)
@@ -116,13 +102,9 @@ func (sm *snapshotManager) LoadTickers() int {
 }
 
 func (sm *snapshotManager) LoadExchangeData() int {
-	raw, ok := JC.LoadFileFromStorage("snapshots-exchange.json")
-	if !ok || raw == "" || raw == "null" {
-		return JC.NO_SNAPSHOT
-	}
-
 	snapshot := JT.NewExchangeDataCacheSnapshot()
-	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
+
+	if !sm.load("snapshots-exchange", &snapshot) {
 		return JC.NO_SNAPSHOT
 	}
 
@@ -131,13 +113,9 @@ func (sm *snapshotManager) LoadExchangeData() int {
 }
 
 func (sm *snapshotManager) LoadTickerData() int {
-	raw, ok := JC.LoadFileFromStorage("snapshots-ticker-cache.json")
-	if !ok || raw == "" || raw == "null" {
-		return JC.NO_SNAPSHOT
-	}
-
 	snapshot := JT.NewTickerDataCacheSnapshot()
-	if err := json.Unmarshal([]byte(raw), &snapshot); err != nil {
+
+	if !sm.load("snapshots-ticker-cache", &snapshot) {
 		return JC.NO_SNAPSHOT
 	}
 
@@ -147,11 +125,11 @@ func (sm *snapshotManager) LoadTickerData() int {
 
 func (sm *snapshotManager) Delete() int {
 	files := []string{
-		"snapshots-panels.json",
-		"snapshots-cryptos.json",
-		"snapshots-tickers.json",
-		"snapshots-exchange.json",
-		"snapshots-ticker-cache.json",
+		"snapshots-panels.gob",
+		"snapshots-cryptos.gob",
+		"snapshots-tickers.gob",
+		"snapshots-exchange.gob",
+		"snapshots-ticker-cache.gob",
 	}
 
 	success := true
@@ -168,15 +146,32 @@ func (sm *snapshotManager) Delete() int {
 }
 
 func (sm *snapshotManager) Save() {
-	JC.SaveFileToStorage("snapshots-panels.json", JT.UsePanelMaps().Serialize())
-	JC.SaveFileToStorage("snapshots-cryptos.json", JT.UsePanelMaps().GetMaps().Serialize())
-	JC.SaveFileToStorage("snapshots-tickers.json", JT.UseTickerMaps().Serialize())
-	JC.SaveFileToStorage("snapshots-exchange.json", JT.UseExchangeCache().Serialize())
-	JC.SaveFileToStorage("snapshots-ticker-cache.json", JT.UseTickerCache().Serialize())
+
+	JC.SaveGobToStorage("snapshots-exchange.gob", JT.UseExchangeCache().Serialize())
+	JC.SaveGobToStorage("snapshots-ticker-cache.gob", JT.UseTickerCache().Serialize())
+	JC.SaveGobToStorage("snapshots-panels.gob", JT.UsePanelMaps().Serialize())
+	JC.SaveGobToStorage("snapshots-tickers.gob", JT.UseTickerMaps().Serialize())
+	JC.SaveGobToStorage("snapshots-cryptos.gob", JT.UsePanelMaps().GetMaps().Serialize())
 
 	sm.mu.Lock()
 	sm.snapshotted = true
 	sm.mu.Unlock()
+}
+
+func (sm *snapshotManager) load(filename string, snapshot any) bool {
+
+	// Migrating from json to gob
+	if JT.UseConfig().IsVersionLessThan("1.8.0") {
+		content, ok := JC.LoadFileFromStorage(filename + ".json")
+		if !ok || json.Unmarshal([]byte(content), snapshot) != nil {
+			return false
+		}
+		_ = JC.EraseFileFromStorage(filename + ".json")
+
+		return true
+	}
+
+	return JC.LoadGobFromStorage(filename+".gob", snapshot)
 }
 
 func RegisterSnapshotManager() *snapshotManager {

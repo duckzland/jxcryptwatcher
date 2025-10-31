@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"os"
 	"os/user"
@@ -126,12 +127,21 @@ func GetUserDirectory() string {
 }
 
 func SaveFileToStorage(filename string, data any) bool {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		Logln("Error marshaling", filename, err)
-		return false
+	var content []byte
+
+	switch v := data.(type) {
+	case []byte:
+		content = v
+	default:
+		jsonData, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			Logln("Error marshaling", filename, err)
+			return false
+		}
+		content = jsonData
 	}
-	return CreateFile(BuildPathRelatedToUserDirectory([]string{filename}), string(jsonData))
+
+	return CreateFile(BuildPathRelatedToUserDirectory([]string{filename}), string(content))
 }
 
 func LoadFileFromStorage(filename string) (string, bool) {
@@ -160,4 +170,43 @@ func LoadFileFromStorage(filename string) (string, bool) {
 func EraseFileFromStorage(filename string) bool {
 	path := BuildPathRelatedToUserDirectory([]string{filename})
 	return DeleteFile(path)
+}
+
+func SaveGobToStorage(filename string, data any) bool {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	if err := encoder.Encode(data); err != nil {
+		Logln("Error encoding GOB", filename, err)
+		return false
+	}
+	return SaveFileToStorage(filename, buf.Bytes())
+}
+
+func LoadGobFromStorage(filename string, out interface{}) bool {
+	fileURI, err := storage.ParseURI(BuildPathRelatedToUserDirectory([]string{filename}))
+	if err != nil {
+		Logln("Error parsing URI for", filename, err)
+		return false
+	}
+
+	reader, err := storage.Reader(fileURI)
+	if err != nil {
+		Logln("Failed to open", filename, err)
+		return false
+	}
+	defer reader.Close()
+
+	buffer := bytes.NewBuffer(nil)
+	if _, err := buffer.ReadFrom(reader); err != nil {
+		Logln("Failed to read", filename, err)
+		return false
+	}
+
+	decoder := gob.NewDecoder(buffer)
+	if err := decoder.Decode(out); err != nil {
+		Logln("Failed to decode GOB", filename, err)
+		return false
+	}
+
+	return true
 }

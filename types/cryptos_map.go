@@ -9,8 +9,9 @@ import (
 )
 
 type cryptosMapCache struct {
-	Data map[string]string
-	Maps []string
+	Data       map[string]string
+	Maps       []string
+	SearchMaps []string
 }
 
 type cryptosMapType struct {
@@ -32,12 +33,21 @@ func (cm *cryptosMapType) Insert(id string, display string) {
 	cm.data.Store(id, display)
 }
 
-func (cm *cryptosMapType) Hydrate(data map[string]string) {
+func (cm *cryptosMapType) Hydrate(cache cryptosMapCache) {
 	cm.Init()
-	for id, display := range data {
+
+	for id, display := range cache.Data {
 		cm.Insert(id, display)
 	}
-	_ = cm.GetOptions()
+
+	if len(cache.Maps) != 0 && len(cache.SearchMaps) != 0 {
+		cm.mu.Lock()
+		cm.maps = cache.Maps
+		cm.searchMaps = cache.SearchMaps
+		cm.mu.Unlock()
+	} else {
+		_ = cm.GetOptions()
+	}
 }
 
 func (cm *cryptosMapType) Serialize() cryptosMapCache {
@@ -47,6 +57,7 @@ func (cm *cryptosMapType) Serialize() cryptosMapCache {
 
 	cm.mu.RLock()
 	cache.Maps = cm.maps
+	cache.SearchMaps = cm.searchMaps
 	cm.mu.RUnlock()
 
 	cm.data.Range(func(key, val any) bool {
