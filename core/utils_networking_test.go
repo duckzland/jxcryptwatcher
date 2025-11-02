@@ -39,7 +39,7 @@ func TestGetRequest_Success(t *testing.T) {
 
 	var result netMockResponse
 
-	code := GetRequest(ts.URL, &result, nil, func(dec any) int64 {
+	code := GetRequest(ts.URL, &result, nil, func(resp *http.Response, dec any) int64 {
 		r, ok := dec.(*netMockResponse)
 		if !ok || r.Message != "Hello, world" {
 			t.Errorf("Unexpected callback data: %+v", dec)

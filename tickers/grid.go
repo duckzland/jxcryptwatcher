@@ -1,6 +1,8 @@
 package tickers
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 
@@ -12,7 +14,7 @@ import (
 var tickerGrid *tickerContainer = &tickerContainer{}
 
 func RegisterTickerGrid() {
-	JC.PrintMemUsage("Start building tickers")
+	JC.PrintPerfStats("Generating Tickers", time.Now())
 
 	list := JT.UseTickerMaps().GetData()
 	p := []*tickerDisplay{}
@@ -46,8 +48,6 @@ func RegisterTickerGrid() {
 	)
 
 	JA.UseLayout().RegisterTickers(container.NewStack(tickerGrid))
-
-	JC.PrintMemUsage("End building tickers")
 }
 
 func UseTickerGrid() *tickerContainer {

@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	JC "jxwatcher/core"
 )
@@ -73,16 +74,15 @@ func (cm *cryptosMapType) Serialize() cryptosMapCache {
 }
 
 func (cm *cryptosMapType) GetOptions() []string {
-	JC.PrintMemUsage("Start generating available crypto options")
-
 	cm.mu.RLock()
 	if len(cm.maps) != 0 {
 		cached := cm.maps
 		cm.mu.RUnlock()
-		JC.PrintMemUsage("End using cached crypto options")
 		return cached
 	}
 	cm.mu.RUnlock()
+
+	JC.PrintPerfStats("Generating crypto options", time.Now())
 
 	var options []string
 	var lowerSearchMap []string
@@ -99,18 +99,15 @@ func (cm *cryptosMapType) GetOptions() []string {
 	cm.searchMaps = lowerSearchMap
 	cm.mu.Unlock()
 
-	JC.PrintMemUsage("End generating available crypto options")
 	return options
 }
 
 func (cm *cryptosMapType) GetSearchMap() []string {
-	JC.PrintMemUsage("Start retrieving lowercase crypto search map")
 
 	cm.mu.RLock()
 	if len(cm.searchMaps) != 0 {
 		cached := cm.searchMaps
 		cm.mu.RUnlock()
-		JC.PrintMemUsage("End using cached crypto search map")
 		return cached
 	}
 	cm.mu.RUnlock()
@@ -122,7 +119,6 @@ func (cm *cryptosMapType) GetSearchMap() []string {
 	cached := cm.searchMaps
 	cm.mu.RUnlock()
 
-	JC.PrintMemUsage("End retrieving lowercase crypto search map")
 	return cached
 }
 

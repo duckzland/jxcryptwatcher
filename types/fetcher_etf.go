@@ -32,7 +32,7 @@ func (ef *etfFetcher) GetRate() int64 {
 			url.Add("category", "all")
 			url.Add("range", "30d")
 		},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*etfFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

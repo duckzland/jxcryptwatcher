@@ -40,7 +40,7 @@ func (er *marketCapFetcher) GetRate() int64 {
 			url.Add("convertId", "2781")
 			url.Add("range", "30d")
 		},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*marketCapFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

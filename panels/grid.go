@@ -1,6 +1,8 @@
 package panels
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
@@ -22,7 +24,7 @@ type panelDropZone struct {
 }
 
 func RegisterPanelGrid(createPanel CreatePanelFunc) {
-	JC.PrintMemUsage("Start building panels")
+	JC.PrintPerfStats("Generating Panels", time.Now())
 
 	// Get the list of panel data
 	list := JT.UsePanelMaps().GetData()
@@ -70,8 +72,6 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 	dragDropZones = []*panelDropZone{}
 
 	JA.UseLayout().UseScroll().OnScrolled = layout.OnScrolled
-
-	JC.PrintMemUsage("End building panels")
 }
 
 func UsePanelGrid() *panelContainer {

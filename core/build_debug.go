@@ -13,8 +13,8 @@ import (
 	_ "net/http/pprof"
 )
 
-const MemoryDebug = false
-const PProfDebug = false
+const MemoryDebug = true
+const PProfDebug = true
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
@@ -67,13 +67,18 @@ func PrintPerfStats(title string, start time.Time) {
 		runtime.ReadMemStats(&m)
 		elapsed := time.Since(start)
 		Logf(
-			"%s | ExecTime = %v | Alloc = %v MiB | TotalAlloc = %v MiB | Sys = %v MiB | NumGC = %v",
+			"%s | Time=%v | Alloc=%vM | Tot=%vM | GC=%v | Heap=%vM/%vM (%vM idle, %vM rel) | M/F=%v/%v",
 			title,
 			elapsed,
 			m.Alloc/1024/1024,
 			m.TotalAlloc/1024/1024,
-			m.Sys/1024/1024,
 			m.NumGC,
+			m.HeapAlloc/1024/1024,
+			m.HeapSys/1024/1024,
+			m.HeapIdle/1024/1024,
+			m.HeapReleased/1024/1024,
+			m.Mallocs,
+			m.Frees,
 		)
 	}
 }

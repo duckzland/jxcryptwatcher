@@ -41,7 +41,7 @@ func (er *rsiFetcher) GetRate() int64 {
 			url.Add("volume24Range.min", "1000000")
 			url.Add("marketCapRange.min", "50000000")
 		},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*rsiFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

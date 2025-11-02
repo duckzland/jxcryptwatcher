@@ -31,7 +31,7 @@ func (df *dominanceFetcher) GetRate() int64 {
 		UseConfig().DominanceEndpoint,
 		df,
 		func(url url.Values, req *http.Request) {},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*dominanceFetcher)
 			if !ok || len(dec.Data.Dominance) < 3 {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

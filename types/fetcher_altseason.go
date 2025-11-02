@@ -37,7 +37,7 @@ func (er *altSeasonFetcher) GetRate() int64 {
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*altSeasonFetcher)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

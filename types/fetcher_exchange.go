@@ -100,7 +100,7 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 			url.Add("id", sid)
 			url.Add("convert_id", tid)
 		},
-		func(cc any) int64 {
+		func(resp *http.Response, cc any) int64 {
 			dec, ok := cc.(*exchangeResults)
 			if !ok {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

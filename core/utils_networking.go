@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *http.Request), callback func(dec any) int64) int64 {
-	PrintMemUsage("Start fetching data")
+func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response, dec any) int64) int64 {
+	PrintPerfStats("Fetching Request", time.Now())
 
 	parsedURL, err := url.Parse(targetUrl)
 	if err != nil {
@@ -21,7 +21,6 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		return NETWORKING_URL_ERROR
 	}
 
-	// Injected: context with timeout to enforce cancellation
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -32,17 +31,14 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 		},
-		// Timeout is optional now — context handles it
 	}
 
-	// Injected: request tied to context
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
 		Logln("Error encountered:", err)
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	// Add headers
 	req.Header.Set("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -106,16 +102,17 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(dec); err != nil {
-		Logln(fmt.Errorf("Failed to examine data: %w", err))
-		return NETWORKING_BAD_DATA_RECEIVED
+	if dec != nil {
+		decoder := json.NewDecoder(resp.Body)
+		if err := decoder.Decode(dec); err != nil {
+			Logln(fmt.Errorf("Failed to examine data: %w", err))
+			return NETWORKING_BAD_DATA_RECEIVED
+		}
 	}
 
 	if callback != nil {
-		return callback(dec)
+		return callback(resp, dec)
 	}
 
-	PrintMemUsage("End fetching data")
 	return NETWORKING_SUCCESS
 }
