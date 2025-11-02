@@ -32,19 +32,18 @@ func (tl *tickerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	centerItems := []fyne.CanvasObject{}
-	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
-		sz := obj.MinSize()
-		if obj.Visible() && (sz.Height > 0 && sz.Width > 0) {
-			centerItems = append(centerItems, obj)
-		}
-	}
+	sizes := []fyne.Size{}
+	totalHeight := float32(0)
 
-	var totalHeight float32
-	sizes := make([]fyne.Size, len(centerItems))
-	for i, obj := range centerItems {
-		s := obj.MinSize()
-		sizes[i] = s
-		totalHeight += s.Height
+	for _, obj := range []fyne.CanvasObject{tl.title, tl.content, tl.status} {
+		if obj.Visible() {
+			sz := obj.MinSize()
+			if sz.Width > 0 && sz.Height > 0 {
+				centerItems = append(centerItems, obj)
+				sizes = append(sizes, sz)
+				totalHeight += sz.Height
+			}
+		}
 	}
 
 	totalHeight += spacer * float32(len(centerItems)-1)

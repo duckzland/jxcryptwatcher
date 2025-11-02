@@ -402,7 +402,7 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", 10000,
+		"notification", 100,
 		func() int64 {
 			return 1000
 		},
