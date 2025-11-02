@@ -189,7 +189,7 @@ func (h *tickerDisplay) updateContent() {
 	h.content.SetText(content)
 
 	if isNewContent {
-		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
+		JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
 	}
 
 	if h.background.FillColor != background {

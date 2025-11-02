@@ -234,7 +234,7 @@ func (h *panelDisplay) updateContent() {
 
 	if pkt.DidChange() {
 		if h.Visible() {
-			JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, h.content.GetText().Color, 1)
+			JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
 		}
 	}
 
