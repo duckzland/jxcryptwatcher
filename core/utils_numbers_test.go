@@ -102,3 +102,26 @@ func TestIsNumeric(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatNumberWithCommas(t *testing.T) {
+	tests := []struct {
+		input    float64
+		frac     int
+		expected string
+	}{
+		{1000000.0, 3, "1,000,000"},
+		{1234567.89, 2, "1,234,567.89"},
+		{0.000001, 6, "0.000001"},
+		{987654321.123456, 6, "987,654,321.123456"},
+		{42.0, 0, "42"},
+		{1000.5, 1, "1,000.5"},
+		{1000.0, 0, "1,000"},
+	}
+
+	for _, tt := range tests {
+		result := FormatNumberWithCommas(tt.input, tt.frac)
+		if result != tt.expected {
+			t.Errorf("FormatNumberWithCommas(%f, %d) = %s; want %s", tt.input, tt.frac, result, tt.expected)
+		}
+	}
+}

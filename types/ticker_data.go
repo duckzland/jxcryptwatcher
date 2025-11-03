@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"fyne.io/fyne/v2/data/binding"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	JC "jxwatcher/core"
 )
@@ -295,14 +293,14 @@ func (p *tickerDataType) FormatContent() string {
 	if err != nil {
 		return raw
 	}
+
 	switch p.GetFormat() {
 	case "nodecimal":
 		return fmt.Sprintf("%.0f", val)
 	case "number":
 		return fmt.Sprintf("%.2f", val)
 	case "currency":
-		printer := message.NewPrinter(language.English)
-		return printer.Sprintf("$%.2f", val)
+		return "$" + JC.FormatNumberWithCommas(val, 2)
 	case "shortcurrency":
 		return JC.FormatShortCurrency(raw)
 	case "shortcurrency_withsign":

@@ -6,10 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
-
 	JC "jxwatcher/core"
 )
 
@@ -163,9 +159,7 @@ func (p *panelKeyType) GetValueFormattedString() string {
 	}
 
 	f64, _ := value.Float64()
-	pr := message.NewPrinter(language.English)
-
-	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
+	return JC.FormatNumberWithCommas(f64, frac)
 }
 
 func (p *panelKeyType) GetReverseValueFormattedString() string {
@@ -182,12 +176,10 @@ func (p *panelKeyType) GetReverseValueFormattedString() string {
 	}
 
 	f64, _ := value.Float64()
-	pr := message.NewPrinter(language.English)
-	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
+	return JC.FormatNumberWithCommas(f64, frac)
 }
 
 func (p *panelKeyType) GetCalculatedValueFormattedString() string {
-	pr := message.NewPrinter(language.English)
 	source := p.GetSourceValueFloat()
 	frac := JC.NumDecPlaces(source)
 
@@ -201,7 +193,7 @@ func (p *panelKeyType) GetCalculatedValueFormattedString() string {
 	}
 
 	f64, _ := nv.Float64()
-	return pr.Sprintf("%v", number.Decimal(f64, number.MaxFractionDigits(frac)))
+	return JC.FormatNumberWithCommas(f64, frac)
 }
 
 func (p *panelKeyType) GetSourceCoinInt() int64 {
@@ -270,20 +262,18 @@ func (p *panelKeyType) GetSourceValueString() string {
 }
 
 func (p *panelKeyType) GetSourceValueFormattedString() string {
-	pr := message.NewPrinter(language.English)
 	frac := int(JC.NumDecPlaces(p.GetSourceValueFloat()))
 	dec := int(p.GetDecimalsInt())
 
 	if frac < 3 {
 		frac = 2
 	}
-
 	if frac < dec {
 		frac = dec
 	}
 
-	return pr.Sprintf("%v", number.Decimal(p.GetSourceValueFloat(), number.MaxFractionDigits(frac)))
-
+	f64 := p.GetSourceValueFloat()
+	return JC.FormatNumberWithCommas(f64, frac)
 }
 
 func (p *panelKeyType) GetSourceSymbolString() string {

@@ -79,10 +79,10 @@ func updateDisplay() bool {
 						JC.Notify("Panel display refreshed with latest rates")
 					}
 					mu.Unlock()
-
-					runtime.GC()
 				}
 			}
+
+			runtime.GC()
 		})
 	}
 
