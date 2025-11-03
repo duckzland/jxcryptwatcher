@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"runtime"
 	// "encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,15 @@ import (
 	json "github.com/goccy/go-json"
 )
 
+var httpClient = &http.Client{
+	Transport: &http.Transport{
+		DisableKeepAlives:     false,
+		ResponseHeaderTimeout: 10 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
+}
+
 func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response, dec any) int64) int64 {
 	PrintPerfStats("Fetching Request", time.Now())
 
@@ -25,15 +35,6 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			DisableKeepAlives:     true,
-			ResponseHeaderTimeout: 10 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
@@ -57,10 +58,14 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	req.URL.RawQuery = q.Encode()
 	// Logf("Fetching data from %v", req.URL)
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 
-		if tr, ok := client.Transport.(*http.Transport); ok {
+		if resp != nil {
+			resp.Body.Close()
+		}
+
+		if tr, ok := httpClient.Transport.(*http.Transport); ok {
 			tr.CloseIdleConnections()
 		}
 
@@ -90,6 +95,12 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 
 	defer resp.Body.Close()
 
+	if tr, ok := httpClient.Transport.(*http.Transport); ok {
+		defer tr.CloseIdleConnections()
+	}
+
+	defer runtime.GC()
+
 	switch resp.StatusCode {
 	case 401, 404:
 		Logln(fmt.Sprintf("Error %d: Unauthorized", resp.StatusCode))
@@ -114,8 +125,10 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 
 	if callback != nil {
 		output := callback(resp, dec)
+		dec = nil
 		return output
 	}
 
+	dec = nil
 	return NETWORKING_SUCCESS
 }

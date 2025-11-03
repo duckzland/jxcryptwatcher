@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -103,22 +104,16 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 		UseConfig().DataEndpoint,
 		nil,
 		func(url url.Values, req *http.Request) {
+			// Optional prefetch logic
 		},
 		func(resp *http.Response, cc any) int64 {
-			respBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				JC.Logln("Failed to read response body:", err)
-				JC.Notify("Failed to fetch cryptos data")
-				return JC.NETWORKING_BAD_DATA_RECEIVED
-			}
+			var sb strings.Builder
+			tee := io.TeeReader(resp.Body, &sb)
 
-			payload := string(respBody)
-			if payload == "" {
-				return JC.NETWORKING_FAILED_CREATE_FILE
-			}
-
-			if err := json.Unmarshal(respBody, &c); err != nil {
+			decoder := json.NewDecoder(tee)
+			if err := decoder.Decode(&c); err != nil {
 				JC.Logln(fmt.Errorf("Failed to examine cryptos data: %w", err))
+				JC.Notify("Failed to fetch cryptos data")
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
@@ -127,9 +122,17 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
+			payload := sb.String()
+			if payload == "" {
+				return JC.NETWORKING_FAILED_CREATE_FILE
+			}
+
 			if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), payload) {
 				return JC.NETWORKING_FAILED_CREATE_FILE
 			}
+
+			c.Values = nil
+			payload = ""
 
 			JC.Logln("Fetched cryptodata from CMC")
 			JC.Notify("Successfully retrieved cryptos data from exchange.")
