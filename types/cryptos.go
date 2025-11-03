@@ -1,7 +1,7 @@
 package types
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +11,8 @@ import (
 	"time"
 
 	JC "jxwatcher/core"
+
+	json "github.com/goccy/go-json"
 )
 
 var cryptosLoaderStorage *cryptosLoaderType

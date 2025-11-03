@@ -45,7 +45,7 @@ func (d *dispatcher) Init() {
 	}
 
 	if d.buffer == 0 {
-		d.buffer = 1000
+		d.buffer = 100
 	}
 	if d.maxConcurrent == 0 {
 		d.maxConcurrent = 4
@@ -110,12 +110,16 @@ func (d *dispatcher) Pause() {
 	}
 	if d.cancel != nil {
 		d.cancel()
+		d.ctx = nil
+		d.cancel = nil
 	}
 }
 
 func (d *dispatcher) Resume() {
 	d.mu.Lock()
 	d.paused = false
+	d.ctx = nil
+	d.cancel = nil
 	d.ctx, d.cancel = context.WithCancel(context.Background())
 	d.mu.Unlock()
 

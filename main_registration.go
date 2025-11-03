@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -438,7 +437,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"cryptos_map", 0,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(
 					JT.UseCryptosLoader().GetCryptos(),
 					nil,
@@ -477,7 +476,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"cmc100", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(), nil), nil
 			},
 		),
@@ -504,7 +503,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"market_cap", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(), nil), nil
 			},
 		),
@@ -531,7 +530,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"altcoin_index", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(), nil), nil
 			},
 		),
@@ -558,7 +557,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"feargreed", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(), nil), nil
 			},
 		),
@@ -585,7 +584,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"rsi", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(), nil), nil
 			},
 		),
@@ -612,7 +611,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"etf", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(), nil), nil
 			},
 		),
@@ -639,7 +638,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"dominance", delay,
 		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
+			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(), nil), nil
 			},
 		),
@@ -666,7 +665,7 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		"rates", delay,
 		JC.NewDynamicPayloadFetcher(
-			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+			func(payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)
 				if !ok {
 					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD, nil), fmt.Errorf("invalid rk")

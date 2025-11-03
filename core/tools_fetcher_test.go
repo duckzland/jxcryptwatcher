@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -36,7 +35,7 @@ func TestRegisterAndCall(t *testing.T) {
 	f.Init()
 
 	done := make(chan bool, 1)
-	f.Register("test", 1, NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+	f.Register("test", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
 		return NewFetchResult(200, "ok"), nil
 	}), func(result FetchResultInterface) {
 		if result.Code() == 200 && result.Data() == "ok" {
@@ -64,7 +63,7 @@ func TestDispatch(t *testing.T) {
 	resultChan := make(chan map[string]FetchResultInterface, 1)
 
 	for key := range payloads {
-		f.Register(key, 1, NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+		f.Register(key, 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
 			return NewFetchResult(100, payload), nil
 		}), nil, func() bool { return true })
 	}
@@ -90,7 +89,7 @@ func TestErrorHandling(t *testing.T) {
 	errMsg := errors.New("fetch failed")
 	done := make(chan error, 1)
 
-	f.Register("error", 1, NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+	f.Register("error", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
 		return NewFetchResult(500, nil), errMsg
 	}), func(result FetchResultInterface) {
 		if result.Err() != nil {

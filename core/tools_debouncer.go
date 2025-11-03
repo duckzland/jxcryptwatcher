@@ -10,6 +10,7 @@ var coreDebouncer *debouncer = nil
 
 type debouncer struct {
 	mu          sync.Mutex
+	timers      map[string]*time.Timer
 	generations map[string]int
 	callbacks   map[string]func()
 	cancelMap   map[string]context.CancelFunc
@@ -40,24 +41,31 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.callbacks[key] = fn
 	d.mu.Unlock()
 
-	go func(gen int, ctx context.Context) {
+	go func(gen int, ctx context.Context, cancel context.CancelFunc) {
+		defer cancel()
+
 		select {
 		case <-time.After(delay):
 			d.mu.Lock()
 			currentGen := d.generations[key]
+			fn := d.callbacks[key]
 			d.mu.Unlock()
 
-			if gen != currentGen {
-				return
+			if gen == currentGen {
+				fn()
 			}
 
-			fn := d.callbacks[key]
-			fn()
+			d.mu.Lock()
+			delete(d.cancelMap, key)
+			delete(d.callbacks, key)
+			d.mu.Unlock()
+
+			return
 
 		case <-ctx.Done():
 			return
 		}
-	}(gen, ctx)
+	}(gen, ctx, cancel)
 }
 
 func (d *debouncer) Cancel(key string) {
@@ -67,7 +75,7 @@ func (d *debouncer) Cancel(key string) {
 		cancel()
 		delete(d.cancelMap, key)
 	}
-	d.callbacks[key] = func() {}
+	delete(d.callbacks, key)
 	d.mu.Unlock()
 }
 

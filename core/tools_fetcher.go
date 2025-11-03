@@ -16,7 +16,7 @@ type FetchResultInterface interface {
 }
 
 type FetcherInterface interface {
-	Fetch(ctx context.Context, payload any, callback func(FetchResultInterface))
+	Fetch(payload any, callback func(FetchResultInterface))
 }
 
 type fetchResult struct {
@@ -77,7 +77,7 @@ func (m *fetcher) Init() {
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
 
-	m.dispatcher = NewDispatcher(1000, 4, 500*time.Millisecond)
+	m.dispatcher = NewDispatcher(200, 4, 500*time.Millisecond)
 	m.dispatcher.Start()
 }
 
@@ -102,10 +102,7 @@ func (m *fetcher) Call(key string, payload any) {
 	}
 
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		m.executeCall(ctx, key, payload, func(result FetchResultInterface) {
+		m.executeCall(key, payload, func(result FetchResultInterface) {
 			if cb, ok := m.callbacks[key]; ok {
 				cb(result)
 			}
@@ -144,10 +141,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 			payload := item
 
 			m.dispatcher.Submit(func() {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-
-				m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
+				m.executeCall(k, payload, func(result FetchResultInterface) {
 					mu.Lock()
 					results[payload] = result
 					mu.Unlock()
@@ -164,9 +158,9 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	}()
 }
 
-func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {
+func (m *fetcher) executeCall(key string, payload any, setResult func(FetchResultInterface)) {
 	if fetcher := m.fetchers[key]; fetcher != nil {
-		fetcher.Fetch(ctx, payload, func(result FetchResultInterface) {
+		fetcher.Fetch(payload, func(result FetchResultInterface) {
 			result.SetSource(key)
 			setResult(result)
 		})
@@ -176,11 +170,11 @@ func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setR
 }
 
 type dynamicPayloadFetcher struct {
-	handler func(ctx context.Context, payload any) (FetchResultInterface, error)
+	handler func(payload any) (FetchResultInterface, error)
 }
 
-func (df *dynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callback func(FetchResultInterface)) {
-	result, err := df.handler(ctx, payload)
+func (df *dynamicPayloadFetcher) Fetch(payload any, callback func(FetchResultInterface)) {
+	result, err := df.handler(payload)
 	if err != nil {
 		result.SetError(err)
 	}
@@ -188,11 +182,11 @@ func (df *dynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callbac
 }
 
 type genericFetcher struct {
-	handler func(ctx context.Context) (FetchResultInterface, error)
+	handler func() (FetchResultInterface, error)
 }
 
-func (gf *genericFetcher) Fetch(ctx context.Context, _ any, callback func(FetchResultInterface)) {
-	result, err := gf.handler(ctx)
+func (gf *genericFetcher) Fetch(_ any, callback func(FetchResultInterface)) {
+	result, err := gf.handler()
 	if err != nil {
 		result.SetError(err)
 	}
@@ -206,11 +200,11 @@ func NewFetchResult(code int64, data any) FetchResultInterface {
 	}
 }
 
-func NewDynamicPayloadFetcher(handler func(ctx context.Context, payload any) (FetchResultInterface, error)) *dynamicPayloadFetcher {
+func NewDynamicPayloadFetcher(handler func(payload any) (FetchResultInterface, error)) *dynamicPayloadFetcher {
 	return &dynamicPayloadFetcher{handler: handler}
 }
 
-func NewGenericFetcher(handler func(ctx context.Context) (FetchResultInterface, error)) *genericFetcher {
+func NewGenericFetcher(handler func() (FetchResultInterface, error)) *genericFetcher {
 	return &genericFetcher{handler: handler}
 }
 

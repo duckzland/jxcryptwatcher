@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-	"encoding/json"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	json "github.com/goccy/go-json"
 )
 
 func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response, dec any) int64) int64 {
@@ -111,7 +113,8 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 	}
 
 	if callback != nil {
-		return callback(resp, dec)
+		output := callback(resp, dec)
+		return output
 	}
 
 	return NETWORKING_SUCCESS
