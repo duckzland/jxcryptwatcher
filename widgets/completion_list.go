@@ -159,6 +159,18 @@ func (n *completionList) IsDragging() bool {
 	return n.dragging
 }
 
+func (n *completionList) Destroy() {
+	if n.dragging {
+		n.DragEnd()
+	}
+
+	n.onChange = nil
+	n.onClose = nil
+	n.data = nil
+	n.done = nil
+
+}
+
 func (n *completionList) prepareForScroll() {
 
 	limiter := float32(0.3)

@@ -225,7 +225,13 @@ func NewPanelForm(
 			return true
 		},
 		onRender,
-		onDestroy,
+		func(layer *fyne.Container) {
+			if onDestroy != nil {
+				onDestroy(layer)
+			}
+			se.Destroy()
+			te.Destroy()
+		},
 		JC.Window)
 
 	se.SetParent(parent)

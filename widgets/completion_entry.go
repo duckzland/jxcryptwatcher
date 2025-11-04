@@ -106,6 +106,31 @@ func (c *completionEntry) SetValidator(fn func(string) error) {
 	c.Validator = fn
 }
 
+func (c *completionEntry) Destroy() {
+	if c.worker != nil {
+		c.worker.Cancel()
+	}
+
+	if activeEntry == c {
+		activeEntry = nil
+	}
+
+	if c.popup != nil {
+		c.popup.Hide()
+		c.popup.Objects = nil
+	}
+
+	c.options = nil
+	c.completionList = nil
+	c.container = nil
+	c.canvas = nil
+	c.action = nil
+	c.parent = nil
+	c.Validator = nil
+
+	JC.Logln("Destroyed completion entry")
+}
+
 func (c *completionEntry) SetParent(parent DialogForm) {
 	c.parent = parent
 }
