@@ -28,7 +28,7 @@ type completionWorker struct {
 func (c *completionWorker) Init() {
 	c.expected = (c.total + c.chunk - 1) / c.chunk
 	c.resultChan = make(chan []string, c.expected)
-	c.closeChan = make(chan struct{}, 100000)
+	c.closeChan = make(chan struct{}, 100)
 }
 
 func (c *completionWorker) Search(s string, fn func(input string, results []string)) {
@@ -92,6 +92,8 @@ func (c *completionWorker) run() {
 
 	state := &completionWorkerState{state: false}
 	timer := time.NewTimer(c.delay)
+
+	defer timer.Stop()
 
 	go func() {
 		select {
