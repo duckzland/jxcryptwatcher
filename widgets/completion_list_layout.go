@@ -61,7 +61,7 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 		switch {
 		case current < l.itemVisible:
 			for i := current; i < l.itemVisible; i++ {
-				l.parent.contentBox.Add(NewCompletionText(l.itemHeight, l.parent))
+				l.parent.contentBox.Add(NewCompletionText(l.parent.contentBox.Size().Width, l.itemHeight, l.parent))
 			}
 
 		case current > l.itemVisible:

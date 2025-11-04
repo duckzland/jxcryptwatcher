@@ -13,7 +13,7 @@ import (
 	_ "net/http/pprof"
 )
 
-const MemoryDebug = false
+const MemoryDebug = true
 const PProfDebug = false
 
 func InitLogger() {

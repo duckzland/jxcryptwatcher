@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -48,6 +49,8 @@ func (d *dialogForm) Show() {
 }
 
 func (d *dialogForm) Hide() {
+
+	defer runtime.GC()
 
 	d.confirm.Destroy()
 	d.cancel.Destroy()

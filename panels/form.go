@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -22,6 +23,8 @@ func NewPanelForm(
 	onRender func(layer *fyne.Container),
 	onDestroy func(layer *fyne.Container),
 ) JW.DialogForm {
+
+	JC.PrintPerfStats("Opening panel form", time.Now())
 
 	var allowValidation bool = false
 

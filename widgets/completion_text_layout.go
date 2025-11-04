@@ -5,6 +5,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/theme"
 )
 
 type completionTextLayout struct {
@@ -30,7 +31,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	}
 
 	textHeight := r.text.TextSize
-	yOffset := ((r.height - textHeight) / 2) - 4
+	yOffset := ((r.height - textHeight) / 2) - theme.Padding()
 	newPos := fyne.NewPos(8, float32(yOffset))
 
 	if r.text.Position() != newPos {
@@ -58,7 +59,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 
 func (r *completionTextLayout) MinSize() fyne.Size {
 	if r.cSize.Height == 0 {
-		r.cSize = fyne.NewSize(0, r.height-4)
+		r.cSize = fyne.NewSize(0, r.height-theme.Padding())
 	}
 	return r.cSize
 }

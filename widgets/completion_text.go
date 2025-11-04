@@ -15,15 +15,17 @@ import (
 type completionText struct {
 	widget.BaseWidget
 	index      int
-	parent     *completionList
 	text       string
+	parent     *completionList
 	label      *canvas.Text
+	background *canvas.Rectangle
+	width      float32
 	height     float32
 	hovered    bool
-	background *canvas.Rectangle
 	bgcolor    color.Color
 	sepcolor   color.Color
 	traColor   color.Color
+	cSize      fyne.Size
 }
 
 func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
@@ -62,6 +64,10 @@ func (s *completionText) SetParent(p *completionList) {
 	s.parent = p
 }
 
+func (p *completionText) MinSize() fyne.Size {
+	return p.cSize
+}
+
 func (s *completionText) Tapped(_ *fyne.PointEvent) {
 	if s.parent.IsDragging() {
 		return
@@ -71,6 +77,7 @@ func (s *completionText) Tapped(_ *fyne.PointEvent) {
 		s.parent.OnSelected(s.index)
 	}
 }
+
 func (s *completionText) MouseIn(*desktop.MouseEvent) {
 
 	if JC.IsMobile {
@@ -108,14 +115,16 @@ func (s *completionText) MouseOut() {
 
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
-func NewCompletionText(height float32, parent *completionList) *completionText {
+func NewCompletionText(width float32, height float32, parent *completionList) *completionText {
 	s := &completionText{
 		label:    canvas.NewText("", JC.UseTheme().GetColor(theme.ColorNameForeground)),
+		width:    width,
 		height:   height,
 		parent:   parent,
 		bgcolor:  JC.UseTheme().GetColor(theme.ColorNameHover),
 		sepcolor: JC.UseTheme().GetColor(theme.ColorNameSeparator),
 		traColor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
+		cSize:    fyne.NewSize(width, height-theme.Padding()),
 	}
 
 	if !JC.IsMobile {
