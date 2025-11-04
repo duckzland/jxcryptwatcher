@@ -82,7 +82,9 @@ func updateDisplay() bool {
 				}
 			}
 
-			runtime.GC()
+			if updateCount != 0 {
+				runtime.GC()
+			}
 		})
 	}
 
@@ -124,6 +126,10 @@ func updateTickerDisplay() bool {
 					JC.Notify("Ticker display refreshed with new rates")
 				}
 			}
+		}
+
+		if success != 0 {
+			runtime.GC()
 		}
 	}
 
