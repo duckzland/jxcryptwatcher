@@ -162,6 +162,14 @@ func (a *mainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
 			height += a.tickers.MinSize().Height
 		}
 
+		if height < 480 {
+			height = 480
+		}
+
+		if width < 320 {
+			width = 320
+		}
+
 		a.cSize = fyne.NewSize(width, height)
 	}
 
