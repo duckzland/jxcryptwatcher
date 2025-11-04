@@ -11,15 +11,27 @@ import (
 
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/google/gops/agent"
 )
 
-const MemoryDebug = true
-const PProfDebug = false
+const MemoryDebug = false
+const PProfDebug = true
+const GopsDebug = false
 
 func InitLogger() {
 	log.SetOutput(os.Stdout)
 	log.SetPrefix("[JX] ")
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
+
+	if GopsDebug {
+		go func() {
+			Logln("Starting gops agent")
+			if err := agent.Listen(agent.Options{}); err != nil {
+				Logf("gops agent failed: %v", err)
+			}
+		}()
+	}
 
 	if PProfDebug {
 		go func() {
