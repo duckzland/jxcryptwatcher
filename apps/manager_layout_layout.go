@@ -38,8 +38,8 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	if size.Width < 320 {
 		size.Width = 320
 	}
-	if size.Height < 480 {
-		size.Height = 480
+	if size.Height < 560 {
+		size.Height = 560
 	}
 
 	if a.background != nil {
@@ -48,7 +48,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 			a.background.Move(fyne.NewPos(0, 0))
 		}
 
-		a.background.SetMinSize(fyne.NewSize(320, 480))
+		a.background.SetMinSize(fyne.NewSize(320, 560))
 	}
 
 	if size.Width >= splitThreshold {
@@ -162,8 +162,8 @@ func (a *mainLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
 			height += a.tickers.MinSize().Height
 		}
 
-		if height < 480 {
-			height = 480
+		if height < 560 {
+			height = 560
 		}
 
 		if width < 320 {
