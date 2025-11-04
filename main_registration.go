@@ -872,7 +872,7 @@ func registerDispatcher() {
 	JX.RegisterAnimationDispatcher().Init()
 
 	ad := JX.UseAnimationDispatcher()
-	ad.SetBufferSize(1000000)
+	ad.SetBufferSize(300)
 
 	if JC.IsMobile {
 		ad.SetDelayBetween(200 * time.Millisecond)
@@ -886,7 +886,7 @@ func registerDispatcher() {
 	ad.Start()
 
 	d := JC.UseDispatcher()
-	d.SetBufferSize(1000000)
+	d.SetBufferSize(300)
 
 	if JC.IsMobile {
 		d.SetDelayBetween(10 * time.Millisecond)

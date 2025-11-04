@@ -2,7 +2,9 @@ package apps
 
 import (
 	"encoding/json"
+	"runtime"
 	"sync"
+	"time"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
@@ -34,6 +36,10 @@ func (sm *snapshotManager) IsSnapshotted() bool {
 }
 
 func (sm *snapshotManager) LoadPanels() int {
+	defer runtime.GC()
+
+	JC.PrintPerfStats("Loading snapshot for panels", time.Now())
+
 	snapshot := JT.NewPanelDataCache()
 
 	if !sm.load("snapshots-panels", &snapshot) {
@@ -60,6 +66,10 @@ func (sm *snapshotManager) LoadPanels() int {
 }
 
 func (sm *snapshotManager) LoadCryptos() int {
+	defer runtime.GC()
+
+	JC.PrintPerfStats("Loading snapshot for cryptos", time.Now())
+
 	snapshot := JT.NewCryptosMapCache()
 
 	if !sm.load("snapshots-cryptos", &snapshot) {
@@ -76,6 +86,10 @@ func (sm *snapshotManager) LoadCryptos() int {
 }
 
 func (sm *snapshotManager) LoadTickers() int {
+	defer runtime.GC()
+
+	JC.PrintPerfStats("Loading snapshot for tickers", time.Now())
+
 	snapshot := JT.NewTickerDataCache()
 
 	if !sm.load("snapshots-tickers", &snapshot) {
@@ -102,6 +116,10 @@ func (sm *snapshotManager) LoadTickers() int {
 }
 
 func (sm *snapshotManager) LoadExchangeData() int {
+	defer runtime.GC()
+
+	JC.PrintPerfStats("Loading snapshot for exchange data", time.Now())
+
 	snapshot := JT.NewExchangeDataCacheSnapshot()
 
 	if !sm.load("snapshots-exchange", &snapshot) {
@@ -113,6 +131,10 @@ func (sm *snapshotManager) LoadExchangeData() int {
 }
 
 func (sm *snapshotManager) LoadTickerData() int {
+	defer runtime.GC()
+
+	JC.PrintPerfStats("Loading snapshot for ticker data", time.Now())
+
 	snapshot := JT.NewTickerDataCacheSnapshot()
 
 	if !sm.load("snapshots-ticker-cache", &snapshot) {

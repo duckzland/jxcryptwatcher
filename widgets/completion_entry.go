@@ -127,8 +127,6 @@ func (c *completionEntry) Destroy() {
 	c.action = nil
 	c.parent = nil
 	c.Validator = nil
-
-	JC.Logln("Destroyed completion entry")
 }
 
 func (c *completionEntry) SetParent(parent DialogForm) {
