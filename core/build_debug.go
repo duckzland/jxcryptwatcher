@@ -16,7 +16,7 @@ import (
 )
 
 const MemoryDebug = false
-const PProfDebug = true
+const PProfDebug = false
 const GopsDebug = false
 
 func InitLogger() {
