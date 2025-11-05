@@ -8,6 +8,14 @@
 CMD=${1:-memstats}
 KEYWORD=${2:-jxwatcher}
 
+# Check required tools
+for tool in pgrep watch gops; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Error: '$tool' is not installed. Please install it and try again."
+    exit 1
+  fi
+done
+
 # Find the PID of the process matching the keyword
 PID=$(pgrep -f "$KEYWORD")
 
