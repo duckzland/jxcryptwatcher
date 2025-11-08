@@ -22,7 +22,7 @@ func main() {
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
 
-	setAppIcon()
+	registerAppIcon()
 
 	registerFonts()
 

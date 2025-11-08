@@ -13,18 +13,7 @@ import (
 	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
-
-	_ "embed"
 )
-
-//go:embed static/256x256/jxwatcher.png
-var appIconData []byte
-
-//go:embed fonts/Roboto-Regular-subset.ttf
-var regularFont []byte
-
-//go:embed fonts/Roboto-Bold-subset.ttf
-var boldFont []byte
 
 func updateDisplay() bool {
 	const chunkSize = 100
@@ -766,16 +755,6 @@ func scheduledNotificationReset() {
 	})
 }
 
-func setAppIcon() {
-	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
-	JC.Window.SetIcon(icon)
-}
-
 func createPanel(pkt JT.PanelData) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, openPanelEditForm, removePanel)
-}
-
-func registerFonts() {
-	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: false}, fyne.NewStaticResource("Roboto-Regular.ttf", regularFont))
-	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: true}, fyne.NewStaticResource("Roboto-Bold.ttf", boldFont))
 }

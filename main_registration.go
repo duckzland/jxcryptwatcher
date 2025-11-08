@@ -17,7 +17,28 @@ import (
 	JS "jxwatcher/tickers"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
+
+	_ "embed"
 )
+
+//go:embed static/256x256/jxwatcher.png
+var appIconData []byte
+
+//go:embed fonts/Roboto-Regular-subset.ttf
+var regularFont []byte
+
+//go:embed fonts/Roboto-Bold-subset.ttf
+var boldFont []byte
+
+func registerAppIcon() {
+	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
+	JC.Window.SetIcon(icon)
+}
+
+func registerFonts() {
+	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: false}, fyne.NewStaticResource("Roboto-Regular.ttf", regularFont))
+	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: true}, fyne.NewStaticResource("Roboto-Bold.ttf", boldFont))
+}
 
 func registerUtility() {
 	JC.RegisterDebouncer().Init()
