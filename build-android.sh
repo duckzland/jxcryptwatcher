@@ -125,11 +125,11 @@ if [[ $1 == "debug" || $1 == "local-debug" ]]; then
 fi
 
 if [[ $1 == "local" ]]; then
-    tags="production,jxandroid,local"
+    tags="production,jxandroid,local,no_emoji,no_animations,no_fonts"
 fi
 
 if [[ $1 == "local-debug" ]]; then
-    tags="jxandroid,local"
+    tags="jxandroid,local,no_emoji,no_animations,no_fonts"
 fi
 
 ## Target os, this will create only for android with arm64 processor
