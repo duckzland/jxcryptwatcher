@@ -30,6 +30,13 @@ var regularFont []byte
 //go:embed fonts/Roboto-Bold-subset.ttf
 var boldFont []byte
 
+func registerTheme() {
+	JC.RegisterThemeManager().Init()
+	// Comment this out for now, as we dont have real settings to force DarkTheme
+	// JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
+	JC.App.Settings().SetTheme(JC.UseTheme())
+}
+
 func registerAppIcon() {
 	icon := fyne.NewStaticResource("jxwatcher.png", appIconData)
 	JC.Window.SetIcon(icon)

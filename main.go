@@ -12,15 +12,11 @@ func main() {
 
 	JC.Logln("App is booting...")
 
-	JC.RegisterThemeManager().Init()
-
 	JC.App = app.NewWithID(JC.AppID)
-	// Comment this out for now, as we dont have real settings to force DarkTheme
-	// JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
-
-	JC.App.Settings().SetTheme(JC.UseTheme())
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
+
+	registerTheme()
 
 	registerAppIcon()
 
