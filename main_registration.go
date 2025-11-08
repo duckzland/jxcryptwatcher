@@ -30,6 +30,12 @@ var regularFont []byte
 //go:embed fonts/Roboto-Bold-subset.ttf
 var boldFont []byte
 
+func registerLogger() {
+	JC.InitLogger()
+
+	JC.Logln("App is booting...")
+}
+
 func registerTheme() {
 	JC.RegisterThemeManager().Init()
 	// Comment this out for now, as we dont have real settings to force DarkTheme

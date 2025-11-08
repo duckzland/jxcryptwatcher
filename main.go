@@ -8,13 +8,12 @@ import (
 )
 
 func main() {
-	JC.InitLogger()
-
-	JC.Logln("App is booting...")
 
 	JC.App = app.NewWithID(JC.AppID)
 
 	JC.Window = JC.App.NewWindow("JXCrypto Watcher")
+
+	registerLogger()
 
 	registerTheme()
 
