@@ -102,7 +102,7 @@ if [[ -z "$version" ]]; then
 fi
 
 ## Production options 
-tags="production,jxandroid,no_emoji,no_animations"
+tags="production,jxandroid,no_emoji,no_animations,no_fonts"
 release="true"
 
 ## Note: must have at least -pthread
@@ -112,7 +112,7 @@ androidXMLDebug="false"
 
 ## Debugging options, you will need to set -release to false
 if [[ $1 == "debug" || $1 == "local-debug" ]]; then
-    tags="jxandroid,no_emoji,no_animations"
+    tags="jxandroid,no_emoji,no_animations,no_fonts"
     release="false"
 
     # Use simpler flags for debugging

@@ -49,25 +49,25 @@ fi
 # Build flags
 ldflags="-w -s"
 gcflags="-l"
-tags="production,desktop,no_emoji,no_animations"
+tags="production,desktop,no_emoji,no_animations,no_fonts"
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     ldflags=""
     gcflags="-l"
-    tags="desktop,no_emoji,no_animations"
+    tags="desktop,no_emoji,no_animations,no_fonts"
     cflags="-pipe -Wall -g -pthread"
     cldflags="-pthread"
     echo_success "Debug mode enabled: building with debug flags"
 fi
 
 if [[ $1 == "local" ]]; then
-    tags="production,desktop,local,no_emoji,no_animations"
+    tags="production,desktop,local,no_emoji,no_animations,no_fonts"
 fi
 
 if [[ $1 == "local-debug" ]]; then
-    tags="desktop,local,no_emoji,no_animations"
+    tags="desktop,local,no_emoji,no_animations,no_fonts"
 fi
 
 # Paths

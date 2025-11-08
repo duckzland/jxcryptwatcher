@@ -13,6 +13,8 @@ var activeTheme *appTheme = nil
 type appTheme struct {
 	mu      sync.Mutex
 	variant fyne.ThemeVariant
+	regular fyne.Resource
+	bold    fyne.Resource
 }
 
 func (t *appTheme) Init() {
@@ -28,6 +30,17 @@ func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
 	t.variant = variant
 }
 
+func (t *appTheme) SetFonts(style fyne.TextStyle, font fyne.Resource) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	switch {
+	case style.Bold:
+		t.bold = font
+	default:
+		t.regular = font
+	}
+}
+
 func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	if t.variant == theme.VariantLight {
 		return t.lightColor(name)
@@ -36,19 +49,10 @@ func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 }
 
 func (t *appTheme) Font(style fyne.TextStyle) fyne.Resource {
-	if style.Monospace {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Monospace: true})
-	}
-	if style.Bold && style.Italic {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true, Italic: true})
-	}
 	if style.Bold {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Bold: true})
+		return t.bold
 	}
-	if style.Italic {
-		return theme.DefaultTheme().Font(fyne.TextStyle{Italic: true})
-	}
-	return theme.DefaultTheme().Font(fyne.TextStyle{})
+	return t.regular
 }
 
 func (t *appTheme) Icon(name fyne.ThemeIconName) fyne.Resource {

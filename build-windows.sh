@@ -75,7 +75,7 @@ wxs_file="${build_dir}/installer.wxs"
 
 # Production compiling flags
 ldflags="-w -s -H=windowsgui"
-tags="production,desktop,no_emoji,no_animations"
+tags="production,desktop,no_emoji,no_animations,no_fonts"
 
 ## Note: must have at least -pthread
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
@@ -85,7 +85,7 @@ cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     ldflags=""
     gcflags="-l"
-    tags="desktop,no_emoji,no_animations"
+    tags="desktop,no_emoji,no_animations,no_fonts"
 
     ## Note: must have at least -pthread
     cflags="-pipe -Wall -g -pthread"
@@ -95,11 +95,11 @@ if [[ $1 == "debug" || $1 == "local-debug" ]]; then
 fi
 
 if [[ $1 == "local" ]]; then
-    tags="production,desktop,local,no_emoji,no_animations"
+    tags="production,desktop,local,no_emoji,no_animations,no_fonts"
 fi
 
 if [[ $1 == "local-debug" ]]; then
-    tags="desktop,local,no_emoji,no_animations"
+    tags="desktop,local,no_emoji,no_animations,no_fonts"
 fi
 
 # Only no need to regenerate this

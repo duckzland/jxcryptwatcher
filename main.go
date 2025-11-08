@@ -14,6 +14,8 @@ func main() {
 
 	JC.RegisterThemeManager().Init()
 
+	registerFonts()
+
 	JC.App = app.NewWithID(JC.AppID)
 	// Comment this out for now, as we dont have real settings to force DarkTheme
 	// JC.UseTheme().SetVariant(JC.App.Settings().ThemeVariant())
