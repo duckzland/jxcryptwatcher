@@ -122,7 +122,7 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			right:  x + g.dynCellSize.Width,
 			top:    y,
 			bottom: y + g.dynCellSize.Height,
-			panel:  child.(*panelDisplay),
+			uuid:   child.(*panelDisplay).GetTag(),
 		}
 
 		dragDropZones = append(dragDropZones, &dz)

@@ -20,7 +20,7 @@ type panelDropZone struct {
 	left   float32
 	bottom float32
 	right  float32
-	panel  *panelDisplay
+	uuid   string
 }
 
 func RegisterPanelGrid(createPanel CreatePanelFunc) {

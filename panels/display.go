@@ -379,7 +379,7 @@ func (h *panelDisplay) findTargetIndex() int {
 			h.dragOffset.Y >= zone.top &&
 			h.dragOffset.Y <= zone.bottom {
 
-			if zone.panel == h {
+			if zone.uuid == h.GetTag() {
 				JC.Logln(fmt.Sprintf("Refusing to drop panel to the old position %d", i))
 				return -1
 			}
