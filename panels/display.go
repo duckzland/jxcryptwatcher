@@ -485,22 +485,6 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 
 	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
-	// pl.action = NewPanelAction(
-	// 	func() {
-	// 		dynpk, _ := pv.Get()
-	// 		if onEdit != nil {
-	// 			onEdit(dynpk, uuid)
-	// 		}
-	// 	},
-	// 	func() {
-	// 		if onDelete != nil {
-	// 			JA.StartFadeOutBackground(pl.background, 300*time.Millisecond, func() {
-	// 				onDelete(uuid)
-	// 			})
-	// 		}
-	// 	},
-	// )
-
 	pd := &panelDisplay{
 		tag: uuid,
 		fps: 3 * time.Millisecond,
@@ -511,10 +495,8 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 			pl.content,
 			pl.subtitle,
 			pl.bottomText,
-			// pl.action,
 		),
-		shown: 0,
-		// action:     pl.action,
+		shown:      0,
 		visible:    false,
 		background: pl.background,
 		title:      pl.title,
@@ -530,8 +512,6 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 	}
 
 	pd.ExtendBaseWidget(pd)
-
-	// pd.action.Hide()
 
 	pd.status = pdt.GetStatus()
 
