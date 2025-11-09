@@ -186,6 +186,10 @@ func (h *panelDisplay) Hide() {
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 
+	if JM.UseStatus().IsDraggable() {
+		return
+	}
+
 	if h.actionVisible && !h.action.Visible() {
 		h.ShowTarget()
 		return
