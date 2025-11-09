@@ -538,7 +538,7 @@ func (h *panelDisplay) createAction() {
 			func() {
 				if h.onDelete != nil {
 					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
-						h.onDelete(h.tag)
+						h.onDelete(h.GetTag())
 					})
 				}
 			},
