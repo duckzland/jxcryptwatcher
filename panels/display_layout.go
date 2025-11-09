@@ -23,6 +23,10 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		return
 	}
 
+	if len(objects) == 0 {
+		return
+	}
+
 	spacer := float32(-2)
 
 	if pl.background != nil {
@@ -38,22 +42,22 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	centerItems := []fyne.CanvasObject{}
 	sizes := []fyne.Size{}
 	totalHeight := float32(0)
-	objects = []fyne.CanvasObject{}
+	ob := []fyne.CanvasObject{}
 
 	if pl.title != nil {
-		objects = append(objects, pl.title)
+		ob = append(ob, pl.title)
 	}
 	if pl.content != nil {
-		objects = append(objects, pl.content)
+		ob = append(ob, pl.content)
 	}
 	if pl.subtitle != nil {
-		objects = append(objects, pl.subtitle)
+		ob = append(ob, pl.subtitle)
 	}
 	if pl.bottomText != nil {
-		objects = append(objects, pl.bottomText)
+		ob = append(ob, pl.bottomText)
 	}
 
-	for _, obj := range objects {
+	for _, obj := range ob {
 		if obj.Visible() {
 			sz := obj.MinSize()
 			if sz.Width > 0 && sz.Height > 0 {

@@ -31,24 +31,25 @@ type PanelDisplay interface {
 
 type panelDisplay struct {
 	widget.BaseWidget
-	tag          string
-	fps          time.Duration
-	status       int
-	shown        int
-	visible      bool
-	container    *fyne.Container
-	dragScroll   float32
-	dragPosition fyne.Position
-	dragOffset   fyne.Position
-	dragging     bool
-	background   *canvas.Rectangle
-	action       *panelAction
-	title        *panelText
-	content      *panelText
-	subtitle     *panelText
-	bottomText   *panelText
-	onEdit       func(pk string, uuid string)
-	onDelete     func(uuid string)
+	tag           string
+	fps           time.Duration
+	status        int
+	shown         int
+	actionVisible bool
+	visible       bool
+	container     *fyne.Container
+	dragScroll    float32
+	dragPosition  fyne.Position
+	dragOffset    fyne.Position
+	dragging      bool
+	background    *canvas.Rectangle
+	action        *panelAction
+	title         *panelText
+	content       *panelText
+	subtitle      *panelText
+	bottomText    *panelText
+	onEdit        func(pk string, uuid string)
+	onDelete      func(uuid string)
 }
 
 func (h *panelDisplay) GetTag() string {
@@ -56,31 +57,8 @@ func (h *panelDisplay) GetTag() string {
 }
 
 func (h *panelDisplay) ShowTarget() {
-	if h.action == nil {
-		h.action = NewPanelAction(
-			func() {
-				pdt := JT.UsePanelMaps().GetDataByID(h.GetTag())
-				pv := pdt.UseData()
-				dynpk, _ := pv.Get()
-				if h.onEdit != nil {
-					h.onEdit(dynpk, h.tag)
-				}
-			},
-			func() {
-				if h.onDelete != nil {
-					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
-						h.onDelete(h.tag)
-					})
-				}
-			},
-		)
-		h.container.Layout.(*panelDisplayLayout).action = h.action
-		h.container.Objects = append(h.container.Objects, h.action)
-		h.container.Refresh()
-	}
-
-	h.action.Show()
-	h.visible = true
+	h.createAction()
+	h.actionVisible = true
 	h.Refresh()
 
 	if UsePanelGrid().HasActiveAction() {
@@ -91,14 +69,8 @@ func (h *panelDisplay) ShowTarget() {
 }
 
 func (h *panelDisplay) HideTarget() {
-	if h.action != nil {
-		h.action.Hide()
-		h.container.Layout.(*panelDisplayLayout).action = nil
-		h.container.Remove(h.action)
-		h.action = nil
-	}
-
-	h.visible = false
+	h.removeAction()
+	h.actionVisible = false
 	h.Refresh()
 	UsePanelGrid().ResetActiveAction()
 }
@@ -108,12 +80,56 @@ func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (h *panelDisplay) Show() {
+
+	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
+	if h.background == nil {
+		h.background = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
+		h.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
+		h.container.Layout.(*panelDisplayLayout).background = h.background
+	}
+
+	if h.title == nil {
+		h.title = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+		h.container.Layout.(*panelDisplayLayout).title = h.title
+	}
+
+	if h.subtitle == nil {
+		h.subtitle = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
+		h.container.Layout.(*panelDisplayLayout).subtitle = h.subtitle
+	}
+
+	if h.content == nil {
+		h.content = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+		h.container.Layout.(*panelDisplayLayout).content = h.content
+	}
+
+	if h.bottomText == nil {
+		h.bottomText = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
+		h.container.Layout.(*panelDisplayLayout).bottomText = h.bottomText
+	}
+
+	h.container.Objects = []fyne.CanvasObject{
+		h.background,
+		h.title,
+		h.subtitle,
+		h.content,
+		h.bottomText,
+	}
+
+	if h.actionVisible {
+		h.createAction()
+	}
+
+	h.visible = true
 	h.BaseWidget.Show()
 	h.background.Show()
 	h.title.Show()
 	h.subtitle.Show()
 	h.content.Show()
 	h.bottomText.Show()
+
+	h.updateContent()
+	h.Refresh()
 
 	if h.shown == 0 {
 		h.shown++
@@ -127,16 +143,50 @@ func (h *panelDisplay) Show() {
 
 func (h *panelDisplay) Hide() {
 	h.BaseWidget.Hide()
-	h.background.Hide()
-	h.title.Hide()
-	h.subtitle.Hide()
-	h.content.Hide()
-	h.bottomText.Hide()
+
+	if h.background != nil {
+		h.background.Hide()
+		h.container.Layout.(*panelDisplayLayout).background = nil
+		h.container.Remove(h.background)
+		h.background = nil
+	}
+
+	if h.title != nil {
+		h.title.Hide()
+		h.container.Layout.(*panelDisplayLayout).title = nil
+		h.container.Remove(h.title)
+		h.title = nil
+	}
+
+	if h.subtitle != nil {
+		h.subtitle.Hide()
+		h.container.Layout.(*panelDisplayLayout).subtitle = nil
+		h.container.Remove(h.subtitle)
+		h.subtitle = nil
+	}
+
+	if h.content != nil {
+		h.content.Hide()
+		h.container.Layout.(*panelDisplayLayout).content = nil
+		h.container.Remove(h.content)
+		h.content = nil
+	}
+
+	if h.bottomText != nil {
+		h.bottomText.Hide()
+		h.container.Layout.(*panelDisplayLayout).bottomText = nil
+		h.container.Remove(h.bottomText)
+		h.bottomText = nil
+	}
+
+	h.removeAction()
+
+	h.visible = false
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 
-	if h.visible && !h.action.Visible() {
+	if h.actionVisible && !h.action.Visible() {
 		h.ShowTarget()
 		return
 	}
@@ -145,7 +195,7 @@ func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
 		return
 	}
 
-	if h.visible {
+	if h.actionVisible {
 		h.HideTarget()
 	} else {
 		h.ShowTarget()
@@ -189,6 +239,10 @@ func (h *panelDisplay) DragEnd() {
 }
 
 func (h *panelDisplay) updateContent() {
+
+	if !h.visible {
+		return
+	}
 
 	pkt := JT.UsePanelMaps().GetDataByID(h.GetTag())
 	if pkt == nil {
@@ -441,6 +495,10 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
+	if !h.visible {
+		h.Show()
+	}
+
 	if !JC.IsMobile {
 		JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil)
 	}
@@ -466,6 +524,40 @@ func (h *panelDisplay) syncData() bool {
 	return true
 }
 
+func (h *panelDisplay) createAction() {
+	if h.action == nil {
+		h.action = NewPanelAction(
+			func() {
+				pdt := JT.UsePanelMaps().GetDataByID(h.GetTag())
+				pv := pdt.UseData()
+				dynpk, _ := pv.Get()
+				if h.onEdit != nil {
+					h.onEdit(dynpk, h.tag)
+				}
+			},
+			func() {
+				if h.onDelete != nil {
+					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
+						h.onDelete(h.tag)
+					})
+				}
+			},
+		)
+		h.container.Layout.(*panelDisplayLayout).action = h.action
+		h.container.Objects = append(h.container.Objects, h.action)
+		h.action.Show()
+	}
+}
+
+func (h *panelDisplay) removeAction() {
+	if h.action != nil {
+		h.action.Hide()
+		h.container.Layout.(*panelDisplayLayout).action = nil
+		h.container.Remove(h.action)
+		h.action = nil
+	}
+}
+
 func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string)) *panelDisplay {
 
 	uuid := JC.CreateUUID()
@@ -473,38 +565,15 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 	pv := pdt.UseData()
 	ps := pdt.UseStatus()
 
-	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
-
-	pl := &panelDisplayLayout{
-		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG)),
-		title:      NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		subtitle:   NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		content:    NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		bottomText: NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-	}
-
-	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-
 	pd := &panelDisplay{
-		tag: uuid,
-		fps: 3 * time.Millisecond,
-		container: container.New(
-			pl,
-			pl.background,
-			pl.title,
-			pl.content,
-			pl.subtitle,
-			pl.bottomText,
-		),
-		shown:      0,
-		visible:    false,
-		background: pl.background,
-		title:      pl.title,
-		content:    pl.content,
-		subtitle:   pl.subtitle,
-		bottomText: pl.bottomText,
-		onEdit:     onEdit,
-		onDelete:   onDelete,
+		tag:           uuid,
+		fps:           3 * time.Millisecond,
+		container:     container.New(&panelDisplayLayout{}),
+		shown:         0,
+		actionVisible: false,
+		visible:       false,
+		onEdit:        onEdit,
+		onDelete:      onDelete,
 	}
 
 	if JC.IsMobile {

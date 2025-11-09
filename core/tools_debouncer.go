@@ -52,7 +52,9 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 			d.mu.Unlock()
 
 			if gen == currentGen {
-				fn()
+				if fn != nil {
+					fn()
+				}
 			}
 
 			d.mu.Lock()
