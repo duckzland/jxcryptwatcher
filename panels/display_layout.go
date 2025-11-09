@@ -68,15 +68,17 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		currentY += objSize.Height + spacer
 	}
 
-	actionSize := pl.action.MinSize()
-	actionPos := fyne.NewPos(size.Width-actionSize.Width, 0)
+	if pl.action != nil {
+		actionSize := pl.action.MinSize()
+		actionPos := fyne.NewPos(size.Width-actionSize.Width, 0)
 
-	if pl.action.Position() != actionPos {
-		pl.action.Move(actionPos)
-	}
+		if pl.action.Position() != actionPos {
+			pl.action.Move(actionPos)
+		}
 
-	if pl.action.Size() != actionSize {
-		pl.action.Resize(actionSize)
+		if pl.action.Size() != actionSize {
+			pl.action.Resize(actionSize)
+		}
 	}
 }
 

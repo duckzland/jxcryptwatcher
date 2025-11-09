@@ -36,17 +36,19 @@ type panelDisplay struct {
 	status       int
 	shown        int
 	visible      bool
-	container    fyne.CanvasObject
+	container    *fyne.Container
 	dragScroll   float32
 	dragPosition fyne.Position
 	dragOffset   fyne.Position
 	dragging     bool
 	background   *canvas.Rectangle
-	action       fyne.CanvasObject
+	action       *panelAction
 	title        *panelText
 	content      *panelText
 	subtitle     *panelText
 	bottomText   *panelText
+	onEdit       func(pk string, uuid string)
+	onDelete     func(uuid string)
 }
 
 func (h *panelDisplay) GetTag() string {
@@ -54,6 +56,29 @@ func (h *panelDisplay) GetTag() string {
 }
 
 func (h *panelDisplay) ShowTarget() {
+	if h.action == nil {
+		h.action = NewPanelAction(
+			func() {
+				pdt := JT.UsePanelMaps().GetDataByID(h.GetTag())
+				pv := pdt.UseData()
+				dynpk, _ := pv.Get()
+				if h.onEdit != nil {
+					h.onEdit(dynpk, h.tag)
+				}
+			},
+			func() {
+				if h.onDelete != nil {
+					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
+						h.onDelete(h.tag)
+					})
+				}
+			},
+		)
+		h.container.Layout.(*panelDisplayLayout).action = h.action
+		h.container.Objects = append(h.container.Objects, h.action)
+		h.container.Refresh()
+	}
+
 	h.action.Show()
 	h.visible = true
 	h.Refresh()
@@ -66,7 +91,13 @@ func (h *panelDisplay) ShowTarget() {
 }
 
 func (h *panelDisplay) HideTarget() {
-	h.action.Hide()
+	if h.action != nil {
+		h.action.Hide()
+		h.container.Layout.(*panelDisplayLayout).action = nil
+		h.container.Remove(h.action)
+		h.action = nil
+	}
+
 	h.visible = false
 	h.Refresh()
 	UsePanelGrid().ResetActiveAction()
@@ -454,21 +485,21 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 
 	pl.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
-	pl.action = NewPanelAction(
-		func() {
-			dynpk, _ := pv.Get()
-			if onEdit != nil {
-				onEdit(dynpk, uuid)
-			}
-		},
-		func() {
-			if onDelete != nil {
-				JA.StartFadeOutBackground(pl.background, 300*time.Millisecond, func() {
-					onDelete(uuid)
-				})
-			}
-		},
-	)
+	// pl.action = NewPanelAction(
+	// 	func() {
+	// 		dynpk, _ := pv.Get()
+	// 		if onEdit != nil {
+	// 			onEdit(dynpk, uuid)
+	// 		}
+	// 	},
+	// 	func() {
+	// 		if onDelete != nil {
+	// 			JA.StartFadeOutBackground(pl.background, 300*time.Millisecond, func() {
+	// 				onDelete(uuid)
+	// 			})
+	// 		}
+	// 	},
+	// )
 
 	pd := &panelDisplay{
 		tag: uuid,
@@ -480,16 +511,18 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 			pl.content,
 			pl.subtitle,
 			pl.bottomText,
-			pl.action,
+			// pl.action,
 		),
-		shown:      0,
-		action:     pl.action,
+		shown: 0,
+		// action:     pl.action,
 		visible:    false,
 		background: pl.background,
 		title:      pl.title,
 		content:    pl.content,
 		subtitle:   pl.subtitle,
 		bottomText: pl.bottomText,
+		onEdit:     onEdit,
+		onDelete:   onDelete,
 	}
 
 	if JC.IsMobile {
@@ -498,7 +531,7 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 
 	pd.ExtendBaseWidget(pd)
 
-	pd.action.Hide()
+	// pd.action.Hide()
 
 	pd.status = pdt.GetStatus()
 
