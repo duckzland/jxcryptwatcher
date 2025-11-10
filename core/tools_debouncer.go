@@ -42,10 +42,23 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.mu.Unlock()
 
 	go func(gen int, ctx context.Context, cancel context.CancelFunc) {
-		defer cancel()
+		defer func() {
+			d.mu.Lock()
+			delete(d.cancelMap, key)
+			delete(d.callbacks, key)
+			d.mu.Unlock()
+			cancel()
+		}()
 
 		select {
 		case <-time.After(delay):
+
+			time.Sleep(1 * time.Millisecond)
+
+			if err := ctx.Err(); err != nil {
+				return
+			}
+
 			d.mu.Lock()
 			currentGen := d.generations[key]
 			fn := d.callbacks[key]
@@ -56,11 +69,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 					fn()
 				}
 			}
-
-			d.mu.Lock()
-			delete(d.cancelMap, key)
-			delete(d.callbacks, key)
-			d.mu.Unlock()
 
 			return
 
