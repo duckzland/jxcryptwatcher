@@ -41,6 +41,7 @@ type PanelData interface {
 	Update(pk string) bool
 	UpdateRate() bool
 	UpdateStatus() bool
+	Destroy()
 	FormatTitle() string
 	FormatSubtitle() string
 	FormatBottomText() string
@@ -365,6 +366,17 @@ func (p *panelDataType) UpdateStatus() bool {
 	}
 
 	return false
+}
+
+func (p *panelDataType) Destroy() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.data = nil
+	p.status = nil
+	p.parent = nil
+	p.oldKey = ""
+	p.id = ""
 }
 
 func (p *panelDataType) FormatTitle() string {

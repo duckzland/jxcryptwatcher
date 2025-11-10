@@ -27,6 +27,7 @@ type PanelDisplay interface {
 	Hide()
 	ShowTarget()
 	HideTarget()
+	Destroy()
 }
 
 type panelDisplay struct {
@@ -240,6 +241,24 @@ func (h *panelDisplay) DragEnd() {
 	h.dragOffset.Y -= h.dragScroll - JM.UseLayout().UseScroll().Offset.Y
 
 	h.snapToNearest()
+}
+
+func (h *panelDisplay) Destroy() {
+	h.Hide()
+
+	h.container = nil
+	h.onEdit = nil
+	h.onDelete = nil
+	h.tag = ""
+	h.status = 0
+	h.shown = 0
+	h.fps = 0
+	h.actionVisible = false
+	h.visible = false
+	h.dragScroll = 0
+	h.dragPosition = fyne.Position{}
+	h.dragOffset = fyne.Position{}
+	h.dragging = false
 }
 
 func (h *panelDisplay) updateContent() {
@@ -543,6 +562,7 @@ func (h *panelDisplay) createAction() {
 				if h.onDelete != nil {
 					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
 						h.onDelete(h.GetTag())
+
 					})
 				}
 			},

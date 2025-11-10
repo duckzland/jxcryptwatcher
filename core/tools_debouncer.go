@@ -53,6 +53,7 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 		select {
 		case <-time.After(delay):
 
+			// Last chance to cancel!
 			time.Sleep(1 * time.Millisecond)
 
 			if err := ctx.Err(); err != nil {

@@ -39,6 +39,7 @@ func (c *panelContainer) RemoveByID(uuid string) bool {
 	for _, obj := range c.Objects {
 		if panel, ok := obj.(*panelDisplay); ok {
 			if panel.GetTag() == uuid {
+				panel.Destroy()
 				c.Remove(obj)
 				return true
 			}

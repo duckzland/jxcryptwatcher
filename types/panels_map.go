@@ -83,13 +83,18 @@ func (pc *panelsMapType) GetVisiblePanels() []string {
 func (pc *panelsMapType) Remove(uuid string) bool {
 	index := pc.GetIndex(uuid)
 	pc.mu.Lock()
-	defer pc.mu.Unlock()
-
 	if index < 0 || index >= len(pc.data) {
 		return false
 	}
 
 	pc.data = append(pc.data[:index], pc.data[index+1:]...)
+	pc.mu.Unlock()
+
+	pd := pc.GetDataByID(uuid)
+	if pd != nil {
+		pd.Destroy()
+	}
+
 	return true
 }
 
