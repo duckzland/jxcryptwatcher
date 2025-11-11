@@ -435,7 +435,7 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", 100,
+		"notification", 50,
 		func() int64 {
 			return 1000
 		},
@@ -906,7 +906,7 @@ func registerDispatcher() {
 	JX.RegisterAnimationDispatcher().Init()
 
 	ad := JX.UseAnimationDispatcher()
-	ad.SetBufferSize(300)
+	ad.SetBufferSize(100)
 
 	if JC.IsMobile {
 		ad.SetDelayBetween(200 * time.Millisecond)
@@ -920,7 +920,7 @@ func registerDispatcher() {
 	ad.Start()
 
 	d := JC.UseDispatcher()
-	d.SetBufferSize(300)
+	d.SetBufferSize(100)
 
 	if JC.IsMobile {
 		d.SetDelayBetween(10 * time.Millisecond)
