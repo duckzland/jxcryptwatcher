@@ -37,7 +37,6 @@ type panelDisplay struct {
 	status        int
 	shown         int
 	actionVisible bool
-	visible       bool
 	container     *fyne.Container
 	dragScroll    float32
 	dragPosition  fyne.Position
@@ -83,32 +82,20 @@ func (h *panelDisplay) CreateRenderer() fyne.WidgetRenderer {
 func (h *panelDisplay) Show() {
 
 	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
-	if h.background == nil {
-		h.background = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
-		h.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
-		h.container.Layout.(*panelDisplayLayout).background = h.background
-	}
 
-	if h.title == nil {
-		h.title = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
-		h.container.Layout.(*panelDisplayLayout).title = h.title
-	}
+	h.background = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
+	h.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
-	if h.subtitle == nil {
-		h.subtitle = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
-		h.container.Layout.(*panelDisplayLayout).subtitle = h.subtitle
-	}
+	h.title = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 
-	if h.content == nil {
-		h.content = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
-		h.container.Layout.(*panelDisplayLayout).content = h.content
-	}
+	h.subtitle = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
 
-	if h.bottomText == nil {
-		h.bottomText = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
-		h.container.Layout.(*panelDisplayLayout).bottomText = h.bottomText
-	}
+	h.content = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 
+	h.bottomText = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
+
+	h.container.Layout.(*panelDisplayLayout).RemoveAll()
+	h.container.Layout.(*panelDisplayLayout).SetContent(h.background, h.title, h.subtitle, h.content, h.bottomText, nil)
 	h.container.Objects = []fyne.CanvasObject{
 		h.background,
 		h.title,
@@ -121,13 +108,7 @@ func (h *panelDisplay) Show() {
 		h.createAction()
 	}
 
-	h.visible = true
 	h.BaseWidget.Show()
-	h.background.Show()
-	h.title.Show()
-	h.subtitle.Show()
-	h.content.Show()
-	h.bottomText.Show()
 
 	h.updateContent()
 	h.Refresh()
@@ -145,44 +126,16 @@ func (h *panelDisplay) Show() {
 func (h *panelDisplay) Hide() {
 	h.BaseWidget.Hide()
 
-	if h.background != nil {
-		h.background.Hide()
-		h.container.Layout.(*panelDisplayLayout).background = nil
-		h.container.Remove(h.background)
-		h.background = nil
-	}
-
-	if h.title != nil {
-		h.title.Hide()
-		h.container.Layout.(*panelDisplayLayout).title = nil
-		h.container.Remove(h.title)
-		h.title = nil
-	}
-
-	if h.subtitle != nil {
-		h.subtitle.Hide()
-		h.container.Layout.(*panelDisplayLayout).subtitle = nil
-		h.container.Remove(h.subtitle)
-		h.subtitle = nil
-	}
-
-	if h.content != nil {
-		h.content.Hide()
-		h.container.Layout.(*panelDisplayLayout).content = nil
-		h.container.Remove(h.content)
-		h.content = nil
-	}
-
-	if h.bottomText != nil {
-		h.bottomText.Hide()
-		h.container.Layout.(*panelDisplayLayout).bottomText = nil
-		h.container.Remove(h.bottomText)
-		h.bottomText = nil
-	}
+	h.background = nil
+	h.title = nil
+	h.subtitle = nil
+	h.content = nil
+	h.bottomText = nil
 
 	h.removeAction()
 
-	h.visible = false
+	h.container.Layout.(*panelDisplayLayout).RemoveAll()
+	h.container.RemoveAll()
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
@@ -254,7 +207,6 @@ func (h *panelDisplay) Destroy() {
 	h.shown = 0
 	h.fps = 0
 	h.actionVisible = false
-	h.visible = false
 	h.dragScroll = 0
 	h.dragPosition = fyne.Position{}
 	h.dragOffset = fyne.Position{}
@@ -263,7 +215,7 @@ func (h *panelDisplay) Destroy() {
 
 func (h *panelDisplay) updateContent() {
 
-	if !h.visible {
+	if !h.Visible() {
 		return
 	}
 
@@ -518,7 +470,7 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 		result = append(result[:targetIndex], append([]fyne.CanvasObject{h}, result[targetIndex:]...)...)
 	}
 
-	if !h.visible {
+	if !h.Visible() {
 		h.Show()
 	}
 
@@ -595,7 +547,6 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 		container:     container.New(&panelDisplayLayout{}),
 		shown:         0,
 		actionVisible: false,
-		visible:       false,
 		onEdit:        onEdit,
 		onDelete:      onDelete,
 	}

@@ -109,3 +109,16 @@ func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 
 	return panelDisplayLayoutCachedSize
 }
+
+func (pl *panelDisplayLayout) RemoveAll() {
+	pl.SetContent(nil, nil, nil, nil, nil, nil)
+}
+
+func (pl *panelDisplayLayout) SetContent(background *canvas.Rectangle, title *panelText, subtitle *panelText, content *panelText, bottomText *panelText, action *panelAction) {
+	pl.background = background
+	pl.title = title
+	pl.subtitle = subtitle
+	pl.content = content
+	pl.bottomText = bottomText
+	pl.action = action
+}
