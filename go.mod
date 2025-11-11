@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.7.0-experimental-no-fonts
 	github.com/dweymouth/fyne-tooltip v0.3.3
 	github.com/goccy/go-json v0.10.5
+	github.com/google/gops v0.3.28
 	github.com/google/uuid v1.6.0
 )
 
