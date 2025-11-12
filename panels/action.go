@@ -59,6 +59,10 @@ func NewPanelAction(
 			if onEdit != nil {
 				onEdit()
 			}
+
+			pa.editBtn.MouseOut()
+			pa.deleteBtn.MouseOut()
+
 		}, func(btn JW.ActionButton) {
 			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
@@ -83,6 +87,10 @@ func NewPanelAction(
 			if onDelete != nil {
 				onDelete()
 			}
+
+			pa.editBtn.MouseOut()
+			pa.deleteBtn.MouseOut()
+
 		}, func(btn JW.ActionButton) {
 			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()

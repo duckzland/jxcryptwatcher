@@ -196,12 +196,16 @@ func (h *panelDisplay) DragEnd() {
 	h.snapToNearest()
 }
 
+func (h *panelDisplay) Refresh() {
+	if h.container != nil {
+		h.container.Refresh()
+	}
+}
+
 func (h *panelDisplay) Destroy() {
 	h.Hide()
 
 	h.container = nil
-	h.onEdit = nil
-	h.onDelete = nil
 	h.tag = ""
 	h.status = 0
 	h.shown = 0
@@ -513,9 +517,10 @@ func (h *panelDisplay) createAction() {
 			func() {
 				if h.onDelete != nil {
 					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
-						h.onDelete(h.GetTag())
-
-					})
+						if h.onDelete != nil {
+							h.onDelete(h.GetTag())
+						}
+					}, false)
 				}
 			},
 		)

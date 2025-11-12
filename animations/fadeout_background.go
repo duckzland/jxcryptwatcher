@@ -17,6 +17,7 @@ func StartFadeOutBackground(
 	rect *canvas.Rectangle,
 	duration time.Duration,
 	callback func(),
+	dispatch bool,
 ) {
 
 	if val, ok := fadeRegistry.Load(rect); ok {
@@ -32,8 +33,7 @@ func StartFadeOutBackground(
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeRegistry.Store(rect, cancel)
 
-	UseAnimationDispatcher().Submit(func() {
-
+	run := func() {
 		if !rect.Visible() {
 			return
 		}
@@ -56,15 +56,12 @@ func StartFadeOutBackground(
 							canvas.Refresh(rect)
 						})
 					}
-					ticker.Stop()
 					return
 				case <-ticker.C:
-
 					if !rect.Visible() {
 						cancel()
 						return
 					}
-
 					fyne.Do(func() {
 						rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 						canvas.Refresh(rect)
@@ -76,5 +73,11 @@ func StartFadeOutBackground(
 				fyne.Do(callback)
 			}
 		}()
-	})
+	}
+
+	if dispatch {
+		UseAnimationDispatcher().Submit(run)
+	} else {
+		run()
+	}
 }

@@ -50,8 +50,15 @@ fi
 ldflags="-w -s"
 gcflags="-l"
 tags="production,desktop,no_emoji,no_animations,no_fonts"
+
+# Optimized safe flags
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
 cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+
+# Aggresive experimental flags
+# cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -fomit-frame-pointer -fno-ident -pthread"
+# cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program -Wl,--as-needed -Wl,-O1"
+
 
 if [[ $1 == "debug" || $1 == "local-debug" ]]; then
     ldflags=""
