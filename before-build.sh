@@ -64,10 +64,42 @@ fi
 #   echo_success "JC.${func} calls removed."
 # done
 
+# for func in "${functions[@]}"; do
+#   find . -type f -name "*.go" -exec sed -i "/JC\.${func}/s/^/if false {\n/; /JC\.${func}/s/$/\n}/" {} +
+#   find . -type f -name "*.go" -exec sed -i "/^[[:space:]]*func[[:space:]]\+${func}\s*(/!{/[^a-zA-Z0-9_]${func}\s*(/s/^/if false {\n/; s/$/\n}/}" {} +
+#   echo_success "JC.${func} calls removed."
+# done
+
 for func in "${functions[@]}"; do
-  find . -type f -name "*.go" -exec sed -i "/JC\.${func}/s/^/if false {\n/; /JC\.${func}/s/$/\n}/" {} +
-  find . -type f -name "*.go" -exec sed -i "/^[[:space:]]*func[[:space:]]\+${func}\s*(/!{/[^a-zA-Z0-9_]${func}\s*(/s/^/if false {\n/; s/$/\n}/}" {} +
-  echo_success "JC.${func} calls removed."
+  echo_start "Wrapping ${func} and JC.${func} calls in 'if false { ... }'"
+
+  find . -type f -name "*.go" | while read -r file; do
+    awk -v f="$func" '
+      # Skip function definitions
+      $0 ~ "^[[:space:]]*func[[:space:]]+" f "\\s*\\(" { print; next }
+
+      # Match JC.{func} calls
+      $0 ~ "JC\\." f "\\s*\\(" {
+        print "if false {"
+        print $0
+        print "}"
+        next
+      }
+
+      # Match unprefixed {func} calls
+      $0 ~ "(^|[^a-zA-Z0-9_])" f "\\s*\\(" {
+        print "if false {"
+        print $0
+        print "}"
+        next
+      }
+
+      # Default: print line unchanged
+      { print }
+    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+  done
+
+  echo_success "${func} calls wrapped."
 done
 
 git add .
