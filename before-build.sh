@@ -28,6 +28,13 @@ echo_start() {
 
 echo_start "Starting pre-build cleanup..."
 
+mode="$1"
+live_mode=false
+if [ "$mode" == "live" ]; then
+  live_mode=true
+  echo_success "Running in LIVE mode — skipping Git operations"
+fi
+
 if ! command -v git &> /dev/null; then
   echo_error "Git is not installed. Please install Git before proceeding."
   exit 1
@@ -45,43 +52,38 @@ timestamp=$(date +"%Y%m%d-%H%M%S")
 commit_msg="prebuild cleanup v${version}-${timestamp}"
 core_file="core/env_const.go"
 
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo_error "Uncommitted changes detected. Please commit or stash them before proceeding."
-  exit 1
-fi
+if [ "$live_mode" = false ]; then
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo_error "Uncommitted changes detected. Please commit or stash them before proceeding."
+    exit 1
+  fi
 
-if git show-ref --verify --quiet refs/heads/"$temp_branch"; then
-  echo_success "Switching to existing temporary branch: $temp_branch"
-  git checkout "$temp_branch"
-else
-  current_branch=$(git rev-parse --abbrev-ref HEAD)
-  echo_success "Creating temporary branch: $temp_branch from $current_branch"
-  git checkout -b "$temp_branch"
+  if git show-ref --verify --quiet refs/heads/"$temp_branch"; then
+    echo_success "Switching to existing temporary branch: $temp_branch"
+    git checkout "$temp_branch"
+  else
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    echo_success "Creating temporary branch: $temp_branch from $current_branch"
+    git checkout -b "$temp_branch"
+  fi
 fi
 
 for func in "${functions[@]}"; do
   find . -type f -name "*.go" | while read -r file; do
     awk -v f="$func" '
-      # Skip function definitions
       $0 ~ "^[[:space:]]*func[[:space:]]+" f "\\s*\\(" { print; next }
-
-      # Match JC.{func} calls
       $0 ~ "JC\\." f "\\s*\\(" {
         print "if false {"
         print $0
         print "}"
         next
       }
-
-      # Match unprefixed {func} calls
       $0 ~ "(^|[^a-zA-Z0-9_])" f "\\s*\\(" {
         print "if false {"
         print $0
         print "}"
         next
       }
-
-      # Default: print line unchanged
       { print }
     ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
   done
@@ -90,26 +92,22 @@ for func in "${functions[@]}"; do
 done
 
 grep -rho 'JC\.Notify("[^"]\+[^"]")' . | sort | uniq | while read -r line; do
-  # Extract the string
   msg=$(echo "$line" | sed -E 's/JC\.Notify\("(.*)"\)/\1/')
-  
-  # Generate a const name (e.g., NotifyPanelsUpdated)
   const_name="Notify$(echo "$msg" | tr -cd '[:alnum:]' | sed -E 's/([A-Z])/\1/g' | cut -c1-40)"
 
-  # Append to core/env_const.go if not already present
   if ! grep -q "$const_name" "$core_file"; then
     echo "const $const_name = \"$msg\"" >> "$core_file"
   fi
 
-  # Replace all occurrences in code
   find . -type f -name "*.go" -exec sed -i "s|JC\.Notify(\"$msg\")|JC.Notify(JC.$const_name)|g" {} +
 
   echo_success "Moving ${msg} as a constant"
 done
 
-git add .
-git commit -m "$commit_msg"
-
-echo_success "Changes committed to $temp_branch"
+if [ "$live_mode" = false ]; then
+  git add .
+  git commit -m "$commit_msg"
+  echo_success "Changes committed to $temp_branch"
+fi
 
 echo_success "Pre-build steps completed successfully."

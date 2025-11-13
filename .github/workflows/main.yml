@@ -42,13 +42,8 @@ jobs:
       - name: Download and prepare Android NDK
         run: ./download-ndk.sh r29
 
-      - name: Configure Git identity
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
       - name: Run pre-build script
-        run: ./before-build.sh
+        run: ./before-build.sh live
 
       - name: Cross-compile and packages
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
