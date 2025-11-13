@@ -49,6 +49,7 @@ functions=("InitLogger" "Logln" "Logf" "PrintMemUsage" "PrintExecTime" "PrintPer
 version=$(grep '^version=' version.txt | cut -d'=' -f2 | tr -d '[:space:]')
 timestamp=$(date +"%Y%m%d-%H%M%S")
 commit_msg="prebuild cleanup v${version}-${timestamp}"
+core_file="core/env_const.go"
 
 if git show-ref --verify --quiet refs/heads/"$temp_branch"; then
   echo_success "Switching to existing temporary branch: $temp_branch"
@@ -87,6 +88,24 @@ for func in "${functions[@]}"; do
   done
 
   echo_success "Debug function: ${func} calls neutralized"
+done
+
+grep -rho 'JC\.Notify("[^"]\+[^"]")' . | sort | uniq | while read -r line; do
+  # Extract the string
+  msg=$(echo "$line" | sed -E 's/JC\.Notify\("(.*)"\)/\1/')
+  
+  # Generate a const name (e.g., NotifyPanelsUpdated)
+  const_name="Notify$(echo "$msg" | tr -cd '[:alnum:]' | sed -E 's/([A-Z])/\1/g' | cut -c1-40)"
+
+  # Append to core/env_const.go if not already present
+  if ! grep -q "$const_name" "$core_file"; then
+    echo "const $const_name = \"$msg\"" >> "$core_file"
+  fi
+
+  # Replace all occurrences in code
+  find . -type f -name "*.go" -exec sed -i "s|JC\.Notify(\"$msg\")|JC.Notify($const_name)|g" {} +
+
+  echo_success "Moving ${msg} as a constant"
 done
 
 git add .
