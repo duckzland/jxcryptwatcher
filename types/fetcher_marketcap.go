@@ -59,9 +59,9 @@ func (er *marketCapFetcher) GetRate() int64 {
 			dif := strconv.FormatFloat(dx, 'f', -1, 64)
 			dix := strconv.FormatFloat(z, 'f', -1, 64)
 
-			tickerCacheStorage.Insert("market_cap", now, dec.Status.LastUpdate)
-			tickerCacheStorage.Insert("market_cap_30_percentage", dix, dec.Status.LastUpdate)
-			tickerCacheStorage.Insert("market_cap_24_percentage", dif, dec.Status.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeMarketCap, now, dec.Status.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeCMC10030dChange, dix, dec.Status.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeMarketCap24hChange, dif, dec.Status.LastUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

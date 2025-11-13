@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -20,7 +19,7 @@ func (p *panelKeyType) Set(value string) {
 func (p *panelKeyType) UpdateValue(rate *big.Float) string {
 	pkk := strings.Split(p.value, "|")
 
-	p.value = fmt.Sprintf("%s|%s", pkk[0], rate.Text('g', -1))
+	p.value = pkk[0] + "|" + rate.Text('g', -1)
 	return p.value
 }
 
@@ -61,20 +60,40 @@ func (p *panelKeyType) RefreshKey() string {
 }
 
 func (p *panelKeyType) GenerateKey(source, target, value, sourceSymbol string, targetSymbol string, decimals string, rate *big.Float) string {
-	p.value = fmt.Sprintf("%s-%s-%s-%s-%s-%s|%s", source, target, value, sourceSymbol, targetSymbol, decimals, rate.Text('g', -1))
+	var b strings.Builder
+	b.WriteString(source)
+	b.WriteString("-")
+	b.WriteString(target)
+	b.WriteString("-")
+	b.WriteString(value)
+	b.WriteString("-")
+	b.WriteString(sourceSymbol)
+	b.WriteString("-")
+	b.WriteString(targetSymbol)
+	b.WriteString("-")
+	b.WriteString(decimals)
+	b.WriteString("|")
+	b.WriteString(rate.Text('g', -1))
+	p.value = b.String()
 	return p.value
 }
 
 func (p *panelKeyType) GenerateKeyFromPanel(panel panelType, rate *big.Float) string {
-	p.value = fmt.Sprintf("%d-%d-%s-%s-%s-%d|%s",
-		panel.Source,
-		panel.Target,
-		JC.DynamicFormatFloatToString(panel.Value),
-		panel.SourceSymbol,
-		panel.TargetSymbol,
-		panel.Decimals,
-		rate.Text('g', -1),
-	)
+	var b strings.Builder
+	b.WriteString(strconv.FormatInt(panel.Source, 10))
+	b.WriteString("-")
+	b.WriteString(strconv.FormatInt(panel.Target, 10))
+	b.WriteString("-")
+	b.WriteString(JC.DynamicFormatFloatToString(panel.Value))
+	b.WriteString("-")
+	b.WriteString(panel.SourceSymbol)
+	b.WriteString("-")
+	b.WriteString(panel.TargetSymbol)
+	b.WriteString("-")
+	b.WriteString(strconv.FormatInt(panel.Decimals, 10))
+	b.WriteString("|")
+	b.WriteString(rate.Text('g', -1))
+	p.value = b.String()
 	return p.value
 }
 

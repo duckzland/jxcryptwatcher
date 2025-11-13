@@ -1,15 +1,41 @@
 package types
 
 import (
-	"fmt"
+	"math"
 	"strconv"
-	"strings"
 	"sync"
 
 	"fyne.io/fyne/v2/data/binding"
 
 	JC "jxwatcher/core"
 )
+
+const TickerFormatNodecimal = "nodecimal"
+const TickerFormatNumber = "number"
+const TickerFormatCurrency = "currency"
+const TickerFormatShortCurrency = "shortcurrency"
+const TickerFormatShortCurrencyWithSign = "shortcurrency_withsign"
+const TickerFormatPercentage = "percentage"
+const TickerFormatShortPercentage = "shortpercentage"
+const TickerFormatPulse = "pulse"
+const TickerTypeMarketCap = "market_cap"
+const TickerTypePulse = "pulse"
+const TickerTypeCMC100 = "cmc100"
+const TickerTypeAltcoinIndex = "altcoin_index"
+const TickerTypeFearGreed = "feargreed"
+const TickerTypeRSI = "rsi"
+const TickerTypeRSIOverbought = "rsi_overbought_precentage"
+const TickerTypeRSIOversold = "rsi_oversold_percentage"
+const TickerTypeRSINeutral = "rsi_neutral_percentage"
+const TickerTypeETF = "etf"
+const TickerTypeETFBTC = "etf_btc"
+const TickerTypeETFETH = "etf_eth"
+const TickerTypeDominance = "dominance"
+const TickerTypeETCDominance = "etc_dominance"
+const TickerTypeOtherDominance = "other_dominance"
+const TickerTypeMarketCap24hChange = "market_cap_24_percentage"
+const TickerTypeCMC10024hChange = "cmc100_24_percentage"
+const TickerTypeCMC10030dChange = "market_cap_30_percentage"
 
 type TickerData interface {
 	Init()
@@ -289,30 +315,39 @@ func (p *tickerDataType) Update() bool {
 
 func (p *tickerDataType) FormatContent() string {
 	raw := p.Get()
+	format := p.GetFormat()
+
 	val, err := strconv.ParseFloat(raw, 64)
 	if err != nil {
 		return raw
 	}
 
-	switch p.GetFormat() {
-	case "nodecimal":
-		return fmt.Sprintf("%.0f", val)
-	case "number":
-		return fmt.Sprintf("%.2f", val)
-	case "currency":
+	switch format {
+	case TickerFormatNodecimal:
+		return strconv.FormatFloat(val, 'f', 0, 64)
+
+	case TickerFormatNumber:
+		return strconv.FormatFloat(val, 'f', 2, 64)
+
+	case TickerFormatCurrency:
 		return "$" + JC.FormatNumberWithCommas(val, 2)
-	case "shortcurrency":
+
+	case TickerFormatShortCurrency:
 		return JC.FormatShortCurrency(raw)
-	case "shortcurrency_withsign":
+
+	case TickerFormatShortCurrencyWithSign:
 		sign := "+"
 		if val < 0 {
 			sign = "-"
 		}
-		return sign + JC.FormatShortCurrency(strings.TrimPrefix(raw, "-"))
-	case "percentage":
-		return fmt.Sprintf("%s/100", raw)
-	case "shortpercentage":
-		return fmt.Sprintf("%.1f%%", val)
+		return sign + JC.FormatShortCurrency(strconv.FormatFloat(math.Abs(val), 'f', -1, 64))
+
+	case TickerFormatPercentage:
+		return raw + "/100"
+
+	case TickerFormatShortPercentage:
+		return strconv.FormatFloat(val, 'f', 1, 64) + "%"
+
 	default:
 		return raw
 	}

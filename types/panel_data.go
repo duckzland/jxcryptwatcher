@@ -1,8 +1,8 @@
 package types
 
 import (
-	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"fyne.io/fyne/v2/data/binding"
@@ -381,41 +381,61 @@ func (p *panelDataType) Destroy() {
 
 func (p *panelDataType) FormatTitle() string {
 	pk := p.UsePanelKey()
+
+	// Ensure minimum decimal precision
 	frac := int(JC.NumDecPlaces(pk.GetSourceValueFloat()))
 	if frac < 3 {
 		frac = 2
 	}
-	return fmt.Sprintf("%s %s to %s",
-		pk.GetSourceValueFormattedString(),
-		pk.GetSourceSymbolString(),
-		pk.GetTargetSymbolString(),
-	)
+
+	// Use strings.Builder for efficient string construction
+	var b strings.Builder
+	b.WriteString(pk.GetSourceValueFormattedString())
+	b.WriteString(" ")
+	b.WriteString(pk.GetSourceSymbolString())
+	b.WriteString(" to ")
+	b.WriteString(pk.GetTargetSymbolString())
+
+	return b.String()
 }
 
 func (p *panelDataType) FormatSubtitle() string {
 	pk := p.UsePanelKey()
-	return fmt.Sprintf("1 %s = %s %s",
-		pk.GetSourceSymbolString(),
-		pk.GetValueFormattedString(),
-		pk.GetTargetSymbolString(),
-	)
+
+	var b strings.Builder
+	b.WriteString("1 ")
+	b.WriteString(pk.GetSourceSymbolString())
+	b.WriteString(" = ")
+	b.WriteString(pk.GetValueFormattedString())
+	b.WriteString(" ")
+	b.WriteString(pk.GetTargetSymbolString())
+
+	return b.String()
 }
 
 func (p *panelDataType) FormatBottomText() string {
 	pk := p.UsePanelKey()
-	return fmt.Sprintf("1 %s = %s %s",
-		pk.GetTargetSymbolString(),
-		pk.GetReverseValueFormattedString(),
-		pk.GetSourceSymbolString(),
-	)
+
+	var b strings.Builder
+	b.WriteString("1 ")
+	b.WriteString(pk.GetTargetSymbolString())
+	b.WriteString(" = ")
+	b.WriteString(pk.GetReverseValueFormattedString())
+	b.WriteString(" ")
+	b.WriteString(pk.GetSourceSymbolString())
+
+	return b.String()
 }
 
 func (p *panelDataType) FormatContent() string {
 	pk := p.UsePanelKey()
-	return fmt.Sprintf("%s %s",
-		pk.GetCalculatedValueFormattedString(),
-		pk.GetTargetSymbolString(),
-	)
+
+	var b strings.Builder
+	b.WriteString(pk.GetCalculatedValueFormattedString())
+	b.WriteString(" ")
+	b.WriteString(pk.GetTargetSymbolString())
+
+	return b.String()
 }
 
 func (p *panelDataType) DidChange() bool {

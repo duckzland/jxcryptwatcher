@@ -75,7 +75,7 @@ func (h *tickerDisplay) updateContent() {
 			isNewContent = true
 		}
 
-		if pkt.IsType("altcoin_index") {
+		if pkt.IsType(JT.TickerTypeAltcoinIndex) {
 			percentage, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case percentage >= 75:
@@ -89,7 +89,7 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("feargreed") {
+		if pkt.IsType(JT.TickerTypeFearGreed) {
 			index, _ := strconv.ParseInt(pkt.Get(), 10, 64)
 			switch {
 			case index >= 75:
@@ -105,8 +105,8 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("market_cap") {
-			raw := JT.UseTickerCache().Get("market_cap_24_percentage")
+		if pkt.IsType(JT.TickerTypeMarketCap) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypeMarketCap24hChange)
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index > 0 {
 				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
@@ -115,8 +115,8 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("cmc100") {
-			raw := JT.UseTickerCache().Get("cmc100_24_percentage")
+		if pkt.IsType(JT.TickerTypeCMC100) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypeCMC10024hChange)
 			index, _ := strconv.ParseFloat(raw, 64)
 			if index >= 0 {
 				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
@@ -124,8 +124,9 @@ func (h *tickerDisplay) updateContent() {
 				background = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 		}
-		if pkt.IsType("rsi") {
-			raw := JT.UseTickerCache().Get("rsi")
+
+		if pkt.IsType(JT.TickerTypeRSI) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypeRSI)
 			index, _ := strconv.ParseFloat(raw, 64)
 			switch {
 			case index >= 70:
@@ -141,8 +142,8 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("pulse") {
-			raw := JT.UseTickerCache().Get("pulse")
+		if pkt.IsType(JT.TickerTypePulse) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypePulse)
 			pulseValue, err := strconv.ParseFloat(strings.TrimSuffix(raw, "%"), 64)
 			if err == nil {
 				switch {
@@ -156,8 +157,8 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("etf") {
-			raw := JT.UseTickerCache().Get("etf")
+		if pkt.IsType(JT.TickerTypeETF) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypeETF)
 			etfValue, err := strconv.ParseFloat(raw, 64)
 			if err == nil {
 				switch {
@@ -171,8 +172,8 @@ func (h *tickerDisplay) updateContent() {
 			}
 		}
 
-		if pkt.IsType("dominance") {
-			raw := JT.UseTickerCache().Get("dominance")
+		if pkt.IsType(JT.TickerTypeDominance) {
+			raw := JT.UseTickerCache().Get(JT.TickerTypeDominance)
 			btcDom, err := strconv.ParseFloat(raw, 64)
 			if err == nil {
 				if btcDom >= 50 {

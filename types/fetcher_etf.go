@@ -43,15 +43,15 @@ func (ef *etfFetcher) GetRate() int64 {
 				parsedTime = time.Now()
 			}
 
-			tickerCacheStorage.Insert("etf",
+			tickerCacheStorage.Insert(TickerTypeETF,
 				strconv.FormatInt(dec.Data.Total, 10),
 				parsedTime)
 
-			tickerCacheStorage.Insert("etf_btc",
+			tickerCacheStorage.Insert(TickerTypeETFBTC,
 				strconv.FormatInt(dec.Data.TotalBtcValue, 10),
 				parsedTime)
 
-			tickerCacheStorage.Insert("etf_eth",
+			tickerCacheStorage.Insert(TickerTypeETF,
 				strconv.FormatInt(dec.Data.TotalEthValue, 10),
 				parsedTime)
 

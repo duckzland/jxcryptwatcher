@@ -132,53 +132,51 @@ func (pc *tickersMapType) Hydrate(data []TickerData) {
 			}
 		} else {
 			switch tkd.GetType() {
-			case "market_cap":
+			case TickerTypeMarketCap:
 				if UseConfig().CanDoMarketCap() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "cmc100":
+			case TickerTypeCMC100:
 				if UseConfig().CanDoCMC100() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "altcoin_index":
+			case TickerTypeAltcoinIndex:
 				if UseConfig().CanDoAltSeason() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "feargreed":
+			case TickerTypeFearGreed:
 				if UseConfig().CanDoFearGreed() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "rsi", "pulse":
+			case TickerTypeRSI, TickerTypePulse:
 				if UseConfig().CanDoRSI() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "etf":
+			case TickerTypeETF:
 				if UseConfig().CanDoETF() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-			case "dominance":
+			case TickerTypeDominance:
 				if UseConfig().CanDoDominance() {
 					pc.mu.Lock()
 					pc.data = append(pc.data, tkd)
 					pc.mu.Unlock()
 				}
-
 			}
 		}
 	}
-
 }
 
 func (pc *tickersMapType) Serialize() []tickerDataCache {
@@ -201,64 +199,64 @@ func TickersInit() {
 	if UseConfig().CanDoMarketCap() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Market Cap")
-		tdt.SetType("market_cap")
-		tdt.SetFormat("shortcurrency")
+		tdt.SetType(TickerTypeMarketCap)
+		tdt.SetFormat(TickerFormatShortCurrency)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoRSI() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Market Bias")
-		tdt.SetType("pulse")
-		tdt.SetFormat("pulse")
+		tdt.SetType(TickerTypePulse)
+		tdt.SetFormat(TickerFormatPulse)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoCMC100() {
 		tdt := NewTickerData()
 		tdt.SetTitle("CMC100")
-		tdt.SetType("cmc100")
-		tdt.SetFormat("currency")
+		tdt.SetType(TickerTypeCMC100)
+		tdt.SetFormat(TickerFormatCurrency)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoAltSeason() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Altcoin Index")
-		tdt.SetType("altcoin_index")
-		tdt.SetFormat("percentage")
+		tdt.SetType(TickerTypeAltcoinIndex)
+		tdt.SetFormat(TickerFormatPercentage)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoFearGreed() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Fear & Greed")
-		tdt.SetType("feargreed")
-		tdt.SetFormat("percentage")
+		tdt.SetType(TickerTypeFearGreed)
+		tdt.SetFormat(TickerFormatPercentage)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoRSI() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Crypto RSI")
-		tdt.SetType("rsi")
-		tdt.SetFormat("number")
+		tdt.SetType(TickerTypeRSI)
+		tdt.SetFormat(TickerFormatNumber)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoETF() {
 		tdt := NewTickerData()
 		tdt.SetTitle("ETF Flow")
-		tdt.SetType("etf")
-		tdt.SetFormat("shortcurrency_withsign")
+		tdt.SetType(TickerTypeETF)
+		tdt.SetFormat(TickerFormatShortCurrencyWithSign)
 		UseTickerMaps().Add(tdt)
 	}
 
 	if UseConfig().CanDoDominance() {
 		tdt := NewTickerData()
 		tdt.SetTitle("Dominance")
-		tdt.SetType("dominance")
-		tdt.SetFormat("shortpercentage")
+		tdt.SetType(TickerTypeDominance)
+		tdt.SetFormat(TickerFormatShortPercentage)
 		UseTickerMaps().Add(tdt)
 	}
 }

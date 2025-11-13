@@ -58,8 +58,8 @@ func (er *cmc100Fetcher) GetRate() int64 {
 				nextUpdate = time.Unix(ts, 0)
 			}
 
-			tickerCacheStorage.Insert("cmc100", now, nextUpdate)
-			tickerCacheStorage.Insert("cmc100_24_percentage", dif, nextUpdate)
+			tickerCacheStorage.Insert(TickerTypeCMC100, now, nextUpdate)
+			tickerCacheStorage.Insert(TickerTypeCMC10024hChange, dif, nextUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

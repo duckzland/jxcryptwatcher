@@ -510,7 +510,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"cmc100", delay,
+		JT.TickerTypeCMC100, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(), nil), nil
@@ -537,7 +537,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"market_cap", delay,
+		JT.TickerTypeMarketCap, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(), nil), nil
@@ -564,7 +564,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"altcoin_index", delay,
+		JT.TickerTypeAltcoinIndex, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(), nil), nil
@@ -591,7 +591,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"feargreed", delay,
+		JT.TickerTypeFearGreed, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(), nil), nil
@@ -618,7 +618,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"rsi", delay,
+		JT.TickerTypeRSI, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(), nil), nil
@@ -645,7 +645,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"etf", delay,
+		JT.TickerTypeETF, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(), nil), nil
@@ -672,7 +672,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"dominance", delay,
+		JT.TickerTypeDominance, delay,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(), nil), nil

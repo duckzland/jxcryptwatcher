@@ -42,15 +42,15 @@ func (df *dominanceFetcher) GetRate() int64 {
 				parsedTime = time.Now()
 			}
 
-			tickerCacheStorage.Insert("dominance",
+			tickerCacheStorage.Insert(TickerTypeDominance,
 				strconv.FormatFloat(dec.Data.Dominance[0].MCProportion, 'f', -1, 64),
 				parsedTime)
 
-			tickerCacheStorage.Insert("etc_dominance",
+			tickerCacheStorage.Insert(TickerTypeETCDominance,
 				strconv.FormatFloat(dec.Data.Dominance[1].MCProportion, 'f', -1, 64),
 				parsedTime)
 
-			tickerCacheStorage.Insert("other_dominance",
+			tickerCacheStorage.Insert(TickerTypeOtherDominance,
 				strconv.FormatFloat(dec.Data.Dominance[2].MCProportion, 'f', -1, 64),
 				parsedTime)
 

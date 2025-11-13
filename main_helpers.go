@@ -90,26 +90,27 @@ func updateTickerDisplay() bool {
 
 	success := 0
 	tickers := []string{}
+
 	if JT.UseConfig().CanDoCMC100() {
-		tickers = append(tickers, "cmc100")
+		tickers = append(tickers, JT.TickerTypeCMC100)
 	}
 	if JT.UseConfig().CanDoFearGreed() {
-		tickers = append(tickers, "feargreed")
+		tickers = append(tickers, JT.TickerTypeFearGreed)
 	}
 	if JT.UseConfig().CanDoMarketCap() {
-		tickers = append(tickers, "market_cap")
+		tickers = append(tickers, JT.TickerTypeMarketCap)
 	}
 	if JT.UseConfig().CanDoAltSeason() {
-		tickers = append(tickers, "altcoin_index")
+		tickers = append(tickers, JT.TickerTypeAltcoinIndex)
 	}
 	if JT.UseConfig().CanDoRSI() {
-		tickers = append(tickers, "rsi", "pulse")
+		tickers = append(tickers, JT.TickerTypeRSI, JT.TickerTypePulse)
 	}
 	if JT.UseConfig().CanDoETF() {
-		tickers = append(tickers, "etf")
+		tickers = append(tickers, JT.TickerTypeETF)
 	}
 	if JT.UseConfig().CanDoDominance() {
-		tickers = append(tickers, "dominance")
+		tickers = append(tickers, JT.TickerTypeDominance)
 	}
 
 	for _, key := range tickers {
@@ -234,25 +235,25 @@ func updateTickers() bool {
 	payloads := map[string][]string{}
 
 	if JT.UseConfig().CanDoCMC100() {
-		payloads["cmc100"] = []string{"cmc100"}
+		payloads[JT.TickerTypeCMC100] = []string{JT.TickerTypeCMC100}
 	}
 	if JT.UseConfig().CanDoFearGreed() {
-		payloads["feargreed"] = []string{"feargreed"}
+		payloads[JT.TickerTypeFearGreed] = []string{JT.TickerTypeFearGreed}
 	}
 	if JT.UseConfig().CanDoMarketCap() {
-		payloads["market_cap"] = []string{"market_cap"}
+		payloads[JT.TickerTypeMarketCap] = []string{JT.TickerTypeMarketCap}
 	}
 	if JT.UseConfig().CanDoAltSeason() {
-		payloads["altcoin_index"] = []string{"altcoin_index"}
+		payloads[JT.TickerTypeAltcoinIndex] = []string{JT.TickerTypeAltcoinIndex}
 	}
 	if JT.UseConfig().CanDoRSI() {
-		payloads["rsi"] = []string{"rsi"}
+		payloads[JT.TickerTypeRSI] = []string{JT.TickerTypeRSI}
 	}
 	if JT.UseConfig().CanDoETF() {
-		payloads["etf"] = []string{"etf"}
+		payloads[JT.TickerTypeETF] = []string{JT.TickerTypeETF}
 	}
 	if JT.UseConfig().CanDoDominance() {
-		payloads["dominance"] = []string{"dominance"}
+		payloads[JT.TickerTypeDominance] = []string{JT.TickerTypeDominance}
 	}
 
 	if len(payloads) == 0 {
