@@ -35,11 +35,6 @@ if [ "$mode" == "live" ]; then
   echo_success "Running in LIVE mode — skipping Git operations"
 fi
 
-if ! command -v git &> /dev/null; then
-  echo_error "Git is not installed. Please install Git before proceeding."
-  exit 1
-fi
-
 if [ ! -f version.txt ]; then
   echo_error "version.txt not found. Please create one with format 'version=1.0.0'"
   exit 1
@@ -53,6 +48,12 @@ commit_msg="prebuild cleanup v${version}-${timestamp}"
 core_file="core/env_const.go"
 
 if [ "$live_mode" = false ]; then
+
+  if ! command -v git &> /dev/null; then
+    echo_error "Git is not installed. Please install Git before proceeding."
+    exit 1
+  fi
+
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo_error "Uncommitted changes detected. Please commit or stash them before proceeding."
     exit 1
