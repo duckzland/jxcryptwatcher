@@ -45,6 +45,11 @@ timestamp=$(date +"%Y%m%d-%H%M%S")
 commit_msg="prebuild cleanup v${version}-${timestamp}"
 core_file="core/env_const.go"
 
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo_error "Uncommitted changes detected. Please commit or stash them before proceeding."
+  exit 1
+fi
+
 if git show-ref --verify --quiet refs/heads/"$temp_branch"; then
   echo_success "Switching to existing temporary branch: $temp_branch"
   git checkout "$temp_branch"
