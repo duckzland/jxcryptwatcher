@@ -60,9 +60,8 @@ else
 fi
 
 for func in "${functions[@]}"; do
-  echo_success "Removing JC.${func} calls..."
-  find . -type f -name "*.go" -exec sed -i -E "s/JC\.${func}\([^)]*\);//g" {} +
-  find . -type f -name "*.go" -exec sed -i -E "s/JC\.${func}\([^)]*\)//g" {} +
+  find . -type f -name "*.go" -exec sed -i "/JC\.${func}.*/d" {} +
+  echo_success "JC.${func} calls removed."
 done
 
 git add .
