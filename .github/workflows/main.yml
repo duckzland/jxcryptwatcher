@@ -41,7 +41,10 @@ jobs:
 
       - name: Download and prepare Android NDK
         run: ./download-ndk.sh r29
-          
+
+      - name: Run pre-build script
+        run: ./before-build.sh
+
       - name: Cross-compile and packages
         run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
 

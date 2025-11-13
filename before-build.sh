@@ -6,6 +6,10 @@
 ## This script performs pre-build tasks:
 ##   1. Verifies Git is installed and creates a temporary branch.
 ##   2. Strips all JC.{function} calls from Go source files.
+##   3. Search for notification string and create const for replacement
+##
+## Requirement:
+## 1. Git - apt install git
 ## ================================================================
 
 set -e
@@ -26,16 +30,6 @@ echo_start "Starting pre-build cleanup..."
 
 if ! command -v git &> /dev/null; then
   echo_error "Git is not installed. Please install Git before proceeding."
-  exit 1
-fi
-
-if ! command -v sed &> /dev/null; then
-  echo_error "sed is not installed. Please install sed before proceeding."
-  exit 1
-fi
-
-if ! command -v find &> /dev/null; then
-  echo_error "find is not installed. Please install find before proceeding."
   exit 1
 fi
 
