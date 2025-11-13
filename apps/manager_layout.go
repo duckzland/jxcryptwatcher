@@ -12,6 +12,7 @@ import (
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 
 	JC "jxwatcher/core"
+	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
 
@@ -226,17 +227,17 @@ func NewAppLayout() fyne.CanvasObject {
 
 	contentIcon := theme.ContentAddIcon()
 	manager.actionAddPanel = NewAppPage(&contentIcon, "Add Panel", func() {
-		UseAction().Call("add_panel")
+		UseAction().Call(AppAddPanel)
 	})
 
 	settingIcon := theme.SettingsIcon()
 	manager.actionFixSetting = NewAppPage(&settingIcon, "Open Settings", func() {
-		UseAction().Call("open_settings")
+		UseAction().Call(AppOpenSettings)
 	})
 
 	restoreIcon := theme.ViewRestoreIcon()
 	manager.actionGetCryptos = NewAppPage(&restoreIcon, "Fetch Crypto Data", func() {
-		UseAction().Call("refresh_cryptos")
+		UseAction().Call(JT.CryptoRefresh)
 	})
 
 	manager.scroll = container.NewVScroll(nil)

@@ -120,7 +120,7 @@ func NewDialogForm(
 		"Cancel",
 		theme.CancelIcon(),
 		"Close Form",
-		"normal",
+		ActionStateNormal,
 		func(ActionButton) {
 			fd.Hide()
 		},
@@ -132,7 +132,7 @@ func NewDialogForm(
 		"Save",
 		theme.ConfirmIcon(),
 		"Save and Close Form",
-		"normal",
+		ActionStateNormal,
 		func(ActionButton) {
 			fd.Submit()
 		},

@@ -9,6 +9,9 @@ import (
 	JC "jxwatcher/core"
 )
 
+const CryptoMap = "cryptos_map"
+const CryptoRefresh = "refresh_cryptos"
+
 type cryptosMapCache struct {
 	Data       map[string]string
 	Maps       []string

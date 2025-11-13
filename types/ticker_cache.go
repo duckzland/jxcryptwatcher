@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const TickerUpdate = "update_tickers"
+
 var tickerCacheStorage *tickerDataCacheType = nil
 var tickerUpdateThreshold = 10 * time.Second
 

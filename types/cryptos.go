@@ -1,7 +1,6 @@
 package types
 
 import (
-	// json "github.com/goccy/go-json"
 	"fmt"
 	"io"
 	"net/http"

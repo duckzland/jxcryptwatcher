@@ -66,9 +66,9 @@ func registerActions() {
 	JA.RegisterActionManager().Init()
 
 	// Refresh ticker data
-	JA.UseAction().Add(JW.NewActionButton("refresh_cryptos", "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JT.CryptoRefresh, "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
-			JC.UseFetcher().Call("cryptos_map", nil)
+			JC.UseFetcher().Call(JT.CryptoMap, nil)
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatus().IsReady() {
@@ -115,20 +115,20 @@ func registerActions() {
 		}))
 
 	// Refresh exchange rates
-	JA.UseAction().Add(JW.NewActionButton("refresh_rates", "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JT.ExchangeRefresh, "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn JW.ActionButton) {
 			// Open the network status temporarily
 			JA.UseStatus().SetNetworkStatus(true)
 
 			// Force update
 			JT.UseExchangeCache().SoftReset()
-			JC.UseWorker().Flush("update_rates")
-			JC.UseWorker().Call("update_rates", JC.CallDebounced)
+			JC.UseWorker().Flush(JT.ExchangeUpdateRates)
+			JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallDebounced)
 
 			// Force update
 			JT.UseTickerCache().SoftReset()
-			JC.UseWorker().Flush("update_tickers")
-			JC.UseWorker().Call("update_tickers", JC.CallDebounced)
+			JC.UseWorker().Flush(JT.TickerUpdate)
+			JC.UseWorker().Call(JT.TickerUpdate, JC.CallDebounced)
 
 		},
 		func(btn JW.ActionButton) {
@@ -191,7 +191,7 @@ func registerActions() {
 		}))
 
 	// Open settings
-	JA.UseAction().Add(JW.NewActionButton("open_settings", "", theme.SettingsIcon(), "Open settings", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JA.AppOpenSettings, "", theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn JW.ActionButton) {
 			openSettingForm()
 		},
@@ -240,7 +240,7 @@ func registerActions() {
 		}))
 
 	// Panel drag toggle
-	JA.UseAction().Add(JW.NewActionButton("toggle_drag", "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JA.AppToggleDrag, "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn JW.ActionButton) {
 			toggleDraggable()
 		},
@@ -288,7 +288,7 @@ func registerActions() {
 		}))
 
 	// Add new panel
-	JA.UseAction().Add(JW.NewActionButton("add_panel", "", theme.ContentAddIcon(), "Add new panel", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JA.AppAddPanel, "", theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn JW.ActionButton) {
 			openNewPanelForm()
 		},
@@ -327,7 +327,7 @@ func registerWorkers() {
 	JC.RegisterWorkerManager().Init()
 
 	JC.UseWorker().Register(
-		"update_display", 1,
+		JP.PanelUpdate, 1,
 		func() int64 {
 			return 200
 		},
@@ -369,7 +369,7 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_rates", 1,
+		JT.ExchangeUpdateRates, 1,
 		nil,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
@@ -407,7 +407,7 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"update_tickers", 1,
+		JT.TickerUpdate, 1,
 		nil,
 		func() int64 {
 			return max(JT.UseConfig().Delay*1000, 30000)
@@ -437,7 +437,7 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		"notification", 50,
+		JC.NOTIFICATION_KEY, 50,
 		func() int64 {
 			return 1000
 		},
@@ -471,7 +471,7 @@ func registerFetchers() {
 	JC.RegisterFetcherManager().Init()
 
 	JC.UseFetcher().Register(
-		"cryptos_map", 0,
+		JT.CryptoMap, 0,
 		JC.NewGenericFetcher(
 			func() (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(
@@ -699,7 +699,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		"rates", delay,
+		JT.ExchangeRate, delay,
 		JC.NewDynamicPayloadFetcher(
 			func(payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)
@@ -815,11 +815,11 @@ func registerLifecycle() {
 
 						// Force Refresh
 						JT.UseExchangeCache().SoftReset()
-						JC.UseWorker().Call("update_rates", JC.CallImmediate)
+						JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallImmediate)
 
 						// Force Refresh
 						JT.UseTickerCache().SoftReset()
-						JC.UseWorker().Call("update_tickers", JC.CallImmediate)
+						JC.UseWorker().Call(JT.TickerUpdate, JC.CallImmediate)
 					}
 				})
 
@@ -852,11 +852,11 @@ func registerLifecycle() {
 			if !JA.UseStatus().HasError() && JC.IsMobile {
 				// Force Refresh
 				JT.UseExchangeCache().SoftReset()
-				JC.UseWorker().Call("update_rates", JC.CallImmediate)
+				JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallImmediate)
 
 				// Force Refresh
 				JT.UseTickerCache().SoftReset()
-				JC.UseWorker().Call("update_tickers", JC.CallImmediate)
+				JC.UseWorker().Call(JT.TickerUpdate, JC.CallImmediate)
 			}
 		})
 		lc.SetOnExitedForeground(func() {

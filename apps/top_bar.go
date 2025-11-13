@@ -6,8 +6,13 @@ import (
 	"fyne.io/fyne/v2/container"
 
 	JC "jxwatcher/core"
+	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
+
+const AppOpenSettings = "open_settings"
+const AppToggleDrag = "toggle_drag"
+const AppAddPanel = "add_panel"
 
 func NewTopBar() *fyne.Container {
 
@@ -23,10 +28,10 @@ func NewTopBar() *fyne.Container {
 			topBg,
 			JW.UseNotification(),
 		),
-		UseAction().Get("refresh_cryptos"),
-		UseAction().Get("refresh_rates"),
-		UseAction().Get("open_settings"),
-		UseAction().Get("toggle_drag"),
-		UseAction().Get("add_panel"),
+		UseAction().Get(JT.CryptoRefresh),
+		UseAction().Get(JT.ExchangeRefresh),
+		UseAction().Get(AppOpenSettings),
+		UseAction().Get(AppToggleDrag),
+		UseAction().Get(AppAddPanel),
 	)
 }

@@ -172,7 +172,7 @@ func updateRates() bool {
 	payloads := make(map[string][]string)
 
 	for _, rk := range jb {
-		payloads["rates"] = append(payloads["rates"], rk)
+		payloads[JT.ExchangeRate] = append(payloads[JT.ExchangeRate], rk)
 	}
 	var hasError int = 0
 	successCount := 0
@@ -209,11 +209,11 @@ func updateRates() bool {
 
 			mu.Lock()
 			if successCount != 0 {
-				JC.UseWorker().Call("update_display", JC.CallBypassImmediate)
+				JC.UseWorker().Call(JP.PanelUpdate, JC.CallBypassImmediate)
 			}
 			mu.Unlock()
 
-			JC.UseWorker().Reset("update_rates")
+			JC.UseWorker().Reset(JT.ExchangeUpdateRates)
 		})
 
 	return true
@@ -300,7 +300,7 @@ func updateTickers() bool {
 				updateTickerDisplay()
 			}
 
-			JC.UseWorker().Reset("update_tickers")
+			JC.UseWorker().Reset(JT.TickerUpdate)
 		})
 
 	return true
@@ -442,10 +442,10 @@ func processFetchingCryptosComplete(status int) {
 			})
 
 			JT.UseExchangeCache().SoftReset()
-			JC.UseWorker().Call("update_rates", JC.CallQueued)
+			JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallQueued)
 
 			JT.UseTickerCache().SoftReset()
-			JC.UseWorker().Call("update_tickers", JC.CallQueued)
+			JC.UseWorker().Call(JT.TickerUpdate, JC.CallQueued)
 
 			JA.UseStatus().SetCryptoStatus(true)
 			JA.UseStatus().SetConfigStatus(true)
@@ -559,7 +559,7 @@ func savePanelForm(pdt JT.PanelData) {
 				tid := pkt.GetTargetCoinString()
 
 				payloads := map[string][]string{}
-				payloads["rates"] = []string{sid + "|" + tid}
+				payloads[JT.ExchangeRate] = []string{sid + "|" + tid}
 
 				JC.UseFetcher().Dispatch(payloads,
 					func(totalScheduled int) {
@@ -695,10 +695,10 @@ func openSettingForm() {
 						JA.UseStatus().SetConfigStatus(true)
 
 						JT.UseTickerCache().SoftReset()
-						JC.UseWorker().Call("update_tickers", JC.CallQueued)
+						JC.UseWorker().Call(JT.TickerUpdate, JC.CallQueued)
 
 						JT.UseExchangeCache().SoftReset()
-						JC.UseWorker().Call("update_rates", JC.CallQueued)
+						JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallQueued)
 					}
 				} else {
 					JC.Notify("Failed to save configuration.")
@@ -745,7 +745,7 @@ func scheduledNotificationReset() {
 		}
 
 		// Ensure message shown for at least 6 seconds
-		last := JC.UseWorker().GetLastUpdate("notification")
+		last := JC.UseWorker().GetLastUpdate(JC.NOTIFICATION_KEY)
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
 			JW.UseNotification().ClearText()

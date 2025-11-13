@@ -8,6 +8,15 @@ import (
 	tooltip "github.com/dweymouth/fyne-tooltip/widget"
 )
 
+const ActionStateAllowActions = "allow_actions"
+const ActionStateDisallowActions = "disallow_actions"
+const ActionStateDisabled = "disabled"
+const ActionStateInProgress = "in_progress"
+const ActionStateActive = "active"
+const ActionStateError = "error"
+const ActionStateReset = "reset"
+const ActionStateNormal = "normal"
+
 type ActionButton interface {
 	fyne.Widget
 	desktop.Hoverable
@@ -143,31 +152,31 @@ func (b *actionButton) IsDisabled() bool {
 }
 
 func (b *actionButton) DisallowActions() {
-	b.changeState("disallow_actions")
+	b.changeState(ActionStateDisallowActions)
 }
 
 func (b *actionButton) AllowActions() {
-	b.changeState("allow_actions")
+	b.changeState(ActionStateAllowActions)
 }
 
 func (b *actionButton) Disable() {
-	b.changeState("disabled")
+	b.changeState(ActionStateDisabled)
 }
 
 func (b *actionButton) Enable() {
-	b.changeState("reset")
+	b.changeState(ActionStateReset)
 }
 
 func (b *actionButton) Error() {
-	b.changeState("error")
+	b.changeState(ActionStateError)
 }
 
 func (b *actionButton) Progress() {
-	b.changeState("in_progress")
+	b.changeState(ActionStateInProgress)
 }
 
 func (b *actionButton) Active() {
-	b.changeState("active")
+	b.changeState(ActionStateActive)
 }
 
 func (b *actionButton) GetTag() string {
@@ -228,35 +237,35 @@ func (b *actionButton) setState(state string) {
 	}
 
 	switch state {
-	case "allow_actions":
+	case ActionStateAllowActions:
 		b.allow_actions = true
 		b.setImportance(widget.MediumImportance)
 
-	case "disallow_actions":
+	case ActionStateDisallowActions:
 		b.allow_actions = false
 		b.triggerMouseOut()
 		b.setImportance(widget.MediumImportance)
 
-	case "disabled":
+	case ActionStateDisabled:
 		b.allow_actions = true
 		b.disabled = true
 		b.setImportance(widget.LowImportance)
 
-	case "in_progress":
+	case ActionStateInProgress:
 		b.allow_actions = true
 		b.disabled = true
 		b.setImportance(widget.HighImportance)
 
-	case "active":
+	case ActionStateActive:
 		b.allow_actions = true
 		b.setImportance(widget.HighImportance)
 
-	case "error":
+	case ActionStateError:
 		b.allow_actions = true
 		b.disabled = false
 		b.setImportance(widget.DangerImportance)
 
-	case "reset", "normal":
+	case ActionStateReset, ActionStateNormal:
 		b.allow_actions = true
 		b.disabled = false
 		b.setImportance(widget.MediumImportance)

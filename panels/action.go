@@ -10,6 +10,9 @@ import (
 	JW "jxwatcher/widgets"
 )
 
+const PanelActionEdit = "edit_panel"
+const PanelActionDelete = "delete_panel"
+
 type panelAction struct {
 	widget.BaseWidget
 	editBtn   JW.ActionButton
@@ -54,7 +57,7 @@ func NewPanelAction(
 ) *panelAction {
 
 	pa := &panelAction{}
-	pa.editBtn = JW.NewActionButton("edit_panel", "", theme.DocumentCreateIcon(), "Edit panel", "normal",
+	pa.editBtn = JW.NewActionButton(PanelActionEdit, "", theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onEdit != nil {
 				onEdit()
@@ -82,7 +85,7 @@ func NewPanelAction(
 			btn.Enable()
 		})
 
-	pa.deleteBtn = JW.NewActionButton("delete_panel", "", theme.DeleteIcon(), "Delete panel", "normal",
+	pa.deleteBtn = JW.NewActionButton(PanelActionDelete, "", theme.DeleteIcon(), "Delete panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onDelete != nil {
 				onDelete()
