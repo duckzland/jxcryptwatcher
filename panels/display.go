@@ -48,8 +48,8 @@ type panelDisplay struct {
 	content       *panelText
 	subtitle      *panelText
 	bottomText    *panelText
-	onEdit        func(pk string, uuid string)
-	onDelete      func(uuid string)
+	onEdit        func()
+	onDelete      func()
 }
 
 func (h *panelDisplay) GetTag() string {
@@ -505,25 +505,7 @@ func (h *panelDisplay) syncData() bool {
 
 func (h *panelDisplay) createAction() {
 	if h.action == nil {
-		h.action = NewPanelAction(
-			func() {
-				pdt := JT.UsePanelMaps().GetDataByID(h.GetTag())
-				pv := pdt.UseData()
-				dynpk, _ := pv.Get()
-				if h.onEdit != nil {
-					h.onEdit(dynpk, h.tag)
-				}
-			},
-			func() {
-				if h.onDelete != nil {
-					JA.StartFadeOutBackground(h.background, 300*time.Millisecond, func() {
-						if h.onDelete != nil {
-							h.onDelete(h.GetTag())
-						}
-					}, false)
-				}
-			},
-		)
+		h.action = NewPanelAction(h.onEdit, h.onDelete)
 		h.container.Layout.(*panelDisplayLayout).action = h.action
 		h.container.Objects = append(h.container.Objects, h.action)
 		h.action.Show()
@@ -552,8 +534,28 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 		container:     container.New(&panelDisplayLayout{}),
 		shown:         0,
 		actionVisible: false,
-		onEdit:        onEdit,
-		onDelete:      onDelete,
+	}
+
+	pd.onEdit = func() {
+		if onEdit != nil {
+			pdt := JT.UsePanelMaps().GetDataByID(pd.GetTag())
+			pv := pdt.UseData()
+			dynpk, _ := pv.Get()
+
+			onEdit(dynpk, pd.GetTag())
+		}
+	}
+
+	pd.onDelete = func() {
+		if onDelete != nil {
+			JA.StartFadeOutBackground(pd.background, 300*time.Millisecond, func() {
+				if onDelete != nil {
+					onDelete(pd.GetTag())
+				}
+			}, false)
+		}
+
+		pd.HideTarget()
 	}
 
 	if JC.IsMobile {

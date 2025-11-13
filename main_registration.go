@@ -21,6 +21,8 @@ import (
 	_ "embed"
 )
 
+var signals chan os.Signal
+
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
@@ -731,7 +733,7 @@ func registerFetchers() {
 
 func registerShutdown() {
 
-	signals := make(chan os.Signal, 1)
+	signals = make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	JC.Logln("Registering shutdown callback")
@@ -743,6 +745,8 @@ func registerShutdown() {
 		if !JA.UseSnapshot().IsSnapshotted() {
 			JA.UseSnapshot().Save()
 		}
+
+		return
 	}()
 }
 
@@ -895,6 +899,9 @@ func registerLifecycle() {
 			if !JA.UseSnapshot().IsSnapshotted() {
 				JA.UseSnapshot().Save()
 			}
+
+			signals <- syscall.SIGTERM
+
 		})
 	}
 }
