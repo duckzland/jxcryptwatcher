@@ -59,17 +59,6 @@ else
   git checkout -b "$temp_branch"
 fi
 
-# for func in "${functions[@]}"; do
-#   find . -type f -name "*.go" -exec sed -i "/JC\.${func}.*/d" {} +
-#   echo_success "JC.${func} calls removed."
-# done
-
-# for func in "${functions[@]}"; do
-#   find . -type f -name "*.go" -exec sed -i "/JC\.${func}/s/^/if false {\n/; /JC\.${func}/s/$/\n}/" {} +
-#   find . -type f -name "*.go" -exec sed -i "/^[[:space:]]*func[[:space:]]\+${func}\s*(/!{/[^a-zA-Z0-9_]${func}\s*(/s/^/if false {\n/; s/$/\n}/}" {} +
-#   echo_success "JC.${func} calls removed."
-# done
-
 for func in "${functions[@]}"; do
   find . -type f -name "*.go" | while read -r file; do
     awk -v f="$func" '
