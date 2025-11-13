@@ -103,7 +103,7 @@ grep -rho 'JC\.Notify("[^"]\+[^"]")' . | sort | uniq | while read -r line; do
   fi
 
   # Replace all occurrences in code
-  find . -type f -name "*.go" -exec sed -i "s|JC\.Notify(\"$msg\")|JC.Notify($const_name)|g" {} +
+  find . -type f -name "*.go" -exec sed -i "s|JC\.Notify(\"$msg\")|JC.Notify(JC.$const_name)|g" {} +
 
   echo_success "Moving ${msg} as a constant"
 done
