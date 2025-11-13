@@ -71,8 +71,6 @@ fi
 # done
 
 for func in "${functions[@]}"; do
-  echo_start "Wrapping ${func} and JC.${func} calls in 'if false { ... }'"
-
   find . -type f -name "*.go" | while read -r file; do
     awk -v f="$func" '
       # Skip function definitions
@@ -99,7 +97,7 @@ for func in "${functions[@]}"; do
     ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
   done
 
-  echo_success "${func} calls wrapped."
+  echo_success "Debug function: ${func} calls neutralized"
 done
 
 git add .
