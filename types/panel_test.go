@@ -1,10 +1,11 @@
 package types
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"testing"
+
+	json "github.com/goccy/go-json"
 
 	"fyne.io/fyne/v2/test"
 )

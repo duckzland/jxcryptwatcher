@@ -1,11 +1,12 @@
 package core
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"strings"
 	"testing"
+
+	json "github.com/goccy/go-json"
 
 	"fyne.io/fyne/v2/app"
 )

@@ -1,13 +1,14 @@
 package apps
 
 import (
-	"encoding/json"
 	"runtime"
 	"sync"
 	"time"
 
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
+
+	json "github.com/goccy/go-json"
 )
 
 var snapshotManagerStorage *snapshotManager = nil

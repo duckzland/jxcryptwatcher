@@ -1,10 +1,11 @@
 package types
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 	"sync"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )

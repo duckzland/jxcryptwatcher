@@ -2,10 +2,11 @@ package types
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sync"
+
+	json "github.com/goccy/go-json"
 
 	"fyne.io/fyne/v2/storage"
 

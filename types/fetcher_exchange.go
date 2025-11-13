@@ -1,12 +1,13 @@
 package types
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )

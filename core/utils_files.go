@@ -3,11 +3,12 @@ package core
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/json"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+
+	json "github.com/goccy/go-json"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/storage"

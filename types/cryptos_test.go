@@ -1,13 +1,15 @@
 package types
 
 import (
-	"encoding/json"
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 
+	json "github.com/goccy/go-json"
+
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type cryptosLoaderNullWriter struct{}

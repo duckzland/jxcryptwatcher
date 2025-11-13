@@ -1,13 +1,14 @@
 package core
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
+
+	json "github.com/goccy/go-json"
 )
 
 type netMockResponse struct {

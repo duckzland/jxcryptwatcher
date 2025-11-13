@@ -16,59 +16,79 @@ type cryptosMapCache struct {
 }
 
 type cryptosMapType struct {
-	data       sync.Map
+	data       map[int64]string
 	maps       []string
 	searchMaps []string
 	mu         sync.RWMutex
 }
 
+func parseID(id string) (int64, bool) {
+	val, err := strconv.ParseInt(id, 10, 64)
+	return val, err == nil
+}
+
+func formatID(id int64) string {
+	return strconv.FormatInt(id, 10)
+}
+
 func (cm *cryptosMapType) Init() {
-	cm.data = sync.Map{}
 	cm.mu.Lock()
+	cm.data = make(map[int64]string)
 	cm.maps = []string{}
 	cm.searchMaps = []string{}
 	cm.mu.Unlock()
 }
 
 func (cm *cryptosMapType) Insert(id string, display string) {
-	cm.data.Store(id, display)
+	if intID, ok := parseID(id); ok {
+		cm.mu.Lock()
+		cm.data[intID] = display
+		cm.mu.Unlock()
+	}
 }
 
 func (cm *cryptosMapType) Hydrate(cache cryptosMapCache) {
 	cm.Init()
 
-	for id, display := range cache.Data {
-		cm.Insert(id, display)
+	cm.mu.Lock()
+	if len(cache.Data) != 0 {
+		cm.data = make(map[int64]string, len(cache.Data))
+		for k, v := range cache.Data {
+			if intID, ok := parseID(k); ok {
+				cm.data[intID] = v
+			}
+		}
 	}
 
 	if len(cache.Maps) != 0 && len(cache.SearchMaps) != 0 {
-		cm.mu.Lock()
-		cm.maps = cache.Maps
-		cm.searchMaps = cache.SearchMaps
-		cm.mu.Unlock()
-	} else {
+		cm.maps = make([]string, len(cache.Maps))
+		copy(cm.maps, cache.Maps)
+
+		cm.searchMaps = make([]string, len(cache.SearchMaps))
+		copy(cm.searchMaps, cache.SearchMaps)
+	}
+	cm.mu.Unlock()
+
+	if len(cache.Data) == 0 || len(cache.Maps) == 0 || len(cache.SearchMaps) == 0 {
 		_ = cm.GetOptions()
 	}
 }
 
 func (cm *cryptosMapType) Serialize() cryptosMapCache {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
 	cache := cryptosMapCache{
-		Data: make(map[string]string),
+		Data:       make(map[string]string, len(cm.data)),
+		Maps:       make([]string, len(cm.maps)),
+		SearchMaps: make([]string, len(cm.searchMaps)),
 	}
 
-	cm.mu.RLock()
-	cache.Maps = cm.maps
-	cache.SearchMaps = cm.searchMaps
-	cm.mu.RUnlock()
-
-	cm.data.Range(func(key, val any) bool {
-		k, ok1 := key.(string)
-		v, ok2 := val.(string)
-		if ok1 && ok2 {
-			cache.Data[k] = v
-		}
-		return true
-	})
+	for k, v := range cm.data {
+		cache.Data[formatID(k)] = v
+	}
+	copy(cache.Maps, cm.maps)
+	copy(cache.SearchMaps, cm.searchMaps)
 
 	return cache
 }
@@ -84,15 +104,15 @@ func (cm *cryptosMapType) GetOptions() []string {
 
 	JC.PrintPerfStats("Generating crypto options", time.Now())
 
-	var options []string
-	var lowerSearchMap []string
+	options := make([]string, 0, len(cm.data))
+	lowerSearchMap := make([]string, 0, len(cm.data))
 
-	cm.data.Range(func(_, val any) bool {
-		str := val.(string)
-		options = append(options, str)
-		lowerSearchMap = append(lowerSearchMap, strings.ToLower(str))
-		return true
-	})
+	cm.mu.RLock()
+	for _, val := range cm.data {
+		options = append(options, val)
+		lowerSearchMap = append(lowerSearchMap, strings.ToLower(val))
+	}
+	cm.mu.RUnlock()
 
 	cm.mu.Lock()
 	cm.maps = options
@@ -103,7 +123,6 @@ func (cm *cryptosMapType) GetOptions() []string {
 }
 
 func (cm *cryptosMapType) GetSearchMap() []string {
-
 	cm.mu.RLock()
 	if len(cm.searchMaps) != 0 {
 		cached := cm.searchMaps
@@ -112,7 +131,6 @@ func (cm *cryptosMapType) GetSearchMap() []string {
 	}
 	cm.mu.RUnlock()
 
-	// Trigger GetOptions() to generate both maps and searchMap
 	_ = cm.GetOptions()
 
 	cm.mu.RLock()
@@ -131,37 +149,60 @@ func (cm *cryptosMapType) SetMaps(m []string) {
 func (cm *cryptosMapType) ClearMapCache() {
 	cm.mu.Lock()
 	cm.maps = []string{}
+	cm.searchMaps = []string{}
 	cm.mu.Unlock()
 }
 
 func (cm *cryptosMapType) GetDisplayById(id string) string {
-	if val, ok := cm.data.Load(id); ok {
-		return val.(string)
+	if intID, ok := parseID(id); ok {
+		cm.mu.RLock()
+		val, ok := cm.data[intID]
+		cm.mu.RUnlock()
+		if ok {
+			return val
+		}
 	}
 	return ""
 }
 
 func (cm *cryptosMapType) GetIdByDisplay(tk string) string {
 	if JC.IsNumeric(tk) {
-		return tk
+		if intID, ok := parseID(tk); ok {
+			cm.mu.RLock()
+			_, exists := cm.data[intID]
+			cm.mu.RUnlock()
+			if exists {
+				return tk
+			}
+		}
 	}
 
 	ntk := strings.Split(tk, "|")
 	if len(ntk) > 0 && JC.IsNumeric(ntk[0]) {
-		if _, ok := cm.data.Load(ntk[0]); ok {
-			return ntk[0]
+		if intID, ok := parseID(ntk[0]); ok {
+			cm.mu.RLock()
+			_, exists := cm.data[intID]
+			cm.mu.RUnlock()
+			if exists {
+				return ntk[0]
+			}
 		}
 	}
 	return ""
 }
 
 func (cm *cryptosMapType) GetSymbolById(id string) string {
-	if val, ok := cm.data.Load(id); ok {
-		parts := strings.Split(val.(string), "|")
-		if len(parts) == 2 {
-			subs := strings.Split(parts[1], " - ")
-			if len(subs) >= 2 {
-				return subs[0]
+	if intID, ok := parseID(id); ok {
+		cm.mu.RLock()
+		val, ok := cm.data[intID]
+		cm.mu.RUnlock()
+		if ok {
+			parts := strings.Split(val, "|")
+			if len(parts) == 2 {
+				subs := strings.Split(parts[1], " - ")
+				if len(subs) >= 2 {
+					return subs[0]
+				}
 			}
 		}
 	}
@@ -180,16 +221,16 @@ func (cm *cryptosMapType) GetSymbolByDisplay(tk string) string {
 }
 
 func (cm *cryptosMapType) IsEmpty() bool {
-	empty := true
-	cm.data.Range(func(_, _ any) bool {
-		empty = false
-		return false
-	})
+	cm.mu.RLock()
+	empty := len(cm.data) == 0
+	cm.mu.RUnlock()
 	return empty
 }
 
 func (cm *cryptosMapType) ValidateId(id int64) bool {
-	_, ok := cm.data.Load(strconv.FormatInt(id, 10))
+	cm.mu.RLock()
+	_, ok := cm.data[id]
+	cm.mu.RUnlock()
 	return ok
 }
 
