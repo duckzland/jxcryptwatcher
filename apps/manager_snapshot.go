@@ -170,15 +170,15 @@ func (sm *snapshotManager) Delete() int {
 
 func (sm *snapshotManager) Save() {
 
+	sm.mu.Lock()
+	sm.snapshotted = true
+	sm.mu.Unlock()
+
 	JC.SaveGobToStorage("snapshots-exchange.gob", JT.UseExchangeCache().Serialize())
 	JC.SaveGobToStorage("snapshots-ticker-cache.gob", JT.UseTickerCache().Serialize())
 	JC.SaveGobToStorage("snapshots-panels.gob", JT.UsePanelMaps().Serialize())
 	JC.SaveGobToStorage("snapshots-tickers.gob", JT.UseTickerMaps().Serialize())
 	JC.SaveGobToStorage("snapshots-cryptos.gob", JT.UsePanelMaps().GetMaps().Serialize())
-
-	sm.mu.Lock()
-	sm.snapshotted = true
-	sm.mu.Unlock()
 }
 
 func (sm *snapshotManager) load(filename string, snapshot any) bool {

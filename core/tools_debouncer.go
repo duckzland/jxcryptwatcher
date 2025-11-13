@@ -44,8 +44,11 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	go func(gen int, ctx context.Context, cancel context.CancelFunc) {
 		defer func() {
 			d.mu.Lock()
-			delete(d.cancelMap, key)
-			delete(d.callbacks, key)
+			currentGen := d.generations[key]
+			if gen == currentGen {
+				delete(d.cancelMap, key)
+				delete(d.callbacks, key)
+			}
 			d.mu.Unlock()
 			cancel()
 		}()
