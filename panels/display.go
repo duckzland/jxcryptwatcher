@@ -433,10 +433,7 @@ func (h *panelDisplay) findTargetIndex() int {
 
 	for i, zone := range dragDropZones {
 
-		JC.Logln(fmt.Sprintf(
-			"Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]",
-			i, zone.left, zone.right, zone.top, zone.bottom,
-		))
+		JC.Logln(fmt.Sprintf("Checking panel %d — Bounds: [X: %.2f–%.2f, Y: %.2f–%.2f]", i, zone.left, zone.right, zone.top, zone.bottom))
 
 		if h.dragOffset.X >= zone.left &&
 			h.dragOffset.X <= zone.right &&
