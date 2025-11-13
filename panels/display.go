@@ -536,8 +536,8 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 		actionVisible: false,
 	}
 
-	pd.onEdit = func() {
-		if onEdit != nil {
+	if onEdit != nil {
+		pd.onEdit = func() {
 			pdt := JT.UsePanelMaps().GetDataByID(pd.GetTag())
 			pv := pdt.UseData()
 			dynpk, _ := pv.Get()
@@ -546,16 +546,14 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 		}
 	}
 
-	pd.onDelete = func() {
-		if onDelete != nil {
+	if onDelete != nil {
+		pd.onDelete = func() {
 			JA.StartFadeOutBackground(pd.background, 300*time.Millisecond, func() {
-				if onDelete != nil {
-					onDelete(pd.GetTag())
-				}
+				onDelete(pd.GetTag())
 			}, false)
-		}
 
-		pd.HideTarget()
+			pd.HideTarget()
+		}
 	}
 
 	if JC.IsMobile {
