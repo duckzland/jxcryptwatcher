@@ -227,7 +227,7 @@ func (p *panelDataType) IsOnInitialValue() bool {
 	old := p.oldKey
 	p.mu.RUnlock()
 	opt := &panelKeyType{value: old}
-	return opt.IsValueMatchingFloat(-1, "==") && p.IsStatus(JC.STATE_LOADED)
+	return opt.IsValueMatchingFloat(-1, JC.STRING_DOUBLE_EQUAL) && p.IsStatus(JC.STATE_LOADED)
 }
 
 func (p *panelDataType) IsValueIncrease() int {
@@ -317,7 +317,7 @@ func (p *panelDataType) Update(pk string) bool {
 
 	switch nst {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if nso.IsValueMatchingFloat(0, ">=") {
+		if nso.IsValueMatchingFloat(0, JC.STRING_GREATER_EQUAL) {
 			nst = JC.STATE_LOADED
 		}
 	case JC.STATE_LOADED:
@@ -343,7 +343,7 @@ func (p *panelDataType) UpdateRate() bool {
 	if UseExchangeCache().Has(ck) {
 		dt := UseExchangeCache().Get(ck)
 		if dt != nil && dt.TargetAmount != nil {
-			if pk.IsValueMatching(dt.TargetAmount, "!=") {
+			if pk.IsValueMatching(dt.TargetAmount, JC.STRING_NOT_EQUAL) {
 				p.Set(pk.UpdateValue(dt.TargetAmount))
 				return true
 			}
@@ -357,7 +357,7 @@ func (p *panelDataType) UpdateStatus() bool {
 
 	switch p.GetStatus() {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		if p.UsePanelKey().IsValueMatchingFloat(0, ">=") {
+		if p.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_GREATER_EQUAL) {
 			p.SetStatus(JC.STATE_LOADED)
 			return true
 		}
@@ -443,7 +443,7 @@ func (p *panelDataType) DidChange() bool {
 	old := p.oldKey
 	p.mu.RUnlock()
 	opt := &panelKeyType{value: old}
-	return old != p.Get() && opt.IsValueMatchingFloat(-1, "!=") && p.IsStatus(JC.STATE_LOADED)
+	return old != p.Get() && opt.IsValueMatchingFloat(-1, JC.STRING_NOT_EQUAL) && p.IsStatus(JC.STATE_LOADED)
 }
 
 func (p *panelDataType) Insert(panel panelType, rate float64) {

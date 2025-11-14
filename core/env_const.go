@@ -7,7 +7,22 @@ import (
 )
 
 const EPSILON = 1e-9
+
 const STRING_EMPTY = ""
+const STRING_PLUS = "+"
+const STRING_MINUS = "-"
+const STRING_PERCENTAGE = "%"
+const STRING_PERCENTAGE_DIVIDE = "/100"
+const STRING_DOLLAR = "$"
+const STRING_PIPE = "|"
+const STRING_DOUBLE_EQUAL = "=="
+const STRING_EQUAL = "="
+const STRING_NOT_EQUAL = "!="
+const STRING_LESS = "<"
+const STRING_GREATER = ">"
+const STRING_LESS_EQUAL = "<="
+const STRING_GREATER_EQUAL = ">="
+
 const NETWORKING_SUCCESS = 0
 const NETWORKING_ERROR_CONNECTION = -1
 const NETWORKING_URL_ERROR = -2

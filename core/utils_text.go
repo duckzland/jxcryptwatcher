@@ -152,7 +152,7 @@ func MeasureText(text string, fontSize float32, style fyne.TextStyle) float32 {
 }
 
 func FormatShortCurrency(value string) string {
-	num, err := strconv.ParseFloat(strings.Replace(value, "$", STRING_EMPTY, 1), 64)
+	num, err := strconv.ParseFloat(strings.Replace(value, STRING_DOLLAR, STRING_EMPTY, 1), 64)
 	if err != nil {
 		return value // fallback if parsing fails
 	}
@@ -182,7 +182,7 @@ func ExtractLeadingNumber(s string) int {
 }
 
 func SearchableExtractNumber(s string) int {
-	parts := strings.SplitN(s, "|", 2)
+	parts := strings.SplitN(s, STRING_PIPE, 2)
 	if len(parts) < 1 || parts[0] == STRING_EMPTY {
 		return -1
 	}

@@ -177,7 +177,7 @@ func (cm *cryptosMapType) GetIdByDisplay(tk string) string {
 		}
 	}
 
-	ntk := strings.Split(tk, "|")
+	ntk := strings.Split(tk, JC.STRING_PIPE)
 	if len(ntk) > 0 && JC.IsNumeric(ntk[0]) {
 		if intID, ok := parseID(ntk[0]); ok {
 			cm.mu.RLock()
@@ -197,7 +197,7 @@ func (cm *cryptosMapType) GetSymbolById(id string) string {
 		val, ok := cm.data[intID]
 		cm.mu.RUnlock()
 		if ok {
-			parts := strings.Split(val, "|")
+			parts := strings.Split(val, JC.STRING_PIPE)
 			if len(parts) == 2 {
 				subs := strings.Split(parts[1], " - ")
 				if len(subs) >= 2 {
@@ -210,7 +210,7 @@ func (cm *cryptosMapType) GetSymbolById(id string) string {
 }
 
 func (cm *cryptosMapType) GetSymbolByDisplay(tk string) string {
-	parts := strings.Split(tk, "|")
+	parts := strings.Split(tk, JC.STRING_PIPE)
 	if len(parts) == 2 {
 		subs := strings.Split(parts[1], " - ")
 		if len(subs) >= 2 {

@@ -37,11 +37,11 @@ type panelDisplay struct {
 	status        int
 	shown         int
 	actionVisible bool
-	container     *fyne.Container
 	dragScroll    float32
 	dragPosition  fyne.Position
 	dragOffset    fyne.Position
 	dragging      bool
+	container     *fyne.Container
 	background    *canvas.Rectangle
 	action        *panelAction
 	title         *panelText

@@ -68,7 +68,7 @@ func (er *exchangeResults) UnmarshalJSON(data []byte) error {
 
 func (er *exchangeResults) GetRate(rk string) int64 {
 
-	rko := strings.Split(rk, "|")
+	rko := strings.Split(rk, JC.STRING_PIPE)
 
 	if len(rko) != 2 {
 		return JC.NETWORKING_BAD_PAYLOAD

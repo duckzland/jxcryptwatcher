@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type panelKeyNullWriter struct{}
@@ -69,10 +71,10 @@ func TestPanelKeyComparison(t *testing.T) {
 	test.NewApp()
 
 	pk := &panelKeyType{value: "1-2-0.5-BTC-ETH-4|15.5"}
-	if !pk.IsValueMatchingFloat(15.5, "==") {
+	if !pk.IsValueMatchingFloat(15.5, JC.STRING_DOUBLE_EQUAL) {
 		t.Error("Expected value to match")
 	}
-	if !pk.IsValueMatchingFloat(10.0, ">") {
+	if !pk.IsValueMatchingFloat(10.0, JC.STRING_GREATER) {
 		t.Error("Expected value to be greater than 10.0")
 	}
 	panelKeyTurnOnLogs()

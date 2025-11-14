@@ -159,7 +159,7 @@ func updateRates() bool {
 		tid := pkt.GetTargetCoinString()
 
 		if _, exists := jb[sid]; !exists {
-			jb[sid] = sid + "|" + tid
+			jb[sid] = sid + JC.STRING_PIPE + tid
 		} else {
 			jb[sid] += "," + tid
 		}
@@ -340,7 +340,7 @@ func processUpdatePanelComplete(status int) {
 		JA.UseStatus().SetNetworkStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<") || pdt.IsStatus(JC.STATE_LOADING)
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_LESS) || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		fyne.Do(func() {
@@ -356,7 +356,7 @@ func processUpdatePanelComplete(status int) {
 		JA.UseStatus().SetConfigStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
-			return pdt.UsePanelKey().IsValueMatchingFloat(0, "<") || pdt.IsStatus(JC.STATE_LOADING)
+			return pdt.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_LESS) || pdt.IsStatus(JC.STATE_LOADING)
 		})
 
 		fyne.Do(func() {
@@ -559,7 +559,7 @@ func savePanelForm(pdt JT.PanelData) {
 				tid := pkt.GetTargetCoinString()
 
 				payloads := map[string][]string{}
-				payloads[JC.ACT_EXCHANGE_GET_RATES] = []string{sid + "|" + tid}
+				payloads[JC.ACT_EXCHANGE_GET_RATES] = []string{sid + JC.STRING_PIPE + tid}
 
 				JC.UseFetcher().Dispatch(payloads,
 					func(totalScheduled int) {

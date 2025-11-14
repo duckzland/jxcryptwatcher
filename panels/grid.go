@@ -34,7 +34,7 @@ func RegisterPanelGrid(createPanel CreatePanelFunc) {
 		// Retrieve and initialize panel data
 		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 
-		if pkt.UsePanelKey().IsValueMatchingFloat(-1, "==") {
+		if pkt.UsePanelKey().IsValueMatchingFloat(-1, JC.STRING_DOUBLE_EQUAL) {
 			pkt.SetStatus(JC.STATE_LOADING)
 		}
 

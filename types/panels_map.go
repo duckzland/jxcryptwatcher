@@ -275,7 +275,7 @@ func (pc *panelsMapType) Hydrate(data []PanelData) {
 
 		switch pkn.GetStatus() {
 		case JC.STATE_ERROR:
-			if pkn.UsePanelKey().IsValueMatchingFloat(0, ">=") {
+			if pkn.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_GREATER_EQUAL) {
 				pdt.SetStatus(JC.STATE_LOADED)
 			} else {
 				pdt.SetStatus(JC.STATE_FETCHING_NEW)

@@ -144,7 +144,7 @@ func (h *tickerDisplay) updateContent() {
 
 		if pkt.IsType(JT.TickerTypePulse) {
 			raw := JT.UseTickerCache().Get(JT.TickerTypePulse)
-			pulseValue, err := strconv.ParseFloat(strings.TrimSuffix(raw, "%"), 64)
+			pulseValue, err := strconv.ParseFloat(strings.TrimSuffix(raw, JC.STRING_PERCENTAGE), 64)
 			if err == nil {
 				switch {
 				case pulseValue > 0:

@@ -18,6 +18,7 @@ const TickerFormatShortCurrencyWithSign = "shortcurrency_withsign"
 const TickerFormatPercentage = "percentage"
 const TickerFormatShortPercentage = "shortpercentage"
 const TickerFormatPulse = "pulse"
+
 const TickerTypeMarketCap = "market_cap"
 const TickerTypePulse = "pulse"
 const TickerTypeCMC100 = "cmc100"
@@ -330,23 +331,23 @@ func (p *tickerDataType) FormatContent() string {
 		return strconv.FormatFloat(val, 'f', 2, 64)
 
 	case TickerFormatCurrency:
-		return "$" + JC.FormatNumberWithCommas(val, 2)
+		return JC.STRING_DOLLAR + JC.FormatNumberWithCommas(val, 2)
 
 	case TickerFormatShortCurrency:
 		return JC.FormatShortCurrency(raw)
 
 	case TickerFormatShortCurrencyWithSign:
-		sign := "+"
+		sign := JC.STRING_PLUS
 		if val < 0 {
-			sign = "-"
+			sign = JC.STRING_MINUS
 		}
 		return sign + JC.FormatShortCurrency(strconv.FormatFloat(math.Abs(val), 'f', -1, 64))
 
 	case TickerFormatPercentage:
-		return raw + "/100"
+		return raw + JC.STRING_PERCENTAGE_DIVIDE
 
 	case TickerFormatShortPercentage:
-		return strconv.FormatFloat(val, 'f', 1, 64) + "%"
+		return strconv.FormatFloat(val, 'f', 1, 64) + JC.STRING_PERCENTAGE
 
 	default:
 		return raw
