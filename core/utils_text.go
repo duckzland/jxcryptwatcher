@@ -101,7 +101,7 @@ func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.Tex
 	var b strings.Builder
 	b.Grow(maxChars + 3)
 	b.WriteString(str[:maxChars])
-	b.WriteString("...")
+	b.WriteString(STRING_ELLIPISIS)
 
 	return b.String()
 }
@@ -110,7 +110,7 @@ func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) 
 
 	const charWidthFactor = 0.6
 
-	ellipsis := "..."
+	ellipsis := STRING_ELLIPISIS
 	ellipsisWidth := float32(len([]rune(ellipsis))) * fontSize * charWidthFactor
 
 	runes := []rune(str)
@@ -159,21 +159,22 @@ func FormatShortCurrency(value string) string {
 
 	switch {
 	case num >= 1_000_000_000_000:
-		return fmt.Sprintf("$%.2fT", num/1_000_000_000_000)
+		return fmt.Sprintf(FMT_SHORT_TRILLION_DOLLAR, num/1_000_000_000_000)
 	case num >= 1_000_000_000:
-		return fmt.Sprintf("$%.2fB", num/1_000_000_000)
+		return fmt.Sprintf(FMT_SHORT_BILLION_DOLLAR, num/1_000_000_000)
 	case num >= 1_000_000:
-		return fmt.Sprintf("$%.2fM", num/1_000_000)
+		return fmt.Sprintf(FMT_SHORT_MILLION_DOLLAR, num/1_000_000)
 	case num >= 1_000:
-		return fmt.Sprintf("$%.2fK", num/1_000)
+		return fmt.Sprintf(FMT_SHORT_THOUSAND_DOLLAR, num/1_000)
 	default:
-		return fmt.Sprintf("$%.2f", num)
+		return fmt.Sprintf(FMT_SHORT_DOLLAR, num)
 	}
 }
 
+var extractLeadingRegex = regexp.MustCompile(`^\d+`)
+
 func ExtractLeadingNumber(s string) int {
-	re := regexp.MustCompile(`^\d+`)
-	match := re.FindString(s)
+	match := extractLeadingRegex.FindString(s)
 	if match == STRING_EMPTY {
 		return -1
 	}

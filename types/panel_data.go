@@ -10,6 +10,11 @@ import (
 	JC "jxwatcher/core"
 )
 
+const fmtSpace = " "
+const fmtTo = " to "
+const fmtVal = "1 "
+const fmtEqual = " = "
+
 type PanelData interface {
 	Init()
 	Set(val string)
@@ -391,9 +396,9 @@ func (p *panelDataType) FormatTitle() string {
 	// Use strings.Builder for efficient string construction
 	var b strings.Builder
 	b.WriteString(pk.GetSourceValueFormattedString())
-	b.WriteString(" ")
+	b.WriteString(fmtSpace)
 	b.WriteString(pk.GetSourceSymbolString())
-	b.WriteString(" to ")
+	b.WriteString(fmtTo)
 	b.WriteString(pk.GetTargetSymbolString())
 
 	return b.String()
@@ -403,11 +408,11 @@ func (p *panelDataType) FormatSubtitle() string {
 	pk := p.UsePanelKey()
 
 	var b strings.Builder
-	b.WriteString("1 ")
+	b.WriteString(fmtVal)
 	b.WriteString(pk.GetSourceSymbolString())
-	b.WriteString(" = ")
+	b.WriteString(fmtEqual)
 	b.WriteString(pk.GetValueFormattedString())
-	b.WriteString(" ")
+	b.WriteString(fmtSpace)
 	b.WriteString(pk.GetTargetSymbolString())
 
 	return b.String()
@@ -417,11 +422,11 @@ func (p *panelDataType) FormatBottomText() string {
 	pk := p.UsePanelKey()
 
 	var b strings.Builder
-	b.WriteString("1 ")
+	b.WriteString(fmtVal)
 	b.WriteString(pk.GetTargetSymbolString())
-	b.WriteString(" = ")
+	b.WriteString(fmtEqual)
 	b.WriteString(pk.GetReverseValueFormattedString())
-	b.WriteString(" ")
+	b.WriteString(fmtSpace)
 	b.WriteString(pk.GetSourceSymbolString())
 
 	return b.String()
@@ -432,7 +437,7 @@ func (p *panelDataType) FormatContent() string {
 
 	var b strings.Builder
 	b.WriteString(pk.GetCalculatedValueFormattedString())
-	b.WriteString(" ")
+	b.WriteString(fmtSpace)
 	b.WriteString(pk.GetTargetSymbolString())
 
 	return b.String()
