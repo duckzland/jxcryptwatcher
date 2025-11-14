@@ -71,7 +71,7 @@ func updateDisplay() bool {
 					mu.Lock()
 					if updateCount == 0 {
 						updateCount++
-						JC.Notify("Panel display refreshed with latest rates")
+						JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
 					}
 					mu.Unlock()
 				}
@@ -119,7 +119,7 @@ func updateTickerDisplay() bool {
 			if tkt.Update() {
 				if success == 0 {
 					success++
-					JC.Notify("Ticker display refreshed with new rates")
+					JC.Notify(JC.NotifyTickerDisplayRefreshedWithNewRates)
 				}
 			}
 		}
@@ -177,7 +177,7 @@ func updateRates() bool {
 	var hasError int = 0
 	successCount := 0
 
-	JC.Notify("Fetching the latest exchange rates...")
+	JC.Notify(JC.NotifyFetchingTheLatestExchangeRates)
 
 	JC.UseFetcher().Dispatch(payloads,
 		func(scheduledJobs int) {
@@ -263,7 +263,7 @@ func updateTickers() bool {
 	var hasError int = 0
 	var successCount int = 0
 
-	JC.Notify("Fetching the latest ticker data...")
+	JC.Notify(JC.NotifyFetchingTheLatestTickerData)
 
 	JC.UseFetcher().Dispatch(payloads,
 		func(totalJob int) {
@@ -330,13 +330,13 @@ func processUpdatePanelComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JC.Notify("Exchange fetch completed.")
+		JC.Notify(JC.NotifyExchangeFetchCompleted)
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(true)
 
 	case JC.STATUS_NETWORK_ERROR:
 
-		JC.Notify("Please check your network connection.")
+		JC.Notify(JC.NotifyPleaseCheckYourNetworkConnection)
 		JA.UseStatus().SetNetworkStatus(false)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
@@ -351,7 +351,7 @@ func processUpdatePanelComplete(status int) {
 
 	case JC.STATUS_CONFIG_ERROR:
 
-		JC.Notify("Please check your settings.")
+		JC.Notify(JC.NotifyPleaseCheckYourSettings)
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(false)
 
@@ -377,13 +377,13 @@ func processUpdateTickerComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JC.Notify("Ticker fetch completed.")
+		JC.Notify(JC.NotifyTickerFetchCompleted)
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(true)
 
 	case JC.STATUS_NETWORK_ERROR:
 
-		JC.Notify("Please check your network connection.")
+		JC.Notify(JC.NotifyPleaseCheckYourNetworkConnection)
 		JA.UseStatus().SetNetworkStatus(false)
 		JA.UseStatus().SetConfigStatus(true)
 
@@ -399,7 +399,7 @@ func processUpdateTickerComplete(status int) {
 
 	case JC.STATUS_CONFIG_ERROR:
 
-		JC.Notify("Please check your settings.")
+		JC.Notify(JC.NotifyPleaseCheckYourSettings)
 
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(false)
@@ -428,13 +428,13 @@ func processFetchingCryptosComplete(status int) {
 		JA.UseStatus().DetectData()
 
 		if !JA.UseStatus().ValidCryptos() {
-			JC.Notify("Failed to convert crypto data to map")
+			JC.Notify(JC.NotifyFailedToConvertCryptoDataToMap)
 			JA.UseStatus().SetCryptoStatus(false)
 
 			return
 		}
 
-		JC.Notify("Crypto map regenerated successfully")
+		JC.Notify(JC.NotifyCryptoMapRegeneratedSuccessfully)
 
 		if JT.UsePanelMaps().RefreshData() {
 			fyne.Do(func() {
@@ -453,12 +453,12 @@ func processFetchingCryptosComplete(status int) {
 		}
 
 	case JC.STATUS_NETWORK_ERROR:
-		JC.Notify("Please check your network connection.")
+		JC.Notify(JC.NotifyPleaseCheckYourNetworkConnection)
 		JA.UseStatus().SetNetworkStatus(false)
 		JA.UseStatus().SetConfigStatus(true)
 
 	case JC.STATUS_CONFIG_ERROR:
-		JC.Notify("Please check your settings.")
+		JC.Notify(JC.NotifyPleaseCheckYourSettings)
 		JA.UseStatus().SetConfigStatus(false)
 		JA.UseStatus().SetNetworkStatus(true)
 
@@ -513,7 +513,7 @@ func removePanel(uuid string) {
 			// Prevent UX locking
 			go func() {
 				if JT.SavePanels() {
-					JC.Notify("Panel removed successfully.")
+					JC.Notify(JC.NotifyPanelRemovedSuccessfully)
 				}
 			}()
 		}
@@ -524,7 +524,7 @@ func removePanel(uuid string) {
 
 func savePanelForm(pdt JT.PanelData) {
 
-	JC.Notify("Saving panel settings...")
+	JC.Notify(JC.NotifySavingPanelSettings)
 
 	JP.UsePanelGrid().ForceRefresh()
 
@@ -585,10 +585,10 @@ func savePanelForm(pdt JT.PanelData) {
 					})
 			}
 
-			JC.Notify("Panel settings saved.")
+			JC.Notify(JC.NotifyPanelSettingsSaved)
 
 		} else {
-			JC.Notify("Failed to save panel settings.")
+			JC.Notify(JC.NotifyFailedToSavePanelSettings)
 		}
 	}()
 
@@ -613,7 +613,7 @@ func openNewPanelForm() {
 			JP.UsePanelGrid().ForceRefresh()
 			JA.UseStatus().DetectData()
 
-			JC.Notify("New panel created.")
+			JC.Notify(JC.NotifyNewPanelCreated)
 		},
 		func(layer *fyne.Container) {
 			JA.UseLayout().RegisterOverlay(layer)
@@ -675,11 +675,11 @@ func openSettingForm() {
 
 	d := JA.NewSettingsForm(
 		func() {
-			JC.Notify("Saving configuration...")
+			JC.Notify(JC.NotifySavingConfiguration)
 
 			go func() {
 				if JT.ConfigSave() {
-					JC.Notify("Configuration saved successfully.")
+					JC.Notify(JC.NotifyConfigurationSavedSuccessfully)
 					JA.UseStatus().DetectData()
 
 					if JT.UseConfig().IsValidTickers() {
@@ -701,7 +701,7 @@ func openSettingForm() {
 						JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallQueued)
 					}
 				} else {
-					JC.Notify("Failed to save configuration.")
+					JC.Notify(JC.NotifyFailedToSaveConfiguration)
 				}
 			}()
 		},

@@ -28,12 +28,12 @@ func (c *cryptosLoaderType) load() *cryptosLoaderType {
 	content, ok := JC.LoadFileFromStorage("cryptos.json")
 	if !ok {
 		JC.Logln("Failed to open cryptos.json")
-		JC.Notify("Failed to load cryptos data")
+		JC.Notify(JC.NotifyFailedToLoadCryptosData)
 	}
 
 	if err := json.Unmarshal([]byte(content), c); err != nil {
 		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
-		JC.Notify("Failed to load cryptos data")
+		JC.Notify(JC.NotifyFailedToLoadCryptosData)
 		JC.Logln(wrappedErr)
 		return c
 	}
@@ -60,7 +60,7 @@ func (c *cryptosLoaderType) check() *cryptosLoaderType {
 	if !exists {
 		if c.create() == nil {
 			JC.Logln("Failed to create cryptos.json with default values")
-			JC.Notify("Failed to create cryptos data file")
+			JC.Notify(JC.NotifyFailedToCreateCryptosDataFile)
 			c = &cryptosLoaderType{}
 			return c
 		} else {
@@ -97,7 +97,7 @@ func (c *cryptosLoaderType) convert() *cryptosMapType {
 
 func (c *cryptosLoaderType) GetCryptos() int64 {
 	JC.PrintPerfStats("Fetching cryptos data", time.Now())
-	JC.Notify("Requesting latest cryptos data from exchange...")
+	JC.Notify(JC.NotifyRequestingLatestCryptosDataFromExchange)
 
 	return JC.GetRequest(
 		UseConfig().DataEndpoint,
@@ -112,7 +112,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 			decoder := json.NewDecoder(tee)
 			if err := decoder.Decode(&c); err != nil {
 				JC.Logln(fmt.Errorf("Failed to examine cryptos data: %w", err))
-				JC.Notify("Failed to fetch cryptos data")
+				JC.Notify(JC.NotifyFailedToFetchCryptosData)
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
@@ -134,7 +134,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 			payload = ""
 
 			JC.Logln("Fetched cryptodata from CMC")
-			JC.Notify("Successfully retrieved cryptos data from exchange.")
+			JC.Notify(JC.NotifySuccessfullyRetrievedCryptosDataFromExch)
 
 			return JC.NETWORKING_SUCCESS
 		})

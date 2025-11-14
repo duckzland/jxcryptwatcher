@@ -496,7 +496,7 @@ func registerFetchers() {
 				return false
 			}
 			if !JA.UseStatus().ValidConfig() {
-				JC.Notify("Invalid configuration. Unable to reset cryptos map.")
+				JC.Notify(JC.NotifyInvalidConfigurationUnableToResetCryptos)
 				JC.Logln("Unable to do fetch cryptos: Invalid config")
 				return false
 			}
@@ -765,7 +765,7 @@ func registerLifecycle() {
 			}
 
 			JC.Logln("App started")
-			JC.Notify("Application is starting...")
+			JC.Notify(JC.NotifyApplicationIsStarting)
 
 			JA.RegisterLayoutManager().Init()
 

@@ -187,7 +187,7 @@ func NewPanelForm(
 				ns = JT.UsePanelMaps().Append(npk.GetRawValue())
 
 				if ns == nil {
-					JC.Notify("Unable to add new panel. Please try again.")
+					JC.Notify(JC.NotifyUnableToAddNewPanelPleaseTryAgain)
 					return false
 				}
 
@@ -200,7 +200,7 @@ func NewPanelForm(
 			} else {
 				ns = JT.UsePanelMaps().GetDataByID(uuid)
 				if ns == nil {
-					JC.Notify("Unable to update panel. Please try again.")
+					JC.Notify(JC.NotifyUnableToUpdatePanelPleaseTryAgain)
 					return false
 				}
 
