@@ -7,11 +7,9 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	JA "jxwatcher/apps"
+	JC "jxwatcher/core"
 	JW "jxwatcher/widgets"
 )
-
-const PanelActionEdit = "edit_panel"
-const PanelActionDelete = "delete_panel"
 
 type panelAction struct {
 	widget.BaseWidget
@@ -57,7 +55,7 @@ func NewPanelAction(
 ) *panelAction {
 
 	pa := &panelAction{}
-	pa.editBtn = JW.NewActionButton(PanelActionEdit, "", theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
+	pa.editBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, "", theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onEdit != nil {
 				onEdit()
@@ -85,7 +83,7 @@ func NewPanelAction(
 			btn.Enable()
 		})
 
-	pa.deleteBtn = JW.NewActionButton(PanelActionDelete, "", theme.DeleteIcon(), "Delete panel", JW.ActionStateNormal,
+	pa.deleteBtn = JW.NewActionButton(JC.ACT_PANEL_DELETE, "", theme.DeleteIcon(), "Delete panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onDelete != nil {
 				onDelete()

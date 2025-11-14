@@ -172,7 +172,7 @@ func updateRates() bool {
 	payloads := make(map[string][]string)
 
 	for _, rk := range jb {
-		payloads[JT.ExchangeRate] = append(payloads[JT.ExchangeRate], rk)
+		payloads[JC.ACT_EXCHANGE_GET_RATES] = append(payloads[JC.ACT_EXCHANGE_GET_RATES], rk)
 	}
 	var hasError int = 0
 	successCount := 0
@@ -209,11 +209,11 @@ func updateRates() bool {
 
 			mu.Lock()
 			if successCount != 0 {
-				JC.UseWorker().Call(JP.PanelUpdate, JC.CallBypassImmediate)
+				JC.UseWorker().Call(JC.ACT_PANEL_UPDATE, JC.CallBypassImmediate)
 			}
 			mu.Unlock()
 
-			JC.UseWorker().Reset(JT.ExchangeUpdateRates)
+			JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
 		})
 
 	return true
@@ -300,7 +300,7 @@ func updateTickers() bool {
 				updateTickerDisplay()
 			}
 
-			JC.UseWorker().Reset(JT.TickerUpdate)
+			JC.UseWorker().Reset(JC.ACT_TICKER_UPDATE)
 		})
 
 	return true
@@ -442,10 +442,10 @@ func processFetchingCryptosComplete(status int) {
 			})
 
 			JT.UseExchangeCache().SoftReset()
-			JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallQueued)
+			JC.UseWorker().Call(JC.ACT_EXCHANGE_UPDATE_RATES, JC.CallQueued)
 
 			JT.UseTickerCache().SoftReset()
-			JC.UseWorker().Call(JT.TickerUpdate, JC.CallQueued)
+			JC.UseWorker().Call(JC.ACT_TICKER_UPDATE, JC.CallQueued)
 
 			JA.UseStatus().SetCryptoStatus(true)
 			JA.UseStatus().SetConfigStatus(true)
@@ -559,7 +559,7 @@ func savePanelForm(pdt JT.PanelData) {
 				tid := pkt.GetTargetCoinString()
 
 				payloads := map[string][]string{}
-				payloads[JT.ExchangeRate] = []string{sid + "|" + tid}
+				payloads[JC.ACT_EXCHANGE_GET_RATES] = []string{sid + "|" + tid}
 
 				JC.UseFetcher().Dispatch(payloads,
 					func(totalScheduled int) {
@@ -602,7 +602,7 @@ func openNewPanelForm() {
 	JA.UseStatus().SetOverlayShownStatus(true)
 
 	d := JP.NewPanelForm(
-		"new",
+		JC.ACT_PANEL_NEW,
 		"",
 		func(npdt JT.PanelData) {
 			savePanelForm(npdt)
@@ -695,10 +695,10 @@ func openSettingForm() {
 						JA.UseStatus().SetConfigStatus(true)
 
 						JT.UseTickerCache().SoftReset()
-						JC.UseWorker().Call(JT.TickerUpdate, JC.CallQueued)
+						JC.UseWorker().Call(JC.ACT_TICKER_UPDATE, JC.CallQueued)
 
 						JT.UseExchangeCache().SoftReset()
-						JC.UseWorker().Call(JT.ExchangeUpdateRates, JC.CallQueued)
+						JC.UseWorker().Call(JC.ACT_EXCHANGE_UPDATE_RATES, JC.CallQueued)
 					}
 				} else {
 					JC.Notify(JC.NotifyFailedToSaveConfiguration)
@@ -733,7 +733,7 @@ func toggleDraggable() {
 }
 
 func scheduledNotificationReset() {
-	JC.UseDebouncer().Call("notification_clear", 6000*time.Millisecond, func() {
+	JC.UseDebouncer().Call(JC.ACT_NOTIFICATION_CLEAR, 6000*time.Millisecond, func() {
 
 		// Break loop once notification is empty
 		if JW.UseNotification().GetText() == "" {
@@ -745,7 +745,7 @@ func scheduledNotificationReset() {
 		}
 
 		// Ensure message shown for at least 6 seconds
-		last := JC.UseWorker().GetLastUpdate(JC.NOTIFICATION_KEY)
+		last := JC.UseWorker().GetLastUpdate(JC.ACT_NOTIFICATION_PUSH)
 		if time.Since(last) > 6*time.Second {
 			JC.Logln("Clearing notification display due to inactivity")
 			JW.UseNotification().ClearText()

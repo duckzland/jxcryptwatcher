@@ -18,8 +18,6 @@ import (
 	JT "jxwatcher/types"
 )
 
-const PanelUpdate = "update_display"
-
 var activeDragging *panelDisplay = nil
 
 type PanelDisplay interface {

@@ -39,8 +39,6 @@ const STATUS_CONFIG_ERROR = 2
 const STATUS_BAD_DATA_RECEIVED = 3
 const STATUS_CANCELLED = 4
 
-const NOTIFICATION_KEY = "notification"
-
 const ColorNameError fyne.ThemeColorName = "error"
 const ColorNameTransparent fyne.ThemeColorName = "transparent"
 const ColorNameRed fyne.ThemeColorName = "red"

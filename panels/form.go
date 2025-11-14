@@ -99,7 +99,7 @@ func NewPanelForm(
 
 	title := "Adding New Panel"
 
-	if panelKey != "new" {
+	if panelKey != JC.ACT_PANEL_NEW {
 
 		pkt := JT.UsePanelMaps().GetDataByID(uuid)
 		pko := pkt.UsePanelKey()
@@ -183,7 +183,7 @@ func NewPanelForm(
 				JC.ToBigFloat(-1),
 			))
 
-			if panelKey == "new" {
+			if panelKey == JC.ACT_PANEL_NEW {
 				ns = JT.UsePanelMaps().Append(npk.GetRawValue())
 
 				if ns == nil {

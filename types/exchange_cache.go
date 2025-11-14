@@ -9,9 +9,6 @@ import (
 )
 
 const exchangeCacheUpdateThreshold = 10 * time.Second
-const ExchangeRate = "rates"
-const ExchangeRefresh = "refresh_rates"
-const ExchangeUpdateRates = "update_rates"
 
 var exchangeCacheStorage *exchangeDataCacheType = nil
 
