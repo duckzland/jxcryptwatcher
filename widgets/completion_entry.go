@@ -387,7 +387,7 @@ func NewCompletionEntry(options []string, searchOptions []string, popup *fyne.Co
 		background: canvas.NewRectangle(theme.Color(theme.ColorNameMenuBackground)),
 		listEntry:  c.completionList,
 		closeSize:  fyne.NewSize(32, 32),
-		closeBtn: NewActionButton("close_entry", "", theme.CancelIcon(), "", ActionStateNormal, func(btn ActionButton) {
+		closeBtn: NewActionButton("close_entry", JC.STRING_EMPTY, theme.CancelIcon(), JC.STRING_EMPTY, ActionStateNormal, func(btn ActionButton) {
 			c.hideCompletion()
 		}, nil),
 	}

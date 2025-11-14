@@ -35,7 +35,7 @@ func (w *notificationDisplay) UpdateText(msg string) {
 
 func (w *notificationDisplay) ClearText() {
 	JA.StartFadingText(w.text, func() {
-		w.text.Text = ""
+		w.text.Text = JC.STRING_EMPTY
 		w.text.Color = w.txtcolor
 		canvas.Refresh(w.text)
 		canvas.Refresh(w)
@@ -64,7 +64,7 @@ func NotificationInit() {
 func NewNotificationDisplay() *notificationDisplay {
 	c := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
-	t := canvas.NewText("", c)
+	t := canvas.NewText(JC.STRING_EMPTY, c)
 	t.Alignment = fyne.TextAlignCenter
 	t.TextSize = JC.UseTheme().Size(JC.SizeNotificationText)
 

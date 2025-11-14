@@ -603,7 +603,7 @@ func openNewPanelForm() {
 
 	d := JP.NewPanelForm(
 		JC.ACT_PANEL_NEW,
-		"",
+		JC.STRING_EMPTY,
 		func(npdt JT.PanelData) {
 			savePanelForm(npdt)
 		},
@@ -736,7 +736,7 @@ func scheduledNotificationReset() {
 	JC.UseDebouncer().Call(JC.ACT_NOTIFICATION_CLEAR, 6000*time.Millisecond, func() {
 
 		// Break loop once notification is empty
-		if JW.UseNotification().GetText() == "" {
+		if JW.UseNotification().GetText() == JC.STRING_EMPTY {
 			return
 		}
 

@@ -7,6 +7,8 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	JC "jxwatcher/core"
 )
 
 type actionButtonIcon struct {
@@ -95,7 +97,7 @@ func (r *actionButtonIconRenderer) applyTheme() {
 
 	bgColor := theme.Color(bg)
 
-	if blend != "" {
+	if blend != JC.STRING_EMPTY {
 		bgColor = r.blendColor(bgColor, theme.Color(blend))
 	}
 
@@ -133,7 +135,7 @@ func (r *actionButtonIconRenderer) buttonColorNames() (fg, bg, blend fyne.ThemeC
 		blend = theme.ColorNameFocus
 	}
 
-	if bg == "" {
+	if bg == JC.STRING_EMPTY {
 		switch b.Importance {
 		case widget.DangerImportance:
 			fg = theme.ColorNameForegroundOnError
@@ -142,7 +144,7 @@ func (r *actionButtonIconRenderer) buttonColorNames() (fg, bg, blend fyne.ThemeC
 			fg = theme.ColorNameForegroundOnPrimary
 			bg = theme.ColorNamePrimary
 		case widget.LowImportance:
-			if blend != "" {
+			if blend != JC.STRING_EMPTY {
 				bg = theme.ColorNameButton
 			}
 		case widget.SuccessImportance:

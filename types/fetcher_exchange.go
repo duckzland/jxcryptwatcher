@@ -80,7 +80,7 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 
 	for _, id := range rwt {
 		id = strings.TrimSpace(id)
-		if id != "" && !cks[id] {
+		if id != JC.STRING_EMPTY && !cks[id] {
 			cks[id] = true
 			rkt = append(rkt, id)
 		}
@@ -89,7 +89,7 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 	sid := strings.TrimSpace(rko[0])
 	tid := strings.Join(rkt, ",")
 
-	if sid == "" || tid == "" {
+	if sid == JC.STRING_EMPTY || tid == JC.STRING_EMPTY {
 		return JC.NETWORKING_BAD_PAYLOAD
 	}
 

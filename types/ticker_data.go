@@ -94,8 +94,8 @@ func (p *tickerDataType) Init() {
 	p.mu.Lock()
 	p.data = binding.NewString()
 	p.status = binding.NewInt()
-	p.id = ""
-	p.oldKey = ""
+	p.id = JC.STRING_EMPTY
+	p.oldKey = JC.STRING_EMPTY
 	p.mu.Unlock()
 }
 
@@ -152,11 +152,11 @@ func (p *tickerDataType) Get() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
-		return ""
+		return JC.STRING_EMPTY
 	}
 	val, err := p.data.Get()
 	if err != nil {
-		return ""
+		return JC.STRING_EMPTY
 	}
 	return val
 }
@@ -215,7 +215,7 @@ func (p *tickerDataType) UseStatus() binding.Int {
 }
 
 func (p *tickerDataType) HasData() bool {
-	return p.Get() != ""
+	return p.Get() != JC.STRING_EMPTY
 }
 
 func (p *tickerDataType) IsType(val string) bool {
@@ -260,7 +260,7 @@ func (p *tickerDataType) IsKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
-		return val == ""
+		return val == JC.STRING_EMPTY
 	}
 	current, err := p.data.Get()
 	if err != nil {
@@ -281,11 +281,11 @@ func (p *tickerDataType) Update() bool {
 		return false
 	}
 	npk := tickerCacheStorage.Get(p.category)
-	if npk == "" {
+	if npk == JC.STRING_EMPTY {
 		return false
 	}
 
-	opk := ""
+	opk := JC.STRING_EMPTY
 	if p.data != nil {
 		v, err := p.data.Get()
 		if err == nil {
@@ -357,7 +357,7 @@ func (p *tickerDataType) DidChange() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	if !p.IsStatus(JC.STATE_LOADED) || p.oldKey == "" {
+	if !p.IsStatus(JC.STATE_LOADED) || p.oldKey == JC.STRING_EMPTY {
 		return false
 	}
 	if p.data != nil {

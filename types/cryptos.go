@@ -122,7 +122,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 			}
 
 			payload := sb.String()
-			if payload == "" {
+			if payload == JC.STRING_EMPTY {
 				return JC.NETWORKING_FAILED_CREATE_FILE
 			}
 
@@ -131,7 +131,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 			}
 
 			c.Values = nil
-			payload = ""
+			payload = JC.STRING_EMPTY
 
 			JC.Logln("Fetched cryptodata from CMC")
 			JC.Notify(JC.NotifySuccessfullyRetrievedCryptosDataFromExch)

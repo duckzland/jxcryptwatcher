@@ -24,7 +24,7 @@ func NewSettingsForm(
 		if !allowValidation {
 			return nil
 		}
-		if s == "" {
+		if s == JC.STRING_EMPTY {
 			return errors.New("This field is required")
 		}
 		u, err := url.ParseRequestURI(s)
@@ -42,7 +42,7 @@ func NewSettingsForm(
 		if !allowValidation {
 			return nil
 		}
-		if s == "" {
+		if s == JC.STRING_EMPTY {
 			return errors.New("This field is required")
 		}
 		val, err := strconv.ParseInt(s, 10, 64)

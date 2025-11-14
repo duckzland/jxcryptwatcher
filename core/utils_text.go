@@ -62,7 +62,7 @@ func SetAlpha(c color.Color, alpha float32) color.Color {
 
 func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.TextStyle) string {
 	sc := len(str)
-	if str == "" || sc < 6 {
+	if str == STRING_EMPTY || sc < 6 {
 		return str
 	}
 
@@ -95,7 +95,7 @@ func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.Tex
 	maxChars := int(availableWidth / charWidth)
 
 	if maxChars <= 0 {
-		return ""
+		return STRING_EMPTY
 	}
 
 	var b strings.Builder
@@ -124,7 +124,7 @@ func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) 
 	maxChars := int(availableWidth / (fontSize * charWidthFactor))
 
 	if maxChars <= 0 {
-		return ""
+		return STRING_EMPTY
 	}
 
 	return string(runes[:maxChars]) + ellipsis
@@ -152,7 +152,7 @@ func MeasureText(text string, fontSize float32, style fyne.TextStyle) float32 {
 }
 
 func FormatShortCurrency(value string) string {
-	num, err := strconv.ParseFloat(strings.Replace(value, "$", "", 1), 64)
+	num, err := strconv.ParseFloat(strings.Replace(value, "$", STRING_EMPTY, 1), 64)
 	if err != nil {
 		return value // fallback if parsing fails
 	}
@@ -174,7 +174,7 @@ func FormatShortCurrency(value string) string {
 func ExtractLeadingNumber(s string) int {
 	re := regexp.MustCompile(`^\d+`)
 	match := re.FindString(s)
-	if match == "" {
+	if match == STRING_EMPTY {
 		return -1
 	}
 	num, _ := strconv.Atoi(match)
@@ -183,7 +183,7 @@ func ExtractLeadingNumber(s string) int {
 
 func SearchableExtractNumber(s string) int {
 	parts := strings.SplitN(s, "|", 2)
-	if len(parts) < 1 || parts[0] == "" {
+	if len(parts) < 1 || parts[0] == STRING_EMPTY {
 		return -1
 	}
 	num, err := strconv.Atoi(parts[0])

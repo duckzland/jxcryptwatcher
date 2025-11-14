@@ -141,8 +141,8 @@ func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 					ex.SourceAmount == 0 ||
 					ex.SourceId == 0 ||
 					ex.TargetId == 0 ||
-					ex.SourceSymbol == "" ||
-					ex.TargetSymbol == "" {
+					ex.SourceSymbol == JC.STRING_EMPTY ||
+					ex.TargetSymbol == JC.STRING_EMPTY {
 					return true
 				}
 

@@ -55,7 +55,7 @@ func NewPanelAction(
 ) *panelAction {
 
 	pa := &panelAction{}
-	pa.editBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, "", theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
+	pa.editBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, JC.STRING_EMPTY, theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onEdit != nil {
 				onEdit()
@@ -83,7 +83,7 @@ func NewPanelAction(
 			btn.Enable()
 		})
 
-	pa.deleteBtn = JW.NewActionButton(JC.ACT_PANEL_DELETE, "", theme.DeleteIcon(), "Delete panel", JW.ActionStateNormal,
+	pa.deleteBtn = JW.NewActionButton(JC.ACT_PANEL_DELETE, JC.STRING_EMPTY, theme.DeleteIcon(), "Delete panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onDelete != nil {
 				onDelete()

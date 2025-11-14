@@ -97,7 +97,7 @@ func (pc *tickersMapType) Reset() {
 	defer pc.mu.Unlock()
 
 	for _, tdt := range pc.data {
-		tdt.Set("")
+		tdt.Set(JC.STRING_EMPTY)
 		tdt.SetStatus(JC.STATE_LOADING)
 	}
 }

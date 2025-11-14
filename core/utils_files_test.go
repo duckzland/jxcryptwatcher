@@ -34,7 +34,7 @@ func TestGetUserDirectory(t *testing.T) {
 	defer filesTurnOnLogs()
 
 	dir := GetUserDirectory()
-	if dir == "" {
+	if dir == STRING_EMPTY {
 		t.Error("Expected non-empty user directory path")
 	}
 	if !strings.Contains(dir, "jxcryptwatcher") {
@@ -112,7 +112,7 @@ func TestCleanupCreatedFiles(t *testing.T) {
 	for _, f := range files {
 		path := BuildPathRelatedToUserDirectory([]string{f})
 		localPath := strings.TrimPrefix(path, "file://")
-		if localPath != "" {
+		if localPath != STRING_EMPTY {
 			err := os.Remove(localPath)
 			if err != nil && !os.IsNotExist(err) {
 				t.Errorf("Failed to remove test file %s: %v", f, err)

@@ -43,10 +43,10 @@ func TestCryptosLoaderConvertToMap(t *testing.T) {
 	if cm.IsEmpty() {
 		t.Error("Expected map to be populated")
 	}
-	if cm.GetDisplayById("1") == "" || cm.GetDisplayById("2") == "" {
+	if cm.GetDisplayById("1") == JC.STRING_EMPTY || cm.GetDisplayById("2") == JC.STRING_EMPTY {
 		t.Error("Expected valid entries for active cryptos")
 	}
-	if cm.GetDisplayById("3") != "" {
+	if cm.GetDisplayById("3") != JC.STRING_EMPTY {
 		t.Error("Expected inactive crypto to be excluded")
 	}
 	cryptosLoaderTurnOnLogs()

@@ -6,6 +6,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	tooltip "github.com/dweymouth/fyne-tooltip/widget"
+
+	JC "jxwatcher/core"
 )
 
 const ActionStateAllowActions = "allow_actions"
@@ -308,13 +310,13 @@ func NewActionButton(
 		onTapped(b)
 	}
 
-	if text == "" && icon != nil {
+	if text == JC.STRING_EMPTY && icon != nil {
 		b.buttonWidget = NewActionButtonIcon(icon, widget.MediumImportance, cb)
 	} else {
 		b.buttonWidget = widget.NewButtonWithIcon(text, icon, cb)
 	}
 
-	if tip != "" {
+	if tip != JC.STRING_EMPTY {
 		b.ExtendToolTipWidget(b)
 		b.SetToolTip(tip)
 		b.hastip = true

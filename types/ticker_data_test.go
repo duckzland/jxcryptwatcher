@@ -37,7 +37,7 @@ func TestTickerDataInitAndSet(t *testing.T) {
 	if td.Get() != "123.45" {
 		t.Errorf("Expected value '123.45', got '%s'", td.Get())
 	}
-	if td.GetOldKey() != "" {
+	if td.GetOldKey() != JC.STRING_EMPTY {
 		t.Error("Expected oldKey to be empty after first Set")
 	}
 

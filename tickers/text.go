@@ -48,7 +48,7 @@ func (s *tickerText) SetText(t string) {
 		return
 	}
 
-	if t == "" {
+	if t == JC.STRING_EMPTY {
 		s.label.Hide()
 	} else {
 		s.label.Show()

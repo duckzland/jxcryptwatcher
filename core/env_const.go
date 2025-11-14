@@ -7,6 +7,7 @@ import (
 )
 
 const EPSILON = 1e-9
+const STRING_EMPTY = ""
 const NETWORKING_SUCCESS = 0
 const NETWORKING_ERROR_CONNECTION = -1
 const NETWORKING_URL_ERROR = -2

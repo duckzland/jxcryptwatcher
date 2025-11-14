@@ -117,7 +117,7 @@ func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
 func NewCompletionText(width float32, height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:    canvas.NewText("", JC.UseTheme().GetColor(theme.ColorNameForeground)),
+		label:    canvas.NewText(JC.STRING_EMPTY, JC.UseTheme().GetColor(theme.ColorNameForeground)),
 		width:    width,
 		height:   height,
 		parent:   parent,

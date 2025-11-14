@@ -162,7 +162,7 @@ func (cm *cryptosMapType) GetDisplayById(id string) string {
 			return val
 		}
 	}
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (cm *cryptosMapType) GetIdByDisplay(tk string) string {
@@ -188,7 +188,7 @@ func (cm *cryptosMapType) GetIdByDisplay(tk string) string {
 			}
 		}
 	}
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (cm *cryptosMapType) GetSymbolById(id string) string {
@@ -206,7 +206,7 @@ func (cm *cryptosMapType) GetSymbolById(id string) string {
 			}
 		}
 	}
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (cm *cryptosMapType) GetSymbolByDisplay(tk string) string {
@@ -217,7 +217,7 @@ func (cm *cryptosMapType) GetSymbolByDisplay(tk string) string {
 			return subs[0]
 		}
 	}
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (cm *cryptosMapType) IsEmpty() bool {

@@ -47,7 +47,7 @@ func FormatNumberWithCommas(f float64, frac int) string {
 
 	parts := strings.Split(s, ".")
 	intPart := parts[0]
-	fracPart := ""
+	fracPart := STRING_EMPTY
 	if len(parts) > 1 {
 		fracPart = parts[1]
 	}
@@ -61,7 +61,7 @@ func FormatNumberWithCommas(f float64, frac int) string {
 		out.WriteByte(intPart[i])
 	}
 
-	if fracPart != "" {
+	if fracPart != STRING_EMPTY {
 		out.WriteByte('.')
 		out.WriteString(fracPart)
 	}

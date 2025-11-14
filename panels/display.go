@@ -86,13 +86,13 @@ func (h *panelDisplay) Show() {
 	h.background = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
 	h.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
-	h.title = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	h.title = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 
-	h.subtitle = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
+	h.subtitle = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelSubTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
 
-	h.content = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	h.content = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 
-	h.bottomText = NewPanelText("", tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
+	h.bottomText = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
 
 	h.container.Layout.(*panelDisplayLayout).RemoveAll()
 	h.container.Layout.(*panelDisplayLayout).SetContent(h.background, h.title, h.subtitle, h.content, h.bottomText, nil)
@@ -206,7 +206,7 @@ func (h *panelDisplay) Destroy() {
 	h.Hide()
 
 	h.container = nil
-	h.tag = ""
+	h.tag = JC.STRING_EMPTY
 	h.status = 0
 	h.shown = 0
 	h.fps = 0
@@ -247,10 +247,10 @@ func (h *panelDisplay) updateContent() {
 		pkt.SetStatus(JC.STATE_BAD_CONFIG)
 	}
 
-	title := ""
-	subtitle := ""
-	bottomText := ""
-	content := ""
+	title := JC.STRING_EMPTY
+	subtitle := JC.STRING_EMPTY
+	bottomText := JC.STRING_EMPTY
+	content := JC.STRING_EMPTY
 	background := JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 	status := h.status
 

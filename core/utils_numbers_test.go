@@ -69,7 +69,7 @@ func TestToBigString(t *testing.T) {
 	}{
 		{"123.456", "123.456", true},
 		{"0.0001", "0.0001", true},
-		{"abc", "", false},
+		{"abc", JC.STRING_EMPTY, false},
 	}
 
 	for _, tt := range tests {

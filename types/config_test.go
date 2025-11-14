@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type configNullWriter struct{}
@@ -104,7 +106,7 @@ func TestConfigCheckFileCreatesDefault(t *testing.T) {
 	if !cfg.IsValid() {
 		t.Error("Expected default config to be valid")
 	}
-	if cfg.RSIEndpoint == "" || cfg.ETFEndpoint == "" || cfg.DominanceEndpoint == "" {
+	if cfg.RSIEndpoint == JC.STRING_EMPTY || cfg.ETFEndpoint == JC.STRING_EMPTY || cfg.DominanceEndpoint == JC.STRING_EMPTY {
 		t.Error("Expected new endpoints to be present in default config")
 	}
 
@@ -157,7 +159,7 @@ func TestUpdateDefaultVersionPatch(t *testing.T) {
 	test.NewApp()
 
 	configStorage = &configType{
-		Version: "",
+		Version: JC.STRING_EMPTY,
 	}
 	ConfigSave()
 
@@ -166,7 +168,7 @@ func TestUpdateDefaultVersionPatch(t *testing.T) {
 	if UseConfig().Version != "1.7.0" {
 		t.Errorf("Expected version to be updated to 1.7.0, got %s", UseConfig().Version)
 	}
-	if UseConfig().RSIEndpoint == "" || UseConfig().ETFEndpoint == "" || UseConfig().DominanceEndpoint == "" {
+	if UseConfig().RSIEndpoint == JC.STRING_EMPTY || UseConfig().ETFEndpoint == JC.STRING_EMPTY || UseConfig().DominanceEndpoint == JC.STRING_EMPTY {
 		t.Error("Expected endpoints to be set by updateDefault")
 	}
 	configTurnOnLogs()

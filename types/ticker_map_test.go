@@ -84,7 +84,7 @@ func TestTickersMapFilterAndReset(t *testing.T) {
 
 	tm.Reset()
 	for _, td := range tm.GetData() {
-		if td.Get() != "" || !td.IsStatus(JC.STATE_LOADING) {
+		if td.Get() != JC.STRING_EMPTY || !td.IsStatus(JC.STATE_LOADING) {
 			t.Error("Expected ticker to be reset")
 		}
 	}

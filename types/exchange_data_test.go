@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type exchangeDataNullWriter struct{}
@@ -64,7 +66,7 @@ func TestExchangeDataZeroValues(t *testing.T) {
 	test.NewApp()
 
 	ex := exchangeDataType{}
-	if ex.SourceSymbol != "" || ex.TargetSymbol != "" {
+	if ex.SourceSymbol != JC.STRING_EMPTY || ex.TargetSymbol != JC.STRING_EMPTY {
 		t.Error("Expected empty symbols")
 	}
 	if ex.SourceId != 0 || ex.TargetId != 0 {

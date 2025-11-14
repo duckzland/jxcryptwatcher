@@ -36,7 +36,7 @@ func TestPanelDataInitAndSet(t *testing.T) {
 	if p.Get() != "123|BTC - ETH|0.5" {
 		t.Error("Set/Get mismatch")
 	}
-	if p.GetOldKey() != "" {
+	if p.GetOldKey() != JC.STRING_EMPTY {
 		t.Error("Expected oldKey to be empty after first Set")
 	}
 

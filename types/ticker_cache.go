@@ -3,6 +3,8 @@ package types
 import (
 	"sync"
 	"time"
+
+	JC "jxwatcher/core"
 )
 
 var tickerCacheStorage *tickerDataCacheType = nil
@@ -63,7 +65,7 @@ func (tc *tickerDataCacheType) Get(key string) string {
 			return strVal
 		}
 	}
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *tickerDataCacheType {

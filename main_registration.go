@@ -66,7 +66,7 @@ func registerActions() {
 	JA.RegisterActionManager().Init()
 
 	// Refresh ticker data
-	JA.UseAction().Add(JW.NewActionButton(JC.ACT_CRYPTO_REFRESH_MAP, "", theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_CRYPTO_REFRESH_MAP, JC.STRING_EMPTY, theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
 			JC.UseFetcher().Call(JC.ACT_CRYPTO_GET_MAP, nil)
 		},
@@ -115,7 +115,7 @@ func registerActions() {
 		}))
 
 	// Refresh exchange rates
-	JA.UseAction().Add(JW.NewActionButton(JC.ACT_EXCHANGE_REFRESH_RATES, "", theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_EXCHANGE_REFRESH_RATES, JC.STRING_EMPTY, theme.ViewRefreshIcon(), "Update rates from exchange", "disabled",
 		func(btn JW.ActionButton) {
 			// Open the network status temporarily
 			JA.UseStatus().SetNetworkStatus(true)
@@ -191,7 +191,7 @@ func registerActions() {
 		}))
 
 	// Open settings
-	JA.UseAction().Add(JW.NewActionButton(JC.ACT_OPEN_SETTINGS, "", theme.SettingsIcon(), "Open settings", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_OPEN_SETTINGS, JC.STRING_EMPTY, theme.SettingsIcon(), "Open settings", "disabled",
 		func(btn JW.ActionButton) {
 			openSettingForm()
 		},
@@ -240,7 +240,7 @@ func registerActions() {
 		}))
 
 	// Panel drag toggle
-	JA.UseAction().Add(JW.NewActionButton(JC.ACT_PANEL_DRAG, "", theme.ContentPasteIcon(), "Enable Reordering", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_PANEL_DRAG, JC.STRING_EMPTY, theme.ContentPasteIcon(), "Enable Reordering", "disabled",
 		func(btn JW.ActionButton) {
 			toggleDraggable()
 		},
@@ -288,7 +288,7 @@ func registerActions() {
 		}))
 
 	// Add new panel
-	JA.UseAction().Add(JW.NewActionButton(JC.ACT_PANEL_ADD, "", theme.ContentAddIcon(), "Add new panel", "disabled",
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_PANEL_ADD, JC.STRING_EMPTY, theme.ContentAddIcon(), "Add new panel", "disabled",
 		func(btn JW.ActionButton) {
 			openNewPanelForm()
 		},

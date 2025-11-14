@@ -152,7 +152,7 @@ func (p *panelKeyType) GetValueString() string {
 		return pkv[1]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetReverseValueString() string {
@@ -234,7 +234,7 @@ func (p *panelKeyType) GetSourceCoinString() string {
 		return pkv[0]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetTargetCoinInt() int64 {
@@ -256,7 +256,7 @@ func (p *panelKeyType) GetTargetCoinString() string {
 		return pkv[1]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetSourceValueFloat() float64 {
@@ -277,7 +277,7 @@ func (p *panelKeyType) GetSourceValueString() string {
 		return pkv[2]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetSourceValueFormattedString() string {
@@ -304,7 +304,7 @@ func (p *panelKeyType) GetSourceSymbolString() string {
 		return pkv[3]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetTargetSymbolString() string {
@@ -316,7 +316,7 @@ func (p *panelKeyType) GetTargetSymbolString() string {
 		return pkv[4]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func (p *panelKeyType) GetDecimalsInt() int64 {
@@ -337,7 +337,7 @@ func (p *panelKeyType) GetDecimalsString() string {
 		return pkv[5]
 	}
 
-	return ""
+	return JC.STRING_EMPTY
 }
 
 func NewPanelKey() *panelKeyType {

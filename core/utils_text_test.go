@@ -81,7 +81,7 @@ func TestExtractLeadingNumber(t *testing.T) {
 		{"123abc", 123},
 		{"42", 42},
 		{"abc123", -1},
-		{"", -1},
+		{STRING_EMPTY, -1},
 	}
 
 	for _, tt := range tests {
@@ -101,7 +101,7 @@ func TestSearchableExtractNumber(t *testing.T) {
 		{"42|world", 42},
 		{"|missing", -1},
 		{"abc|fail", -1},
-		{"", -1},
+		{STRING_EMPTY, -1},
 	}
 
 	for _, tt := range tests {

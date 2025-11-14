@@ -162,7 +162,7 @@ func NewDialogForm(
 	formLayout.dispatcher.SetScroller(innerLayout.content)
 
 	for _, item := range items {
-		if item.HintText == "" {
+		if item.HintText == JC.STRING_EMPTY {
 			item.HintText = " "
 		}
 

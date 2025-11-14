@@ -83,7 +83,7 @@ func (p *panelsType) save(maps *panelsMapType) bool {
 		np = append(np, panel)
 	}
 
-	jsonData, err := json.MarshalIndent(np, "", "  ")
+	jsonData, err := json.MarshalIndent(np, JC.STRING_EMPTY, "  ")
 	if err != nil {
 		JC.Logln(err)
 		return false

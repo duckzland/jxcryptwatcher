@@ -69,8 +69,8 @@ func (p *panelDataType) Init() {
 	p.mu.Lock()
 	p.data = binding.NewString()
 	p.status = binding.NewInt()
-	p.id = ""
-	p.oldKey = ""
+	p.id = JC.STRING_EMPTY
+	p.oldKey = JC.STRING_EMPTY
 	p.mu.Unlock()
 }
 
@@ -113,7 +113,7 @@ func (p *panelDataType) SetParent(val *panelsMapType) {
 
 func (p *panelDataType) Get() string {
 	p.mu.RLock()
-	val := ""
+	val := JC.STRING_EMPTY
 	if p.data != nil {
 		v, err := p.data.Get()
 		if err == nil {
@@ -203,7 +203,7 @@ func (p *panelDataType) IsKey(val string) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if p.data == nil {
-		return val == ""
+		return val == JC.STRING_EMPTY
 	}
 	current, err := p.data.Get()
 	if err != nil {
@@ -285,11 +285,11 @@ func (p *panelDataType) RefreshKey(key string) string {
 
 	parent := p.GetParent()
 
-	if parent != nil && sourceSymbol == "" {
+	if parent != nil && sourceSymbol == JC.STRING_EMPTY {
 		sourceSymbol = parent.GetSymbolById(source)
 	}
 
-	if parent != nil && targetSymbol == "" {
+	if parent != nil && targetSymbol == JC.STRING_EMPTY {
 		targetSymbol = parent.GetSymbolById(target)
 	}
 
@@ -375,8 +375,8 @@ func (p *panelDataType) Destroy() {
 	p.data = nil
 	p.status = nil
 	p.parent = nil
-	p.oldKey = ""
-	p.id = ""
+	p.oldKey = JC.STRING_EMPTY
+	p.id = JC.STRING_EMPTY
 }
 
 func (p *panelDataType) FormatTitle() string {

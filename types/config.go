@@ -33,25 +33,25 @@ func (c *configType) update() bool {
 		JC.Logln("Updating old config to 1.7.0")
 		c.Version = "1.7.0"
 
-		if c.AltSeasonEndpoint == "" {
+		if c.AltSeasonEndpoint == JC.STRING_EMPTY {
 			c.AltSeasonEndpoint = "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart"
 		}
-		if c.FearGreedEndpoint == "" {
+		if c.FearGreedEndpoint == JC.STRING_EMPTY {
 			c.FearGreedEndpoint = "https://api.coinmarketcap.com/data-api/v3/fear-greed/chart"
 		}
-		if c.CMC100Endpoint == "" {
+		if c.CMC100Endpoint == JC.STRING_EMPTY {
 			c.CMC100Endpoint = "https://api.coinmarketcap.com/data-api/v3/top100/supplement"
 		}
-		if c.MarketCapEndpoint == "" {
+		if c.MarketCapEndpoint == JC.STRING_EMPTY {
 			c.MarketCapEndpoint = "https://api.coinmarketcap.com/data-api/v4/global-metrics/quotes/historical"
 		}
-		if c.RSIEndpoint == "" {
+		if c.RSIEndpoint == JC.STRING_EMPTY {
 			c.RSIEndpoint = "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall"
 		}
-		if c.ETFEndpoint == "" {
+		if c.ETFEndpoint == JC.STRING_EMPTY {
 			c.ETFEndpoint = "https://api.coinmarketcap.com/data-api/v3/etf/overview/netflow/chart"
 		}
-		if c.DominanceEndpoint == "" {
+		if c.DominanceEndpoint == JC.STRING_EMPTY {
 			c.DominanceEndpoint = "https://api.coinmarketcap.com/data-api/v3/global-metrics/dominance/overview"
 		}
 
@@ -165,55 +165,55 @@ func (c *configType) IsVersionLessThan(target string) bool {
 func (c *configType) IsValid() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.DataEndpoint != "" && c.ExchangeEndpoint != ""
+	return c.DataEndpoint != JC.STRING_EMPTY && c.ExchangeEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) IsValidTickers() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CMC100Endpoint != "" || c.FearGreedEndpoint != "" || c.MarketCapEndpoint != "" || c.AltSeasonEndpoint != "" || c.RSIEndpoint != "" || c.ETFEndpoint != "" || c.DominanceEndpoint != ""
+	return c.CMC100Endpoint != JC.STRING_EMPTY || c.FearGreedEndpoint != JC.STRING_EMPTY || c.MarketCapEndpoint != JC.STRING_EMPTY || c.AltSeasonEndpoint != JC.STRING_EMPTY || c.RSIEndpoint != JC.STRING_EMPTY || c.ETFEndpoint != JC.STRING_EMPTY || c.DominanceEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoCMC100() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.CMC100Endpoint != ""
+	return c.CMC100Endpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoMarketCap() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.MarketCapEndpoint != ""
+	return c.MarketCapEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoFearGreed() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.FearGreedEndpoint != ""
+	return c.FearGreedEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoAltSeason() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.AltSeasonEndpoint != ""
+	return c.AltSeasonEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoRSI() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.RSIEndpoint != ""
+	return c.RSIEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoETF() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.RSIEndpoint != ""
+	return c.RSIEndpoint != JC.STRING_EMPTY
 }
 
 func (c *configType) CanDoDominance() bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
-	return c.DominanceEndpoint != ""
+	return c.DominanceEndpoint != JC.STRING_EMPTY
 }
 
 func ConfigInit() bool {

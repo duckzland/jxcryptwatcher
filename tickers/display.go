@@ -49,9 +49,9 @@ func (h *tickerDisplay) updateContent() {
 		return
 	}
 
-	title := ""
-	status := ""
-	content := ""
+	title := JC.STRING_EMPTY
+	status := JC.STRING_EMPTY
+	content := JC.STRING_EMPTY
 	state := h.state
 	background := JC.UseTheme().GetColor(JC.ColorNameTickerBG)
 	isNewContent := false
@@ -211,9 +211,9 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 
 	tl := &tickerLayout{
 		background: canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNameTickerBG)),
-		title:      NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
-		status:     NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		content:    NewTickerText("", tc, JC.UseTheme().Size(JC.SizeTickerContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		title:      NewTickerText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		status:     NewTickerText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizeTickerTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		content:    NewTickerText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizeTickerContent), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 	}
 
 	tl.background.CornerRadius = JC.UseTheme().Size(JC.SizeTickerBorderRadius)
