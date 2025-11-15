@@ -15,6 +15,7 @@ type Dispatcher interface {
 	Resume()
 	Start()
 	Drain()
+	Destroy()
 	SetDrainer(fn func())
 	SetBufferSize(int)
 	SetDelayBetween(time.Duration)
@@ -124,6 +125,24 @@ func (d *dispatcher) Resume() {
 	d.mu.Unlock()
 
 	d.Start()
+}
+
+func (d *dispatcher) Destroy() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.paused = true
+
+	if d.cancel != nil {
+		d.cancel()
+		d.ctx = nil
+		d.cancel = nil
+	}
+
+	if d.queue != nil {
+		close(d.queue)
+		d.queue = nil
+	}
 }
 
 func (d *dispatcher) SetDrainer(fn func()) {

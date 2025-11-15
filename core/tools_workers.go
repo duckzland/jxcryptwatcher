@@ -106,6 +106,16 @@ func (w *worker) Pause() {
 	}
 }
 
+func (w *worker) Destroy() {
+	for _, unit := range w.registry {
+		unit.Flush()
+		unit.Stop()
+	}
+	w.registry = nil
+	w.conditions = nil
+	w.lastRun = nil
+}
+
 func (w *worker) Resume() {
 	w.mu.Lock()
 	defer w.mu.Unlock()

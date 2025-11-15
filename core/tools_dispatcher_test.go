@@ -177,3 +177,32 @@ func TestDispatcherDrain(t *testing.T) {
 		t.Error("Expected drainer function to be called")
 	}
 }
+
+func TestDispatcherDestroy(t *testing.T) {
+	d := NewDispatcher(10, 2, 50*time.Millisecond)
+
+	for i := 0; i < 3; i++ {
+		d.Submit(func() {})
+	}
+
+	if d.queue == nil {
+		t.Fatal("Expected queue to be initialized before destroy")
+	}
+	if d.ctx == nil || d.cancel == nil {
+		t.Fatal("Expected context and cancel to be initialized before destroy")
+	}
+
+	d.Destroy()
+
+	if d.queue != nil {
+		t.Error("Expected queue to be nil after destroy")
+	}
+
+	if d.ctx != nil || d.cancel != nil {
+		t.Error("Expected context and cancel to be nil after destroy")
+	}
+
+	if !d.IsPaused() {
+		t.Error("Expected dispatcher to be paused after destroy")
+	}
+}

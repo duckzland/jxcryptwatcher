@@ -10,7 +10,7 @@ var animationDispatcher JC.Dispatcher = nil
 
 func RegisterAnimationDispatcher() JC.Dispatcher {
 	if animationDispatcher == nil {
-		animationDispatcher = JC.NewDispatcher(1000, 2, 200*time.Millisecond)
+		animationDispatcher = JC.NewDispatcher(200, 2, 200*time.Millisecond)
 	}
 	return animationDispatcher
 }

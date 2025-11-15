@@ -93,6 +93,22 @@ func (d *debouncer) Cancel(key string) {
 	d.mu.Unlock()
 }
 
+func (d *debouncer) Destroy() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	for key, cancel := range d.cancelMap {
+		if cancel != nil {
+			cancel()
+		}
+		delete(d.cancelMap, key)
+	}
+
+	d.cancelMap = nil
+	d.generations = nil
+	d.callbacks = nil
+}
+
 func RegisterDebouncer() *debouncer {
 	if coreDebouncer == nil {
 		coreDebouncer = &debouncer{}

@@ -746,6 +746,12 @@ func registerShutdown() {
 			JA.UseSnapshot().Save()
 		}
 
+		JC.UseWorker().Destroy()
+		JC.UseFetcher().Destroy()
+		JC.UseDebouncer().Destroy()
+		JC.UseDispatcher().Destroy()
+		JX.UseAnimationDispatcher().Destroy()
+
 		return
 	}()
 }

@@ -168,3 +168,44 @@ func TestWorkerLastUpdate(t *testing.T) {
 	}
 	stopWorker(w, "last_update", 20)
 }
+
+func TestWorkerDestroy(t *testing.T) {
+	w := &worker{}
+	w.Init()
+
+	done := make(chan bool, 1)
+
+	w.Register("destroy_test", 1,
+		func() int64 { return 10 },
+		nil,
+		func(payload any) bool {
+			done <- true
+			return true
+		},
+		func() bool { return true },
+	)
+
+	w.Push("destroy_test", "payload")
+
+	select {
+	case <-done:
+		// Proceed to destroy after function is confirmed to be called
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Expected function to be called")
+	}
+
+	w.Destroy()
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.registry != nil {
+		t.Error("Expected registry to be nil after destroy")
+	}
+	if w.conditions != nil {
+		t.Error("Expected conditions to be nil after destroy")
+	}
+	if w.lastRun != nil {
+		t.Error("Expected lastRun to be nil after destroy")
+	}
+}

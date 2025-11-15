@@ -99,3 +99,27 @@ func TestDebouncerMultipleCalls(t *testing.T) {
 	}
 	mu.Unlock()
 }
+
+func TestDebouncerDestroy(t *testing.T) {
+	d := RegisterDebouncer()
+
+	for i := 0; i < 3; i++ {
+		d.Call("destroyTest", 50*time.Millisecond, func() {})
+	}
+
+	if d.generations == nil || d.cancelMap == nil || d.callbacks == nil {
+		t.Fatal("Expected debouncer maps to be initialized before destroy")
+	}
+
+	d.Destroy()
+
+	if d.generations != nil {
+		t.Error("Expected generations map to be nil after destroy")
+	}
+	if d.cancelMap != nil {
+		t.Error("Expected cancelMap to be nil after destroy")
+	}
+	if d.callbacks != nil {
+		t.Error("Expected callbacks map to be nil after destroy")
+	}
+}

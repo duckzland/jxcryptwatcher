@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -106,5 +107,43 @@ func TestErrorHandling(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Error("Expected error callback to be triggered")
+	}
+}
+
+func TestFetcherDestroy(t *testing.T) {
+	f := &fetcher{}
+	f.Init()
+
+	f.Register("destroyTest", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
+		return NewFetchResult(200, "ok"), nil
+	}), nil, func() bool { return true })
+
+	_, cancel := context.WithCancel(context.Background())
+	f.mu.Lock()
+	f.activeWorkers["destroyTest"] = cancel
+	f.mu.Unlock()
+
+	f.Destroy()
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.fetchers != nil {
+		t.Error("Expected fetchers to be nil after destroy")
+	}
+	if f.delay != nil {
+		t.Error("Expected delay to be nil after destroy")
+	}
+	if f.callbacks != nil {
+		t.Error("Expected callbacks to be nil after destroy")
+	}
+	if f.conditions != nil {
+		t.Error("Expected conditions to be nil after destroy")
+	}
+	if f.activeWorkers != nil {
+		t.Error("Expected activeWorkers to be nil after destroy")
+	}
+	if f.dispatcher != nil {
+		t.Error("Expected dispatcher to be nil after destroy")
 	}
 }
