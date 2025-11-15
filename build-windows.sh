@@ -83,7 +83,7 @@ tags="production,desktop,no_emoji,no_animations,no_fonts"
 
 # Aggresive experimental flags
 cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -fomit-frame-pointer -fno-ident -pthread"
-cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program -Wl,--as-needed -Wl,-O1"
+cldflags="-pthread -Wl,--gc-sections -flto=auto,--as-needed -Wl,-O1"
 
 
 # Debug compiling flags
