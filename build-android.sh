@@ -106,12 +106,12 @@ tags="production,jxandroid,no_emoji,no_animations,no_fonts"
 release="true"
 
 # Optimized safe flags
-cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
-cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
+# cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -pthread"
+# cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program"
 
 # Aggresive experimental flags
-# cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -fomit-frame-pointer -fno-ident -pthread"
-# cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program -Wl,--as-needed -Wl,-O1"
+cflags="-Os -ffunction-sections -fdata-sections -flto=auto -pipe -fomit-frame-pointer -fno-ident -pthread"
+cldflags="-pthread -Wl,--gc-sections -flto=auto -fwhole-program -Wl,--as-needed -Wl,-O1"
 
 androidXMLDebug="false"
 
