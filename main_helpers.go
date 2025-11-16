@@ -1,12 +1,14 @@
 package main
 
 import (
+	"os"
 	"runtime"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 
+	JN "jxwatcher/animations"
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JP "jxwatcher/panels"
@@ -758,4 +760,19 @@ func scheduledNotificationReset() {
 
 func createPanel(pkt JT.PanelData) fyne.CanvasObject {
 	return JP.NewPanelDisplay(pkt, openPanelEditForm, removePanel)
+}
+
+func appShutdown() {
+
+	if !JA.UseSnapshot().IsSnapshotted() {
+		JA.UseSnapshot().Save()
+	}
+
+	JC.UseWorker().Destroy()
+	JC.UseFetcher().Destroy()
+	JC.UseDebouncer().Destroy()
+	JC.UseDispatcher().Destroy()
+	JN.UseAnimationDispatcher().Destroy()
+
+	os.Exit(1)
 }

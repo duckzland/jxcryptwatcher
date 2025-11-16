@@ -742,15 +742,7 @@ func registerShutdown() {
 		sig := <-signals
 		JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
 
-		if !JA.UseSnapshot().IsSnapshotted() {
-			JA.UseSnapshot().Save()
-		}
-
-		JC.UseWorker().Destroy()
-		JC.UseFetcher().Destroy()
-		JC.UseDebouncer().Destroy()
-		JC.UseDispatcher().Destroy()
-		JX.UseAnimationDispatcher().Destroy()
+		appShutdown()
 
 		return
 	}()
@@ -896,15 +888,6 @@ func registerLifecycle() {
 			}
 
 			JC.Logln("App stopped")
-
-			if !JA.UseStatus().IsReady() {
-				JC.Logln("Refused to take snapshot as app is not ready yet")
-				return
-			}
-
-			if !JA.UseSnapshot().IsSnapshotted() {
-				JA.UseSnapshot().Save()
-			}
 
 			signals <- syscall.SIGTERM
 
