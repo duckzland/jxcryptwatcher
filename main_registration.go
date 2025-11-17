@@ -23,6 +23,9 @@ import (
 
 var signals chan os.Signal
 
+// Blocker channel so final shutdown logic can be performed
+var finalShutdown = make(chan struct{})
+
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
@@ -744,7 +747,9 @@ func registerShutdown() {
 
 		appShutdown()
 
-		return
+		close(finalShutdown)
+
+		os.Exit(1)
 	}()
 }
 

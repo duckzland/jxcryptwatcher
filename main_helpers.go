@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -773,6 +772,4 @@ func appShutdown() {
 	JC.UseDebouncer().Destroy()
 	JC.UseDispatcher().Destroy()
 	JN.UseAnimationDispatcher().Destroy()
-
-	os.Exit(1)
 }

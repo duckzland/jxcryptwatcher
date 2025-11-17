@@ -44,4 +44,6 @@ func main() {
 	}
 
 	JC.Window.ShowAndRun()
+
+	<-finalShutdown
 }
