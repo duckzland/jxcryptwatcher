@@ -34,7 +34,7 @@ func (w *notificationDisplay) UpdateText(msg string) {
 }
 
 func (w *notificationDisplay) ClearText() {
-	JA.StartFadingText(w.text, func() {
+	JA.StartFadingText("n", w.text, func() {
 		w.text.Text = JC.STRING_EMPTY
 		w.text.Color = w.txtcolor
 		canvas.Refresh(w.text)

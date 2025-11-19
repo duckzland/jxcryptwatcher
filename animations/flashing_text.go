@@ -3,7 +3,6 @@ package animations
 import (
 	"context"
 	"image/color"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -12,19 +11,17 @@ import (
 	JC "jxwatcher/core"
 )
 
-var flashRegistry sync.Map
+var flashRegistry = JC.NewCancelRegistry(100)
 
 func StartFlashingText(
+	tag string,
 	text *canvas.Text,
 	interval time.Duration,
 	visibleColor color.Color,
 	flashes int,
 ) {
-
-	if val, ok := flashRegistry.Load(text); ok {
-		if cancel, ok := val.(context.CancelFunc); ok {
-			cancel()
-		}
+	if cancel, ok := flashRegistry.Get(tag); ok {
+		cancel()
 	}
 
 	if !text.Visible() {
@@ -32,7 +29,7 @@ func StartFlashingText(
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	flashRegistry.Store(text, cancel)
+	flashRegistry.Set(tag, cancel)
 
 	r, g, b, _ := visibleColor.RGBA()
 	baseR := float64(r >> 8)
@@ -40,7 +37,6 @@ func StartFlashingText(
 	baseB := float64(b >> 8)
 
 	UseAnimationDispatcher().Submit(func() {
-
 		if !text.Visible() {
 			return
 		}
@@ -58,7 +54,7 @@ func StartFlashingText(
 
 		go func() {
 			defer ticker.Stop()
-			defer flashRegistry.Delete(text)
+			defer flashRegistry.Delete(tag)
 			defer cancel()
 
 			for _, alpha := range alphaSequence {
@@ -70,15 +66,12 @@ func StartFlashingText(
 							canvas.Refresh(text)
 						})
 					}
-					ticker.Stop()
 					return
 				case <-ticker.C:
-
 					if !text.Visible() {
 						cancel()
 						return
 					}
-
 					fyne.Do(func() {
 						a := float64(alpha) / 255.0
 						text.Color = color.RGBA{
@@ -93,4 +86,11 @@ func StartFlashingText(
 			}
 		}()
 	})
+}
+
+func StopFlashingText(tag string) {
+	if cancel, ok := flashRegistry.Get(tag); ok {
+		cancel()
+		flashRegistry.Delete(tag)
+	}
 }

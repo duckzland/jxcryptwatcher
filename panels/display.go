@@ -117,7 +117,7 @@ func (h *panelDisplay) Show() {
 		h.shown++
 		if !JC.IsMobile {
 			if JM.UseLayout().UseScroll().Offset.X == 0 {
-				JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
+				JA.StartFadeInBackground(h.tag, h.background, 300*time.Millisecond, nil, false)
 			}
 		}
 	}
@@ -136,6 +136,10 @@ func (h *panelDisplay) Hide() {
 
 	h.container.Layout.(*panelDisplayLayout).RemoveAll()
 	h.container.RemoveAll()
+
+	JA.StopFlashingText(h.tag)
+	JA.StopFadeInBackground(h.tag)
+	JA.StopFadeOutBackground(h.tag)
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
@@ -298,7 +302,7 @@ func (h *panelDisplay) updateContent() {
 
 	if pkt.DidChange() {
 		if h.Visible() {
-			JA.StartFlashingText(h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
+			JA.StartFlashingText(h.tag, h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
 		}
 	}
 
@@ -308,7 +312,7 @@ func (h *panelDisplay) updateContent() {
 			if JC.IsMobile {
 				canvas.Refresh(h.background)
 			} else {
-				JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
+				JA.StartFadeInBackground(h.tag, h.background, 300*time.Millisecond, nil, false)
 			}
 		}
 	}
@@ -480,7 +484,7 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	}
 
 	if !JC.IsMobile {
-		JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
+		JA.StartFadeInBackground(h.tag, h.background, 300*time.Millisecond, nil, false)
 	}
 
 	return result
@@ -549,7 +553,7 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 
 	if onDelete != nil {
 		pd.onDelete = func() {
-			JA.StartFadeOutBackground(pd.background, 300*time.Millisecond, func() {
+			JA.StartFadeOutBackground(pd.tag, pd.background, 300*time.Millisecond, func() {
 				onDelete(pd.GetTag())
 			}, false)
 

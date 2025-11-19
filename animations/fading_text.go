@@ -2,7 +2,6 @@ package animations
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -11,18 +10,16 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeTextRegistry sync.Map
+var fadeTextRegistry = JC.NewCancelRegistry(5)
 
 func StartFadingText(
+	tag string,
 	text *canvas.Text,
 	callback func(),
 	fadeAlphas *[]uint8,
 ) {
-
-	if val, ok := fadeTextRegistry.Load(text); ok {
-		if cancel, ok := val.(context.CancelFunc); ok {
-			cancel()
-		}
+	if cancel, ok := fadeTextRegistry.Get(tag); ok {
+		cancel()
 	}
 
 	if !text.Visible() {
@@ -30,10 +27,9 @@ func StartFadingText(
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	fadeTextRegistry.Store(text, cancel)
+	fadeTextRegistry.Set(tag, cancel)
 
 	UseAnimationDispatcher().Submit(func() {
-
 		if !text.Visible() {
 			return
 		}
@@ -46,7 +42,7 @@ func StartFadingText(
 
 		go func() {
 			defer ticker.Stop()
-			defer fadeTextRegistry.Delete(text)
+			defer fadeTextRegistry.Delete(tag)
 			defer cancel()
 
 			for _, alpha := range *fadeAlphas {
@@ -58,15 +54,12 @@ func StartFadingText(
 							canvas.Refresh(text)
 						})
 					}
-					ticker.Stop()
 					return
 				case <-ticker.C:
-
 					if !text.Visible() {
 						cancel()
 						return
 					}
-
 					fyne.Do(func() {
 						JC.SetTextAlpha(text, alpha)
 						canvas.Refresh(text)
@@ -79,4 +72,11 @@ func StartFadingText(
 			}
 		}()
 	})
+}
+
+func StopFadingText(tag string) {
+	if cancel, ok := fadeTextRegistry.Get(tag); ok {
+		cancel()
+		fadeTextRegistry.Delete(tag)
+	}
 }

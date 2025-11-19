@@ -2,7 +2,6 @@ package animations
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -11,18 +10,17 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeInRegistry sync.Map
+var fadeInRegistry = JC.NewCancelRegistry(100)
 
 func StartFadeInBackground(
+	tag string,
 	rect *canvas.Rectangle,
 	duration time.Duration,
 	callback func(),
 	dispatch bool,
 ) {
-	if val, ok := fadeInRegistry.Load(rect); ok {
-		if cancel, ok := val.(context.CancelFunc); ok {
-			cancel()
-		}
+	if cancel, ok := fadeInRegistry.Get(tag); ok {
+		cancel()
 	}
 
 	if !rect.Visible() {
@@ -30,7 +28,7 @@ func StartFadeInBackground(
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	fadeInRegistry.Store(rect, cancel)
+	fadeInRegistry.Set(tag, cancel)
 
 	run := func() {
 		if !rect.Visible() {
@@ -43,7 +41,7 @@ func StartFadeInBackground(
 
 		go func() {
 			defer ticker.Stop()
-			defer fadeInRegistry.Delete(rect)
+			defer fadeInRegistry.Delete(tag)
 			defer cancel()
 
 			for _, alpha := range alphaSteps {
@@ -78,5 +76,12 @@ func StartFadeInBackground(
 		UseAnimationDispatcher().Submit(run)
 	} else {
 		run()
+	}
+}
+
+func StopFadeInBackground(tag string) {
+	if cancel, ok := fadeInRegistry.Get(tag); ok {
+		cancel()
+		fadeInRegistry.Delete(tag)
 	}
 }
