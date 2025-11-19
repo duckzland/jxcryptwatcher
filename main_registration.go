@@ -895,10 +895,6 @@ func registerLifecycle() {
 			}
 		})
 		lc.SetOnStopped(func() {
-			if !isAppStarted {
-				JC.Logln("App is not started yet, refuse to init app stopped")
-				return
-			}
 
 			JC.Logln("App stopped")
 
