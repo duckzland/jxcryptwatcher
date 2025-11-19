@@ -31,7 +31,7 @@ jobs:
         run: go install fyne.io/tools/cmd/fyne@latest
       
       - name: Install dependencies for cross compiling
-        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu curl unzip
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu curl unzip rpm
 
       - name: Read version from version.txt
         id: get_version
@@ -46,7 +46,7 @@ jobs:
         run: ./before-build.sh live
 
       - name: Cross-compile and packages
-        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh
+        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh && ./build-rpm
 
       - name: Clean build folders
         run: rm -rf build/libs
