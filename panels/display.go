@@ -117,7 +117,7 @@ func (h *panelDisplay) Show() {
 		h.shown++
 		if !JC.IsMobile {
 			if JM.UseLayout().UseScroll().Offset.X == 0 {
-				JA.StartFadeInBackground(h.background, 100*time.Millisecond, nil)
+				JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
 			}
 		}
 	}
@@ -305,7 +305,11 @@ func (h *panelDisplay) updateContent() {
 	if h.background.FillColor != background {
 		h.background.FillColor = background
 		if h.Visible() {
-			canvas.Refresh(h.background)
+			if JC.IsMobile {
+				canvas.Refresh(h.background)
+			} else {
+				JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
+			}
 		}
 	}
 
@@ -476,7 +480,7 @@ func (h *panelDisplay) reorder(targetIndex int) []fyne.CanvasObject {
 	}
 
 	if !JC.IsMobile {
-		JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil)
+		JA.StartFadeInBackground(h.background, 300*time.Millisecond, nil, false)
 	}
 
 	return result

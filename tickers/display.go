@@ -244,7 +244,7 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 	tk.updateContent()
 
 	if !JC.IsMobile {
-		JA.StartFadeInBackground(tk.background, 100*time.Millisecond, nil)
+		JA.StartFadeInBackground(tk.background, 300*time.Millisecond, nil, false)
 	}
 
 	return tk
