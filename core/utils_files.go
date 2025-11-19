@@ -14,6 +14,8 @@ import (
 	"fyne.io/fyne/v2/storage"
 )
 
+var userConfigDirExists = false
+
 func DeleteFile(path string) bool {
 	fullPath := strings.TrimLeft(path, "/")
 	fileURI, err := storage.ParseURI(fullPath)
@@ -123,8 +125,9 @@ func GetUserDirectory() string {
 	}
 
 	path = append(path, "jxcryptwatcher")
+	fp := filepath.Join(path...)
 
-	return filepath.Join(path...)
+	return fp
 }
 
 func SaveFileToStorage(filename string, data any) bool {

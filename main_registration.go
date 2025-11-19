@@ -35,7 +35,15 @@ var regularFont []byte
 //go:embed fonts/Roboto-Bold-subset.ttf
 var boldFont []byte
 
-func registerLogger() {
+func registerBoot() {
+
+	if !JC.IsMobile {
+		configDir := JC.GetUserDirectory()
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			JC.Logf("Error creating directory: %v", err)
+		}
+	}
+
 	JC.InitLogger()
 
 	JC.Logln("App is booting...")
