@@ -46,7 +46,7 @@ jobs:
         run: ./before-build.sh live
 
       - name: Cross-compile and packages
-        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh && ./build-rpm
+        run: ./build-linux.sh && ./build-windows.sh && ./build-debian.sh && ./build-android.sh && ./build-rpm.sh
 
       - name: Clean build folders
         run: rm -rf build/libs
