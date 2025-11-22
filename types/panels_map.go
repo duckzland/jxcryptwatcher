@@ -256,33 +256,28 @@ func (pc *panelsMapType) Hydrate(data []PanelData) {
 
 	for i := 0; i < dataLen; i++ {
 		pdt := pc.GetDataByIndex(i)
-		pdt.UpdateRate()
-		pdt.UpdateStatus()
 
 		if pdt == nil || i < 0 || i >= len(data) {
 			continue
 		}
 
+		pdt.UpdateRate()
+		pdt.UpdateStatus()
+
 		pkn := data[i]
 		pko := pdt.UsePanelKey()
 
 		if !pko.IsConfigMatching(pkn.Get()) {
+			JC.Logln("Panel doesnt match exit", pkn.Get())
 			continue
 		}
 
+		pkn.UpdateRate()
+		pkn.UpdateStatus()
+
 		pdt.Set(pkn.Get())
 		pdt.SetOldKey(pkn.GetOldKey())
-
-		switch pkn.GetStatus() {
-		case JC.STATE_ERROR:
-			if pkn.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_GREATER_EQUAL) {
-				pdt.SetStatus(JC.STATE_LOADED)
-			} else {
-				pdt.SetStatus(JC.STATE_FETCHING_NEW)
-			}
-		default:
-			pdt.SetStatus(pkn.GetStatus())
-		}
+		pdt.SetStatus(pkn.GetStatus())
 
 		if !pdt.HasParent() {
 			pdt.SetParent(pc)

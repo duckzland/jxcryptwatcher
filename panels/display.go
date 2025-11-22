@@ -126,6 +126,10 @@ func (h *panelDisplay) Show() {
 func (h *panelDisplay) Hide() {
 	h.BaseWidget.Hide()
 
+	JA.StopFlashingText(h.tag)
+	JA.StopFadeInBackground(h.tag)
+	JA.StopFadeOutBackground(h.tag)
+
 	h.background = nil
 	h.title = nil
 	h.subtitle = nil
@@ -136,10 +140,6 @@ func (h *panelDisplay) Hide() {
 
 	h.container.Layout.(*panelDisplayLayout).RemoveAll()
 	h.container.RemoveAll()
-
-	JA.StopFlashingText(h.tag)
-	JA.StopFadeInBackground(h.tag)
-	JA.StopFadeOutBackground(h.tag)
 }
 
 func (h *panelDisplay) Tapped(event *fyne.PointEvent) {
