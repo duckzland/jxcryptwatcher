@@ -47,6 +47,11 @@ func (w *worker) Register(key string, size int64, getDelay func() int64, getInte
 		queue:       make(chan any, size),
 		fn: func(payload any) bool {
 
+			// Most probably workers is Destroyed
+			if w.registry == nil && w.conditions == nil && w.lastRun == nil {
+				return false
+			}
+
 			if mode, ok := payload.(CallMode); !ok || mode != CallBypassImmediate {
 				if shouldRun != nil && !shouldRun() {
 					return false

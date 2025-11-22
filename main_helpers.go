@@ -788,18 +788,14 @@ func appShutdown() {
 	}
 
 	status := JA.UseStatus()
-	if status == nil {
-		JC.Logln("Refused to take snapshot as status is nil")
-		return
-	}
-	if !status.IsReady() {
-		JC.Logln("Refused to take snapshot as app is not ready yet")
-		return
+	snapshot := JA.UseSnapshot()
+	if status != nil && snapshot != nil && !snapshot.IsSnapshotted() && status.IsReady() {
+		snapshot.Save()
 	}
 
-	snapshot := JA.UseSnapshot()
-	if snapshot != nil && !snapshot.IsSnapshotted() {
-		snapshot.Save()
+	panels := JT.UsePanelMaps()
+	if panels != nil {
+		panels.Destroy()
 	}
 
 }

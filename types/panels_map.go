@@ -348,6 +348,14 @@ func (pc *panelsMapType) GetSymbolByDisplay(id string) string {
 	return pc.maps.GetSymbolByDisplay(id)
 }
 
+func (p *panelsMapType) Destroy() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.data = make([]PanelData, 0)
+	p.visiblePanels = make([]string, 0)
+}
+
 func UsePanelMaps() *panelsMapType {
 	return panelMapsStorage
 }

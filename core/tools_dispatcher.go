@@ -210,8 +210,14 @@ func (d *dispatcher) worker() {
 			select {
 			case fn := <-d.queue:
 				if d.IsPaused() {
+					// Most probably the dispatcher is destroyed
+					if d.ctx == nil && d.cancel == nil && d.queue == nil {
+						return
+					}
+
 					continue
 				}
+
 				fn()
 			default:
 			}

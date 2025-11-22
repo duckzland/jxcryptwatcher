@@ -63,6 +63,11 @@ func registerBoot() {
 			JC.Logf("Error creating directory: %v", err)
 		}
 	}
+
+	JC.Window.SetOnClosed(func() {
+		JC.Logln("Window was closed")
+		JC.App.Quit()
+	})
 }
 
 func registerTheme() {
