@@ -762,14 +762,44 @@ func createPanel(pkt JT.PanelData) fyne.CanvasObject {
 }
 
 func appShutdown() {
-
-	if !JA.UseSnapshot().IsSnapshotted() {
-		JA.UseSnapshot().Save()
+	worker := JC.UseWorker()
+	if worker != nil {
+		worker.Destroy()
 	}
 
-	JC.UseWorker().Destroy()
-	JC.UseFetcher().Destroy()
-	JC.UseDebouncer().Destroy()
-	JC.UseDispatcher().Destroy()
-	JN.UseAnimationDispatcher().Destroy()
+	fetcher := JC.UseFetcher()
+	if fetcher != nil {
+		fetcher.Destroy()
+	}
+
+	debouncer := JC.UseDebouncer()
+	if debouncer != nil {
+		debouncer.Destroy()
+	}
+
+	dispatcher := JC.UseDispatcher()
+	if dispatcher != nil {
+		dispatcher.Destroy()
+	}
+
+	animDispatcher := JN.UseAnimationDispatcher()
+	if animDispatcher != nil {
+		animDispatcher.Destroy()
+	}
+
+	status := JA.UseStatus()
+	if status == nil {
+		JC.Logln("Refused to take snapshot as status is nil")
+		return
+	}
+	if !status.IsReady() {
+		JC.Logln("Refused to take snapshot as app is not ready yet")
+		return
+	}
+
+	snapshot := JA.UseSnapshot()
+	if snapshot != nil && !snapshot.IsSnapshotted() {
+		snapshot.Save()
+	}
+
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"syscall"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
@@ -33,8 +35,6 @@ func main() {
 
 	registerDispatcher()
 
-	registerShutdown()
-
 	registerLifecycle()
 
 	JC.Window.Resize(fyne.NewSize(920, 600))
@@ -45,5 +45,6 @@ func main() {
 
 	JC.Window.ShowAndRun()
 
+	signals <- syscall.SIGTERM
 	<-finalShutdown
 }

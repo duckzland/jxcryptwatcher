@@ -37,16 +37,32 @@ var boldFont []byte
 
 func registerBoot() {
 
+	JC.Logln("App is booting...")
+
+	JC.InitLogger()
+
+	signals = make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	JC.Logln("Registering shutdown callback")
+
+	go func() {
+		sig := <-signals
+		JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
+
+		appShutdown()
+
+		close(finalShutdown)
+
+		os.Exit(1)
+	}()
+
 	if !JC.IsMobile {
 		configDir := JC.GetUserDirectory()
 		if err := os.MkdirAll(configDir, 0755); err != nil {
 			JC.Logf("Error creating directory: %v", err)
 		}
 	}
-
-	JC.InitLogger()
-
-	JC.Logln("App is booting...")
 }
 
 func registerTheme() {
@@ -742,25 +758,6 @@ func registerFetchers() {
 	)
 }
 
-func registerShutdown() {
-
-	signals = make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
-
-	JC.Logln("Registering shutdown callback")
-
-	go func() {
-		sig := <-signals
-		JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
-
-		appShutdown()
-
-		close(finalShutdown)
-
-		os.Exit(1)
-	}()
-}
-
 func registerLifecycle() {
 
 	var isAppStarted bool = false
@@ -870,6 +867,7 @@ func registerLifecycle() {
 				JC.UseWorker().Call(JC.ACT_TICKER_UPDATE, JC.CallImmediate)
 			}
 		})
+
 		lc.SetOnExitedForeground(func() {
 			if !isAppStarted {
 				JC.Logln("App is not started yet, refuse to init app exited foreground")
@@ -894,12 +892,9 @@ func registerLifecycle() {
 				JA.UseSnapshot().Save()
 			}
 		})
+
 		lc.SetOnStopped(func() {
-
 			JC.Logln("App stopped")
-
-			signals <- syscall.SIGTERM
-
 		})
 	}
 }
