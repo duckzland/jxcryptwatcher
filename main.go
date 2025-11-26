@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -10,8 +9,6 @@ import (
 
 	JC "jxwatcher/core"
 )
-
-var signals chan os.Signal
 
 func main() {
 
