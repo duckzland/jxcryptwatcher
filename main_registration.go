@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"syscall"
 	"time"
 
@@ -21,11 +20,6 @@ import (
 	_ "embed"
 )
 
-var signals chan os.Signal
-
-// Blocker channel so final shutdown logic can be performed
-var finalShutdown = make(chan struct{})
-
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
@@ -37,25 +31,9 @@ var boldFont []byte
 
 func registerBoot() {
 
-	JC.Logln("App is booting...")
-
 	JC.InitLogger()
 
-	signals = make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
-
-	JC.Logln("Registering shutdown callback")
-
-	go func() {
-		sig := <-signals
-		JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
-
-		appShutdown()
-
-		close(finalShutdown)
-
-		os.Exit(1)
-	}()
+	JC.Logln("App is booting...")
 
 	if !JC.IsMobile {
 		configDir := JC.GetUserDirectory()
@@ -67,6 +45,7 @@ func registerBoot() {
 	JC.Window.SetOnClosed(func() {
 		JC.Logln("Window was closed")
 		JC.App.Quit()
+		JC.ShutdownSignal <- syscall.SIGTERM
 	})
 }
 

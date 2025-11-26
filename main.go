@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"os/signal"
 	"syscall"
 
 	"fyne.io/fyne/v2"
@@ -9,7 +11,11 @@ import (
 	JC "jxwatcher/core"
 )
 
+var signals chan os.Signal
+
 func main() {
+
+	signal.Notify(JC.ShutdownSignal, syscall.SIGINT, syscall.SIGTERM)
 
 	JC.App = app.NewWithID(JC.AppID)
 
@@ -45,6 +51,11 @@ func main() {
 
 	JC.Window.ShowAndRun()
 
-	signals <- syscall.SIGTERM
-	<-finalShutdown
+	sig := <-JC.ShutdownSignal
+
+	JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
+
+	appShutdown()
+
+	signal.Stop(JC.ShutdownSignal)
 }
