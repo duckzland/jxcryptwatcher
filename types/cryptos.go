@@ -149,7 +149,10 @@ func CryptosLoaderInit() {
 	cm.ClearMapCache()
 
 	UsePanelMaps().SetMaps(cm)
-	UsePanelMaps().GetOptions()
+
+	if JC.IsMobile {
+		UsePanelMaps().GetOptions()
+	}
 }
 
 func UseCryptosLoader() *cryptosLoaderType {
