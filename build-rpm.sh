@@ -157,7 +157,7 @@ cp usr/share/icons/hicolor/256x256/apps/jxwatcher.png %{buildroot}/usr/share/ico
 EOF
 
 # Build RPM
-rpmbuild --define "_topdir $(pwd)/${rpm_root}" -bb "${rpm_root}/SPECS/jxwatcher.spec"
+rpmbuild --quiet --define "_topdir $(pwd)/${rpm_root}" -bb "${rpm_root}/SPECS/jxwatcher.spec"
 
 if [ $? -ne 0 ]; then
     echo_error "Failed to build the RPM package. Please check for errors above."
