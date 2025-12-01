@@ -110,6 +110,7 @@ func (c *completionEntry) Destroy() {
 	if c.worker != nil {
 		c.worker.Cancel()
 		c.worker.Destroy()
+		c.worker = nil
 	}
 
 	if activeEntry == c {
@@ -119,11 +120,23 @@ func (c *completionEntry) Destroy() {
 	if c.popup != nil {
 		c.popup.Hide()
 		c.popup.Objects = nil
+		c.popup = nil
+	}
+
+	if c.completionList != nil {
+		c.completionList.Destroy()
+		c.completionList = nil
+	}
+
+	if c.container != nil {
+		if layout, ok := c.container.Layout.(*completionListEntryLayout); ok {
+			layout.Destroy()
+		}
+		c.container.Objects = nil
+		c.container = nil
 	}
 
 	c.options = nil
-	c.completionList = nil
-	c.container = nil
 	c.canvas = nil
 	c.action = nil
 	c.parent = nil
@@ -354,7 +367,7 @@ func (c *completionEntry) setTextFromMenu(s string) {
 
 func NewCompletionEntry(options []string, searchOptions []string, popup *fyne.Container) *completionEntry {
 
-	delay := 16 * time.Millisecond
+	delay := 8 * time.Millisecond
 	if JC.IsMobile {
 		delay = 50 * time.Millisecond
 	}

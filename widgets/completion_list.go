@@ -164,11 +164,33 @@ func (n *completionList) Destroy() {
 		n.DragEnd()
 	}
 
+	if n.done != nil {
+		close(n.done)
+		n.done = nil
+	}
+
 	n.onChange = nil
 	n.onClose = nil
 	n.data = nil
-	n.done = nil
 
+	n.itemVisible = 0
+	n.itemHeight = 0
+	n.itemTotal = 0
+	n.scaledItemHeight = 0
+	n.scaledHeight = 0
+	n.scrollOffset = 0
+	n.maxOffset = 0
+	n.scrollLimiter = 0
+	n.fps = 0
+	n.position = fyne.Position{}
+	n.lastSize = fyne.Size{}
+	n.dragging = false
+
+	n.contentBox = nil
+	n.scrollContent = nil
+	n.scrollBox = nil
+	n.layout = nil
+	n.root = nil
 }
 
 func (n *completionList) prepareForScroll() {

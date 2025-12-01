@@ -1,10 +1,10 @@
 package widgets
 
 import (
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+
+	JC "jxwatcher/core"
 )
 
 type completionListEntryLayout struct {
@@ -62,4 +62,19 @@ func (l *completionListEntryLayout) Layout(objects []fyne.CanvasObject, size fyn
 
 func (l *completionListEntryLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return l.cSize
+}
+
+func (l *completionListEntryLayout) Destroy() {
+
+	l.cSize = fyne.Size{}
+	l.closeSize = fyne.Size{}
+
+	l.background = nil
+
+	if l.listEntry != nil {
+		l.listEntry.Destroy()
+		l.listEntry = nil
+	}
+
+	l.closeBtn = nil
 }
