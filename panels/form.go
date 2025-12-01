@@ -229,8 +229,16 @@ func NewPanelForm(
 			if onDestroy != nil {
 				onDestroy(layer)
 			}
+
 			se.Destroy()
 			te.Destroy()
+
+			cm = nil
+			cs = nil
+
+			if !JC.IsMobile {
+				JT.UsePanelMaps().GetMaps().ClearMapCache()
+			}
 		},
 		JC.Window)
 

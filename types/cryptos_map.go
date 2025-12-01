@@ -60,18 +60,21 @@ func (cm *cryptosMapType) Hydrate(cache cryptosMapCache) {
 		}
 	}
 
-	if len(cache.Maps) != 0 && len(cache.SearchMaps) != 0 {
-		cm.maps = make([]string, len(cache.Maps))
-		copy(cm.maps, cache.Maps)
+	if JC.IsMobile {
+		if len(cache.Maps) != 0 && len(cache.SearchMaps) != 0 {
+			cm.maps = make([]string, len(cache.Maps))
+			copy(cm.maps, cache.Maps)
 
-		cm.searchMaps = make([]string, len(cache.SearchMaps))
-		copy(cm.searchMaps, cache.SearchMaps)
+			cm.searchMaps = make([]string, len(cache.SearchMaps))
+			copy(cm.searchMaps, cache.SearchMaps)
+		}
+
+		if len(cache.Data) == 0 || len(cache.Maps) == 0 || len(cache.SearchMaps) == 0 {
+			_ = cm.GetOptions()
+		}
 	}
+
 	cm.mu.Unlock()
-
-	if len(cache.Data) == 0 || len(cache.Maps) == 0 || len(cache.SearchMaps) == 0 {
-		_ = cm.GetOptions()
-	}
 }
 
 func (cm *cryptosMapType) Serialize() cryptosMapCache {
@@ -87,8 +90,11 @@ func (cm *cryptosMapType) Serialize() cryptosMapCache {
 	for k, v := range cm.data {
 		cache.Data[formatID(k)] = v
 	}
-	copy(cache.Maps, cm.maps)
-	copy(cache.SearchMaps, cm.searchMaps)
+
+	if JC.IsMobile {
+		copy(cache.Maps, cm.maps)
+		copy(cache.SearchMaps, cm.searchMaps)
+	}
 
 	return cache
 }

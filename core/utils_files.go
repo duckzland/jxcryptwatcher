@@ -8,13 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	json "github.com/goccy/go-json"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/storage"
-)
 
-var userConfigDirExists = false
+	json "github.com/goccy/go-json"
+)
 
 func DeleteFile(path string) bool {
 	fullPath := strings.TrimLeft(path, "/")
@@ -31,6 +29,7 @@ func DeleteFile(path string) bool {
 	}
 
 	Logf("Successfully deleted file: %s", path)
+
 	return true
 }
 
@@ -97,7 +96,13 @@ func BuildPathRelatedToUserDirectory(additionalPath []string) string {
 	return uri.String()
 }
 
+var userDirectory string = ""
+
 func GetUserDirectory() string {
+
+	if userDirectory != "" {
+		return userDirectory
+	}
 
 	path := []string{}
 
@@ -125,9 +130,9 @@ func GetUserDirectory() string {
 	}
 
 	path = append(path, "jxcryptwatcher")
-	fp := filepath.Join(path...)
+	userDirectory = filepath.Join(path...)
 
-	return fp
+	return userDirectory
 }
 
 func SaveFileToStorage(filename string, data any) bool {

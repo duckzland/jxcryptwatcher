@@ -81,7 +81,9 @@ func (sm *snapshotManager) LoadCryptos() int {
 	cm.Hydrate(*snapshot)
 
 	JT.UsePanelMaps().SetMaps(cm)
-	JT.UsePanelMaps().GetOptions()
+	if JC.IsMobile {
+		JT.UsePanelMaps().GetOptions()
+	}
 
 	return JC.HAVE_SNAPSHOT
 }

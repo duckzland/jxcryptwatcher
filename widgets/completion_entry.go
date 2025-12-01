@@ -109,6 +109,7 @@ func (c *completionEntry) SetValidator(fn func(string) error) {
 func (c *completionEntry) Destroy() {
 	if c.worker != nil {
 		c.worker.Cancel()
+		c.worker.Destroy()
 	}
 
 	if activeEntry == c {

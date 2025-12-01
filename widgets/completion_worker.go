@@ -60,6 +60,34 @@ func (c *completionWorker) Cancel() {
 	c.mu.Unlock()
 
 }
+
+func (c *completionWorker) Destroy() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.resultChan != nil {
+		close(c.resultChan)
+		c.resultChan = nil
+	}
+	if c.closeChan != nil {
+		close(c.closeChan)
+		c.closeChan = nil
+	}
+
+	c.searchable = nil
+	c.data = nil
+	c.results = nil
+
+	c.total = 0
+	c.chunk = 0
+	c.expected = 0
+	c.counter = 0
+	c.searchKey = ""
+	c.delay = 0
+
+	c.done = nil
+}
+
 func (c *completionWorker) close() {
 	select {
 	case c.closeChan <- struct{}{}:
