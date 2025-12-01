@@ -28,7 +28,6 @@ type completionList struct {
 	contentBox       *fyne.Container
 	scrollContent    *canvas.Rectangle
 	scrollBox        *container.Scroll
-	layout           *completionListLayout
 	root             *fyne.Container
 	lastSize         fyne.Size
 	scrollOffset     int
@@ -186,11 +185,21 @@ func (n *completionList) Destroy() {
 	n.lastSize = fyne.Size{}
 	n.dragging = false
 
-	n.contentBox = nil
 	n.scrollContent = nil
 	n.scrollBox = nil
-	n.layout = nil
-	n.root = nil
+
+	if n.contentBox != nil {
+		n.contentBox.Objects = nil
+		n.contentBox = nil
+	}
+
+	if n.root != nil {
+		if layout, ok := n.root.Layout.(*completionListLayout); ok {
+			layout.Destroy()
+		}
+		n.root.Objects = nil
+		n.root = nil
+	}
 }
 
 func (n *completionList) prepareForScroll() {

@@ -80,3 +80,11 @@ func (l *completionListLayout) Layout(objects []fyne.CanvasObject, size fyne.Siz
 func (l *completionListLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return l.lastSize
 }
+
+func (l *completionListLayout) Destroy() {
+	l.itemHeight = 0
+	l.itemVisible = 0
+
+	l.lastSize = fyne.Size{}
+	l.parent = nil
+}
