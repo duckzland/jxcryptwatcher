@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 
 	JC "jxwatcher/core"
 )
@@ -14,14 +13,13 @@ var fadeTextRegistry = JC.NewCancelRegistry(5)
 
 func StartFadingText(
 	tag string,
-	text *canvas.Text,
+	text AnimatableText,
 	callback func(),
 	fadeAlphas *[]uint8,
 ) {
 	if cancel, ok := fadeTextRegistry.Get(tag); ok {
 		cancel()
 	}
-
 	if !text.Visible() {
 		return
 	}
@@ -33,11 +31,9 @@ func StartFadingText(
 		if !text.Visible() {
 			return
 		}
-
 		if fadeAlphas == nil || len(*fadeAlphas) == 0 {
 			fadeAlphas = &[]uint8{255, 160, 80, 0}
 		}
-
 		ticker := time.NewTicker(80 * time.Millisecond)
 
 		go func() {
@@ -48,12 +44,10 @@ func StartFadingText(
 			for _, alpha := range *fadeAlphas {
 				select {
 				case <-ctx.Done():
-					if !JC.IsTextAlpha(text, 255) {
-						fyne.Do(func() {
-							JC.SetTextAlpha(text, 255)
-							canvas.Refresh(text)
-						})
-					}
+					fyne.Do(func() {
+						text.SetAlpha(255)
+						text.Refresh()
+					})
 					return
 				case <-ticker.C:
 					if !text.Visible() {
@@ -61,12 +55,11 @@ func StartFadingText(
 						return
 					}
 					fyne.Do(func() {
-						JC.SetTextAlpha(text, alpha)
-						canvas.Refresh(text)
+						text.SetAlpha(alpha)
+						text.Refresh()
 					})
 				}
 			}
-
 			if callback != nil {
 				fyne.Do(callback)
 			}

@@ -6,15 +6,18 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
+	"golang.org/x/image/font/opentype"
 )
 
 var activeTheme *appTheme = nil
 
 type appTheme struct {
-	mu      sync.Mutex
-	variant fyne.ThemeVariant
-	regular fyne.Resource
-	bold    fyne.Resource
+	mu            sync.Mutex
+	variant       fyne.ThemeVariant
+	regular       fyne.Resource
+	bold          fyne.Resource
+	fontRegularTT *opentype.Font
+	fontBoldTT    *opentype.Font
 }
 
 func (t *appTheme) Init() {
@@ -33,12 +36,33 @@ func (t *appTheme) SetVariant(variant fyne.ThemeVariant) {
 func (t *appTheme) SetFonts(style fyne.TextStyle, font fyne.Resource) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
 	switch {
 	case style.Bold:
 		t.bold = font
+		if font != nil {
+			if tt, err := opentype.Parse(font.Content()); err == nil {
+				t.fontBoldTT = tt
+			}
+		}
 	default:
 		t.regular = font
+		if font != nil {
+			if tt, err := opentype.Parse(font.Content()); err == nil {
+				t.fontRegularTT = tt
+			}
+		}
 	}
+}
+
+func (t *appTheme) GetFont(style fyne.TextStyle) *opentype.Font {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if style.Bold {
+		return t.fontBoldTT
+	}
+	return t.fontRegularTT
 }
 
 func (t *appTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {

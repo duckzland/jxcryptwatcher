@@ -289,10 +289,10 @@ func (h *panelDisplay) updateContent() {
 			background = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 		}
 
-		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.GetText().TextSize, h.title.GetText().TextStyle)
-		subtitle = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.GetText().TextSize, h.subtitle.GetText().TextStyle)
-		bottomText = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.GetText().TextSize, h.bottomText.GetText().TextStyle)
-		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.GetText().TextSize, h.content.GetText().TextStyle)
+		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.textSize, h.title.textStyle)
+		subtitle = JC.TruncateText(pkt.FormatSubtitle(), pwidth-20, h.subtitle.textSize, h.subtitle.textStyle)
+		bottomText = JC.TruncateText(pkt.FormatBottomText(), pwidth-20, h.bottomText.textSize, h.bottomText.textStyle)
+		content = JC.TruncateText(pkt.FormatContent(), pwidth-20, h.content.textSize, h.content.textStyle)
 	}
 
 	h.title.SetText(title)
@@ -302,7 +302,7 @@ func (h *panelDisplay) updateContent() {
 
 	if pkt.DidChange() {
 		if h.Visible() {
-			JA.StartFlashingText(h.tag, h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
+			JA.StartFlashingText(h.tag, h.content, 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
 		}
 	}
 

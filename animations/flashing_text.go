@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 
 	JC "jxwatcher/core"
 )
@@ -15,7 +14,7 @@ var flashRegistry = JC.NewCancelRegistry(100)
 
 func StartFlashingText(
 	tag string,
-	text *canvas.Text,
+	txt AnimatableText,
 	interval time.Duration,
 	visibleColor color.Color,
 	flashes int,
@@ -24,7 +23,7 @@ func StartFlashingText(
 		cancel()
 	}
 
-	if !text.Visible() {
+	if !txt.Visible() {
 		return
 	}
 
@@ -37,7 +36,7 @@ func StartFlashingText(
 	baseB := float64(b >> 8)
 
 	UseAnimationDispatcher().Submit(func() {
-		if !text.Visible() {
+		if !txt.Visible() {
 			return
 		}
 
@@ -60,27 +59,27 @@ func StartFlashingText(
 			for _, alpha := range alphaSequence {
 				select {
 				case <-ctx.Done():
-					if !JC.IsTextAlpha(text, 255) {
-						fyne.Do(func() {
-							text.Color = visibleColor
-							canvas.Refresh(text)
-						})
-					}
+					fyne.Do(func() {
+						txt.SetAlpha(255)
+						txt.Refresh()
+					})
 					return
 				case <-ticker.C:
-					if !text.Visible() {
+					if !txt.Visible() {
 						cancel()
 						return
 					}
 					fyne.Do(func() {
 						a := float64(alpha) / 255.0
-						text.Color = color.RGBA{
+						// apply scaled color
+						newCol := color.NRGBA{
 							R: uint8(baseR * a),
 							G: uint8(baseG * a),
 							B: uint8(baseB * a),
 							A: 255,
 						}
-						canvas.Refresh(text)
+						txt.SetColor(newCol)
+						txt.Refresh()
 					})
 				}
 			}

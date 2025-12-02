@@ -456,7 +456,7 @@ func registerWorkers() {
 		func(payload any) bool {
 			latest, _ := payload.(string)
 			fyne.Do(func() {
-				JW.UseNotification().UpdateText(latest)
+				JW.UseNotification().SetText(latest)
 			})
 
 			scheduledNotificationReset()

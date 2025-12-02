@@ -71,7 +71,7 @@ func (h *tickerDisplay) updateContent() {
 		title = pkt.GetTitle()
 		content = pkt.FormatContent()
 
-		if h.content.GetText().Text != content {
+		if h.content.GetText() != content {
 			isNewContent = true
 		}
 
@@ -190,7 +190,7 @@ func (h *tickerDisplay) updateContent() {
 	h.content.SetText(content)
 
 	if isNewContent {
-		JA.StartFlashingText(h.tag, h.content.GetText(), 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
+		JA.StartFlashingText(h.tag, h.content, 50*time.Millisecond, JC.UseTheme().GetColor(theme.ColorNameForeground), 1)
 	}
 
 	if h.background.FillColor != background {

@@ -1,7 +1,12 @@
 package panels
 
 import (
+	"image"
 	"image/color"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/math/fixed"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -12,70 +17,153 @@ import (
 
 type panelText struct {
 	widget.BaseWidget
-	index int
-	text  string
-	label *canvas.Text
-	cSize fyne.Size
+	index     int
+	text      string
+	color     color.Color
+	textSize  float32
+	textAlign fyne.TextAlign
+	textStyle fyne.TextStyle
+	cSize     fyne.Size
+	img       *canvas.Image
 }
 
-func (s *panelText) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(s.label)
-}
-
-func (s *panelText) MinSize() fyne.Size {
-	if s.cSize != fyne.NewSize(0, 0) {
-		return s.cSize
+func (p *panelText) CreateRenderer() fyne.WidgetRenderer {
+	if p.img == nil {
+		p.rasterize()
 	}
-
-	width := JC.MeasureText(s.text, s.label.TextSize, s.label.TextStyle)
-	height := s.label.TextSize * 1.35
-	s.cSize = fyne.NewSize(width, height)
-
-	return s.cSize
+	return widget.NewSimpleRenderer(p.img)
 }
 
-func (s *panelText) GetText() *canvas.Text {
-	return s.label
+func (p *panelText) MinSize() fyne.Size {
+	if p.cSize != fyne.NewSize(0, 0) {
+		return p.cSize
+	}
+	width := JC.MeasureText(p.text, p.textSize, p.textStyle)
+	height := p.textSize * 1.35
+	p.cSize = fyne.NewSize(width, height)
+	return p.cSize
 }
 
-func (s *panelText) SetTextSize(size float32) {
-	s.label.TextSize = size
-	s.cSize = fyne.NewSize(0, 0)
+func (p *panelText) Visible() bool {
+	return p.BaseWidget.Visible() && p.text != JC.STRING_EMPTY
 }
 
-func (s *panelText) SetText(t string) {
-	if s.text == t {
+func (p *panelText) GetText() string {
+	return p.text
+}
+
+func (p *panelText) SetTextSize(size float32) {
+	if p.textSize == size {
 		return
 	}
+	p.textSize = size
+	p.cSize = fyne.NewSize(0, 0)
+	p.rasterize()
+	p.Refresh()
+}
 
-	if t == JC.STRING_EMPTY {
-		s.label.Hide()
+func (p *panelText) SetText(t string) {
+	if p.text == t {
+		return
+	}
+	p.text = t
+	p.cSize = fyne.NewSize(0, 0)
+
+	if p.text == JC.STRING_EMPTY {
+		p.Hide()
 	} else {
-		s.label.Show()
+		p.Show()
 	}
 
-	s.text = t
-	s.label.Text = t
-	s.cSize = fyne.NewSize(0, 0)
+	p.rasterize()
+	p.Refresh()
+}
 
-	if s.Visible() {
-		canvas.Refresh(s.label)
+func (p *panelText) SetAlpha(a uint8) {
+	r, g, b, _ := p.color.RGBA()
+	p.SetColor(color.NRGBA{
+		R: uint8(r >> 8),
+		G: uint8(g >> 8),
+		B: uint8(b >> 8),
+		A: a,
+	})
+}
+
+func (p *panelText) SetColor(col color.Color) {
+	p.color = col
+	p.rasterize()
+	p.Refresh()
+}
+
+func (p *panelText) rasterize() {
+	scale := JC.Window.Canvas().Scale()
+	dpi := float64(96.0 * scale)
+	px := float64(p.textSize)
+	pt := px * 72.0 / dpi
+
+	face, err := opentype.NewFace(
+		JC.UseTheme().GetFont(p.textStyle),
+		&opentype.FaceOptions{
+			Size:    pt,
+			DPI:     dpi,
+			Hinting: font.HintingFull,
+		},
+	)
+	if err != nil {
+		return
 	}
+	defer face.Close()
+
+	_, adv := font.BoundString(face, p.text)
+	textW := adv.Round()
+	if textW < 1 {
+		textW = 1
+	}
+	padding := p.textSize * 0.35
+	if padding > 4 {
+		padding = 4
+	}
+	height := p.textSize + padding
+	width := int(float32(textW) * scale)
+
+	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)))
+
+	startX := (width - textW) / 2
+
+	d := &font.Drawer{
+		Dst:  buf,
+		Src:  image.NewUniform(p.color),
+		Face: face,
+		Dot: fixed.Point26_6{
+			X: fixed.Int26_6(startX << 6),
+			Y: fixed.Int26_6(int(height-padding) << 6),
+		},
+	}
+	d.DrawString(p.text)
+
+	if p.img == nil {
+		p.img = canvas.NewImageFromImage(buf)
+	} else {
+		p.img.Image = buf
+	}
+
+	p.img.FillMode = canvas.ImageFillOriginal
+	size := fyne.NewSize(float32(buf.Bounds().Dx()), height)
+	p.cSize = size
+	p.img.SetMinSize(size)
+	p.img.Resize(size)
 }
 
-func (s *panelText) Visible() bool {
-	return s.BaseWidget.Visible() && s.label.Visible()
-}
-
-func NewPanelText(text string, color color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
+func NewPanelText(text string, col color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
 	s := &panelText{
-		label: canvas.NewText(text, color),
-		cSize: fyne.NewSize(0, 0),
+		text:      text,
+		color:     col,
+		textSize:  size,
+		textAlign: alignment,
+		textStyle: style,
 	}
 
-	s.label.TextSize = size
-	s.label.Alignment = alignment
-	s.label.TextStyle = style
 	s.ExtendBaseWidget(s)
+
 	return s
 }

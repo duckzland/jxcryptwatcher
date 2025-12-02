@@ -27,7 +27,7 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		return
 	}
 
-	spacer := float32(-2)
+	spacer := float32(0)
 
 	if pl.background != nil {
 		if pl.background.Size() != size {
@@ -75,12 +75,14 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 
 	for i, obj := range centerItems {
 		objSize := sizes[i]
-		pos := fyne.NewPos((size.Width-objSize.Width)/2, currentY)
+		pos := fyne.NewPos(
+			(size.Width-objSize.Width)/2,
+			currentY,
+		)
 
 		if obj.Position() != pos {
 			obj.Move(pos)
 		}
-
 		if obj.Size() != objSize {
 			obj.Resize(objSize)
 		}
