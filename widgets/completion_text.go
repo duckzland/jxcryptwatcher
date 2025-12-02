@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"image"
 	"image/color"
 
 	"fyne.io/fyne/v2"
@@ -8,6 +9,8 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 
 	JC "jxwatcher/core"
 )
@@ -16,8 +19,11 @@ type completionText struct {
 	widget.BaseWidget
 	index      int
 	text       string
+	source     string
+	textSize   float32
+	textStyle  fyne.TextStyle
 	parent     *completionList
-	label      *canvas.Text
+	img        *canvas.Image
 	background *canvas.Rectangle
 	width      float32
 	height     float32
@@ -32,9 +38,13 @@ func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
 	separator := canvas.NewLine(s.sepcolor)
 	separator.StrokeWidth = 1
 
+	if s.img == nil {
+		s.rasterize()
+	}
+
 	return &completionTextLayout{
 		parent:     s,
-		text:       s.label,
+		text:       s.img,
 		separator:  separator,
 		background: s.background,
 		height:     s.height,
@@ -45,15 +55,25 @@ func (s *completionText) GetText() string {
 	return s.text
 }
 
+func (s *completionText) GetSource() string {
+	return s.source
+}
+
 func (s *completionText) SetText(t string) {
-	if s.text == t {
+
+	s.source = t
+	maxWidth := s.Size().Width
+	txt := JC.TruncateText(t, maxWidth, s.textSize, s.textStyle)
+
+	if s.text == txt {
 		return
 	}
-	size := s.Size()
 
-	s.text = t
-	s.label.Text = JC.TruncateText(s.GetText(), size.Width, s.label.TextSize, s.label.TextStyle)
-	canvas.Refresh(s.label)
+	s.text = txt
+
+	s.rasterize()
+	s.Refresh()
+
 }
 
 func (s *completionText) SetIndex(i int) {
@@ -95,7 +115,7 @@ func (s *completionText) MouseIn(*desktop.MouseEvent) {
 
 	s.hovered = true
 	s.background.FillColor = s.bgcolor
-	canvas.Refresh(s.label)
+	canvas.Refresh(s.img)
 }
 
 func (s *completionText) MouseOut() {
@@ -110,29 +130,60 @@ func (s *completionText) MouseOut() {
 
 	s.hovered = false
 	s.background.FillColor = s.traColor
-	canvas.Refresh(s)
+	canvas.Refresh(s.img)
 }
 
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
+func (s *completionText) rasterize() {
+	face := JC.UseTheme().GetFontFace(fyne.TextStyle{}, JC.UseTheme().Size(JC.SizeCompletionText))
+	if face == nil {
+		return
+	}
+
+	buf := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width), int(s.cSize.Height)))
+	d := &font.Drawer{
+		Dst:  buf,
+		Src:  image.NewUniform(JC.UseTheme().GetColor(theme.ColorNameForeground)),
+		Face: face,
+		Dot: fixed.Point26_6{
+			X: fixed.I(0),
+			Y: fixed.I(int(JC.UseTheme().Size(JC.SizeCompletionText))),
+		},
+	}
+	d.DrawString(s.text)
+
+	if s.img == nil {
+		s.img = canvas.NewImageFromImage(buf)
+	} else {
+		s.img.Image = buf
+	}
+
+	s.img.FillMode = canvas.ImageFillOriginal
+	size := fyne.NewSize(float32(buf.Bounds().Dx()), s.cSize.Height)
+	s.cSize = size
+	s.img.SetMinSize(size)
+	s.img.Resize(size)
+}
+
 func NewCompletionText(width float32, height float32, parent *completionList) *completionText {
 	s := &completionText{
-		label:    canvas.NewText(JC.STRING_EMPTY, JC.UseTheme().GetColor(theme.ColorNameForeground)),
-		width:    width,
-		height:   height,
-		parent:   parent,
-		bgcolor:  JC.UseTheme().GetColor(theme.ColorNameHover),
-		sepcolor: JC.UseTheme().GetColor(theme.ColorNameSeparator),
-		traColor: JC.UseTheme().GetColor(JC.ColorNameTransparent),
-		cSize:    fyne.NewSize(width, height-theme.Padding()),
+		width:     width,
+		height:    height,
+		parent:    parent,
+		bgcolor:   JC.UseTheme().GetColor(theme.ColorNameHover),
+		sepcolor:  JC.UseTheme().GetColor(theme.ColorNameSeparator),
+		traColor:  JC.UseTheme().GetColor(JC.ColorNameTransparent),
+		cSize:     fyne.NewSize(width, height-theme.Padding()),
+		textSize:  JC.UseTheme().Size(JC.SizeCompletionText),
+		textStyle: fyne.TextStyle{Bold: false},
 	}
 
 	if !JC.IsMobile {
 		s.background = canvas.NewRectangle(s.traColor)
 	}
 
-	s.label.TextSize = JC.UseTheme().Size(JC.SizeCompletionText)
-	s.label.Alignment = fyne.TextAlignLeading
 	s.ExtendBaseWidget(s)
+
 	return s
 }

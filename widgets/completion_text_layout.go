@@ -1,16 +1,16 @@
 package widgets
 
 import (
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
+
+	JC "jxwatcher/core"
 )
 
 type completionTextLayout struct {
 	parent     *completionText
-	text       *canvas.Text
+	text       *canvas.Image
 	separator  *canvas.Line
 	background *canvas.Rectangle
 	height     float32
@@ -30,7 +30,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 		}
 	}
 
-	textHeight := r.text.TextSize
+	textHeight := r.parent.textSize
 	yOffset := ((r.height - textHeight) / 2) - theme.Padding()
 	newPos := fyne.NewPos(8, float32(yOffset))
 
@@ -39,7 +39,7 @@ func (r *completionTextLayout) Layout(size fyne.Size) {
 	}
 
 	if r.width != size.Width {
-		r.text.Text = JC.TruncateText(r.parent.GetText(), size.Width, r.text.TextSize, r.text.TextStyle)
+		r.parent.SetText(r.parent.GetSource())
 	}
 
 	posY := r.height - 1
@@ -81,4 +81,9 @@ func (r *completionTextLayout) Objects() []fyne.CanvasObject {
 	return []fyne.CanvasObject{r.background, r.text, r.separator}
 }
 
-func (r *completionTextLayout) Destroy() {}
+func (r *completionTextLayout) Destroy() {
+	r.parent = nil
+	r.text = nil
+	r.separator = nil
+	r.background = nil
+}
