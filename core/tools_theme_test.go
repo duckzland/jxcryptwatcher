@@ -52,6 +52,12 @@ func TestAppThemeSize(t *testing.T) {
 
 func TestAppThemeFont(t *testing.T) {
 	th := &appTheme{}
+
+	// Fake resource: name can be anything, data can be dummy bytes
+	fakeRes := fyne.NewStaticResource("FakeFont.ttf", []byte("not a real font"))
+
+	th.SetFonts(fyne.TextStyle{Bold: true}, fakeRes)
+
 	font := th.Font(fyne.TextStyle{Bold: true})
 	if font == nil {
 		t.Error("Expected non-nil font resource for bold style")

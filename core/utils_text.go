@@ -8,40 +8,10 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 )
 
 func DynamicFormatFloatToString(f float64) string {
 	return strconv.FormatFloat(f, 'f', NumDecPlaces(f), 64)
-}
-
-func SetTextAlpha(text *canvas.Text, alpha uint8) {
-	switch c := text.Color.(type) {
-	case color.RGBA:
-		c.A = alpha
-		text.Color = c
-	case color.NRGBA:
-		c.A = alpha
-		text.Color = c
-	default:
-		// fallback to white with new alpha if type is unknown
-		text.Color = color.RGBA{R: 255, G: 255, B: 255, A: alpha}
-	}
-}
-
-func IsTextAlpha(text *canvas.Text, alpha uint8) bool {
-	switch c := text.Color.(type) {
-	case color.RGBA:
-		if c.A == alpha {
-			return true
-		}
-	case color.NRGBA:
-		if c.A == alpha {
-			return true
-		}
-	default:
-	}
-	return false
 }
 
 func IsAlpha(c color.Color, alpha uint32) bool {
@@ -104,30 +74,6 @@ func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.Tex
 	b.WriteString(STRING_ELLIPISIS)
 
 	return b.String()
-}
-
-func TruncateTextWithEstimation(str string, maxWidth float32, fontSize float32) string {
-
-	const charWidthFactor = 0.6
-
-	ellipsis := STRING_ELLIPISIS
-	ellipsisWidth := float32(len([]rune(ellipsis))) * fontSize * charWidthFactor
-
-	runes := []rune(str)
-	totalWidth := float32(len(runes)) * fontSize * charWidthFactor
-
-	if totalWidth <= maxWidth {
-		return str
-	}
-
-	availableWidth := maxWidth - ellipsisWidth
-	maxChars := int(availableWidth / (fontSize * charWidthFactor))
-
-	if maxChars <= 0 {
-		return STRING_EMPTY
-	}
-
-	return string(runes[:maxChars]) + ellipsis
 }
 
 func MeasureText(text string, fontSize float32, style fyne.TextStyle) float32 {

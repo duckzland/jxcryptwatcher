@@ -35,23 +35,6 @@ func TestSetAlpha(t *testing.T) {
 	}
 }
 
-func TestTruncateTextWithEstimation(t *testing.T) {
-	str := "This is a long sentence that should be truncated"
-	maxWidth := float32(100)
-	fontSize := float32(12)
-
-	result := TruncateTextWithEstimation(str, maxWidth, fontSize)
-	if len(result) >= len(str) {
-		t.Errorf("Expected truncation, got: %s", result)
-	}
-
-	short := "Hi"
-	result = TruncateTextWithEstimation(short, maxWidth, fontSize)
-	if result != short {
-		t.Errorf("Expected no truncation, got: %s", result)
-	}
-}
-
 func TestFormatShortCurrency(t *testing.T) {
 	tests := []struct {
 		input    string

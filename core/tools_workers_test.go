@@ -32,22 +32,27 @@ func TestWorkerSingleton(t *testing.T) {
 }
 
 func TestWorkerCallImmediate(t *testing.T) {
-	called := false
+	done := make(chan struct{})
 	w := &worker{}
 	w.Init()
 	w.Register("call_immediate", 1,
 		func() int64 { return 10 },
 		nil,
 		func(payload any) bool {
-			called = true
+			close(done)
 			return true
 		},
 		func() bool { return true },
 	)
 	w.Call("call_immediate", CallImmediate)
-	if !called {
+
+	select {
+	case <-done:
+		// success
+	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected function to be called immediately")
 	}
+
 	stopWorker(w, "call_immediate", 20)
 }
 
@@ -76,22 +81,28 @@ func TestWorkerCallDebounced(t *testing.T) {
 }
 
 func TestWorkerCallBypassImmediateIgnoresCondition(t *testing.T) {
-	called := false
+	done := make(chan struct{})
 	w := &worker{}
 	w.Init()
 	w.Register("bypass", 1,
 		nil,
 		func() int64 { return 10 },
 		func(payload any) bool {
-			called = true
+			close(done)
 			return true
 		},
-		func() bool { return false },
+		func() bool { return false }, // condition is false
 	)
+
 	w.Call("bypass", CallBypassImmediate)
-	if !called {
+
+	select {
+	case <-done:
+		// success
+	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected function to be called despite false condition")
 	}
+
 	stopWorker(w, "bypass", 20)
 }
 

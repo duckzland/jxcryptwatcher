@@ -88,18 +88,21 @@ func TestPanelsMapHydrateAndSerialize(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
+	ex := RegisterExchangeCache()
+	ex.Init()
+
 	pm := &panelsMapType{}
 	pm.Init()
 
 	cm := &cryptosMapType{}
 	cm.Init()
-	cm.Insert("1", "BTC - Bitcoin")
-	cm.Insert("2", "ETH - Ethereum")
+	cm.Insert("5604", "5604|SCRT - Secret")
+	cm.Insert("34146", "34146|FROX - Frox")
 	pm.SetMaps(cm)
 
 	original := NewPanelData()
 	original.Init()
-	original.Set("1-2-0.5-BTC-ETH-4|15.5")
+	original.Set("5604-34146-0.5-SCRT-FROX-4|-1")
 	original.SetID("x")
 	original.SetParent(pm)
 	original.SetStatus(JC.STATE_ERROR)
@@ -109,22 +112,49 @@ func TestPanelsMapHydrateAndSerialize(t *testing.T) {
 		t.Errorf("Expected status ERROR after SetData, got %d", original.GetStatus())
 	}
 
+	// Note: In order to keep the STATE_LOADING status, the value must -1
+	// Otherwise it will mutate to STATE_LOADED
 	hydrated := NewPanelData()
 	hydrated.Init()
-	hydrated.Set("1-2-0.5-BTC-ETH-4|15.5")
+	hydrated.Set("5604-34146-0.5-SCRT-FROX-4|-1")
 	hydrated.SetID("x")
 	hydrated.SetStatus(JC.STATE_LOADING)
 
 	pm.Hydrate([]PanelData{hydrated})
 
 	ref := pm.GetDataByID("x")
+
 	if ref == nil {
 		t.Fatal("Expected hydrated panel to exist")
 	}
+
 	if ref.GetStatus() != JC.STATE_LOADING {
 		t.Errorf("Expected status LOADING after hydrate, got %d", ref.GetStatus())
 	}
 	if !ref.HasParent() {
+		t.Error("Expected hydrated panel to have parent set")
+	}
+
+	// Note: In order to keep the STATE_LOADING status, the value must -1
+	// Otherwise it will mutate to STATE_LOADED
+	h := NewPanelData()
+	h.Init()
+	h.Set("5604-34146-0.5-SCRT-FROX-4|100")
+	h.SetID("x")
+	h.SetStatus(JC.STATE_LOADING)
+
+	pm.Hydrate([]PanelData{h})
+
+	r := pm.GetDataByID("x")
+
+	if r == nil {
+		t.Fatal("Expected hydrated panel to exist")
+	}
+
+	if r.GetStatus() != JC.STATE_LOADED {
+		t.Errorf("Expected status LOADED after hydrate, got %d", r.GetStatus())
+	}
+	if !r.HasParent() {
 		t.Error("Expected hydrated panel to have parent set")
 	}
 

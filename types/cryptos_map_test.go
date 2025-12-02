@@ -84,6 +84,7 @@ func TestCryptosMapSerialize(t *testing.T) {
 	test.NewApp()
 
 	cm := NewCryptosMap()
+	cm.Init()
 	cm.Insert("1", "1|BTC - Bitcoin")
 	cm.Insert("2", "2|ETH - Ethereum")
 	_ = cm.GetOptions()
@@ -125,6 +126,7 @@ func TestCryptosMapClearAndEmpty(t *testing.T) {
 	test.NewApp()
 
 	cm := NewCryptosMap()
+	cm.Init()
 	cm.Insert("1", "1|BTC - Bitcoin")
 	if cm.IsEmpty() {
 		t.Error("Expected map to be non-empty")

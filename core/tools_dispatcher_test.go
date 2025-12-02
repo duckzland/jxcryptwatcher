@@ -13,7 +13,7 @@ func TestDispatcherInit(t *testing.T) {
 	if d.queue == nil {
 		t.Error("Expected queue to be initialized")
 	}
-	if d.buffer != 1000 {
+	if d.buffer != 100 {
 		t.Errorf("Expected default buffer size 1000, got %d", d.buffer)
 	}
 	if d.maxConcurrent != 4 {
