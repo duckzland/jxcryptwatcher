@@ -95,13 +95,13 @@ func (p *panelText) SetColor(col color.Color) {
 }
 
 func (p *panelText) rasterize() {
-	scale := JC.Window.Canvas().Scale()
 
 	face := JC.UseTheme().GetFontFace(p.textStyle, p.textSize)
 	if face == nil {
 		return
 	}
 
+	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, p.text)
 	textW := max(adv.Round(), 1)
 	padding := p.textSize * 0.35

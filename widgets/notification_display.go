@@ -126,13 +126,12 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 }
 
 func (w *notificationDisplay) rasterize() {
-	scale := JC.Window.Canvas().Scale()
-
 	face := JC.UseTheme().GetFontFace(w.textStyle, w.textSize)
 	if face == nil {
 		return
 	}
 
+	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, w.text)
 	textW := max(adv.Round(), 1)
 	padding := w.textSize * 0.35

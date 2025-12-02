@@ -95,13 +95,12 @@ func (s *tickerText) SetColor(col color.Color) {
 }
 
 func (s *tickerText) rasterize() {
-	scale := JC.Window.Canvas().Scale()
-
 	face := JC.UseTheme().GetFontFace(s.textStyle, s.textSize)
 	if face == nil {
 		return
 	}
 
+	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, s.text)
 	textW := max(adv.Round(), 1)
 	padding := s.textSize * 0.6
