@@ -1,11 +1,13 @@
 package core
 
 import (
+	"fmt"
 	"image/color"
 	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
+	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
@@ -18,6 +20,7 @@ type appTheme struct {
 	bold          fyne.Resource
 	fontRegularTT *opentype.Font
 	fontBoldTT    *opentype.Font
+	faceCache     map[string]font.Face
 }
 
 func (t *appTheme) Init() {
@@ -53,6 +56,62 @@ func (t *appTheme) SetFonts(style fyne.TextStyle, font fyne.Resource) {
 			}
 		}
 	}
+}
+
+func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32) font.Face {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var tt *opentype.Font
+	switch {
+	case style.Bold:
+		tt = t.fontBoldTT
+	default:
+		tt = t.fontRegularTT
+	}
+
+	if tt == nil {
+		return nil
+	}
+
+	styleBits := 0
+	if style.Bold {
+		styleBits |= 1 << 0
+	}
+	if style.Italic {
+		styleBits |= 1 << 1
+	}
+	if style.Monospace {
+		styleBits |= 1 << 2
+	}
+
+	key := fmt.Sprintf("%d-%f", styleBits, size)
+
+	if face, ok := t.faceCache[key]; ok {
+		return face
+	}
+
+	scale := Window.Canvas().Scale()
+	dpi := float64(96.0 * scale)
+	px := float64(size)
+	pt := px * 72.0 / dpi
+
+	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    pt,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		return nil
+	}
+
+	if t.faceCache == nil {
+		t.faceCache = make(map[string]font.Face)
+	}
+
+	t.faceCache[key] = face
+
+	return face
 }
 
 func (t *appTheme) GetFont(style fyne.TextStyle) *opentype.Font {

@@ -5,7 +5,6 @@ import (
 	"image/color"
 
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 
 	"fyne.io/fyne/v2"
@@ -97,28 +96,14 @@ func (p *panelText) SetColor(col color.Color) {
 
 func (p *panelText) rasterize() {
 	scale := JC.Window.Canvas().Scale()
-	dpi := float64(96.0 * scale)
-	px := float64(p.textSize)
-	pt := px * 72.0 / dpi
 
-	face, err := opentype.NewFace(
-		JC.UseTheme().GetFont(p.textStyle),
-		&opentype.FaceOptions{
-			Size:    pt,
-			DPI:     dpi,
-			Hinting: font.HintingFull,
-		},
-	)
-	if err != nil {
+	face := JC.UseTheme().GetFontFace(p.textStyle, p.textSize)
+	if face == nil {
 		return
 	}
-	defer face.Close()
 
-	_, adv := font.BoundString(face, p.text)
-	textW := adv.Round()
-	if textW < 1 {
-		textW = 1
-	}
+	adv := font.MeasureString(face, p.text)
+	textW := max(adv.Round(), 1)
 	padding := p.textSize * 0.35
 	if padding > 4 {
 		padding = 4
