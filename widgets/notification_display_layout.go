@@ -22,7 +22,7 @@ func (r *notificationDisplayLayout) Layout(size fyne.Size) {
 	}
 
 	if r.text != nil {
-		x := (size.Width-r.text.Size().Width)/2 + r.padding
+		x := (size.Width - r.text.Size().Width) / 2
 		y := (40 - h + 2) / 2
 
 		pos := fyne.NewPos(x, y)
