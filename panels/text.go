@@ -146,6 +146,7 @@ func NewPanelText(text string, col color.Color, size float32, alignment fyne.Tex
 		textSize:  size,
 		textAlign: alignment,
 		textStyle: style,
+		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	s.ExtendBaseWidget(s)

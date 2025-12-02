@@ -12,33 +12,31 @@ type notificationDisplayLayout struct {
 	cSize     fyne.Size
 }
 
-func (r *notificationDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
-	nSize := size
-	if r.cSize.Height > 0 {
-		nSize.Height = r.cSize.Height
-	} else {
-		nSize.Height = 20
+func (r *notificationDisplayLayout) Layout(size fyne.Size) {
+	r.MinSize()
+
+	w := size.Width - r.padding*2
+	h := r.cSize.Height
+	if h <= 0 {
+		h = 20
 	}
 
 	if r.text != nil {
-		nSize.Width -= r.padding * 2
-		pos := fyne.NewPos(r.padding, (40-nSize.Height+2)/2)
+		x := (size.Width-r.text.Size().Width)/2 + r.padding
+		y := (40 - h + 2) / 2
+
+		pos := fyne.NewPos(x, y)
 		if r.text.Position() != pos {
 			r.text.Move(pos)
-		}
-
-		pz := fyne.NewSize(size.Width-2*r.padding, nSize.Height+2)
-		if r.text.Size() != pz {
-			r.text.Resize(pz)
 		}
 	}
 
 	if r.container != nil {
-		r.container.pSize = nSize
+		r.container.pSize = fyne.NewSize(w, h)
 	}
 }
 
-func (r *notificationDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (r *notificationDisplayLayout) MinSize() fyne.Size {
 	if r.cSize.Height == 0 {
 		r.cSize = fyne.NewSize(200, 20)
 	}

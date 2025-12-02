@@ -9,7 +9,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -33,20 +32,11 @@ type notificationDisplay struct {
 }
 
 func (w *notificationDisplay) CreateRenderer() fyne.WidgetRenderer {
-	if w.img == nil {
-		w.rasterize()
+	return &notificationDisplayLayout{
+		padding:   w.padding,
+		text:      w.img,
+		container: w,
 	}
-
-	cont := container.New(
-		&notificationDisplayLayout{
-			padding:   w.padding,
-			text:      w.img,
-			container: w,
-		},
-		w.img,
-	)
-
-	return widget.NewSimpleRenderer(cont)
 }
 
 func (w *notificationDisplay) MinSize() fyne.Size {
@@ -55,14 +45,6 @@ func (w *notificationDisplay) MinSize() fyne.Size {
 	}
 	width := JC.MeasureText(w.text, w.textSize, w.textStyle)
 	height := w.textSize * 1.35
-
-	if width <= 0 {
-		width = w.pSize.Width
-	}
-
-	if height <= 0 {
-		height = w.pSize.Height
-	}
 
 	w.cSize = fyne.NewSize(width, height)
 
@@ -100,10 +82,7 @@ func (w *notificationDisplay) GetText() string {
 
 func (w *notificationDisplay) ClearText() {
 	JA.StartFadingText("n", w, func() {
-		w.text = JC.STRING_EMPTY
-		w.color = w.txtcolor
-		w.rasterize()
-		w.Refresh()
+		w.SetText(JC.STRING_EMPTY)
 	}, nil)
 }
 
@@ -133,7 +112,7 @@ func (w *notificationDisplay) rasterize() {
 
 	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, w.text)
-	textW := max(adv.Round(), 1)
+	textW := max(adv.Round(), 0)
 	padding := w.textSize * 0.35
 	if padding > 4 {
 		padding = 4
@@ -167,6 +146,7 @@ func (w *notificationDisplay) rasterize() {
 	w.cSize = size
 	w.img.SetMinSize(size)
 	w.img.Resize(size)
+	w.img.Refresh()
 }
 
 func UseNotification() *notificationDisplay {
@@ -186,6 +166,7 @@ func NewNotificationDisplay() *notificationDisplay {
 		textStyle: fyne.TextStyle{Bold: false},
 		padding:   10,
 		txtcolor:  c,
+		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	w.ExtendBaseWidget(w)

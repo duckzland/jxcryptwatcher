@@ -27,9 +27,6 @@ type tickerText struct {
 }
 
 func (s *tickerText) CreateRenderer() fyne.WidgetRenderer {
-	if s.img == nil {
-		s.rasterize()
-	}
 	return widget.NewSimpleRenderer(s.img)
 }
 
@@ -145,6 +142,7 @@ func NewTickerText(text string, col color.Color, size float32, alignment fyne.Te
 		textSize:  size,
 		textAlign: alignment,
 		textStyle: style,
+		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	s.ExtendBaseWidget(s)
