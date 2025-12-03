@@ -101,8 +101,8 @@ func (s *tickerText) rasterize() {
 	adv := font.MeasureString(face, s.text)
 	textW := max(adv.Round(), 1)
 	padding := s.textSize * 0.6
-	if padding > 3 {
-		padding = 3
+	if padding > 2 {
+		padding = 2
 	}
 	height := s.textSize + padding
 	width := int(float32(textW) * scale)
@@ -130,7 +130,9 @@ func (s *tickerText) rasterize() {
 
 	s.img.FillMode = canvas.ImageFillOriginal
 	size := fyne.NewSize(float32(buf.Bounds().Dx()), height)
+
 	s.cSize = size
+	s.Resize(size)
 	s.img.SetMinSize(size)
 	s.img.Resize(size)
 }

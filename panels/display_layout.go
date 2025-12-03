@@ -83,9 +83,6 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 		if obj.Position() != pos {
 			obj.Move(pos)
 		}
-		if obj.Size() != objSize {
-			obj.Resize(objSize)
-		}
 
 		currentY += objSize.Height + spacer
 	}

@@ -134,9 +134,11 @@ func (p *panelText) rasterize() {
 
 	p.img.FillMode = canvas.ImageFillOriginal
 	size := fyne.NewSize(float32(buf.Bounds().Dx()), height)
+
 	p.cSize = size
 	p.img.SetMinSize(size)
 	p.img.Resize(size)
+	p.Resize(size)
 }
 
 func NewPanelText(text string, col color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
