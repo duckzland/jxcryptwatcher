@@ -798,4 +798,9 @@ func appShutdown() {
 		panels.Destroy()
 	}
 
+	theme := JC.UseTheme()
+	if theme != nil {
+		theme.Destroy()
+	}
+
 }

@@ -500,6 +500,23 @@ func (t *appTheme) darkColor(name fyne.ThemeColorName) color.Color {
 	}
 }
 
+func (t *appTheme) Destroy() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for k, f := range t.faceCache {
+		if of, ok := f.(*opentype.Face); ok {
+			_ = of.Close()
+		}
+		delete(t.faceCache, k)
+	}
+
+	t.faceCache = nil
+	t.fontRegularTT = nil
+	t.fontBoldTT = nil
+	t.regular = nil
+	t.bold = nil
+}
+
 func RegisterThemeManager() *appTheme {
 	if activeTheme == nil {
 		activeTheme = &appTheme{}
