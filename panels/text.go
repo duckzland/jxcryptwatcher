@@ -3,11 +3,6 @@ package panels
 import (
 	"image"
 	"image/color"
-	"math"
-
-	"golang.org/x/image/draw"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -97,39 +92,11 @@ func (p *panelText) SetColor(col color.Color) {
 }
 
 func (p *panelText) rasterize() {
-	sampling := int(2)
-	face := JC.UseTheme().GetFontFace(p.textStyle, p.textSize, sampling)
-	if face == nil {
+
+	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4)
+	if dst == nil {
 		return
 	}
-
-	scale := JC.Window.Canvas().Scale()
-	adv := font.MeasureString(face, p.text)
-	textW := max(adv.Round(), 1)
-	padding := float32(math.Ceil(float64(p.textSize * 0.35)))
-	if padding > 4 {
-		padding = 4
-	}
-	height := float32(math.Ceil(float64(p.textSize + padding)))
-	width := int(math.Ceil(float64(float32(textW) * scale)))
-
-	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
-
-	startX := (width - textW) / 2
-
-	d := &font.Drawer{
-		Dst:  buf,
-		Src:  image.NewUniform(p.color),
-		Face: face,
-		Dot: fixed.Point26_6{
-			X: fixed.Int26_6(startX << 6),
-			Y: fixed.Int26_6(int(height-padding) * sampling << 6),
-		},
-	}
-	d.DrawString(p.text)
-
-	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
 
 	if p.img == nil {
 		p.img = canvas.NewImageFromImage(dst)
@@ -138,7 +105,6 @@ func (p *panelText) rasterize() {
 	}
 
 	p.img.FillMode = canvas.ImageFillOriginal
-	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
 
 	p.cSize = size
 	p.img.SetMinSize(size)

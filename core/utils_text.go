@@ -2,12 +2,17 @@ package core
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
+	"golang.org/x/image/draw"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 func DynamicFormatFloatToString(f float64) string {
@@ -138,4 +143,53 @@ func SearchableExtractNumber(s string) int {
 		return -1
 	}
 	return num
+}
+
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32) (*image.RGBA, fyne.Size) {
+
+	if Window == nil {
+		return nil, fyne.Size{}
+	}
+
+	scale := Window.Canvas().Scale()
+	sampling := SamplingForScale(scale)
+
+	face := UseTheme().GetFontFace(textStyle, textSize, sampling)
+	if face == nil {
+		return nil, fyne.Size{}
+	}
+
+	adv := font.MeasureString(face, text)
+	textW := max(adv.Round(), 1)
+
+	padding := float32(math.Ceil(float64(textSize * paddingFactor)))
+	if padding > maxPadding {
+		padding = maxPadding
+	}
+
+	height := float32(math.Ceil(float64(textSize + padding)))
+
+	width := int(math.Ceil(float64(float32(textW) * scale)))
+
+	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
+
+	startX := (width - textW) / 2
+
+	d := &font.Drawer{
+		Dst:  buf,
+		Src:  image.NewUniform(col),
+		Face: face,
+		Dot: fixed.Point26_6{
+			X: fixed.Int26_6(startX << 6),
+			Y: fixed.Int26_6(int(height-padding) * sampling << 6),
+		},
+	}
+	d.DrawString(text)
+
+	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
+
+	return dst, size
 }

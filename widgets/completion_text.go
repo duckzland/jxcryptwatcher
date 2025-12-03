@@ -137,7 +137,9 @@ func (s *completionText) MouseOut() {
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
 func (s *completionText) rasterize() {
-	sampling := int(2)
+	scale := JC.Window.Canvas().Scale()
+	sampling := JC.SamplingForScale(scale)
+
 	face := JC.UseTheme().GetFontFace(fyne.TextStyle{}, JC.UseTheme().Size(JC.SizeCompletionText), sampling)
 	if face == nil {
 		return
