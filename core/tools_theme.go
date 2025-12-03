@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"image/color"
+	"math"
 	"sync"
 
 	"fyne.io/fyne/v2"
@@ -58,7 +59,7 @@ func (t *appTheme) SetFonts(style fyne.TextStyle, font fyne.Resource) {
 	}
 }
 
-func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32) font.Face {
+func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32, sampling int) font.Face {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -85,22 +86,23 @@ func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32) font.Face {
 		styleBits |= 1 << 2
 	}
 
-	key := fmt.Sprintf("%d-%f", styleBits, size)
+	key := fmt.Sprintf("%d-%f-%d", styleBits, size, sampling)
 
 	if face, ok := t.faceCache[key]; ok {
 		return face
 	}
 
 	scale := Window.Canvas().Scale()
-	dpi := float64(96.0 * scale)
+	dpi := math.Round(float64(96.0 * scale))
 	px := float64(size)
-	pt := px * 72.0 / dpi
+	pt := math.Round(px * 72.0 / dpi)
 
 	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    pt,
+		Size:    pt * float64(sampling),
 		DPI:     dpi,
-		Hinting: font.HintingFull,
+		Hinting: font.HintingNone,
 	})
+
 	if err != nil {
 		return nil
 	}

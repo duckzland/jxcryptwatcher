@@ -3,7 +3,9 @@ package tickers
 import (
 	"image"
 	"image/color"
+	"math"
 
+	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
@@ -92,7 +94,8 @@ func (s *tickerText) SetColor(col color.Color) {
 }
 
 func (s *tickerText) rasterize() {
-	face := JC.UseTheme().GetFontFace(s.textStyle, s.textSize)
+	sampling := int(2)
+	face := JC.UseTheme().GetFontFace(s.textStyle, s.textSize, sampling)
 	if face == nil {
 		return
 	}
@@ -100,14 +103,14 @@ func (s *tickerText) rasterize() {
 	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, s.text)
 	textW := max(adv.Round(), 1)
-	padding := s.textSize * 0.6
+	padding := float32(math.Ceil(float64(s.textSize * 0.6)))
 	if padding > 2 {
 		padding = 2
 	}
-	height := s.textSize + padding
-	width := int(float32(textW) * scale)
+	height := float32(math.Ceil(float64(s.textSize + padding)))
+	width := int(math.Ceil(float64(float32(textW) * scale)))
 
-	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)))
+	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
 
 	startX := (width - textW) / 2
 
@@ -117,19 +120,22 @@ func (s *tickerText) rasterize() {
 		Face: face,
 		Dot: fixed.Point26_6{
 			X: fixed.Int26_6(startX << 6),
-			Y: fixed.Int26_6(int(height-padding) << 6),
+			Y: fixed.Int26_6(int(height-padding) * sampling << 6),
 		},
 	}
 	d.DrawString(s.text)
 
+	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
 	if s.img == nil {
-		s.img = canvas.NewImageFromImage(buf)
+		s.img = canvas.NewImageFromImage(dst)
 	} else {
 		s.img.Image = buf
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
-	size := fyne.NewSize(float32(buf.Bounds().Dx()), height)
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
 
 	s.cSize = size
 	s.Resize(size)

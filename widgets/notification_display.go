@@ -3,7 +3,9 @@ package widgets
 import (
 	"image"
 	"image/color"
+	"math"
 
+	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
@@ -105,7 +107,8 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 }
 
 func (w *notificationDisplay) rasterize() {
-	face := JC.UseTheme().GetFontFace(w.textStyle, w.textSize)
+	sampling := int(2)
+	face := JC.UseTheme().GetFontFace(w.textStyle, w.textSize, sampling)
 	if face == nil {
 		return
 	}
@@ -113,14 +116,14 @@ func (w *notificationDisplay) rasterize() {
 	scale := JC.Window.Canvas().Scale()
 	adv := font.MeasureString(face, w.text)
 	textW := max(adv.Round(), 0)
-	padding := w.textSize * 0.35
+	padding := float32(math.Ceil(float64(w.textSize * 0.35)))
 	if padding > 4 {
 		padding = 4
 	}
-	height := w.textSize + padding
-	width := int(float32(textW) * scale)
+	height := float32(math.Ceil(float64(w.textSize + padding)))
+	width := int(math.Ceil(float64(float32(textW) * scale)))
 
-	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)))
+	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
 
 	startX := (width - textW) / 2
 
@@ -130,19 +133,23 @@ func (w *notificationDisplay) rasterize() {
 		Face: face,
 		Dot: fixed.Point26_6{
 			X: fixed.Int26_6(startX << 6),
-			Y: fixed.Int26_6(int(height-padding) << 6),
+			Y: fixed.Int26_6(int(height-padding) * sampling << 6),
 		},
 	}
 	d.DrawString(w.text)
 
+	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
 	if w.img == nil {
-		w.img = canvas.NewImageFromImage(buf)
+		w.img = canvas.NewImageFromImage(dst)
 	} else {
-		w.img.Image = buf
+		w.img.Image = dst
 	}
 
 	w.img.FillMode = canvas.ImageFillOriginal
-	size := fyne.NewSize(float32(buf.Bounds().Dx()), height)
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
+
 	w.cSize = size
 	w.img.SetMinSize(size)
 	w.img.Resize(size)

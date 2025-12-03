@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
@@ -136,31 +137,35 @@ func (s *completionText) MouseOut() {
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
 func (s *completionText) rasterize() {
-	face := JC.UseTheme().GetFontFace(fyne.TextStyle{}, JC.UseTheme().Size(JC.SizeCompletionText))
+	sampling := int(2)
+	face := JC.UseTheme().GetFontFace(fyne.TextStyle{}, JC.UseTheme().Size(JC.SizeCompletionText), sampling)
 	if face == nil {
 		return
 	}
 
-	buf := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width), int(s.cSize.Height)))
+	buf := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width)*sampling, int(s.cSize.Height)*sampling))
 	d := &font.Drawer{
 		Dst:  buf,
 		Src:  image.NewUniform(JC.UseTheme().GetColor(theme.ColorNameForeground)),
 		Face: face,
 		Dot: fixed.Point26_6{
 			X: fixed.I(0),
-			Y: fixed.I(int(JC.UseTheme().Size(JC.SizeCompletionText))),
+			Y: fixed.I(int(JC.UseTheme().Size(JC.SizeCompletionText)) * sampling),
 		},
 	}
 	d.DrawString(s.text)
 
+	dst := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width), int(s.cSize.Height)))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
 	if s.img == nil {
-		s.img = canvas.NewImageFromImage(buf)
+		s.img = canvas.NewImageFromImage(dst)
 	} else {
-		s.img.Image = buf
+		s.img.Image = dst
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
-	size := fyne.NewSize(float32(buf.Bounds().Dx()), s.cSize.Height)
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), s.cSize.Height)
 	s.cSize = size
 	s.img.SetMinSize(size)
 	s.img.Resize(size)
