@@ -93,18 +93,12 @@ func (p *panelText) SetColor(col color.Color) {
 
 func (p *panelText) rasterize() {
 
-	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4)
-	if dst == nil {
+	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4, JC.POS_CENTER)
+	if dst == nil || p.img == nil {
 		return
 	}
 
-	if p.img == nil {
-		p.img = canvas.NewImageFromImage(dst)
-	} else {
-		p.img.Image = dst
-	}
-
-	p.img.FillMode = canvas.ImageFillOriginal
+	p.img.Image = dst
 
 	p.cSize = size
 	p.img.SetMinSize(size)
@@ -121,6 +115,8 @@ func NewPanelText(text string, col color.Color, size float32, alignment fyne.Tex
 		textStyle: style,
 		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
+
+	s.img.FillMode = canvas.ImageFillOriginal
 
 	s.ExtendBaseWidget(s)
 

@@ -90,18 +90,12 @@ func (s *tickerText) SetColor(col color.Color) {
 
 func (s *tickerText) rasterize() {
 
-	dst, size := JC.RasterizeText(s.text, s.textStyle, s.textSize, s.color, 0.6, 2)
-	if dst == nil {
+	dst, size := JC.RasterizeText(s.text, s.textStyle, s.textSize, s.color, 0.6, 2, JC.POS_CENTER)
+	if dst == nil || s.img == nil {
 		return
 	}
 
-	if s.img == nil {
-		s.img = canvas.NewImageFromImage(dst)
-	} else {
-		s.img.Image = dst
-	}
-
-	s.img.FillMode = canvas.ImageFillOriginal
+	s.img.Image = dst
 
 	s.cSize = size
 	s.Resize(size)
@@ -118,6 +112,8 @@ func NewTickerText(text string, col color.Color, size float32, alignment fyne.Te
 		textStyle: style,
 		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
+
+	s.img.FillMode = canvas.ImageFillOriginal
 
 	s.ExtendBaseWidget(s)
 

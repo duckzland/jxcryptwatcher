@@ -145,7 +145,7 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32) (*image.RGBA, fyne.Size) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, position int) (*image.RGBA, fyne.Size) {
 
 	if Window == nil {
 		return nil, fyne.Size{}
@@ -168,22 +168,34 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	}
 
 	height := float32(math.Ceil(float64(textSize + padding)))
-
 	width := int(math.Ceil(float64(float32(textW) * scale)))
 
 	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
 
-	startX := (width - textW) / 2
+	dotY := int(height-padding) * sampling
+
+	var dotX int
+	switch position {
+	case POS_CENTER:
+		dotX = (width - textW) / 2
+
+	case POS_RIGHT:
+		dotX = max(width-textW, 0)
+
+	default:
+		dotX = int(0)
+	}
 
 	d := &font.Drawer{
 		Dst:  buf,
 		Src:  image.NewUniform(col),
 		Face: face,
 		Dot: fixed.Point26_6{
-			X: fixed.Int26_6(startX << 6),
-			Y: fixed.Int26_6(int(height-padding) * sampling << 6),
+			X: fixed.Int26_6(dotX << 6),
+			Y: fixed.Int26_6(dotY << 6),
 		},
 	}
+
 	d.DrawString(text)
 
 	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))

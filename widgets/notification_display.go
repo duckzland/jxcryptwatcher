@@ -103,18 +103,12 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 
 func (w *notificationDisplay) rasterize() {
 
-	dst, size := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color, 0.35, 4)
-	if dst == nil {
+	dst, size := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color, 0.35, 4, JC.POS_CENTER)
+	if dst == nil || w.img == nil {
 		return
 	}
 
-	if w.img == nil {
-		w.img = canvas.NewImageFromImage(dst)
-	} else {
-		w.img.Image = dst
-	}
-
-	w.img.FillMode = canvas.ImageFillOriginal
+	w.img.Image = dst
 
 	w.cSize = size
 	w.img.SetMinSize(size)
@@ -141,6 +135,8 @@ func NewNotificationDisplay() *notificationDisplay {
 		txtcolor:  c,
 		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
+
+	w.img.FillMode = canvas.ImageFillOriginal
 
 	w.ExtendBaseWidget(w)
 

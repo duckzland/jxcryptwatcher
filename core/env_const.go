@@ -62,6 +62,10 @@ const STATUS_CONFIG_ERROR = 2
 const STATUS_BAD_DATA_RECEIVED = 3
 const STATUS_CANCELLED = 4
 
+const POS_CENTER = 0
+const POS_LEFT = 1
+const POS_RIGHT = 2
+
 const ColorNameError fyne.ThemeColorName = "error"
 const ColorNameTransparent fyne.ThemeColorName = "transparent"
 const ColorNameRed fyne.ThemeColorName = "red"

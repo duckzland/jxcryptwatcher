@@ -9,9 +9,6 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/image/draw"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 
 	JC "jxwatcher/core"
 )
@@ -137,40 +134,19 @@ func (s *completionText) MouseOut() {
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 
 func (s *completionText) rasterize() {
-	scale := JC.Window.Canvas().Scale()
-	sampling := JC.SamplingForScale(scale)
+	fs := JC.UseTheme().Size(JC.SizeCompletionText)
 
-	face := JC.UseTheme().GetFontFace(fyne.TextStyle{}, JC.UseTheme().Size(JC.SizeCompletionText), sampling)
-	if face == nil {
+	dst, size := JC.RasterizeText(s.text, fyne.TextStyle{}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground), s.cSize.Height/fs, s.cSize.Height-fs, JC.POS_LEFT)
+	if dst == nil || s.img == nil {
 		return
 	}
 
-	buf := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width)*sampling, int(s.cSize.Height)*sampling))
-	d := &font.Drawer{
-		Dst:  buf,
-		Src:  image.NewUniform(JC.UseTheme().GetColor(theme.ColorNameForeground)),
-		Face: face,
-		Dot: fixed.Point26_6{
-			X: fixed.I(0),
-			Y: fixed.I(int(JC.UseTheme().Size(JC.SizeCompletionText)) * sampling),
-		},
-	}
-	d.DrawString(s.text)
+	s.img.Image = dst
 
-	dst := image.NewRGBA(image.Rect(0, 0, int(s.cSize.Width), int(s.cSize.Height)))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
-
-	if s.img == nil {
-		s.img = canvas.NewImageFromImage(dst)
-	} else {
-		s.img.Image = dst
-	}
-
-	s.img.FillMode = canvas.ImageFillOriginal
-	size := fyne.NewSize(float32(dst.Bounds().Dx()), s.cSize.Height)
 	s.cSize = size
 	s.img.SetMinSize(size)
 	s.img.Resize(size)
+	s.img.Refresh()
 }
 
 func NewCompletionText(width float32, height float32, parent *completionList) *completionText {
@@ -184,11 +160,14 @@ func NewCompletionText(width float32, height float32, parent *completionList) *c
 		cSize:     fyne.NewSize(width, height-theme.Padding()),
 		textSize:  JC.UseTheme().Size(JC.SizeCompletionText),
 		textStyle: fyne.TextStyle{Bold: false},
+		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	if !JC.IsMobile {
 		s.background = canvas.NewRectangle(s.traColor)
 	}
+
+	s.img.FillMode = canvas.ImageFillOriginal
 
 	s.ExtendBaseWidget(s)
 
