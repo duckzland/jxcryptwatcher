@@ -136,7 +136,7 @@ func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
 func (s *completionText) rasterize() {
 	fs := JC.UseTheme().Size(JC.SizeCompletionText)
 
-	dst, size := JC.RasterizeText(s.text, fyne.TextStyle{}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground), s.cSize.Height/fs, s.cSize.Height-fs, JC.POS_LEFT)
+	dst, size := JC.RasterizeText(s.text, fyne.TextStyle{}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground), s.cSize.Height/fs, s.cSize.Height-fs, JC.POS_LEFT, JC.POS_BOTTOM, JC.SCALE_NEAREST, false)
 	if dst == nil || s.img == nil {
 		return
 	}

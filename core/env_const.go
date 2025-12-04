@@ -65,6 +65,13 @@ const STATUS_CANCELLED = 4
 const POS_CENTER = 0
 const POS_LEFT = 1
 const POS_RIGHT = 2
+const POS_TOP = 3
+const POS_BOTTOM = 4
+
+const SCALE_NEAREST = 0
+const SCALE_APPROX = 1
+const SCALE_BILINEAR = 2
+const SCALE_CATMULLROM = 3
 
 const ColorNameError fyne.ThemeColorName = "error"
 const ColorNameTransparent fyne.ThemeColorName = "transparent"

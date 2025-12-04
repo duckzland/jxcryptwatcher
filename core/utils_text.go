@@ -10,11 +10,10 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
+	"github.com/disintegration/imaging"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
-
-	"github.com/disintegration/imaging"
 )
 
 func DynamicFormatFloatToString(f float64) string {
@@ -147,7 +146,7 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, position int) (*image.NRGBA, fyne.Size) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, hPos int, vPos int, scaler int, sharpen bool) (*image.NRGBA, fyne.Size) {
 
 	if Window == nil {
 		return nil, fyne.Size{}
@@ -174,10 +173,8 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 
 	buf := image.NewRGBA(image.Rect(0, 0, width, int(height)*sampling))
 
-	dotY := int(height-padding) * sampling
-
 	var dotX int
-	switch position {
+	switch hPos {
 	case POS_CENTER:
 		dotX = (width - textW) / 2
 
@@ -186,6 +183,18 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 
 	default:
 		dotX = int(0)
+	}
+
+	var dotY int
+	switch vPos {
+	case POS_CENTER:
+		dotY = (int(height) * sampling) / 2
+
+	case POS_BOTTOM:
+		dotY = int(height-padding) * sampling
+
+	default:
+		dotY = int(padding * float32(sampling))
 	}
 
 	d := &font.Drawer{
@@ -200,13 +209,30 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 
 	d.DrawString(text)
 
-	dst := image.NewRGBA(image.Rect(0, 0, width/sampling, int(height)))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+	dst := image.NewNRGBA(image.Rect(0, 0, width/sampling, int(height)))
+
+	switch scaler {
+	case SCALE_NEAREST:
+		draw.NearestNeighbor.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
+	case SCALE_APPROX:
+		draw.ApproxBiLinear.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
+	case SCALE_BILINEAR:
+		draw.BiLinear.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+
+	default:
+		draw.CatmullRom.Scale(dst, dst.Bounds(), buf, buf.Bounds(), draw.Over, nil)
+	}
 
 	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
 
-	sharpened := imaging.Sharpen(dst, 0.8)
+	if sharpen {
+		sharpened := imaging.Sharpen(dst, 0.8)
 
-	return sharpened, size
+		return sharpened, size
+	}
+
+	return dst, size
 
 }
