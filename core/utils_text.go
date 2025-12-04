@@ -34,6 +34,33 @@ func SetAlpha(c color.Color, alpha float32) color.Color {
 	}
 }
 
+func SetImageColor(img *image.NRGBA, col color.Color) {
+	r, g, b, _ := col.RGBA()
+	bounds := img.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			i := img.PixOffset(x, y)
+			a := img.Pix[i+3]
+			if a > 0 {
+				img.Pix[i+0] = uint8(r >> 8)
+				img.Pix[i+1] = uint8(g >> 8)
+				img.Pix[i+2] = uint8(b >> 8)
+			}
+		}
+	}
+}
+
+func SetImageAlpha(img *image.NRGBA, alpha uint8) {
+	bounds := img.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			i := img.PixOffset(x, y)
+			orig := img.Pix[i+3]
+			img.Pix[i+3] = uint8((uint16(orig) * uint16(alpha)) / 255)
+		}
+	}
+}
+
 func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.TextStyle) string {
 	sc := len(str)
 	if str == STRING_EMPTY || sc < 6 {

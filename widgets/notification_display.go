@@ -70,7 +70,8 @@ func (w *notificationDisplay) SetText(msg string) {
 	}
 
 	w.MinSize()
-	w.SetColor(w.txtcolor)
+	w.rasterize()
+	w.Refresh()
 }
 
 func (w *notificationDisplay) GetText() string {
@@ -84,21 +85,14 @@ func (w *notificationDisplay) ClearText() {
 }
 
 func (w *notificationDisplay) SetAlpha(a uint8) {
-	r, g, b, _ := w.color.RGBA()
-	w.color = color.NRGBA{
-		R: uint8(r >> 8),
-		G: uint8(g >> 8),
-		B: uint8(b >> 8),
-		A: a,
-	}
-	w.rasterize()
-	w.Refresh()
+	JC.SetImageAlpha(w.img.Image.(*image.NRGBA), a)
+	w.img.Refresh()
 }
 
 func (w *notificationDisplay) SetColor(col color.Color) {
 	w.color = col
-	w.rasterize()
-	w.Refresh()
+	JC.SetImageColor(w.img.Image.(*image.NRGBA), col)
+	w.img.Refresh()
 }
 
 func (w *notificationDisplay) rasterize() {
@@ -135,7 +129,7 @@ func NewNotificationDisplay() *notificationDisplay {
 		textStyle: fyne.TextStyle{Bold: false},
 		padding:   10,
 		txtcolor:  c,
-		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
+		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	w.img.FillMode = canvas.ImageFillOriginal

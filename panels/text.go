@@ -76,19 +76,14 @@ func (p *panelText) SetText(t string) {
 }
 
 func (p *panelText) SetAlpha(a uint8) {
-	r, g, b, _ := p.color.RGBA()
-	p.SetColor(color.NRGBA{
-		R: uint8(r >> 8),
-		G: uint8(g >> 8),
-		B: uint8(b >> 8),
-		A: a,
-	})
+	JC.SetImageAlpha(p.img.Image.(*image.NRGBA), a)
+	p.img.Refresh()
 }
 
 func (p *panelText) SetColor(col color.Color) {
 	p.color = col
-	p.rasterize()
-	p.Refresh()
+	JC.SetImageColor(p.img.Image.(*image.NRGBA), col)
+	p.img.Refresh()
 }
 
 func (p *panelText) rasterize() {
@@ -116,7 +111,7 @@ func NewPanelText(text string, col color.Color, size float32, alignment fyne.Tex
 		textSize:  size,
 		textAlign: alignment,
 		textStyle: style,
-		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
+		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal

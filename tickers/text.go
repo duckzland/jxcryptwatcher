@@ -73,19 +73,14 @@ func (s *tickerText) SetText(t string) {
 }
 
 func (s *tickerText) SetAlpha(a uint8) {
-	r, g, b, _ := s.color.RGBA()
-	s.SetColor(color.NRGBA{
-		R: uint8(r >> 8),
-		G: uint8(g >> 8),
-		B: uint8(b >> 8),
-		A: a,
-	})
+	JC.SetImageAlpha(s.img.Image.(*image.NRGBA), a)
+	s.img.Refresh()
 }
 
 func (s *tickerText) SetColor(col color.Color) {
 	s.color = col
-	s.rasterize()
-	s.Refresh()
+	JC.SetImageColor(s.img.Image.(*image.NRGBA), col)
+	s.img.Refresh()
 }
 
 func (s *tickerText) rasterize() {
@@ -113,7 +108,7 @@ func NewTickerText(text string, col color.Color, size float32, alignment fyne.Te
 		textSize:  size,
 		textAlign: alignment,
 		textStyle: style,
-		img:       canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 0, 0))),
+		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
