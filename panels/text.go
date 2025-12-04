@@ -93,7 +93,7 @@ func (p *panelText) SetColor(col color.Color) {
 
 func (p *panelText) rasterize() {
 
-	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4, JC.POS_CENTER, JC.POS_BOTTOM, JC.SCALE_APPROX)
+	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4, JC.POS_CENTER, JC.POS_BOTTOM)
 	if dst == nil || p.img == nil {
 		return
 	}
