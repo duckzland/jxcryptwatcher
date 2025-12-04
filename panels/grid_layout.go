@@ -22,6 +22,8 @@ type panelGridLayout struct {
 	objectCount    int
 	cWidth         float32
 	cHeight        float32
+	sWidth         float32
+	sHeight        float32
 	dirty          bool
 }
 
@@ -32,15 +34,21 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 		return
 	}
 
-	if g.offset != JA.UseLayout().UseScroll().Offset {
-		if g.cWidth == size.Width && g.cHeight == size.Height && g.objectCount == len(objects) {
-			return
-		}
+	// User scrolling, only relayout when container scroll, container grid, objects added/removed.
+	if g.offset != JA.UseLayout().UseScroll().Offset &&
+		g.sWidth == JA.UseLayout().UseContainer().Size().Width &&
+		g.sHeight == JA.UseLayout().UseContainer().Size().Height &&
+		g.cWidth == size.Width &&
+		g.cHeight == size.Height &&
+		g.objectCount == len(objects) {
+		return
 	}
 
 	g.offset = JA.UseLayout().UseScroll().Offset
 	g.cWidth = size.Width
 	g.cHeight = size.Height
+	g.sWidth = JA.UseLayout().UseContainer().Size().Width
+	g.sHeight = JA.UseLayout().UseContainer().Size().Height
 	g.objectCount = len(objects)
 	g.objects = objects
 	g.dirty = true
