@@ -13,6 +13,8 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
+
+	"github.com/disintegration/imaging"
 )
 
 func DynamicFormatFloatToString(f float64) string {
@@ -145,7 +147,7 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, position int) (*image.RGBA, fyne.Size) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, position int) (*image.NRGBA, fyne.Size) {
 
 	if Window == nil {
 		return nil, fyne.Size{}
@@ -203,5 +205,8 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 
 	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
 
-	return dst, size
+	sharpened := imaging.Sharpen(dst, 0.8)
+
+	return sharpened, size
+
 }
