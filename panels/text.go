@@ -76,14 +76,42 @@ func (p *panelText) SetText(t string) {
 }
 
 func (p *panelText) SetAlpha(a uint8) {
+	if p.img == nil {
+		return
+	}
 	JC.SetImageAlpha(p.img.Image.(*image.NRGBA), a)
 	p.img.Refresh()
 }
 
 func (p *panelText) SetColor(col color.Color) {
 	p.color = col
+	if p.img == nil {
+		return
+	}
 	JC.SetImageColor(p.img.Image.(*image.NRGBA), col)
 	p.img.Refresh()
+}
+
+func (p *panelText) Destroy() {
+	if p == nil {
+		return
+	}
+
+	if p.img != nil {
+		if p.img.Image != nil {
+			p.img.Image = nil
+		}
+		p.img = nil
+	}
+
+	p.text = JC.STRING_EMPTY
+	p.color = nil
+	p.textSize = 0
+	p.textAlign = fyne.TextAlignLeading
+	p.textStyle = fyne.TextStyle{}
+	p.cSize = fyne.Size{}
+
+	p.ExtendBaseWidget(nil)
 }
 
 func (p *panelText) rasterize() {

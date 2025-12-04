@@ -30,6 +30,7 @@ type completionText struct {
 	sepcolor   color.Color
 	traColor   color.Color
 	cSize      fyne.Size
+	renderer   *completionTextLayout
 }
 
 func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
@@ -39,14 +40,16 @@ func (s *completionText) CreateRenderer() fyne.WidgetRenderer {
 	if s.img == nil {
 		s.rasterize()
 	}
-
-	return &completionTextLayout{
+	r := &completionTextLayout{
 		parent:     s,
 		text:       s.img,
 		separator:  separator,
 		background: s.background,
 		height:     s.height,
 	}
+	s.renderer = r
+	return r
+
 }
 
 func (s *completionText) GetText() string {
@@ -132,6 +135,45 @@ func (s *completionText) MouseOut() {
 }
 
 func (s *completionText) MouseMoved(*desktop.MouseEvent) {}
+
+func (c *completionText) Destroy() {
+
+	if c == nil {
+		return
+	}
+
+	if c.img != nil {
+		if c.img.Image != nil {
+			c.img.Image = nil
+		}
+		c.img = nil
+	}
+
+	c.background = nil
+
+	c.text = JC.STRING_EMPTY
+	c.source = JC.STRING_EMPTY
+
+	c.textSize = 0
+	c.textStyle = fyne.TextStyle{}
+	c.width = 0
+	c.height = 0
+	c.cSize = fyne.Size{}
+
+	c.bgcolor = nil
+	c.sepcolor = nil
+	c.traColor = nil
+
+	c.hovered = false
+	c.parent = nil
+
+	if c.renderer != nil {
+		c.renderer.Destroy()
+		c.renderer = nil
+	}
+
+	c.ExtendBaseWidget(nil)
+}
 
 func (s *completionText) rasterize() {
 	fs := JC.UseTheme().Size(JC.SizeCompletionText)

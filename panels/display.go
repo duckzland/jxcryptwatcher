@@ -130,6 +130,11 @@ func (h *panelDisplay) Hide() {
 	JA.StopFadeInBackground(h.tag)
 	JA.StopFadeOutBackground(h.tag)
 
+	h.title.Destroy()
+	h.subtitle.Destroy()
+	h.content.Destroy()
+	h.bottomText.Destroy()
+
 	h.background = nil
 	h.title = nil
 	h.subtitle = nil

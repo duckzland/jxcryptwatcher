@@ -189,6 +189,12 @@ func (n *completionList) Destroy() {
 	n.scrollBox = nil
 
 	if n.contentBox != nil {
+		for _, obj := range n.contentBox.Objects {
+			if ct, ok := obj.(*completionText); ok {
+				ct.Destroy()
+			}
+		}
+
 		n.contentBox.Objects = nil
 		n.contentBox = nil
 	}
