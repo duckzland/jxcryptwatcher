@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
-	"github.com/disintegration/imaging"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
@@ -146,7 +145,7 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, hPos int, vPos int, scaler int, sharpen bool) (*image.NRGBA, fyne.Size) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, hPos int, vPos int, scaler int) (*image.NRGBA, fyne.Size) {
 
 	if Window == nil {
 		return nil, fyne.Size{}
@@ -226,12 +225,6 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	}
 
 	size := fyne.NewSize(float32(dst.Bounds().Dx()), height)
-
-	if sharpen {
-		sharpened := imaging.Sharpen(dst, 0.8)
-
-		return sharpened, size
-	}
 
 	return dst, size
 
