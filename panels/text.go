@@ -104,6 +104,9 @@ func (p *panelText) rasterize() {
 	p.img.SetMinSize(size)
 	p.img.Resize(size)
 	p.Resize(size)
+	p.img.Refresh()
+
+	dst = nil
 }
 
 func NewPanelText(text string, col color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
@@ -117,6 +120,7 @@ func NewPanelText(text string, col color.Color, size float32, alignment fyne.Tex
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
+	s.img.ScaleMode = canvas.ImageScaleFastest
 
 	s.ExtendBaseWidget(s)
 

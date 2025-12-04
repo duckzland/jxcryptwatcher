@@ -136,13 +136,7 @@ func SamplingForScale(scale float32) int {
 		scale = 1.0
 	}
 
-	s := int(math.Ceil(float64(scale)))
+	s := min(max(int(math.Ceil(float64(scale))), 2), 4)
 
-	if s < 2 {
-		s = 2
-	}
-	if s > 4 {
-		s = 4
-	}
 	return s
 }

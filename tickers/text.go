@@ -101,6 +101,9 @@ func (s *tickerText) rasterize() {
 	s.Resize(size)
 	s.img.SetMinSize(size)
 	s.img.Resize(size)
+	s.img.Refresh()
+
+	dst = nil
 }
 
 func NewTickerText(text string, col color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *tickerText {
@@ -114,6 +117,7 @@ func NewTickerText(text string, col color.Color, size float32, alignment fyne.Te
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
+	s.img.ScaleMode = canvas.ImageScaleFastest
 
 	s.ExtendBaseWidget(s)
 

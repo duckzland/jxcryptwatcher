@@ -147,6 +147,8 @@ func (s *completionText) rasterize() {
 	s.img.SetMinSize(size)
 	s.img.Resize(size)
 	s.img.Refresh()
+
+	dst = nil
 }
 
 func NewCompletionText(width float32, height float32, parent *completionList) *completionText {
@@ -168,6 +170,7 @@ func NewCompletionText(width float32, height float32, parent *completionList) *c
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
+	s.img.ScaleMode = canvas.ImageScaleFastest
 
 	s.ExtendBaseWidget(s)
 

@@ -114,6 +114,8 @@ func (w *notificationDisplay) rasterize() {
 	w.img.SetMinSize(size)
 	w.img.Resize(size)
 	w.img.Refresh()
+
+	dst = nil
 }
 
 func UseNotification() *notificationDisplay {
@@ -137,6 +139,7 @@ func NewNotificationDisplay() *notificationDisplay {
 	}
 
 	w.img.FillMode = canvas.ImageFillOriginal
+	w.img.ScaleMode = canvas.ImageScaleFastest
 
 	w.ExtendBaseWidget(w)
 

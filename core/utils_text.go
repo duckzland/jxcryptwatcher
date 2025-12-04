@@ -209,5 +209,8 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 
 	size := fyne.NewSize(float32(width/sampling), height)
 
+	face = nil
+	d = nil
+
 	return buf, size
 }

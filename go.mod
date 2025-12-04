@@ -8,7 +8,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/google/gops v0.3.28
 	github.com/google/uuid v1.6.0
-	golang.org/x/image v0.30.0
+	golang.org/x/image v0.33.0
 )
 
 replace fyne.io/fyne/v2 => github.com/duckzland/fyne/v2 v2.7.0-exp-0.0.1
@@ -42,6 +42,6 @@ require (
 	github.com/yuin/goldmark v1.7.8 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
