@@ -78,7 +78,6 @@ func (s *tickerText) SetAlpha(a uint8) {
 }
 
 func (s *tickerText) SetColor(col color.Color) {
-	s.color = col
 	JC.SetImageColor(s.img.Image.(*image.NRGBA), col)
 	s.img.Refresh()
 }

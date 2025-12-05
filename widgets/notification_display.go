@@ -69,7 +69,6 @@ func (w *notificationDisplay) SetText(msg string) {
 		w.Show()
 	}
 
-	w.color = w.txtcolor
 	w.MinSize()
 	w.rasterize()
 	w.Refresh()
@@ -91,7 +90,6 @@ func (w *notificationDisplay) SetAlpha(a uint8) {
 }
 
 func (w *notificationDisplay) SetColor(col color.Color) {
-	w.color = col
 	JC.SetImageColor(w.img.Image.(*image.NRGBA), col)
 	w.img.Refresh()
 }

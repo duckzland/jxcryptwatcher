@@ -84,7 +84,6 @@ func (p *panelText) SetAlpha(a uint8) {
 }
 
 func (p *panelText) SetColor(col color.Color) {
-	p.color = col
 	if p.img == nil {
 		return
 	}
