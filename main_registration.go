@@ -23,7 +23,7 @@ import (
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
-//go:embed fonts/Inter-Medium-Subset.ttf
+//go:embed fonts/Inter-Medium.ttf
 var regularFont []byte
 
 //go:embed fonts/Inter-Bold-Subset.ttf
