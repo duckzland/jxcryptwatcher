@@ -109,7 +109,7 @@ func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, wit
 		for _, r := range s {
 			if r >= 0x4E00 && r <= 0x9FFF {
 				a := pinyin.NewArgs()
-				a.Style = pinyin.Tone
+				//a.Style = pinyin.Tone
 				result := pinyin.Pinyin(string(r), a)
 
 				if len(result) > 0 {
