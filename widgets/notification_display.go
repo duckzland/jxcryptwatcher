@@ -25,7 +25,6 @@ type notificationDisplay struct {
 	pSize     fyne.Size
 	img       *canvas.Image
 	color     color.Color
-	txtcolor  color.Color
 }
 
 func (w *notificationDisplay) CreateRenderer() fyne.WidgetRenderer {
@@ -129,7 +128,6 @@ func NewNotificationDisplay() *notificationDisplay {
 		textSize:  JC.UseTheme().Size(JC.SizeNotificationText),
 		textStyle: fyne.TextStyle{Bold: false},
 		padding:   10,
-		txtcolor:  c,
 		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 0, 0))),
 	}
 
