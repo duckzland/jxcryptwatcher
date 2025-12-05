@@ -1,7 +1,6 @@
 package core
 
 import (
-	"math"
 	"runtime"
 	"sort"
 	"time"
@@ -129,14 +128,4 @@ func EqualIntSlices(a, b []int) bool {
 		}
 	}
 	return true
-}
-
-func SamplingForScale(scale float32) int {
-	if scale <= 0 {
-		scale = 1.0
-	}
-
-	s := min(max(int(math.Ceil(float64(scale))), 2), 4)
-
-	return s
 }

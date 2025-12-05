@@ -2,6 +2,9 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/mozillazg/go-pinyin"
 
 	json "github.com/goccy/go-json"
 
@@ -36,8 +39,8 @@ func (cp *cryptoType) UnmarshalJSON(data []byte) error {
 	}
 
 	cp.Id = int64(v[0].(float64))
-	cp.Name = v[1].(string)
-	cp.Symbol = v[2].(string)
+	cp.Name = cp.sanitizeText(v[1].(string))
+	cp.Symbol = cp.sanitizeText(v[2].(string))
 	cp.IsActive = int64(v[4].(float64))
 	cp.Status = int64(v[5].(float64))
 
@@ -83,6 +86,43 @@ func (cp *cryptoType) validate(v []interface{}) bool {
 	return true
 }
 
+func (cp *cryptoType) containsCJK(s string) bool {
+	for _, r := range s {
+		switch {
+		case r >= 0x4E00 && r <= 0x9FFF:
+			return true
+		case r >= 0x3040 && r <= 0x309F:
+			return true
+		case r >= 0x30A0 && r <= 0x30FF:
+			return true
+		}
+	}
+	return false
+}
+
+func (cp *cryptoType) sanitizeText(s string) string {
+	if cp.containsCJK(s) {
+		var out []string
+		for _, r := range s {
+			if r >= 0x4E00 && r <= 0x9FFF {
+				a := pinyin.NewArgs()
+				result := pinyin.Pinyin(string(r), a)
+				if len(result) > 0 {
+					out = append(out, result[0][0])
+				}
+			} else {
+				out = append(out, string(r))
+			}
+		}
+
+		return strings.Join(out, " ")
+	}
+
+	return s
+}
+
 func (cp *cryptoType) createKey() string {
-	return fmt.Sprintf("%d|%s - %s", cp.Id, cp.Symbol, cp.Name)
+	symbol := cp.sanitizeText(cp.Symbol)
+	name := cp.sanitizeText(cp.Name)
+	return fmt.Sprintf("%d|%s - %s", cp.Id, symbol, name)
 }
