@@ -102,11 +102,16 @@ func (cp *cryptoType) containsCJK(s string) bool {
 
 func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, withSpace bool) string {
 	if cp.containsCJK(s) {
-		var out []string
+
+		var buf strings.Builder
+		prevWasCJK := false
+
 		for _, r := range s {
 			if r >= 0x4E00 && r <= 0x9FFF {
 				a := pinyin.NewArgs()
+				a.Style = pinyin.Tone
 				result := pinyin.Pinyin(string(r), a)
+
 				if len(result) > 0 {
 					syllable := result[0][0]
 					if allUpper {
@@ -115,17 +120,20 @@ func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, wit
 						syllable = strings.Title(syllable)
 					}
 
-					out = append(out, syllable)
+					if withSpace && prevWasCJK {
+						buf.WriteRune(' ')
+					}
+					buf.WriteString(syllable)
+					prevWasCJK = true
+					continue
 				}
-			} else {
-				out = append(out, string(r))
 			}
+
+			buf.WriteRune(r)
+			prevWasCJK = false
 		}
 
-		if withSpace {
-			return strings.Join(out, " ")
-		}
-		return strings.Join(out, "")
+		return buf.String()
 	}
 
 	return s
