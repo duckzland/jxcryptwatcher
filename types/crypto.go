@@ -39,8 +39,8 @@ func (cp *cryptoType) UnmarshalJSON(data []byte) error {
 	}
 
 	cp.Id = int64(v[0].(float64))
-	cp.Name = cp.sanitizeText(v[1].(string))
-	cp.Symbol = cp.sanitizeText(v[2].(string))
+	cp.Name = cp.sanitizeText(v[1].(string), true, false, true)
+	cp.Symbol = cp.sanitizeText(v[2].(string), false, true, false)
 	cp.IsActive = int64(v[4].(float64))
 	cp.Status = int64(v[5].(float64))
 
@@ -100,7 +100,7 @@ func (cp *cryptoType) containsCJK(s string) bool {
 	return false
 }
 
-func (cp *cryptoType) sanitizeText(s string) string {
+func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, withSpace bool) string {
 	if cp.containsCJK(s) {
 		var out []string
 		for _, r := range s {
@@ -108,21 +108,31 @@ func (cp *cryptoType) sanitizeText(s string) string {
 				a := pinyin.NewArgs()
 				result := pinyin.Pinyin(string(r), a)
 				if len(result) > 0 {
-					out = append(out, result[0][0])
+					syllable := result[0][0]
+					if allUpper {
+						syllable = strings.ToUpper(syllable)
+					} else if capitalize {
+						syllable = strings.Title(syllable)
+					}
+
+					out = append(out, syllable)
 				}
 			} else {
 				out = append(out, string(r))
 			}
 		}
 
-		return strings.Join(out, " ")
+		if withSpace {
+			return strings.Join(out, " ")
+		}
+		return strings.Join(out, "")
 	}
 
 	return s
 }
 
 func (cp *cryptoType) createKey() string {
-	symbol := cp.sanitizeText(cp.Symbol)
-	name := cp.sanitizeText(cp.Name)
+	symbol := cp.sanitizeText(cp.Symbol, false, true, false)
+	name := cp.sanitizeText(cp.Name, true, false, true)
 	return fmt.Sprintf("%d|%s - %s", cp.Id, symbol, name)
 }
