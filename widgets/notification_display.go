@@ -69,6 +69,7 @@ func (w *notificationDisplay) SetText(msg string) {
 		w.Show()
 	}
 
+	w.color = w.txtcolor
 	w.MinSize()
 	w.rasterize()
 	w.Refresh()
@@ -97,10 +98,12 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 
 func (w *notificationDisplay) rasterize() {
 
-	dst, size := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color, 0.35, 4, JC.POS_CENTER, JC.POS_BOTTOM)
+	dst := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color)
 	if dst == nil || w.img == nil {
 		return
 	}
+
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), float32(dst.Bounds().Dy()))
 
 	w.img.Image = dst
 

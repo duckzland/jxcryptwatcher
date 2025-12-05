@@ -176,18 +176,17 @@ func (c *completionText) Destroy() {
 }
 
 func (s *completionText) rasterize() {
+
 	fs := JC.UseTheme().Size(JC.SizeCompletionText)
 
-	dst, size := JC.RasterizeText(s.text, fyne.TextStyle{}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground), s.cSize.Height/fs, s.cSize.Height-fs, JC.POS_LEFT, JC.POS_BOTTOM)
+	dst := JC.RasterizeText(s.text, fyne.TextStyle{}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground))
 	if dst == nil || s.img == nil {
 		return
 	}
 
-	s.img.Image = dst
-
-	s.cSize = size
-	s.img.SetMinSize(size)
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), float32(dst.Bounds().Dy()))
 	s.img.Resize(size)
+	s.img.Image = dst
 	s.img.Refresh()
 
 	dst = nil

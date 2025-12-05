@@ -85,17 +85,18 @@ func (s *tickerText) SetColor(col color.Color) {
 
 func (s *tickerText) rasterize() {
 
-	dst, size := JC.RasterizeText(s.text, s.textStyle, s.textSize, s.color, 0.6, 2, JC.POS_CENTER, JC.POS_BOTTOM)
+	dst := JC.RasterizeText(s.text, s.textStyle, s.textSize, s.color)
 	if dst == nil || s.img == nil {
 		return
 	}
+
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), float32(dst.Bounds().Dy()))
+	s.img.Resize(size)
 
 	s.img.Image = dst
 
 	s.cSize = size
 	s.Resize(size)
-	s.img.SetMinSize(size)
-	s.img.Resize(size)
 	s.img.Refresh()
 
 	dst = nil

@@ -23,10 +23,10 @@ import (
 //go:embed static/256x256/jxwatcher.png
 var appIconData []byte
 
-//go:embed fonts/Roboto-Regular-subset.ttf
+//go:embed fonts/Inter-Medium-Subset.ttf
 var regularFont []byte
 
-//go:embed fonts/Roboto-Bold-subset.ttf
+//go:embed fonts/Inter-Bold-Subset.ttf
 var boldFont []byte
 
 func registerBoot() {
@@ -62,8 +62,8 @@ func registerAppIcon() {
 }
 
 func registerFonts() {
-	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: false}, fyne.NewStaticResource("Roboto-Regular.ttf", regularFont))
-	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: true}, fyne.NewStaticResource("Roboto-Bold.ttf", boldFont))
+	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: false}, fyne.NewStaticResource("Inter-Medium-Subset.ttf", regularFont))
+	JC.UseTheme().SetFonts(fyne.TextStyle{Bold: true}, fyne.NewStaticResource("Inter-Bold-Subset.ttf", boldFont))
 }
 
 func registerUtility() {

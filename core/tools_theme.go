@@ -59,18 +59,16 @@ func (t *appTheme) SetFonts(style fyne.TextStyle, font fyne.Resource) {
 	}
 }
 
-func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32, sampling int) font.Face {
+func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32) font.Face {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	var tt *opentype.Font
-	switch {
-	case style.Bold:
+	if style.Bold {
 		tt = t.fontBoldTT
-	default:
+	} else {
 		tt = t.fontRegularTT
 	}
-
 	if tt == nil {
 		return nil
 	}
@@ -86,23 +84,20 @@ func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32, sampling int)
 		styleBits |= 1 << 2
 	}
 
-	key := fmt.Sprintf("%d-%f-%d", styleBits, size, sampling)
-
+	key := fmt.Sprintf("%d-%f", styleBits, size)
 	if face, ok := t.faceCache[key]; ok {
 		return face
 	}
 
 	scale := Window.Canvas().Scale()
-	dpi := math.Round(float64(96.0 * scale))
-	px := float64(size)
-	pt := math.Round(px * 72.0 / dpi)
+	dpi := math.Round(96 * float64(scale))
+	pt := math.Round(float64(size) * 72.0 / dpi)
 
 	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    pt * float64(sampling),
+		Size:    pt,
 		DPI:     dpi,
-		Hinting: font.HintingNone,
+		Hinting: font.HintingVertical,
 	})
-
 	if err != nil {
 		return nil
 	}
@@ -110,7 +105,6 @@ func (t *appTheme) GetFontFace(style fyne.TextStyle, size float32, sampling int)
 	if t.faceCache == nil {
 		t.faceCache = make(map[string]font.Face)
 	}
-
 	t.faceCache[key] = face
 
 	return face
@@ -217,16 +211,16 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 6
 
 	case SizePanelTitle:
-		return 16
+		return 14
 
 	case SizePanelSubTitle:
-		return 16
+		return 14
 
 	case SizePanelBottomText:
 		return 12
 
 	case SizePanelContent:
-		return 26
+		return 24
 
 	case SizePanelTitleSmall:
 		return 13
@@ -238,7 +232,7 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 10
 
 	case SizePanelContentSmall:
-		return 22
+		return 20
 
 	case SizePanelWidth:
 		return 320
@@ -265,7 +259,7 @@ func (t *appTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 11
 
 	case SizeTickerContent:
-		return 18
+		return 16
 
 	case SizeNotificationText:
 		return 14

@@ -116,16 +116,17 @@ func (p *panelText) Destroy() {
 
 func (p *panelText) rasterize() {
 
-	dst, size := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color, 0.35, 4, JC.POS_CENTER, JC.POS_BOTTOM)
+	dst := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color)
 	if dst == nil || p.img == nil {
 		return
 	}
 
+	size := fyne.NewSize(float32(dst.Bounds().Dx()), float32(dst.Bounds().Dy()))
+	p.img.Resize(size)
+
 	p.img.Image = dst
 
 	p.cSize = size
-	p.img.SetMinSize(size)
-	p.img.Resize(size)
 	p.Resize(size)
 	p.img.Refresh()
 

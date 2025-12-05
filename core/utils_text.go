@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -171,73 +170,29 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color, paddingFactor float32, maxPadding float32, hPos int, vPos int) (*image.NRGBA, fyne.Size) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) *image.NRGBA {
 
-	if Window == nil {
-		return nil, fyne.Size{}
-	}
-
-	scale := Window.Canvas().Scale()
-	sampling := SamplingForScale(scale)
-
-	face := UseTheme().GetFontFace(textStyle, textSize, sampling)
+	face := UseTheme().GetFontFace(textStyle, textSize)
 	if face == nil {
-		return nil, fyne.Size{}
+		return nil
 	}
 
-	adv := font.MeasureString(face, text)
-	textW := max(adv.Round(), 1)
+	metrics := face.Metrics()
+	width := max(font.MeasureString(face, text).Round(), 1)
+	height := (metrics.Ascent + metrics.Descent).Ceil()
 
-	padding := float32(math.Ceil(float64(textSize * paddingFactor)))
-	if padding > maxPadding {
-		padding = maxPadding
-	}
-
-	height := float32(math.Ceil(float64(textSize + padding)))
-	width := int(math.Ceil(float64(float32(textW) * scale)))
-
-	buf := image.NewNRGBA(image.Rect(0, 0, width, int(height)*sampling))
-
-	var dotX int
-	switch hPos {
-	case POS_CENTER:
-		dotX = (width - textW) / 2
-
-	case POS_RIGHT:
-		dotX = max(width-textW, 0)
-
-	default:
-		dotX = int(0)
-	}
-
-	var dotY int
-	switch vPos {
-	case POS_CENTER:
-		dotY = (int(height) * sampling) / 2
-
-	case POS_BOTTOM:
-		dotY = int(height-padding) * sampling
-
-	default:
-		dotY = int(padding * float32(sampling))
-	}
+	buf := image.NewNRGBA(image.Rect(0, 0, width, height))
 
 	d := &font.Drawer{
 		Dst:  buf,
 		Src:  image.NewUniform(col),
 		Face: face,
 		Dot: fixed.Point26_6{
-			X: fixed.Int26_6(dotX << 6),
-			Y: fixed.Int26_6(dotY << 6),
+			X: fixed.I(0),
+			Y: fixed.I(metrics.Ascent.Round()),
 		},
 	}
-
 	d.DrawString(text)
 
-	size := fyne.NewSize(float32(width/sampling), height)
-
-	face = nil
-	d = nil
-
-	return buf, size
+	return buf
 }
