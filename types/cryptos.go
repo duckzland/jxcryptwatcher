@@ -121,8 +121,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 		UseConfig().DataEndpoint,
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {
-			body, close, err := JC.ReadResponse(resp.Body)
-			defer close()
+			body, _, err := JC.ReadResponse(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
