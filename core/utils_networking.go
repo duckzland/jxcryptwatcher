@@ -148,15 +148,30 @@ func ReadResponse(key string, resp *http.Response) ([]byte, func(), error) {
 
 	pool := getPool(key, size)
 	buf := pool.Get().([]byte)
-	buf = buf[:0]
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if cap(buf) < size {
+		buf = make([]byte, size)
+	} else {
+		buf = buf[:size]
+	}
+
+	n, err := io.ReadFull(resp.Body, buf)
+	if err == io.ErrUnexpectedEOF || err == io.EOF {
+		buf = buf[:n]
+		err = nil
+	} else if err != nil {
+		buf = buf[:0]
 		pool.Put(buf)
 		return nil, nil, err
 	}
 
-	buf = append(buf, data...)
+	cleanup := func() {
+		for i := range buf {
+			buf[i] = 0
+		}
+		buf = buf[:0]
+		pool.Put(buf)
+	}
 
-	return buf, func() { pool.Put(buf) }, nil
+	return buf, cleanup, nil
 }
