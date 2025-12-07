@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 
 	JA "jxwatcher/apps"
+	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 )
 
@@ -112,6 +113,8 @@ func (g *panelGridLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			g.dynCellSize.Width -= 18
 		}
 	}
+
+	JC.Logln("Dynwidth", g.dynCellSize.Width)
 
 	i, x, y := 0, g.innerPadding[3], float32(0)
 
