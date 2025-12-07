@@ -75,11 +75,39 @@ func (mc *marketCapFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error)
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+		newData := map[string]json.RawMessage{}
+		if v, ok := dataObj["historicalValues"]; ok {
+			newData["historicalValues"] = v
+		}
+		if v, ok := dataObj["thirtyDaysPercentage"]; ok {
+			newData["thirtyDaysPercentage"] = v
+		}
+		dataBytes, err := json.Marshal(newData)
+		if err != nil {
+			return nil, err
+		}
+		sanitized["data"] = json.RawMessage(dataBytes)
 	}
-	if v, ok := raw["status"]; ok {
-		sanitized["status"] = v
+
+	if status, ok := raw["status"]; ok {
+		var statusObj map[string]json.RawMessage
+		if err := json.Unmarshal(status, &statusObj); err != nil {
+			return nil, err
+		}
+		newStatus := map[string]json.RawMessage{}
+		if v, ok := statusObj["timestamp"]; ok {
+			newStatus["timestamp"] = v
+		}
+		statusBytes, err := json.Marshal(newStatus)
+		if err != nil {
+			return nil, err
+		}
+		sanitized["status"] = json.RawMessage(statusBytes)
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

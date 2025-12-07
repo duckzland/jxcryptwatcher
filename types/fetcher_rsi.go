@@ -77,7 +77,6 @@ func (rf *rsiFetcher) parseJSON(data []byte) error {
 func (rf *rsiFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
 	dec := json.NewDecoder(r)
 
-	// Decode into a generic map
 	var raw map[string]json.RawMessage
 	if err := dec.Decode(&raw); err != nil {
 		return nil, err
@@ -85,12 +84,45 @@ func (rf *rsiFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+		if overall, ok := dataObj["overall"]; ok {
+			var overallObj map[string]json.RawMessage
+			if err := json.Unmarshal(overall, &overallObj); err != nil {
+				return nil, err
+			}
+			newOverall := map[string]json.RawMessage{}
+			if v, ok := overallObj["averageRsi"]; ok {
+				newOverall["averageRsi"] = v
+			}
+			if v, ok := overallObj["oversoldPercentage"]; ok {
+				newOverall["oversoldPercentage"] = v
+			}
+			if v, ok := overallObj["overboughtPercentage"]; ok {
+				newOverall["overboughtPercentage"] = v
+			}
+			if v, ok := overallObj["neutralPercentage"]; ok {
+				newOverall["neutralPercentage"] = v
+			}
+			overallBytes, err := json.Marshal(newOverall)
+			if err != nil {
+				return nil, err
+			}
+			sanitized["data"] = json.RawMessage(`{"overall":` + string(overallBytes) + `}`)
+		}
 	}
 
-	if v, ok := raw["status"]; ok {
-		sanitized["status"] = v
+	if status, ok := raw["status"]; ok {
+		var statusObj map[string]json.RawMessage
+		if err := json.Unmarshal(status, &statusObj); err != nil {
+			return nil, err
+		}
+		if ts, ok := statusObj["timestamp"]; ok {
+			sanitized["status"] = json.RawMessage(`{"timestamp":` + string(ts) + `}`)
+		}
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

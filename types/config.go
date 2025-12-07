@@ -14,23 +14,23 @@ var configStorage *configType = &configType{}
 var configMu sync.RWMutex
 
 type configType struct {
-	DataEndpoint      string
-	ExchangeEndpoint  string
-	AltSeasonEndpoint string
-	FearGreedEndpoint string
-	CMC100Endpoint    string
-	MarketCapEndpoint string
-	RSIEndpoint       string
-	ETFEndpoint       string
-	DominanceEndpoint string
-	Delay             int64
-	Version           string
+	DataEndpoint      string `json:"data_endpoint"`
+	ExchangeEndpoint  string `json:"exchange_endpoint"`
+	AltSeasonEndpoint string `json:"altseason_endpoint"`
+	FearGreedEndpoint string `json:"feargreed_endpoint"`
+	CMC100Endpoint    string `json:"cmc100_endpoint"`
+	MarketCapEndpoint string `json:"marketcap_endpoint"`
+	RSIEndpoint       string `json:"rsi_endpoint"`
+	ETFEndpoint       string `json:"etf_endpoint"`
+	DominanceEndpoint string `json:"dominance_endpoint"`
+	Delay             int64  `json:"delay"`
+	Version           string `json:"version"`
 }
 
 func (c *configType) update() bool {
 
 	if c.IsVersionLessThan("1.7.0") {
-		JC.Logln("Updating old config to 1.8.0")
+		JC.Logln("Updating old config to 1 1.8.0")
 		c.Version = "1.8.0"
 
 		if c.DataEndpoint == JC.STRING_EMPTY {
@@ -171,8 +171,8 @@ func (c *configType) check() *configType {
 }
 
 func (c *configType) PostInit() {
-	if c.IsVersionLessThan("1.8.0") {
-		JC.Logln("Updating old config to 1.8.0")
+	if c.IsVersionLessThan("1.7.0") {
+		JC.Logln("Updating old config 2 to 1.8.0")
 		c.Version = "1.8.0"
 		c.save()
 	}

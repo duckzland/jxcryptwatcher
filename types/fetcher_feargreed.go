@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+
 	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
@@ -55,8 +56,20 @@ func (fg *fearGreedFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error)
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+		if hv, ok := dataObj["historicalValues"]; ok {
+			var hvObj map[string]json.RawMessage
+			if err := json.Unmarshal(hv, &hvObj); err != nil {
+				return nil, err
+			}
+			if now, ok := hvObj["now"]; ok {
+				sanitized["data"] = json.RawMessage(`{"historicalValues":{"now":` + string(now) + `}}`)
+			}
+		}
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

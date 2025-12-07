@@ -74,12 +74,24 @@ func (df *dominanceFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error)
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+		if dom, ok := dataObj["dominance"]; ok {
+			sanitized["data"] = json.RawMessage(`{"dominance":` + string(dom) + `}`)
+		}
 	}
 
-	if v, ok := raw["status"]; ok {
-		sanitized["status"] = v
+	if status, ok := raw["status"]; ok {
+		var statusObj map[string]json.RawMessage
+		if err := json.Unmarshal(status, &statusObj); err != nil {
+			return nil, err
+		}
+		if ts, ok := statusObj["timestamp"]; ok {
+			sanitized["status"] = json.RawMessage(`{"timestamp":` + string(ts) + `}`)
+		}
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

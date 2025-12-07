@@ -48,7 +48,7 @@ func (er *exchangeResults) parseJSON(data []byte) error {
 		return err
 	}
 
-	tsStr, _ := jsonparser.GetString(data, "status", "timestamp")
+	tsStr, _ := jsonparser.GetString(data, "data", "last_updated")
 	ts, _ := time.Parse(time.RFC3339Nano, tsStr)
 
 	_, err = jsonparser.ArrayEach(data, func(value []byte, _ jsonparser.ValueType, _ int, _ error) {
@@ -95,10 +95,6 @@ func (er *exchangeResults) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) 
 
 	if v, ok := raw["data"]; ok {
 		sanitized["data"] = v
-	}
-
-	if v, ok := raw["status"]; ok {
-		sanitized["status"] = v
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

@@ -56,8 +56,15 @@ func (er *altSeasonFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error)
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+
+		if hv, ok := dataObj["historicalValues"]; ok {
+			sanitized["data"] = json.RawMessage(`{"historicalValues":` + string(hv) + `}`)
+		}
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)

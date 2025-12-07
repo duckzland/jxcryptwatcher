@@ -10,9 +10,9 @@ import (
 
 	"github.com/buger/jsonparser"
 
-	JC "jxwatcher/core"
-
 	json "github.com/goccy/go-json"
+
+	JC "jxwatcher/core"
 )
 
 var panelsMu sync.RWMutex

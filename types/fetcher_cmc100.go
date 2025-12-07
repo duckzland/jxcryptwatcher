@@ -64,8 +64,34 @@ func (er *cmc100Fetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
 
 	sanitized := map[string]json.RawMessage{}
 
-	if v, ok := raw["data"]; ok {
-		sanitized["data"] = v
+	if data, ok := raw["data"]; ok {
+		var dataObj map[string]json.RawMessage
+		if err := json.Unmarshal(data, &dataObj); err != nil {
+			return nil, err
+		}
+
+		if summary, ok := dataObj["summaryData"]; ok {
+			var summaryObj map[string]json.RawMessage
+			if err := json.Unmarshal(summary, &summaryObj); err != nil {
+				return nil, err
+			}
+
+			newSummary := map[string]json.RawMessage{}
+
+			if cv, ok := summaryObj["currentValue"]; ok {
+				newSummary["currentValue"] = cv
+			}
+			if ts, ok := summaryObj["nextUpdateTimestamp"]; ok {
+				newSummary["nextUpdateTimestamp"] = ts
+			}
+
+			summaryBytes, err := json.Marshal(newSummary)
+			if err != nil {
+				return nil, err
+			}
+
+			sanitized["data"] = json.RawMessage(`{"summaryData":` + string(summaryBytes) + `}`)
+		}
 	}
 
 	cleanBytes, err := json.Marshal(sanitized)
