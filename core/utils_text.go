@@ -171,14 +171,17 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-var rasterizeTextBufPool = sync.Pool{
-	New: func() any {
-		return image.NewNRGBA(image.Rect(0, 0, 1, 1))
-	},
+var rasterizePools sync.Map
+
+func getPoolForSize(size float32) *sync.Pool {
+	p, _ := rasterizePools.LoadOrStore(size, &sync.Pool{
+		New: func() any {
+			return image.NewNRGBA(image.Rect(0, 0, 1, 1))
+		},
+	})
+	return p.(*sync.Pool)
 }
 
-// RasterizeText returns an image buffer and a finished func.
-// Call finished() when you are done with the buffer to return it to the pool.
 func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) (*image.NRGBA, func()) {
 	face := UseTheme().GetFontFace(textStyle, textSize)
 	if face == nil {
@@ -189,7 +192,8 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	width := max(font.MeasureString(face, text).Round(), 1)
 	height := (metrics.Ascent + metrics.Descent).Ceil()
 
-	buf := rasterizeTextBufPool.Get().(*image.NRGBA)
+	pool := getPoolForSize(textSize)
+	buf := pool.Get().(*image.NRGBA)
 
 	if buf.Bounds().Dx() != width || buf.Bounds().Dy() != height {
 		buf = image.NewNRGBA(image.Rect(0, 0, width, height))
@@ -210,9 +214,8 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	}
 	d.DrawString(text)
 
-	// finished function returns the buffer to the pool
 	finished := func() {
-		rasterizeTextBufPool.Put(buf)
+		pool.Put(buf)
 	}
 
 	return buf, finished
