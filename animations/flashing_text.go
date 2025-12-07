@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var flashRegistry = JC.NewCancelRegistry(100)
+var flashRegistry = JC.NewCancelRegistry(50)
 
 func StartFlashingText(
 	tag string,
@@ -21,6 +21,7 @@ func StartFlashingText(
 ) {
 	if cancel, ok := flashRegistry.Get(tag); ok {
 		cancel()
+		flashRegistry.Delete(tag)
 	}
 
 	if !txt.Visible() {
@@ -37,6 +38,8 @@ func StartFlashingText(
 
 	UseAnimationDispatcher().Submit(func() {
 		if !txt.Visible() {
+			cancel()
+			flashRegistry.Delete(tag)
 			return
 		}
 
@@ -52,9 +55,10 @@ func StartFlashingText(
 		ticker := time.NewTicker(interval)
 
 		go func() {
-			defer ticker.Stop()
-			defer flashRegistry.Delete(tag)
-			defer cancel()
+			defer func() {
+				ticker.Stop()
+				flashRegistry.Delete(tag)
+			}()
 
 			for _, alpha := range alphaSequence {
 				select {
@@ -71,7 +75,6 @@ func StartFlashingText(
 					}
 					fyne.Do(func() {
 						a := float64(alpha) / 255.0
-						// apply scaled color
 						newCol := color.NRGBA{
 							R: uint8(baseR * a),
 							G: uint8(baseG * a),

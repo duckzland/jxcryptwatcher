@@ -36,6 +36,12 @@ func (r *CancelRegistry) Delete(tag string) {
 	delete(r.store, tag)
 }
 
+func (r *CancelRegistry) Len() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.store)
+}
+
 func NewCancelRegistry(bsize int) *CancelRegistry {
 	return &CancelRegistry{
 		store: make(map[string]context.CancelFunc, bsize),

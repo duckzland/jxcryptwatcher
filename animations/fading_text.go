@@ -17,9 +17,12 @@ func StartFadingText(
 	callback func(),
 	fadeAlphas *[]uint8,
 ) {
+	// Cancel any existing animation for this tag
 	if cancel, ok := fadeTextRegistry.Get(tag); ok {
 		cancel()
+		fadeTextRegistry.Delete(tag)
 	}
+
 	if !text.Visible() {
 		return
 	}
@@ -29,21 +32,25 @@ func StartFadingText(
 
 	UseAnimationDispatcher().Submit(func() {
 		if !text.Visible() {
+			cancel()
+			fadeTextRegistry.Delete(tag)
 			return
 		}
+
 		if fadeAlphas == nil || len(*fadeAlphas) == 0 {
 			fadeAlphas = &[]uint8{255, 160, 80, 0}
 		}
-		ticker := time.NewTicker(80 * time.Millisecond)
+		interval := 80 * time.Millisecond
+		ticker := time.NewTicker(interval)
 
 		go func() {
 			defer ticker.Stop()
 			defer fadeTextRegistry.Delete(tag)
-			defer cancel()
 
 			for _, alpha := range *fadeAlphas {
 				select {
 				case <-ctx.Done():
+					// Ensure final state is fully opaque if cancelled
 					fyne.Do(func() {
 						text.SetAlpha(255)
 						text.Refresh()
@@ -60,6 +67,7 @@ func StartFadingText(
 					})
 				}
 			}
+
 			if callback != nil {
 				fyne.Do(callback)
 			}

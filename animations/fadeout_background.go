@@ -21,6 +21,7 @@ func StartFadeOutBackground(
 ) {
 	if cancel, ok := fadeOutRegistry.Get(tag); ok {
 		cancel()
+		fadeOutRegistry.Delete(tag)
 	}
 
 	if !rect.Visible() {
@@ -32,6 +33,8 @@ func StartFadeOutBackground(
 
 	run := func() {
 		if !rect.Visible() {
+			cancel()
+			fadeOutRegistry.Delete(tag)
 			return
 		}
 
@@ -40,9 +43,10 @@ func StartFadeOutBackground(
 		ticker := time.NewTicker(interval)
 
 		go func() {
-			defer ticker.Stop()
-			defer fadeOutRegistry.Delete(tag)
-			defer cancel()
+			defer func() {
+				ticker.Stop()
+				fadeOutRegistry.Delete(tag)
+			}()
 
 			for _, alpha := range alphaSteps {
 				select {

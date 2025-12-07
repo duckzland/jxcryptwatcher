@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeInRegistry = JC.NewCancelRegistry(100)
+var fadeInRegistry = JC.NewCancelRegistry(50)
 
 func StartFadeInBackground(
 	tag string,
@@ -21,6 +21,7 @@ func StartFadeInBackground(
 ) {
 	if cancel, ok := fadeInRegistry.Get(tag); ok {
 		cancel()
+		fadeInRegistry.Delete(tag)
 	}
 
 	if !rect.Visible() {
@@ -32,17 +33,16 @@ func StartFadeInBackground(
 
 	run := func() {
 		if !rect.Visible() {
+			cancel()
+			fadeInRegistry.Delete(tag)
 			return
 		}
 
 		alphaSteps := []uint8{100, 128, 192, 255}
 		interval := duration / time.Duration(len(alphaSteps))
-		ticker := time.NewTicker(interval)
 
 		go func() {
-			defer ticker.Stop()
 			defer fadeInRegistry.Delete(tag)
-			defer cancel()
 
 			for _, alpha := range alphaSteps {
 				select {
@@ -54,11 +54,12 @@ func StartFadeInBackground(
 						})
 					}
 					return
-				case <-ticker.C:
+				default:
 					if !rect.Visible() {
 						cancel()
 						return
 					}
+					time.Sleep(interval)
 					fyne.Do(func() {
 						rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
 						canvas.Refresh(rect)
