@@ -30,7 +30,7 @@ type configType struct {
 func (c *configType) update() bool {
 
 	if c.IsVersionLessThan("1.7.0") {
-		JC.Logln("Updating old config to 1 1.8.0")
+		JC.Logln("Updating old config to 1.8.0")
 		c.Version = "1.8.0"
 
 		if c.DataEndpoint == JC.STRING_EMPTY {
@@ -172,7 +172,7 @@ func (c *configType) check() *configType {
 
 func (c *configType) PostInit() {
 	if c.IsVersionLessThan("1.7.0") {
-		JC.Logln("Updating old config 2 to 1.8.0")
+		JC.Logln("Updating old config to 1.8.0")
 		c.Version = "1.8.0"
 		c.save()
 	}
