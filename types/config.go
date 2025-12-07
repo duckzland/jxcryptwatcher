@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	JC "jxwatcher/core"
-
 	"github.com/buger/jsonparser"
+
+	JC "jxwatcher/core"
 )
 
 var configStorage *configType = &configType{}
