@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"fyne.io/fyne/v2"
 	"golang.org/x/image/font"
@@ -171,54 +170,28 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-var rasterizePools sync.Map
-
-func getPoolForSize(size float32) *sync.Pool {
-	p, _ := rasterizePools.LoadOrStore(size, &sync.Pool{
-		New: func() any {
-			return image.NewNRGBA(image.Rect(0, 0, 1, 1))
-		},
-	})
-	return p.(*sync.Pool)
-}
-
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) (*image.NRGBA, func()) {
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) *image.NRGBA {
 	face := UseTheme().GetFontFace(textStyle, textSize)
 	if face == nil {
-		return nil, func() {}
+		return nil
 	}
 
 	metrics := face.Metrics()
 	width := max(font.MeasureString(face, text).Round(), 1)
 	height := (metrics.Ascent + metrics.Descent).Ceil()
 
-	pool := getPoolForSize(textSize)
-	_ = pool.Get().(*image.NRGBA)
-
 	buf := image.NewNRGBA(image.Rect(0, 0, width, height))
-
-	if buf.Bounds().Dx() < width || buf.Bounds().Dy() < height {
-		buf = image.NewNRGBA(image.Rect(0, 0, width, height))
-	}
-
-	for i := range buf.Pix {
-		buf.Pix[i] = 0
-	}
 
 	d := &font.Drawer{
 		Dst:  buf,
 		Src:  image.NewUniform(col),
 		Face: face,
 		Dot: fixed.Point26_6{
-			X: fixed.I(max((width-buf.Bounds().Dx())/2, 0)),
+			X: fixed.I(max((buf.Bounds().Dx()-width)/2, 0)),
 			Y: fixed.I(metrics.Ascent.Round()),
 		},
 	}
 	d.DrawString(text)
 
-	finished := func() {
-		pool.Put(buf)
-	}
-
-	return buf, finished
+	return buf
 }
