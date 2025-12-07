@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	JC "jxwatcher/core"
-
-	"github.com/buger/jsonparser"
 	"github.com/mozillazg/go-pinyin"
 )
 
@@ -16,50 +13,6 @@ type cryptoType struct {
 	Symbol   string
 	Status   int64
 	IsActive int64
-}
-
-// ParseJSON replaces UnmarshalJSON
-func (cp *cryptoType) ParseJSON(data []byte) error {
-	// Expect array: [id, name, symbol, ..., is_active, status]
-	idFloat, err := jsonparser.GetFloat(data, "[0]")
-	if err != nil {
-		JC.Logln("Invalid 'id' field:", err)
-		return err
-	}
-	nameStr, err := jsonparser.GetString(data, "[1]")
-	if err != nil {
-		JC.Logln("Invalid 'name' field:", err)
-		return err
-	}
-	symbolStr, err := jsonparser.GetString(data, "[2]")
-	if err != nil {
-		JC.Logln("Invalid 'symbol' field:", err)
-		return err
-	}
-	isActiveFloat, err := jsonparser.GetFloat(data, "[4]")
-	if err != nil {
-		JC.Logln("Invalid 'is_active' field:", err)
-		return err
-	}
-	statusFloat, err := jsonparser.GetFloat(data, "[5]")
-	if err != nil {
-		JC.Logln("Invalid 'status' field:", err)
-		return err
-	}
-
-	isActive := int64(isActiveFloat)
-	status := int64(statusFloat)
-	if isActive == 0 || status == 0 {
-		return nil
-	}
-
-	cp.Id = int64(idFloat)
-	cp.Name = cp.sanitizeText(nameStr, true, false, true)
-	cp.Symbol = cp.sanitizeText(symbolStr, false, true, false)
-	cp.IsActive = isActive
-	cp.Status = status
-
-	return nil
 }
 
 func (cp *cryptoType) containsCJK(s string) bool {

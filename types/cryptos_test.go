@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	json "github.com/goccy/go-json"
-
 	"fyne.io/fyne/v2/test"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )
@@ -69,7 +69,7 @@ func TestCryptosLoaderLoadFileEmpty(t *testing.T) {
 	cryptosLoaderTurnOnLogs()
 }
 
-func TestCryptosLoaderTransformAndUnmarshal(t *testing.T) {
+func TestCryptosLoaderTransformAndParse(t *testing.T) {
 	cryptosLoaderTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
@@ -99,9 +99,9 @@ func TestCryptosLoaderTransformAndUnmarshal(t *testing.T) {
 	processed, _ := json.Marshal(trimmed)
 
 	var loader cryptosLoaderType
-	err := json.Unmarshal(processed, &loader)
+	err := loader.parseJSON(processed)
 	if err != nil {
-		t.Errorf("Failed to unmarshal trimmed data: %v", err)
+		t.Errorf("Failed to parse trimmed data: %v", err)
 	}
 	if len(loader.Values) != 2 {
 		t.Errorf("Expected 2 cryptos, got %d", len(loader.Values))

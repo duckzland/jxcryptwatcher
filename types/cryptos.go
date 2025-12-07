@@ -30,7 +30,7 @@ func (c *cryptosLoaderType) load() *cryptosLoaderType {
 		return c
 	}
 
-	if err := c.ParseJSON([]byte(data)); err != nil {
+	if err := c.parseJSON([]byte(data)); err != nil {
 		JC.Notify(JC.NotifyFailedToLoadCryptosData)
 		return c
 	}
@@ -92,14 +92,47 @@ func (c *cryptosLoaderType) convert() *cryptosMapType {
 	return cm
 }
 
-func (c *cryptosLoaderType) ParseJSON(data []byte) error {
-
+func (c *cryptosLoaderType) parseJSON(data []byte) error {
 	c.Values = nil
+	var parsed []cryptoType
 
 	_, err := jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		var cp cryptoType
-		if err := cp.ParseJSON(value); err == nil && cp.Id != 0 {
-			c.Values = append(c.Values, cp)
+
+		idFloat, err := jsonparser.GetFloat(value, "[0]")
+		if err != nil {
+			JC.Logln("Invalid 'id' field:", err)
+			return
+		}
+		nameStr, err := jsonparser.GetString(value, "[1]")
+		if err != nil {
+			JC.Logln("Invalid 'name' field:", err)
+			return
+		}
+		symbolStr, err := jsonparser.GetString(value, "[2]")
+		if err != nil {
+			JC.Logln("Invalid 'symbol' field:", err)
+			return
+		}
+		isActiveFloat, err := jsonparser.GetFloat(value, "[4]")
+		if err != nil {
+			JC.Logln("Invalid 'is_active' field:", err)
+			return
+		}
+		statusFloat, err := jsonparser.GetFloat(value, "[5]")
+		if err != nil {
+			JC.Logln("Invalid 'status' field:", err)
+			return
+		}
+
+		cp.Id = int64(idFloat)
+		cp.Name = cp.sanitizeText(nameStr, true, false, true)
+		cp.Symbol = cp.sanitizeText(symbolStr, false, true, false)
+		cp.IsActive = int64(isActiveFloat)
+		cp.Status = int64(statusFloat)
+
+		if cp.Id != 0 && cp.IsActive != 0 && cp.Status != 0 {
+			parsed = append(parsed, cp)
 		}
 	}, "values")
 
@@ -107,12 +140,12 @@ func (c *cryptosLoaderType) ParseJSON(data []byte) error {
 		JC.Logln("Failed to parse cryptos:", err)
 		return err
 	}
-
-	if len(c.Values) == 0 {
+	if len(parsed) == 0 {
 		JC.Logln("No cryptos found in the data")
 		return fmt.Errorf("empty cryptos list")
 	}
 
+	c.Values = parsed
 	return nil
 }
 
@@ -132,7 +165,7 @@ func (c *cryptosLoaderType) GetCryptos() int64 {
 				cryptosLoaderStorage = loader
 			}
 
-			if err := loader.ParseJSON(body); err != nil {
+			if err := loader.parseJSON(body); err != nil {
 				JC.Notify(JC.NotifyFailedToFetchCryptosData)
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}

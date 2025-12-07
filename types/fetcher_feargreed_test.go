@@ -34,9 +34,8 @@ func TestFearGreedFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil fearGreedFetcher")
 	}
 
-	// Simulate parsed values
 	fetcher.Score = strconv.FormatInt(72, 10)
-	tsRaw := "1695955200" // Example UNIX timestamp
+	tsRaw := "1695955200"
 	ts, err := strconv.ParseInt(tsRaw, 10, 64)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
@@ -49,6 +48,40 @@ func TestFearGreedFetcherStructure(t *testing.T) {
 	}
 	if fetcher.LastUpdate.Unix() != ts {
 		t.Error("LastUpdate not set correctly")
+	}
+
+	fearGreedTurnOnLogs()
+}
+
+func TestFearGreedFetcherParseJSON(t *testing.T) {
+	fearGreedTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	raw := []byte(`{
+		"data": {
+			"historicalValues": {
+				"now": {
+					"score": 41,
+					"timestamp": "1757136190"
+				}
+			}
+		}
+	}`)
+
+	fetcher := NewFearGreedFetcher()
+	err := fetcher.parseJSON(raw)
+	if err != nil {
+		t.Errorf("Unexpected error parsing JSON: %v", err)
+	}
+
+	if fetcher.Score != "41" {
+		t.Errorf("Expected Score=41, got %s", fetcher.Score)
+	}
+
+	expectedTS, _ := strconv.ParseInt("1757136190", 10, 64)
+	if fetcher.LastUpdate.Unix() != expectedTS {
+		t.Errorf("Expected LastUpdate=%d, got %d", expectedTS, fetcher.LastUpdate.Unix())
 	}
 
 	fearGreedTurnOnLogs()

@@ -9,9 +9,10 @@ import (
 	"fyne.io/fyne/v2/storage"
 
 	"github.com/buger/jsonparser"
-	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
+
+	json "github.com/goccy/go-json"
 )
 
 var panelsMu sync.RWMutex

@@ -46,16 +46,13 @@ func TestConfigInitLoadAndValidate(t *testing.T) {
 	}
 	ConfigSave()
 
-	// Load and patch
 	ConfigInit()
 	cfg := UseConfig()
 
-	// Validate version bump
-	if cfg.Version != "1.7.0" {
-		t.Errorf("Expected version to be 1.7.0 after load, got %s", cfg.Version)
+	if cfg.Version != "1.8.0" {
+		t.Errorf("Expected version to be 1.8.0 after load, got %s", cfg.Version)
 	}
 
-	// Validate all fields are preserved
 	if cfg.DataEndpoint != "https://data" {
 		t.Error("DataEndpoint was overwritten")
 	}
@@ -242,5 +239,68 @@ func TestConcurrentAccess(t *testing.T) {
 	}()
 
 	wg.Wait()
+	configTurnOnLogs()
+}
+
+func TestConfigParseJSON(t *testing.T) {
+	configTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	raw := []byte(`{
+		"data_endpoint": "https://data",
+		"exchange_endpoint": "https://exchange",
+		"altseason_endpoint": "https://altseason",
+		"feargreed_endpoint": "https://feargreed",
+		"cmc100_endpoint": "https://cmc100",
+		"marketcap_endpoint": "https://marketcap",
+		"rsi_endpoint": "https://rsi",
+		"etf_endpoint": "https://etf",
+		"dominance_endpoint": "https://dominance",
+		"version": "1.9.0",
+		"delay": 42
+	}`)
+
+	cfg := &configType{}
+	err := cfg.parseJSON(raw)
+	if err != nil {
+		t.Errorf("Unexpected error parsing JSON: %v", err)
+	}
+
+	// Assertions
+	if cfg.DataEndpoint != "https://data" {
+		t.Errorf("Expected DataEndpoint=https://data, got %s", cfg.DataEndpoint)
+	}
+	if cfg.ExchangeEndpoint != "https://exchange" {
+		t.Errorf("Expected ExchangeEndpoint=https://exchange, got %s", cfg.ExchangeEndpoint)
+	}
+	if cfg.AltSeasonEndpoint != "https://altseason" {
+		t.Errorf("Expected AltSeasonEndpoint=https://altseason, got %s", cfg.AltSeasonEndpoint)
+	}
+	if cfg.FearGreedEndpoint != "https://feargreed" {
+		t.Errorf("Expected FearGreedEndpoint=https://feargreed, got %s", cfg.FearGreedEndpoint)
+	}
+	if cfg.CMC100Endpoint != "https://cmc100" {
+		t.Errorf("Expected CMC100Endpoint=https://cmc100, got %s", cfg.CMC100Endpoint)
+	}
+	if cfg.MarketCapEndpoint != "https://marketcap" {
+		t.Errorf("Expected MarketCapEndpoint=https://marketcap, got %s", cfg.MarketCapEndpoint)
+	}
+	if cfg.RSIEndpoint != "https://rsi" {
+		t.Errorf("Expected RSIEndpoint=https://rsi, got %s", cfg.RSIEndpoint)
+	}
+	if cfg.ETFEndpoint != "https://etf" {
+		t.Errorf("Expected ETFEndpoint=https://etf, got %s", cfg.ETFEndpoint)
+	}
+	if cfg.DominanceEndpoint != "https://dominance" {
+		t.Errorf("Expected DominanceEndpoint=https://dominance, got %s", cfg.DominanceEndpoint)
+	}
+	if cfg.Version != "1.9.0" {
+		t.Errorf("Expected Version=1.9.0, got %s", cfg.Version)
+	}
+	if cfg.Delay != 42 {
+		t.Errorf("Expected Delay=42, got %d", cfg.Delay)
+	}
+
 	configTurnOnLogs()
 }

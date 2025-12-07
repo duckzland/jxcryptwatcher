@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	json "github.com/goccy/go-json"
-
 	"fyne.io/fyne/v2/test"
 )
 
@@ -24,53 +22,57 @@ func cryptoTurnOnLogs() {
 	log.SetOutput(os.Stdout)
 }
 
-func TestCryptoTypeUnmarshalValid(t *testing.T) {
+func TestCryptoLoaderParseValid(t *testing.T) {
 	cryptoTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	raw := []byte(`[123, "Bitcoin", "BTC", "unused", 1, 1]`)
-	var c cryptoType
-	err := json.Unmarshal(raw, &c)
+	raw := []byte(`[ [123, "Bitcoin", "BTC", "unused", 1, 1] ]`)
+	var loader cryptosLoaderType
+	err := loader.parseJSON([]byte(`{"values":` + string(raw) + `}`))
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
+	if len(loader.Values) != 1 {
+		t.Fatalf("Expected 1 crypto, got %d", len(loader.Values))
+	}
+	c := loader.Values[0]
 	if c.Id != 123 || c.Name != "Bitcoin" || c.Symbol != "BTC" || c.IsActive != 1 || c.Status != 1 {
 		t.Errorf("Unexpected values: %+v", c)
 	}
 	cryptoTurnOnLogs()
 }
 
-func TestCryptoTypeUnmarshalInactive(t *testing.T) {
+func TestCryptoLoaderParseInactive(t *testing.T) {
 	cryptoTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	raw := []byte(`[123, "Bitcoin", "BTC", "unused", 0, 1]`)
-	var c cryptoType
-	err := json.Unmarshal(raw, &c)
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	raw := []byte(`[ [123, "Bitcoin", "BTC", "unused", 0, 1] ]`)
+	var loader cryptosLoaderType
+	err := loader.parseJSON([]byte(`{"values":` + string(raw) + `}`))
+	if err == nil {
+		t.Errorf("Expected error for inactive crypto, got nil")
 	}
-	if c.Id != 0 {
-		t.Errorf("Expected zeroed struct for inactive crypto, got: %+v", c)
+	if len(loader.Values) != 0 {
+		t.Errorf("Expected no active cryptos, got: %+v", loader.Values)
 	}
 	cryptoTurnOnLogs()
 }
 
-func TestCryptoTypeUnmarshalInvalidLength(t *testing.T) {
+func TestCryptoLoaderParseInvalidLength(t *testing.T) {
 	cryptoTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	raw := []byte(`[123, "Bitcoin", "BTC"]`)
-	var c cryptoType
-	err := json.Unmarshal(raw, &c)
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	raw := []byte(`[ [123, "Bitcoin", "BTC"] ]`)
+	var loader cryptosLoaderType
+	err := loader.parseJSON([]byte(`{"values":` + string(raw) + `}`))
+	if err == nil {
+		t.Errorf("Expected non-nil error for invalid length")
 	}
-	if c.Id != 0 {
-		t.Errorf("Expected zeroed struct for invalid length, got: %+v", c)
+	if len(loader.Values) != 0 {
+		t.Errorf("Expected no cryptos, got: %+v", loader.Values)
 	}
 	cryptoTurnOnLogs()
 }

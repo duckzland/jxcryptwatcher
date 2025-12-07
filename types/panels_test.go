@@ -1,12 +1,13 @@
 package types
 
 import (
-	JC "jxwatcher/core"
 	"log"
 	"os"
 	"testing"
 
 	"fyne.io/fyne/v2/test"
+
+	JC "jxwatcher/core"
 )
 
 type panelsNullWriter struct{}
@@ -110,5 +111,53 @@ func TestPanelsTypeConvertToMap(t *testing.T) {
 	if pm.TotalData() != 1 {
 		t.Errorf("Expected 1 panel in map, got %d", pm.TotalData())
 	}
+	panelsTurnOnLogs()
+}
+
+func TestPanelsTypeParseJSON(t *testing.T) {
+	panelsTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	raw := []byte(`[
+		{
+			"source": 1,
+			"target": 2,
+			"value": 0.5,
+			"decimals": 4,
+			"source_symbol": "BTC",
+			"target_symbol": "ETH"
+		}
+	]`)
+
+	p := &panelsType{}
+	err := p.parseJSON(raw)
+	if err != nil {
+		t.Errorf("Unexpected error parsing JSON: %v", err)
+	}
+
+	if len(*p) != 1 {
+		t.Fatalf("Expected 1 panel, got %d", len(*p))
+	}
+	panel := (*p)[0]
+	if panel.Source != 1 {
+		t.Errorf("Expected Source=1, got %d", panel.Source)
+	}
+	if panel.Target != 2 {
+		t.Errorf("Expected Target=2, got %d", panel.Target)
+	}
+	if panel.Value != 0.5 {
+		t.Errorf("Expected Value=0.5, got %f", panel.Value)
+	}
+	if panel.Decimals != 4 {
+		t.Errorf("Expected Decimals=4, got %d", panel.Decimals)
+	}
+	if panel.SourceSymbol != "BTC" {
+		t.Errorf("Expected SourceSymbol=BTC, got %s", panel.SourceSymbol)
+	}
+	if panel.TargetSymbol != "ETH" {
+		t.Errorf("Expected TargetSymbol=ETH, got %s", panel.TargetSymbol)
+	}
+
 	panelsTurnOnLogs()
 }
