@@ -119,7 +119,6 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 
 	contentSize := fyne.NewSize(size.Width-2*padding, size.Height-contentY-padding)
 	contentPos := fyne.NewPos(padding, contentY)
-	contentHeight := a.content.Size().Height
 
 	if a.content.Position() != contentPos {
 		a.content.Move(contentPos)
@@ -128,10 +127,8 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	if a.content.Size() != contentSize {
 		a.content.Resize(contentSize)
 
-		// BugFix: container vscroll height change doesnt trigger refresh
-		if contentHeight != contentSize.Height {
-			a.content.Refresh()
-		}
+		// BugFix: container vscroll height change doesnt trigger refresh or container width change not refreshing as well
+		a.content.Refresh()
 	}
 
 	if a.placeholder != nil {
