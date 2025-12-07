@@ -95,7 +95,8 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 
 func (w *notificationDisplay) rasterize() {
 
-	dst := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color)
+	dst, done := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color)
+	defer done()
 	if dst == nil || w.img == nil {
 		return
 	}

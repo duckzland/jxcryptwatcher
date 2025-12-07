@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"golang.org/x/image/font"
@@ -170,18 +171,33 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) *image.NRGBA {
+var rasterizeTextBufPool = sync.Pool{
+	New: func() any {
+		return image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	},
+}
 
+// RasterizeText returns an image buffer and a finished func.
+// Call finished() when you are done with the buffer to return it to the pool.
+func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) (*image.NRGBA, func()) {
 	face := UseTheme().GetFontFace(textStyle, textSize)
 	if face == nil {
-		return nil
+		return nil, func() {}
 	}
 
 	metrics := face.Metrics()
 	width := max(font.MeasureString(face, text).Round(), 1)
 	height := (metrics.Ascent + metrics.Descent).Ceil()
 
-	buf := image.NewNRGBA(image.Rect(0, 0, width, height))
+	buf := rasterizeTextBufPool.Get().(*image.NRGBA)
+
+	if buf.Bounds().Dx() != width || buf.Bounds().Dy() != height {
+		buf = image.NewNRGBA(image.Rect(0, 0, width, height))
+	} else {
+		for i := range buf.Pix {
+			buf.Pix[i] = 0
+		}
+	}
 
 	d := &font.Drawer{
 		Dst:  buf,
@@ -194,5 +210,10 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	}
 	d.DrawString(text)
 
-	return buf
+	// finished function returns the buffer to the pool
+	finished := func() {
+		rasterizeTextBufPool.Put(buf)
+	}
+
+	return buf, finished
 }
