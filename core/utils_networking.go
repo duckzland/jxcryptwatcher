@@ -131,20 +131,17 @@ var networkingBufPool = sync.Pool{
 	},
 }
 
-func ReadResponse(body io.ReadCloser) ([]byte, error) {
-
+func ReadResponse(body io.ReadCloser) ([]byte, func(), error) {
 	buf := networkingBufPool.Get().([]byte)
 	buf = buf[:0]
 
 	data, err := io.ReadAll(body)
 	if err != nil {
 		networkingBufPool.Put(buf)
-		return nil, err
+		return nil, nil, err
 	}
 
 	buf = append(buf, data...)
-	networkingBufPool.Put(buf)
 
-	return buf, nil
-
+	return buf, func() { networkingBufPool.Put(buf) }, nil
 }

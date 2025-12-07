@@ -69,7 +69,8 @@ func (mc *marketCapFetcher) GetRate() int64 {
 			url.Add("range", "30d")
 		},
 		func(resp *http.Response) int64 {
-			body, err := JC.ReadResponse(resp.Body)
+			body, close, err := JC.ReadResponse(resp.Body)
+			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
