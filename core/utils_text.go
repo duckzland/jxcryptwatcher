@@ -205,12 +205,17 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 		buf.Pix[i] = 0
 	}
 
+	xOffset := (width - buf.Bounds().Dx()) / 2
+	if xOffset < 0 {
+		xOffset = 0
+	}
+
 	d := &font.Drawer{
 		Dst:  buf,
 		Src:  image.NewUniform(col),
 		Face: face,
 		Dot: fixed.Point26_6{
-			X: fixed.I(0),
+			X: fixed.I(xOffset),
 			Y: fixed.I(metrics.Ascent.Round()),
 		},
 	}
