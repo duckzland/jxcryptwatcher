@@ -1,13 +1,17 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/buger/jsonparser"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )
@@ -70,6 +74,33 @@ func (rf *rsiFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
+func (rf *rsiFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
+	dec := json.NewDecoder(r)
+
+	// Decode into a generic map
+	var raw map[string]json.RawMessage
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	sanitized := map[string]json.RawMessage{}
+
+	if v, ok := raw["data"]; ok {
+		sanitized["data"] = v
+	}
+
+	if v, ok := raw["status"]; ok {
+		sanitized["status"] = v
+	}
+
+	cleanBytes, err := json.Marshal(sanitized)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.NopCloser(bytes.NewReader(cleanBytes)), nil
+}
+
 func (rf *rsiFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().RSIEndpoint,
@@ -80,6 +111,13 @@ func (rf *rsiFetcher) GetRate() int64 {
 			url.Add("marketCapRange.min", "50000000")
 		},
 		func(resp *http.Response) int64 {
+			sanitizedBody, err := rf.sanitizeJSON(resp.Body)
+			if err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+			resp.Body.Close()
+			resp.Body = sanitizedBody
+
 			body, close, err := JC.ReadResponse(resp.Body)
 			defer close()
 			if err != nil {
@@ -90,12 +128,10 @@ func (rf *rsiFetcher) GetRate() int64 {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			// Compute pulse (overbought - oversold)
 			bp, _ := strconv.ParseFloat(rf.OverboughtPercentage, 64)
 			sp, _ := strconv.ParseFloat(rf.OversoldPercentage, 64)
 			ne := bp - sp
 
-			// ✅ Same insertion logic as old code
 			tickerCacheStorage.Insert(TickerTypeRSI, rf.AverageRSI, rf.LastUpdate)
 			tickerCacheStorage.Insert(TickerTypePulse, fmt.Sprintf("%+.2f%%", ne), rf.LastUpdate)
 			tickerCacheStorage.Insert(TickerTypeRSIOversold, rf.OversoldPercentage, rf.LastUpdate)

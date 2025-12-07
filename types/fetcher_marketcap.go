@@ -1,12 +1,16 @@
 package types
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/buger/jsonparser"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )
@@ -61,6 +65,31 @@ func (mc *marketCapFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
+func (mc *marketCapFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
+	dec := json.NewDecoder(r)
+
+	var raw map[string]json.RawMessage
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	sanitized := map[string]json.RawMessage{}
+
+	if v, ok := raw["data"]; ok {
+		sanitized["data"] = v
+	}
+	if v, ok := raw["status"]; ok {
+		sanitized["status"] = v
+	}
+
+	cleanBytes, err := json.Marshal(sanitized)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.NopCloser(bytes.NewReader(cleanBytes)), nil
+}
+
 func (mc *marketCapFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().MarketCapEndpoint,
@@ -69,6 +98,14 @@ func (mc *marketCapFetcher) GetRate() int64 {
 			url.Add("range", "30d")
 		},
 		func(resp *http.Response) int64 {
+
+			sanitizedBody, err := mc.sanitizeJSON(resp.Body)
+			if err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+			resp.Body.Close()
+			resp.Body = sanitizedBody
+
 			body, close, err := JC.ReadResponse(resp.Body)
 			defer close()
 			if err != nil {

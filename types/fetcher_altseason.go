@@ -1,12 +1,16 @@
 package types
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/buger/jsonparser"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )
@@ -42,6 +46,28 @@ func (er *altSeasonFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
+func (er *altSeasonFetcher) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
+	dec := json.NewDecoder(r)
+
+	var raw map[string]json.RawMessage
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	sanitized := map[string]json.RawMessage{}
+
+	if v, ok := raw["data"]; ok {
+		sanitized["data"] = v
+	}
+
+	cleanBytes, err := json.Marshal(sanitized)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.NopCloser(bytes.NewReader(cleanBytes)), nil
+}
+
 func (er *altSeasonFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().AltSeasonEndpoint,
@@ -51,6 +77,14 @@ func (er *altSeasonFetcher) GetRate() int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(resp *http.Response) int64 {
+
+			sanitizedBody, err := er.sanitizeJSON(resp.Body)
+			if err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+			resp.Body.Close()
+			resp.Body = sanitizedBody
+
 			body, close, err := JC.ReadResponse(resp.Body)
 			defer close()
 			if err != nil {

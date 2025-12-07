@@ -1,6 +1,8 @@
 package types
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -8,6 +10,8 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+
+	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
 )
@@ -78,6 +82,33 @@ func (er *exchangeResults) parseJSON(data []byte) error {
 	return nil
 }
 
+func (er *exchangeResults) sanitizeJSON(r io.ReadCloser) (io.ReadCloser, error) {
+	dec := json.NewDecoder(r)
+
+	// Decode into a generic map
+	var raw map[string]json.RawMessage
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	sanitized := map[string]json.RawMessage{}
+
+	if v, ok := raw["data"]; ok {
+		sanitized["data"] = v
+	}
+
+	if v, ok := raw["status"]; ok {
+		sanitized["status"] = v
+	}
+
+	cleanBytes, err := json.Marshal(sanitized)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.NopCloser(bytes.NewReader(cleanBytes)), nil
+}
+
 func (er *exchangeResults) GetRate(rk string) int64 {
 
 	rko := strings.Split(rk, JC.STRING_PIPE)
@@ -113,6 +144,13 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 			url.Add("convert_id", tid)
 		},
 		func(resp *http.Response) int64 {
+
+			sanitizedBody, err := er.sanitizeJSON(resp.Body)
+			if err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+			resp.Body.Close()
+			resp.Body = sanitizedBody
 
 			body, close, err := JC.ReadResponse(resp.Body)
 			defer close()
