@@ -20,3 +20,11 @@ const ACT_PANEL_EDIT = "panels_edit"
 const ACT_PANEL_DELETE = "panels_delete"
 
 const ACT_TICKER_UPDATE = "tickers_update"
+
+const ACT_TICKER_GET_ALTSEASON = "ticker_get_alt_season"
+const ACT_TICKER_GET_CMC100 = "ticker_get_cmc100"
+const ACT_TICKER_GET_DOMINANCE = "ticker_get_dominance"
+const ACT_TICKER_GET_ETF = "ticker_get_etf"
+const ACT_TICKER_GET_FEARGREED = "ticker_get_feargreed"
+const ACT_TICKER_GET_MARKETCAP = "ticker_get_marketcap"
+const ACT_TICKER_GET_RSI = "ticker_get_rsi"

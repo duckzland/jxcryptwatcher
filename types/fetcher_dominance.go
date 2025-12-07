@@ -66,7 +66,7 @@ func (df *dominanceFetcher) GetRate() int64 {
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {
 
-			body, close, err := JC.ReadResponse(resp.Body)
+			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_DOMINANCE, resp)
 			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

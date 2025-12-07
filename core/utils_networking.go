@@ -125,23 +125,38 @@ func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Reques
 	return NETWORKING_SUCCESS
 }
 
-var networkingBufPool = sync.Pool{
-	New: func() any {
-		return make([]byte, 0, 4096)
-	},
+var networkingBufPools sync.Map
+
+func getPool(key string, size int) *sync.Pool {
+	if p, ok := networkingBufPools.Load(key); ok {
+		return p.(*sync.Pool)
+	}
+	newPool := &sync.Pool{
+		New: func() any {
+			return make([]byte, 0, size)
+		},
+	}
+	networkingBufPools.Store(key, newPool)
+	return newPool
 }
 
-func ReadResponse(body io.ReadCloser) ([]byte, func(), error) {
-	buf := networkingBufPool.Get().([]byte)
+func ReadResponse(key string, resp *http.Response) ([]byte, func(), error) {
+	size := 4096
+	if resp.ContentLength > 0 {
+		size = int(resp.ContentLength)
+	}
+
+	pool := getPool(key, size)
+	buf := pool.Get().([]byte)
 	buf = buf[:0]
 
-	data, err := io.ReadAll(body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		networkingBufPool.Put(buf)
+		pool.Put(buf)
 		return nil, nil, err
 	}
 
 	buf = append(buf, data...)
 
-	return buf, func() { networkingBufPool.Put(buf) }, nil
+	return buf, func() { pool.Put(buf) }, nil
 }
