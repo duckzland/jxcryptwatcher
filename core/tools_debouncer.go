@@ -10,10 +10,10 @@ var coreDebouncer *debouncer = nil
 
 type debouncer struct {
 	mu          sync.Mutex
-	timers      map[string]*time.Timer
 	generations map[string]int
 	callbacks   map[string]func()
 	cancelMap   map[string]context.CancelFunc
+	destroyed   bool
 }
 
 func (d *debouncer) Init() {
@@ -21,12 +21,18 @@ func (d *debouncer) Init() {
 	d.generations = make(map[string]int)
 	d.cancelMap = make(map[string]context.CancelFunc)
 	d.callbacks = make(map[string]func())
+	d.destroyed = false
 	d.mu.Unlock()
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.mu.Lock()
-	if d.generations[key] > 1000000 {
+	if d.destroyed {
+		d.mu.Unlock()
+		return
+	}
+
+	if d.generations[key] > 1_000_000 {
 		d.generations[key] = 0
 	}
 	d.generations[key]++
@@ -44,19 +50,15 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	go func(gen int, ctx context.Context, cancel context.CancelFunc) {
 		defer func() {
 			d.mu.Lock()
-			currentGen := d.generations[key]
-			if gen == currentGen {
-				delete(d.cancelMap, key)
-				delete(d.callbacks, key)
-			}
+			delete(d.cancelMap, key)
+			delete(d.callbacks, key)
+			delete(d.generations, key)
 			d.mu.Unlock()
 			cancel()
 		}()
 
 		select {
 		case <-time.After(delay):
-
-			// Last chance to cancel!
 			time.Sleep(1 * time.Millisecond)
 
 			if err := ctx.Err(); err != nil {
@@ -73,7 +75,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 					fn()
 				}
 			}
-
 			return
 
 		case <-ctx.Done():
@@ -84,29 +85,40 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 func (d *debouncer) Cancel(key string) {
 	d.mu.Lock()
+	if d.destroyed {
+		d.mu.Unlock()
+		return
+	}
 	d.generations[key]++
 	if cancel, exists := d.cancelMap[key]; exists {
 		cancel()
 		delete(d.cancelMap, key)
 	}
 	delete(d.callbacks, key)
+	delete(d.generations, key)
 	d.mu.Unlock()
 }
 
 func (d *debouncer) Destroy() {
 	d.mu.Lock()
-	defer d.mu.Unlock()
+	if d.destroyed {
+		d.mu.Unlock()
+		return
+	}
+	d.destroyed = true
+	d.mu.Unlock()
 
+	d.mu.Lock()
 	for key, cancel := range d.cancelMap {
 		if cancel != nil {
 			cancel()
 		}
 		delete(d.cancelMap, key)
 	}
-
-	d.cancelMap = nil
-	d.generations = nil
 	d.callbacks = nil
+	d.generations = nil
+	d.cancelMap = nil
+	d.mu.Unlock()
 }
 
 func RegisterDebouncer() *debouncer {

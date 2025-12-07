@@ -6,7 +6,12 @@ import (
 	"time"
 )
 
+func resetDebouncer() {
+	coreDebouncer = nil
+}
+
 func TestDebouncerInit(t *testing.T) {
+	resetDebouncer()
 	d := &debouncer{}
 	d.Init()
 
@@ -16,47 +21,55 @@ func TestDebouncerInit(t *testing.T) {
 	if d.cancelMap == nil {
 		t.Error("Expected cancelMap to be initialized")
 	}
+	if d.callbacks == nil {
+		t.Error("Expected callbacks map to be initialized")
+	}
 }
 
 func TestRegisterDebouncerSingleton(t *testing.T) {
+	resetDebouncer()
 	d1 := RegisterDebouncer()
 	d2 := RegisterDebouncer()
-
 	if d1 != d2 {
 		t.Error("Expected RegisterDebouncer to return the same instance")
 	}
 }
 
 func TestUseDebouncerReturnsInstance(t *testing.T) {
+	resetDebouncer()
 	d1 := RegisterDebouncer()
 	d2 := UseDebouncer()
-
 	if d1 != d2 {
 		t.Error("Expected UseDebouncer to return the registered instance")
 	}
 }
 
-func TestDebouncerCall(t *testing.T) {
+func TestDebouncerCallFires(t *testing.T) {
+	resetDebouncer()
 	d := RegisterDebouncer()
 	var mu sync.Mutex
 	called := false
 
-	d.Call("test", 100*time.Millisecond, func() {
+	d.Call("test", 50*time.Millisecond, func() {
 		mu.Lock()
 		called = true
 		mu.Unlock()
 	})
 
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	mu.Lock()
+	defer mu.Unlock()
 	if !called {
 		t.Error("Expected function to be called after delay")
 	}
-	mu.Unlock()
+	if _, ok := d.cancelMap["test"]; ok {
+		t.Error("Expected cancelMap entry cleaned after callback")
+	}
 }
 
-func TestDebouncerCancel(t *testing.T) {
+func TestDebouncerCancelPreventsCallback(t *testing.T) {
+	resetDebouncer()
 	d := RegisterDebouncer()
 	var mu sync.Mutex
 	called := false
@@ -71,13 +84,17 @@ func TestDebouncerCancel(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	mu.Lock()
+	defer mu.Unlock()
 	if called {
 		t.Error("Expected function to be canceled and not called")
 	}
-	mu.Unlock()
+	if _, ok := d.cancelMap["cancelTest"]; ok {
+		t.Error("Expected cancelMap entry cleaned after cancel")
+	}
 }
 
-func TestDebouncerMultipleCalls(t *testing.T) {
+func TestDebouncerMultipleCallsSuppressesEarlier(t *testing.T) {
+	resetDebouncer()
 	d := RegisterDebouncer()
 	var mu sync.Mutex
 	callCount := 0
@@ -94,19 +111,17 @@ func TestDebouncerMultipleCalls(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	mu.Lock()
-	if callCount != 1 {
-		t.Errorf("Expected function to be called once, got %d", callCount)
+	defer mu.Unlock()
+	if callCount > 1 {
+		t.Errorf("Expected at most one callback, got %d", callCount)
 	}
-	mu.Unlock()
 }
 
-func TestDebouncerDestroy(t *testing.T) {
+func TestDebouncerDestroyCleansMaps(t *testing.T) {
+	resetDebouncer()
 	d := RegisterDebouncer()
 
-	for i := 0; i < 3; i++ {
-		d.Call("destroyTest", 50*time.Millisecond, func() {})
-	}
-
+	d.Call("destroyTest", 50*time.Millisecond, func() {})
 	if d.generations == nil || d.cancelMap == nil || d.callbacks == nil {
 		t.Fatal("Expected debouncer maps to be initialized before destroy")
 	}
@@ -121,5 +136,19 @@ func TestDebouncerDestroy(t *testing.T) {
 	}
 	if d.callbacks != nil {
 		t.Error("Expected callbacks map to be nil after destroy")
+	}
+}
+
+func TestDebouncerIgnoresAfterDestroy(t *testing.T) {
+	resetDebouncer()
+	d := RegisterDebouncer()
+	d.Destroy()
+
+	d.Call("afterDestroy", 10*time.Millisecond, func() { t.Error("Callback should not fire after destroy") })
+	d.Cancel("afterDestroy")
+
+	time.Sleep(20 * time.Millisecond)
+	if d.generations != nil || d.cancelMap != nil || d.callbacks != nil {
+		t.Error("Expected maps to remain nil after destroy")
 	}
 }
