@@ -193,14 +193,16 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	height := (metrics.Ascent + metrics.Descent).Ceil()
 
 	pool := getPoolForSize(textSize)
-	buf := pool.Get().(*image.NRGBA)
+	_ = pool.Get().(*image.NRGBA)
 
-	if buf.Bounds().Dx() != width || buf.Bounds().Dy() != height {
+	buf := image.NewNRGBA(image.Rect(0, 0, width, height))
+
+	if buf.Bounds().Dx() < width || buf.Bounds().Dy() < height {
 		buf = image.NewNRGBA(image.Rect(0, 0, width, height))
-	} else {
-		for i := range buf.Pix {
-			buf.Pix[i] = 0
-		}
+	}
+
+	for i := range buf.Pix {
+		buf.Pix[i] = 0
 	}
 
 	d := &font.Drawer{
