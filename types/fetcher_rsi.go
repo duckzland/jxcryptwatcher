@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -81,7 +80,8 @@ func (rf *rsiFetcher) GetRate() int64 {
 			url.Add("marketCapRange.min", "50000000")
 		},
 		func(resp *http.Response) int64 {
-			body, err := io.ReadAll(resp.Body)
+			body, close, err := JC.ReadResponse(resp.Body)
+			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}

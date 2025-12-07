@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -121,4 +123,25 @@ func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Reques
 	}
 
 	return NETWORKING_SUCCESS
+}
+
+var networkingBufPool = sync.Pool{
+	New: func() any {
+		return make([]byte, 0, 4096)
+	},
+}
+
+func ReadResponse(body io.ReadCloser) ([]byte, func(), error) {
+	buf := networkingBufPool.Get().([]byte)
+	buf = buf[:0]
+
+	data, err := io.ReadAll(body)
+	if err != nil {
+		networkingBufPool.Put(buf)
+		return nil, nil, err
+	}
+
+	buf = append(buf, data...)
+
+	return buf, func() { networkingBufPool.Put(buf) }, nil
 }

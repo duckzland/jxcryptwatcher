@@ -1,7 +1,6 @@
 package types
 
 import (
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -67,7 +66,8 @@ func (df *dominanceFetcher) GetRate() int64 {
 		UseConfig().DominanceEndpoint,
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {
-			body, err := io.ReadAll(resp.Body)
+			body, close, err := JC.ReadResponse(resp.Body)
+			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
