@@ -36,11 +36,9 @@ func (c *configType) update() bool {
 		if c.DataEndpoint == JC.STRING_EMPTY {
 			c.DataEndpoint = "https://s3.coinmarketcap.com/generated/core/crypto/cryptos.json"
 		}
-
 		if c.ExchangeEndpoint == JC.STRING_EMPTY {
 			c.ExchangeEndpoint = "https://api.coinmarketcap.com/data-api/v3/tools/price-conversion"
 		}
-
 		if c.AltSeasonEndpoint == JC.STRING_EMPTY {
 			c.AltSeasonEndpoint = "https://api.coinmarketcap.com/data-api/v3/altcoin-season/chart"
 		}
