@@ -894,7 +894,7 @@ func registerDispatcher() {
 
 	if JC.IsMobile {
 		ad.SetDelayBetween(200 * time.Millisecond)
-		ad.SetMaxConcurrent(2)
+		ad.SetMaxConcurrent(JC.MaximumThreads(4))
 
 	} else {
 		ad.SetDelayBetween(50 * time.Millisecond)
