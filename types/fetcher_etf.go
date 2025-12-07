@@ -1,59 +1,88 @@
 package types
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
+
 	JC "jxwatcher/core"
 )
 
 type etfFetcher struct {
-	Data   etfData   `json:"data"`
-	Status etfStatus `json:"status"`
+	Total         string
+	TotalBtcValue string
+	TotalEthValue string
+	LastUpdate    time.Time
 }
 
-type etfData struct {
-	Total         int64 `json:"total"`
-	TotalBtcValue int64 `json:"totalBtcValue"`
-	TotalEthValue int64 `json:"totalEthValue"`
-}
+func (ef *etfFetcher) parseJSON(data []byte) error {
+	totalBytes, _, _, err := jsonparser.Get(data, "data", "total")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing total:", err)
+		return err
+	}
 
-type etfStatus struct {
-	Timestamp string `json:"timestamp"`
+	totalInt, _ := strconv.ParseInt(string(totalBytes), 10, 64)
+	ef.Total = strconv.FormatInt(totalInt, 10)
+
+	btcBytes, _, _, err := jsonparser.Get(data, "data", "totalBtcValue")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing totalBtcValue:", err)
+		return err
+	}
+	btcInt, _ := strconv.ParseInt(string(btcBytes), 10, 64)
+	ef.TotalBtcValue = strconv.FormatInt(btcInt, 10)
+
+	// Total ETH value
+	ethBytes, _, _, err := jsonparser.Get(data, "data", "totalEthValue")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing totalEthValue:", err)
+		return err
+	}
+	ethInt, _ := strconv.ParseInt(string(ethBytes), 10, 64)
+	ef.TotalEthValue = strconv.FormatInt(ethInt, 10)
+
+	tsStr, err := jsonparser.GetString(data, "status", "timestamp")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing timestamp:", err)
+		ef.LastUpdate = time.Now()
+		return err
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339, tsStr)
+	if err == nil {
+		ef.LastUpdate = parsedTime
+	} else {
+		ef.LastUpdate = time.Now()
+	}
+
+	return nil
 }
 
 func (ef *etfFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().ETFEndpoint,
-		ef,
 		func(url url.Values, req *http.Request) {
 			url.Add("category", "all")
 			url.Add("range", "30d")
 		},
-		func(resp *http.Response, cc any) int64 {
-			dec, ok := cc.(*etfFetcher)
-			if !ok {
+		func(resp *http.Response) int64 {
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			parsedTime, err := time.Parse(time.RFC3339, dec.Status.Timestamp)
-			if err != nil {
-				parsedTime = time.Now()
+			if err := ef.parseJSON(body); err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			tickerCacheStorage.Insert(TickerTypeETF,
-				strconv.FormatInt(dec.Data.Total, 10),
-				parsedTime)
-
-			tickerCacheStorage.Insert(TickerTypeETFBTC,
-				strconv.FormatInt(dec.Data.TotalBtcValue, 10),
-				parsedTime)
-
-			tickerCacheStorage.Insert(TickerTypeETF,
-				strconv.FormatInt(dec.Data.TotalEthValue, 10),
-				parsedTime)
+			tickerCacheStorage.Insert(TickerTypeETF, ef.Total, ef.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeETFBTC, ef.TotalBtcValue, ef.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeETF, ef.TotalEthValue, ef.LastUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

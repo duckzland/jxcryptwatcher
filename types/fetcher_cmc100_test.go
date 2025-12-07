@@ -34,30 +34,26 @@ func TestCMC100FetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil cmc100Fetcher")
 	}
 
-	fetcher.Data = &cmc100SummaryData{
-		SummaryData: cmc100SummaryDataFields{
-			NextUpdate: "1695955200", // Example UNIX timestamp
-			CurrentValue: cmc100CurrentValueFields{
-				Value:         100.5,
-				PercentChange: 2.3,
-			},
-		},
-	}
-
-	ts, err := strconv.ParseInt(fetcher.Data.SummaryData.NextUpdate, 10, 64)
+	// Simulate parsed values
+	fetcher.Value = strconv.FormatFloat(100.5, 'f', -1, 64)
+	fetcher.PercentChange = strconv.FormatFloat(2.3, 'f', -1, 64)
+	tsRaw := "1695955200" // Example UNIX timestamp
+	ts, err := strconv.ParseInt(tsRaw, 10, 64)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
-	parsed := time.Unix(ts, 0)
+	fetcher.NextUpdate = time.Unix(ts, 0)
 
-	if fetcher.Data.SummaryData.CurrentValue.Value != 100.5 {
-		t.Error("Value field not set correctly")
+	// Assertions
+	if fetcher.Value != "100.5" {
+		t.Errorf("Value field not set correctly, got %s", fetcher.Value)
 	}
-	if fetcher.Data.SummaryData.CurrentValue.PercentChange != 2.3 {
-		t.Error("PercentChange field not set correctly")
+	if fetcher.PercentChange != "2.3" {
+		t.Errorf("PercentChange field not set correctly, got %s", fetcher.PercentChange)
 	}
-	if parsed.Unix() != ts {
-		t.Error("Parsed timestamp mismatch")
+	if fetcher.NextUpdate.Unix() != ts {
+		t.Error("NextUpdate timestamp mismatch")
 	}
+
 	cmc100TurnOnLogs()
 }

@@ -30,19 +30,21 @@ func TestAltSeasonSnapshotTimestampParsing(t *testing.T) {
 	test.NewApp()
 
 	rawTS := strconv.FormatInt(time.Now().Unix(), 10)
-	snap := altSeasonSnapshot{
-		AltcoinIndex: "75",
-		TimestampRaw: rawTS,
-	}
+	fetcher := NewAltSeasonFetcher()
 
-	ts, err := strconv.ParseInt(snap.TimestampRaw, 10, 64)
+	// Simulate ParseJSON behavior manually
+	ts, err := strconv.ParseInt(rawTS, 10, 64)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
-	snap.LastUpdate = time.Unix(ts, 0)
+	fetcher.Index = "75"
+	fetcher.LastUpdate = time.Unix(ts, 0)
 
-	if snap.LastUpdate.Unix() != ts {
+	if fetcher.LastUpdate.Unix() != ts {
 		t.Errorf("Expected LastUpdate to match parsed timestamp")
+	}
+	if fetcher.Index != "75" {
+		t.Errorf("Expected Index to be 75, got %s", fetcher.Index)
 	}
 	altSeasonTurnOnLogs()
 }
@@ -57,25 +59,19 @@ func TestAltSeasonFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil altSeasonFetcher")
 	}
 
-	fetcher.Data = &altSeasonHistoricalData{
-		HistoricalValues: altSeasonHistoricalValues{
-			Now: altSeasonSnapshot{
-				AltcoinIndex: "80",
-				TimestampRaw: "1695955200", // Example UNIX timestamp
-			},
-		},
-	}
-
-	ts, err := strconv.ParseInt(fetcher.Data.HistoricalValues.Now.TimestampRaw, 10, 64)
+	// Simulate parsed values
+	fetcher.Index = "80"
+	tsRaw := "1695955200" // Example UNIX timestamp
+	ts, err := strconv.ParseInt(tsRaw, 10, 64)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
-	fetcher.Data.HistoricalValues.Now.LastUpdate = time.Unix(ts, 0)
+	fetcher.LastUpdate = time.Unix(ts, 0)
 
-	if fetcher.Data.HistoricalValues.Now.AltcoinIndex != "80" {
+	if fetcher.Index != "80" {
 		t.Error("AltcoinIndex not set correctly")
 	}
-	if fetcher.Data.HistoricalValues.Now.LastUpdate.Unix() != ts {
+	if fetcher.LastUpdate.Unix() != ts {
 		t.Error("LastUpdate not set correctly")
 	}
 	altSeasonTurnOnLogs()

@@ -5,26 +5,26 @@ import (
 	"strings"
 	"sync"
 
-	json "github.com/goccy/go-json"
-
 	JC "jxwatcher/core"
+
+	"github.com/buger/jsonparser"
 )
 
 var configStorage *configType = &configType{}
 var configMu sync.RWMutex
 
 type configType struct {
-	DataEndpoint      string `json:"data_endpoint"`
-	ExchangeEndpoint  string `json:"exchange_endpoint"`
-	AltSeasonEndpoint string `json:"altseason_endpoint"`
-	FearGreedEndpoint string `json:"feargreed_endpoint"`
-	CMC100Endpoint    string `json:"cmc100_endpoint"`
-	MarketCapEndpoint string `json:"marketcap_endpoint"`
-	RSIEndpoint       string `json:"rsi_endpoint"`
-	ETFEndpoint       string `json:"etf_endpoint"`
-	DominanceEndpoint string `json:"dominance_endpoint"`
-	Delay             int64  `json:"delay"`
-	Version           string `json:"version"`
+	DataEndpoint      string
+	ExchangeEndpoint  string
+	AltSeasonEndpoint string
+	FearGreedEndpoint string
+	CMC100Endpoint    string
+	MarketCapEndpoint string
+	RSIEndpoint       string
+	ETFEndpoint       string
+	DominanceEndpoint string
+	Delay             int64
+	Version           string
 }
 
 func (c *configType) update() bool {
@@ -61,6 +61,43 @@ func (c *configType) update() bool {
 	return false
 }
 
+func (c *configType) parseJSON(data []byte) error {
+	if val, err := jsonparser.GetString(data, "data_endpoint"); err == nil {
+		c.DataEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "exchange_endpoint"); err == nil {
+		c.ExchangeEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "altseason_endpoint"); err == nil {
+		c.AltSeasonEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "feargreed_endpoint"); err == nil {
+		c.FearGreedEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "cmc100_endpoint"); err == nil {
+		c.CMC100Endpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "marketcap_endpoint"); err == nil {
+		c.MarketCapEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "rsi_endpoint"); err == nil {
+		c.RSIEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "etf_endpoint"); err == nil {
+		c.ETFEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "dominance_endpoint"); err == nil {
+		c.DominanceEndpoint = val
+	}
+	if val, err := jsonparser.GetString(data, "version"); err == nil {
+		c.Version = val
+	}
+	if val, err := jsonparser.GetInt(data, "delay"); err == nil {
+		c.Delay = val
+	}
+	return nil
+}
+
 func (c *configType) load() bool {
 	configMu.Lock()
 	defer configMu.Unlock()
@@ -69,12 +106,11 @@ func (c *configType) load() bool {
 	if !ok {
 		JC.Logf("Failed to load config.json")
 		configStorage.check()
-
 		return c.IsValid() && c.IsValidTickers()
 	}
 
-	if err := json.Unmarshal([]byte(content), c); err != nil {
-		JC.Logf("Failed to unmarshal config.json: %v", err)
+	if err := c.parseJSON([]byte(content)); err != nil {
+		JC.Logf("Failed to parse config.json: %v", err)
 		return false
 	}
 
@@ -85,7 +121,6 @@ func (c *configType) load() bool {
 	}
 
 	JC.Logln("Configuration Loaded")
-
 	return true
 }
 

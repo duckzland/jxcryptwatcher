@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	fyne.io/fyne/v2 v2.7.0-exp-0.0.1
+	github.com/buger/jsonparser v1.1.1
 	github.com/dweymouth/fyne-tooltip v0.3.3
 	github.com/goccy/go-json v0.10.5
 	github.com/google/gops v0.3.28

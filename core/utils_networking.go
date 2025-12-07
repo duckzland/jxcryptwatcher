@@ -10,20 +10,21 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	json "github.com/goccy/go-json"
 )
 
 var httpClient = &http.Client{
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
+		MaxIdleConns:          20,
+		MaxIdleConnsPerHost:   2,
+		IdleConnTimeout:       30 * time.Second,
 		ResponseHeaderTimeout: 10 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	},
 }
 
-func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response, dec any) int64) int64 {
+func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response) int64) int64 {
 	PrintPerfStats("Fetching Request", time.Now())
 
 	parsedURL, err := url.Parse(targetUrl)
@@ -114,20 +115,10 @@ func GetRequest(targetUrl string, dec any, prefetch func(url url.Values, req *ht
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	if dec != nil {
-		decoder := json.NewDecoder(resp.Body)
-		if err := decoder.Decode(dec); err != nil {
-			Logln(fmt.Errorf("Failed to examine data: %w", err))
-			return NETWORKING_BAD_DATA_RECEIVED
-		}
-	}
-
 	if callback != nil {
-		output := callback(resp, dec)
-		dec = nil
+		output := callback(resp)
 		return output
 	}
 
-	dec = nil
 	return NETWORKING_SUCCESS
 }

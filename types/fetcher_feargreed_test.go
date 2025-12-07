@@ -34,26 +34,22 @@ func TestFearGreedFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil fearGreedFetcher")
 	}
 
-	fetcher.Data = &fearGreedHistoricalData{
-		HistoricalValues: fearGreedHistoricalValues{
-			Now: fearGreedSnapshot{
-				Score:        72,
-				TimestampRaw: "1695955200", // Example UNIX timestamp
-			},
-		},
-	}
-
-	ts, err := strconv.ParseInt(fetcher.Data.HistoricalValues.Now.TimestampRaw, 10, 64)
+	// Simulate parsed values
+	fetcher.Score = strconv.FormatInt(72, 10)
+	tsRaw := "1695955200" // Example UNIX timestamp
+	ts, err := strconv.ParseInt(tsRaw, 10, 64)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
-	fetcher.Data.HistoricalValues.Now.LastUpdate = time.Unix(ts, 0)
+	fetcher.LastUpdate = time.Unix(ts, 0)
 
-	if fetcher.Data.HistoricalValues.Now.Score != 72 {
+	// Assertions
+	if fetcher.Score != "72" {
 		t.Error("Score not set correctly")
 	}
-	if fetcher.Data.HistoricalValues.Now.LastUpdate.Unix() != ts {
+	if fetcher.LastUpdate.Unix() != ts {
 		t.Error("LastUpdate not set correctly")
 	}
+
 	fearGreedTurnOnLogs()
 }

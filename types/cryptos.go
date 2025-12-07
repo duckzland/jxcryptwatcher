@@ -6,35 +6,33 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	JC "jxwatcher/core"
+	"github.com/buger/jsonparser"
 
-	json "github.com/goccy/go-json"
+	JC "jxwatcher/core"
 )
 
 var cryptosLoaderStorage *cryptosLoaderType
 var cryptosMu sync.RWMutex
 
 type cryptosLoaderType struct {
-	Values []cryptoType `json:"values"`
+	Values []cryptoType
 }
 
 func (c *cryptosLoaderType) load() *cryptosLoaderType {
 	JC.PrintPerfStats("Loading cryptos.json", time.Now())
 
-	content, ok := JC.LoadFileFromStorage("cryptos.json")
+	data, ok := JC.LoadFileFromStorage("cryptos.json")
 	if !ok {
 		JC.Logln("Failed to open cryptos.json")
 		JC.Notify(JC.NotifyFailedToLoadCryptosData)
+		return c
 	}
 
-	if err := json.Unmarshal([]byte(content), c); err != nil {
-		wrappedErr := fmt.Errorf("Failed to decode cryptos.json: %w", err)
+	if err := c.ParseJSON([]byte(data)); err != nil {
 		JC.Notify(JC.NotifyFailedToLoadCryptosData)
-		JC.Logln(wrappedErr)
 		return c
 	}
 
@@ -95,47 +93,60 @@ func (c *cryptosLoaderType) convert() *cryptosMapType {
 	return cm
 }
 
-func (c *cryptosLoaderType) GetCryptos() int64 {
-	JC.PrintPerfStats("Fetching cryptos data", time.Now())
-	JC.Notify(JC.NotifyRequestingLatestCryptosDataFromExchange)
+func (c *cryptosLoaderType) ParseJSON(data []byte) error {
 
+	c.Values = nil
+
+	_, err := jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		var cp cryptoType
+		if err := cp.ParseJSON(value); err == nil && cp.Id != 0 {
+			c.Values = append(c.Values, cp)
+		}
+	}, "values")
+
+	if err != nil {
+		JC.Logln("Failed to parse cryptos:", err)
+		return err
+	}
+
+	if len(c.Values) == 0 {
+		JC.Logln("No cryptos found in the data")
+		return fmt.Errorf("empty cryptos list")
+	}
+
+	return nil
+}
+
+func (c *cryptosLoaderType) GetCryptos() int64 {
 	return JC.GetRequest(
 		UseConfig().DataEndpoint,
-		nil,
-		func(url url.Values, req *http.Request) {
-			// Optional prefetch logic
-		},
-		func(resp *http.Response, cc any) int64 {
-			var sb strings.Builder
-			tee := io.TeeReader(resp.Body, &sb)
+		func(url url.Values, req *http.Request) {},
+		func(resp *http.Response) int64 {
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
 
-			decoder := json.NewDecoder(tee)
-			if err := decoder.Decode(&c); err != nil {
-				JC.Logln(fmt.Errorf("Failed to examine cryptos data: %w", err))
+			loader := UseCryptosLoader()
+			if loader == nil {
+				loader = &cryptosLoaderType{}
+				cryptosLoaderStorage = loader
+			}
+
+			if err := loader.ParseJSON(body); err != nil {
 				JC.Notify(JC.NotifyFailedToFetchCryptosData)
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if c == nil || len(c.Values) == 0 {
+			if len(loader.Values) == 0 {
 				JC.Logln("No cryptos found in the data")
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			payload := sb.String()
-			if payload == JC.STRING_EMPTY {
-				return JC.NETWORKING_FAILED_CREATE_FILE
-			}
-
-			if !JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), payload) {
-				return JC.NETWORKING_FAILED_CREATE_FILE
-			}
-
-			c.Values = nil
-			payload = JC.STRING_EMPTY
+			JC.CreateFile(JC.BuildPathRelatedToUserDirectory([]string{"cryptos.json"}), string(body))
 
 			JC.Logln("Fetched cryptodata from CMC")
 			JC.Notify(JC.NotifySuccessfullyRetrievedCryptosDataFromExch)
-
 			return JC.NETWORKING_SUCCESS
 		})
 }
