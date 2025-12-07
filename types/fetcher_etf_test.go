@@ -33,31 +33,30 @@ func TestETFFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil etfFetcher")
 	}
 
-	fetcher.Data = etfData{
-		Total:         1218600000,
-		TotalBtcValue: 985100000,
-		TotalEthValue: 233500000,
-	}
-	fetcher.Status = etfStatus{
-		Timestamp: "2025-10-06T21:06:02.963Z",
-	}
-
-	parsed, err := time.Parse(time.RFC3339Nano, fetcher.Status.Timestamp)
+	// Simulate parsed values
+	fetcher.Total = "1218600000"
+	fetcher.TotalBtcValue = "985100000"
+	fetcher.TotalEthValue = "233500000"
+	tsStr := "2025-10-06T21:06:02.963Z"
+	parsed, err := time.Parse(time.RFC3339Nano, tsStr)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
+	fetcher.LastUpdate = parsed
 
-	if fetcher.Data.Total != 1218600000 {
+	// Assertions
+	if fetcher.Total != "1218600000" {
 		t.Error("ETF total not set correctly")
 	}
-	if fetcher.Data.TotalBtcValue != 985100000 {
+	if fetcher.TotalBtcValue != "985100000" {
 		t.Error("ETF BTC total not set correctly")
 	}
-	if fetcher.Data.TotalEthValue != 233500000 {
+	if fetcher.TotalEthValue != "233500000" {
 		t.Error("ETF ETH total not set correctly")
 	}
-	if parsed.Format(time.RFC3339Nano) != fetcher.Status.Timestamp {
+	if fetcher.LastUpdate.Format(time.RFC3339Nano) != tsStr {
 		t.Error("Parsed timestamp mismatch")
 	}
+
 	etfTurnOnLogs()
 }

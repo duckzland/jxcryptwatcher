@@ -1,13 +1,14 @@
 package types
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	json "github.com/goccy/go-json"
+	"github.com/buger/jsonparser"
 
 	JC "jxwatcher/core"
 )
@@ -16,51 +17,63 @@ type exchangeResults struct {
 	Rates []exchangeDataType
 }
 
-func (er *exchangeResults) UnmarshalJSON(data []byte) error {
+func (er *exchangeResults) ParseJSON(data []byte) error {
 
-	var v map[string]interface{}
+	er.Rates = nil
 
-	decoder := json.NewDecoder(strings.NewReader(string(data)))
-	decoder.UseNumber()
-
-	err := decoder.Decode(&v)
+	sourceSymbol, err := jsonparser.GetString(data, "data", "symbol")
 	if err != nil {
+		JC.Logln("ParseJSON error: missing source symbol:", err)
 		return err
 	}
 
-	if er.validateData(v) == false {
-		return nil
+	sourceIdStr, err := jsonparser.GetString(data, "data", "id")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing source id:", err)
+		return err
 	}
 
-	sc := v["data"]
-	tc := v["data"].(map[string]any)["quote"].([]any)
+	sourceId, err := strconv.ParseInt(sourceIdStr, 10, 64)
+	if err != nil {
+		JC.Logln("ParseJSON error: cannot parse source id:", err)
+		return err
+	}
 
-	st := v["status"]
-	tm := st.(map[string]any)["timestamp"].(string)
-	tx, _ := time.Parse(time.RFC3339Nano, tm)
+	sourceAmount, err := jsonparser.GetFloat(data, "data", "amount")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing source amount:", err)
+		return err
+	}
 
-	for _, rate := range tc {
+	tsStr, _ := jsonparser.GetString(data, "status", "timestamp")
+	ts, _ := time.Parse(time.RFC3339Nano, tsStr)
 
-		if er.validateRate(rate) == false {
-			continue
+	_, err = jsonparser.ArrayEach(data, func(value []byte, _ jsonparser.ValueType, _ int, _ error) {
+		ex := exchangeDataType{}
+		ex.SourceSymbol = sourceSymbol
+		ex.SourceId = sourceId
+		ex.SourceAmount = sourceAmount
+
+		ex.TargetSymbol, _ = jsonparser.GetString(value, "symbol")
+		ex.TargetId, _ = jsonparser.GetInt(value, "cryptoId")
+
+		priceBytes, _, _, err := jsonparser.Get(value, "price")
+		if err != nil {
+			JC.Logln("ParseJSON error: missing price:", err)
+			return
 		}
 
-		ex := exchangeDataType{}
+		priceStr := string(priceBytes)
+		ex.TargetAmount, _ = JC.ToBigString(priceStr)
 
-		// CMC Json data is weird the the id is in string while cryptoId is in int64 (but golang cast this as float64)
-		ex.SourceSymbol = sc.(map[string]any)["symbol"].(string)
-		ex.SourceId, _ = strconv.ParseInt(sc.(map[string]any)["id"].(string), 10, 64)
-		ex.SourceAmount, _ = sc.(map[string]any)["amount"].(json.Number).Float64()
-
-		ex.TargetSymbol = rate.(map[string]any)["symbol"].(string)
-		ex.TargetId, _ = rate.(map[string]any)["cryptoId"].(json.Number).Int64()
-
-		price := rate.(map[string]any)["price"].(json.Number).String()
-		ex.TargetAmount, _ = JC.ToBigString(price)
-
-		ex.Timestamp = tx
+		ex.Timestamp = ts
 
 		er.Rates = append(er.Rates, ex)
+	}, "data", "quote")
+
+	if err != nil {
+		JC.Logln("ParseJSON error: failed to iterate quotes:", err)
+		return err
 	}
 
 	return nil
@@ -95,19 +108,24 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 
 	return JC.GetRequest(
 		UseConfig().ExchangeEndpoint,
-		er,
+		nil,
 		func(url url.Values, req *http.Request) {
 			url.Add("amount", "1")
 			url.Add("id", sid)
 			url.Add("convert_id", tid)
 		},
 		func(resp *http.Response, cc any) int64 {
-			dec, ok := cc.(*exchangeResults)
-			if !ok {
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			for _, ex := range dec.Rates {
+			if err := er.ParseJSON(body); err != nil {
+				return JC.NETWORKING_BAD_DATA_RECEIVED
+			}
+
+			for _, ex := range er.Rates {
 
 				// Debug to force display refresh!
 				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
@@ -119,120 +137,6 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 
 			return JC.NETWORKING_SUCCESS
 		})
-}
-
-func (er *exchangeResults) validateData(v map[string]any) bool {
-
-	if _, ok := v["data"]; !ok {
-		JC.Logln("Missing 'data' field in exchange results")
-		return false
-	}
-
-	if _, ok := v["status"]; !ok {
-		JC.Logln("Missing 'status' field in exchange results")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any); !ok {
-		JC.Logln("Invalid 'data' field format in exchange results")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["symbol"]; !ok {
-		JC.Logln("Missing 'symbol' field in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["symbol"].(string); !ok {
-		JC.Logln("Invalid 'symbol' field type in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["id"]; !ok {
-		JC.Logln("Missing 'id' field in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["id"].(string); !ok {
-		JC.Logln("Invalid 'id' field type in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["amount"]; !ok {
-		JC.Logln("Missing 'amount' field in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["amount"].(json.Number); !ok {
-		JC.Logln("Invalid 'amount' field type in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["quote"]; !ok {
-		JC.Logln("Missing 'quote' field in 'data'")
-		return false
-	}
-
-	if _, ok := v["data"].(map[string]any)["quote"].([]any); !ok {
-		JC.Logln("Invalid 'quote' field type in 'data'")
-		return false
-	}
-
-	if _, ok := v["status"].(map[string]any)["timestamp"]; !ok {
-		JC.Logln("Missing 'timestamp' field in 'status'")
-		return false
-	}
-
-	if tm, ok := v["status"].(map[string]any)["timestamp"].(string); !ok {
-		JC.Logln("Invalid 'timestamp' field type in 'status'")
-
-		_, err := time.Parse(time.RFC3339Nano, tm)
-		if err != nil {
-			JC.Logln("Invalid 'timestamp' value in 'status'")
-		}
-		return false
-	}
-
-	return true
-}
-
-func (er *exchangeResults) validateRate(rate any) bool {
-	if _, ok := rate.(map[string]any); !ok {
-		JC.Logln("Invalid rate format:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["symbol"]; !ok {
-		JC.Logln("Missing symbol in rate:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["symbol"].(string); !ok {
-		JC.Logln("Invalid symbol type in rate:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["cryptoId"]; !ok {
-		JC.Logln("Missing cryptoId in rate:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["cryptoId"].(json.Number); !ok {
-		JC.Logln("Invalid cryptoId type in rate:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["price"]; !ok {
-		JC.Logln("Missing price in rate:", rate)
-		return false
-	}
-
-	if _, ok := rate.(map[string]any)["price"].(json.Number); !ok {
-		JC.Logln("Invalid price type in rate:", rate)
-		return false
-	}
-
-	return true
 }
 
 func NewExchangeResults() *exchangeResults {

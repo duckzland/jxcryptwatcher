@@ -1,67 +1,69 @@
 package types
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	JC "jxwatcher/core"
+
+	"github.com/buger/jsonparser"
 )
 
 type fearGreedFetcher struct {
-	Data *fearGreedHistoricalData `json:"data"`
+	Score      string
+	LastUpdate time.Time
 }
 
-type fearGreedHistoricalData struct {
-	HistoricalValues fearGreedHistoricalValues `json:"historicalValues"`
+func (fg *fearGreedFetcher) ParseJSON(data []byte) error {
+	// Extract score
+	scoreBytes, _, _, err := jsonparser.Get(data, "data", "historicalValues", "now", "score")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing score:", err)
+		return err
+	}
+	scoreInt, _ := strconv.ParseInt(string(scoreBytes), 10, 64)
+	fg.Score = strconv.FormatInt(scoreInt, 10)
+
+	// Extract timestamp
+	tsStr, err := jsonparser.GetString(data, "data", "historicalValues", "now", "timestamp")
+	if err != nil {
+		JC.Logln("ParseJSON error: missing timestamp:", err)
+		fg.LastUpdate = time.Now()
+		return err
+	}
+	tsInt, err := strconv.ParseInt(tsStr, 10, 64)
+	if err == nil {
+		fg.LastUpdate = time.Unix(tsInt, 0)
+	} else {
+		fg.LastUpdate = time.Now()
+	}
+
+	return nil
 }
 
-type fearGreedHistoricalValues struct {
-	Now fearGreedSnapshot `json:"now"`
-}
-
-type fearGreedSnapshot struct {
-	Score        int64     `json:"score"`
-	TimestampRaw string    `json:"timestamp"`
-	LastUpdate   time.Time `json:"-"`
-}
-
-func (er *fearGreedFetcher) GetRate() int64 {
-
+func (fg *fearGreedFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().FearGreedEndpoint,
-		er,
+		nil, // manual parsing
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(resp *http.Response, cc any) int64 {
-			dec, ok := cc.(*fearGreedFetcher)
-			if !ok {
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if dec.Data == nil {
+			if err := fg.ParseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			ts, err := strconv.ParseInt(dec.Data.HistoricalValues.Now.TimestampRaw, 10, 64)
-
-			if err == nil {
-				dec.Data.HistoricalValues.Now.LastUpdate = time.Unix(ts, 0)
-			} else {
-				dec.Data.HistoricalValues.Now.LastUpdate = time.Now()
-			}
-
-			if dec.Data == nil {
-				return JC.NETWORKING_BAD_DATA_RECEIVED
-			}
-
-			ms := strconv.FormatInt(dec.Data.HistoricalValues.Now.Score, 10)
-
-			tickerCacheStorage.Insert(TickerTypeFearGreed, ms, dec.Data.HistoricalValues.Now.LastUpdate)
+			tickerCacheStorage.Insert(TickerTypeFearGreed, fg.Score, fg.LastUpdate)
 
 			return JC.NETWORKING_SUCCESS
 		})

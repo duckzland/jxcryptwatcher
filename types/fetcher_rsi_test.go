@@ -34,40 +34,31 @@ func TestRSIFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil rsiFetcher")
 	}
 
-	fetcher.Data = &rsiData{
-		Overall: rsiOverall{
-			AverageRSI:           55.2,
-			OverboughtPercentage: 18.4,
-			OversoldPercentage:   12.7,
-			NeutralPercentage:    68.9,
-		},
-	}
-	fetcher.Status = &rsiStatus{
-		Timestamp: time.Unix(1695955200, 0), // Example UNIX timestamp
-	}
+	// Simulate parsed values
+	fetcher.AverageRSI = strconv.FormatFloat(55.2, 'f', -1, 64)
+	fetcher.OverboughtPercentage = strconv.FormatFloat(18.4, 'f', -1, 64)
+	fetcher.OversoldPercentage = strconv.FormatFloat(12.7, 'f', -1, 64)
+	fetcher.NeutralPercentage = strconv.FormatFloat(68.9, 'f', -1, 64)
+	fetcher.LastUpdate = time.Unix(1695955200, 0) // Example UNIX timestamp
 
 	// Validate values
-	if fetcher.Data.Overall.AverageRSI != 55.2 {
-		t.Errorf("Expected AverageRSI 55.2, got %.2f", fetcher.Data.Overall.AverageRSI)
+	if fetcher.AverageRSI != "55.2" {
+		t.Errorf("Expected AverageRSI 55.2, got %s", fetcher.AverageRSI)
 	}
-	if fetcher.Data.Overall.OverboughtPercentage != 18.4 {
-		t.Errorf("Expected OverboughtPercentage 18.4, got %.2f", fetcher.Data.Overall.OverboughtPercentage)
+	if fetcher.OverboughtPercentage != "18.4" {
+		t.Errorf("Expected OverboughtPercentage 18.4, got %s", fetcher.OverboughtPercentage)
 	}
-	if fetcher.Data.Overall.OversoldPercentage != 12.7 {
-		t.Errorf("Expected OversoldPercentage 12.7, got %.2f", fetcher.Data.Overall.OversoldPercentage)
+	if fetcher.OversoldPercentage != "12.7" {
+		t.Errorf("Expected OversoldPercentage 12.7, got %s", fetcher.OversoldPercentage)
 	}
-	if fetcher.Data.Overall.NeutralPercentage != 68.9 {
-		t.Errorf("Expected NeutralPercentage 68.9, got %.2f", fetcher.Data.Overall.NeutralPercentage)
+	if fetcher.NeutralPercentage != "68.9" {
+		t.Errorf("Expected NeutralPercentage 68.9, got %s", fetcher.NeutralPercentage)
 	}
 
 	// Validate timestamp parsing
-	ts := fetcher.Status.Timestamp.Unix()
-	parsed, err := strconv.ParseInt(strconv.FormatInt(ts, 10), 10, 64)
-	if err != nil {
-		t.Errorf("Failed to parse timestamp: %v", err)
-	}
-	if parsed != 1695955200 {
-		t.Errorf("Expected timestamp 1695955200, got %d", parsed)
+	ts := fetcher.LastUpdate.Unix()
+	if ts != 1695955200 {
+		t.Errorf("Expected timestamp 1695955200, got %d", ts)
 	}
 
 	rsiTurnOnLogs()

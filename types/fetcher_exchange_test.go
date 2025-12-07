@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	json "github.com/goccy/go-json"
-
 	"fyne.io/fyne/v2/test"
 )
 
@@ -24,12 +22,12 @@ func exchangeResultsTurnOnLogs() {
 	log.SetOutput(os.Stdout)
 }
 
-func TestExchangeResultsUnmarshalValid(t *testing.T) {
+func TestExchangeResultsParseJSONValid(t *testing.T) {
 	exchangeResultsTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	raw := `{
+	raw := []byte(`{
 		"data": {
 			"symbol": "BTC",
 			"id": "1",
@@ -45,28 +43,28 @@ func TestExchangeResultsUnmarshalValid(t *testing.T) {
 		"status": {
 			"timestamp": "2025-09-29T03:00:00.000Z"
 		}
-	}`
+	}`)
 
-	var result exchangeResults
-	err := json.Unmarshal([]byte(raw), &result)
+	er := NewExchangeResults()
+	err := er.ParseJSON(raw)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if len(result.Rates) != 1 {
-		t.Errorf("Expected 1 rate, got %d", len(result.Rates))
+	if len(er.Rates) != 1 {
+		t.Errorf("Expected 1 rate, got %d", len(er.Rates))
 	}
-	if result.Rates[0].TargetSymbol != "ETH" {
+	if er.Rates[0].TargetSymbol != "ETH" {
 		t.Error("TargetSymbol not parsed correctly")
 	}
 	exchangeResultsTurnOnLogs()
 }
 
-func TestExchangeResultsUnmarshalInvalid(t *testing.T) {
+func TestExchangeResultsParseJSONInvalid(t *testing.T) {
 	exchangeResultsTurnOffLogs()
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	raw := `{
+	raw := []byte(`{
 		"data": {
 			"symbol": 123,
 			"id": "1",
@@ -76,41 +74,15 @@ func TestExchangeResultsUnmarshalInvalid(t *testing.T) {
 		"status": {
 			"timestamp": "invalid-timestamp"
 		}
-	}`
-
-	var result exchangeResults
-	err := json.Unmarshal([]byte(raw), &result)
-	if err != nil {
-		t.Errorf("Expected graceful failure, got error: %v", err)
-	}
-	if len(result.Rates) != 0 {
-		t.Errorf("Expected 0 rates, got %d", len(result.Rates))
-	}
-	exchangeResultsTurnOnLogs()
-}
-
-func TestExchangeResultsValidateRate(t *testing.T) {
-	exchangeResultsTurnOffLogs()
-	t.Setenv("FYNE_STORAGE", t.TempDir())
-	test.NewApp()
+	}`)
 
 	er := NewExchangeResults()
-	valid := map[string]any{
-		"symbol":   "ETH",
-		"cryptoId": json.Number("1027"),
-		"price":    json.Number("15.5"),
+	err := er.ParseJSON(raw)
+	if err == nil {
+		t.Errorf("Expected error for invalid payload, got nil")
 	}
-	if !er.validateRate(valid) {
-		t.Error("Expected valid rate to pass validation")
-	}
-
-	invalid := map[string]any{
-		"symbol":   123,
-		"cryptoId": "not-a-number",
-		"price":    nil,
-	}
-	if er.validateRate(invalid) {
-		t.Error("Expected invalid rate to fail validation")
+	if len(er.Rates) != 0 {
+		t.Errorf("Expected 0 rates, got %d", len(er.Rates))
 	}
 	exchangeResultsTurnOnLogs()
 }

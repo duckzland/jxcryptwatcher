@@ -33,33 +33,30 @@ func TestDominanceFetcherStructure(t *testing.T) {
 		t.Error("Expected non-nil dominanceFetcher")
 	}
 
-	fetcher.Data = dominanceData{
-		Dominance: []dominanceEntry{
-			{MCProportion: 58.13},
-			{MCProportion: 13.20},
-			{MCProportion: 28.65},
-		},
-	}
-	fetcher.Status = dominanceStatus{
-		Timestamp: "2025-10-06T21:25:08.328Z",
-	}
-
-	parsed, err := time.Parse(time.RFC3339Nano, fetcher.Status.Timestamp)
+	// Simulate parsed values
+	fetcher.DominanceBTC = "58.13"
+	fetcher.DominanceETC = "13.20"
+	fetcher.DominanceOther = "28.65"
+	tsStr := "2025-10-06T21:25:08.328Z"
+	parsed, err := time.Parse(time.RFC3339Nano, tsStr)
 	if err != nil {
 		t.Errorf("Failed to parse timestamp: %v", err)
 	}
+	fetcher.LastUpdate = parsed
 
-	if fetcher.Data.Dominance[0].MCProportion != 58.13 {
+	// Assertions
+	if fetcher.DominanceBTC != "58.13" {
 		t.Error("BTC dominance not set correctly")
 	}
-	if fetcher.Data.Dominance[1].MCProportion != 13.20 {
+	if fetcher.DominanceETC != "13.20" {
 		t.Error("ETH dominance not set correctly")
 	}
-	if fetcher.Data.Dominance[2].MCProportion != 28.65 {
+	if fetcher.DominanceOther != "28.65" {
 		t.Error("Other dominance not set correctly")
 	}
-	if parsed.Format(time.RFC3339Nano) != fetcher.Status.Timestamp {
+	if fetcher.LastUpdate.Format(time.RFC3339Nano) != tsStr {
 		t.Error("Parsed timestamp mismatch")
 	}
+
 	dominanceTurnOnLogs()
 }
