@@ -170,7 +170,7 @@ func SearchableExtractNumber(s string) int {
 	return num
 }
 
-func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col color.Color) *image.NRGBA {
+func RasterizeText(dst *image.NRGBA, text string, textStyle fyne.TextStyle, textSize float32, col color.Color) *image.NRGBA {
 	face := UseTheme().GetFontFace(textStyle, textSize)
 	if face == nil {
 		return nil
@@ -180,18 +180,24 @@ func RasterizeText(text string, textStyle fyne.TextStyle, textSize float32, col 
 	width := max(font.MeasureString(face, text).Round(), 1)
 	height := (metrics.Ascent + metrics.Descent).Ceil()
 
-	buf := image.NewNRGBA(image.Rect(0, 0, width, height))
+	if dst == nil || width > dst.Bounds().Dx() || height > dst.Bounds().Dy() {
+		dst = image.NewNRGBA(image.Rect(0, 0, width, height))
+	} else {
+		for i := range dst.Pix {
+			dst.Pix[i] = 0
+		}
+	}
 
 	d := &font.Drawer{
-		Dst:  buf,
+		Dst:  dst,
 		Src:  image.NewUniform(col),
 		Face: face,
 		Dot: fixed.Point26_6{
-			X: fixed.I(max((buf.Bounds().Dx()-width)/2, 0)),
+			X: fixed.I(max((dst.Bounds().Dx()-width)/2, 0)),
 			Y: fixed.I(metrics.Ascent.Round()),
 		},
 	}
 	d.DrawString(text)
 
-	return buf
+	return dst
 }

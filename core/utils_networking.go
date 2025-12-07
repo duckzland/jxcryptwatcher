@@ -58,7 +58,7 @@ func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Reques
 	}
 
 	req.URL.RawQuery = q.Encode()
-	// Logf("Fetching data from %v", req.URL)
+	Logf("Fetching data from %v", req.URL)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -148,27 +148,29 @@ func ReadResponse(key string, resp *http.Response) ([]byte, func(), error) {
 
 	pool := getPool(key, size)
 	buf := pool.Get().([]byte)
+	buf = buf[:0]
 
+	// ensure capacity
 	if cap(buf) < size {
-		buf = make([]byte, size)
-	} else {
-		buf = buf[:size]
+		buf = make([]byte, 0, size)
 	}
 
-	n, err := io.ReadFull(resp.Body, buf)
-	if err == io.ErrUnexpectedEOF || err == io.EOF {
-		buf = buf[:n]
-		err = nil
-	} else if err != nil {
-		buf = buf[:0]
-		pool.Put(buf)
-		return nil, nil, err
+	tmp := make([]byte, 32*1024)
+	for {
+		n, err := resp.Body.Read(tmp)
+		if n > 0 {
+			buf = append(buf, tmp[:n]...)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			pool.Put(buf[:0])
+			return nil, nil, err
+		}
 	}
 
 	cleanup := func() {
-		for i := range buf {
-			buf[i] = 0
-		}
 		buf = buf[:0]
 		pool.Put(buf)
 	}

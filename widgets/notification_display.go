@@ -95,8 +95,13 @@ func (w *notificationDisplay) SetColor(col color.Color) {
 
 func (w *notificationDisplay) rasterize() {
 
-	dst := JC.RasterizeText(w.text, w.textStyle, w.textSize, w.color)
-	if dst == nil || w.img == nil {
+	if w.img == nil {
+		return
+	}
+
+	current, _ := w.img.Image.(*image.NRGBA)
+	dst := JC.RasterizeText(current, w.text, w.textStyle, w.textSize, w.color)
+	if dst == nil {
 		return
 	}
 
@@ -128,7 +133,7 @@ func NewNotificationDisplay() *notificationDisplay {
 		textSize:  JC.UseTheme().Size(JC.SizeNotificationText),
 		textStyle: fyne.TextStyle{Bold: false},
 		padding:   10,
-		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 0, 0))),
+		img:       canvas.NewImageFromImage(image.NewNRGBA(image.Rect(0, 0, 200, 18))),
 	}
 
 	w.img.FillMode = canvas.ImageFillOriginal

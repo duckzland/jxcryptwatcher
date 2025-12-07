@@ -115,8 +115,13 @@ func (p *panelText) Destroy() {
 
 func (p *panelText) rasterize() {
 
-	dst := JC.RasterizeText(p.text, p.textStyle, p.textSize, p.color)
-	if dst == nil || p.img == nil {
+	if p.img == nil {
+		return
+	}
+
+	current, _ := p.img.Image.(*image.NRGBA)
+	dst := JC.RasterizeText(current, p.text, p.textStyle, p.textSize, p.color)
+	if dst == nil {
 		return
 	}
 

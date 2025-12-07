@@ -84,8 +84,13 @@ func (s *tickerText) SetColor(col color.Color) {
 
 func (s *tickerText) rasterize() {
 
-	dst := JC.RasterizeText(s.text, s.textStyle, s.textSize, s.color)
-	if dst == nil || s.img == nil {
+	if s.img == nil {
+		return
+	}
+
+	current, _ := s.img.Image.(*image.NRGBA)
+	dst := JC.RasterizeText(current, s.text, s.textStyle, s.textSize, s.color)
+	if dst == nil {
 		return
 	}
 

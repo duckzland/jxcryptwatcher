@@ -67,21 +67,42 @@ func TestMarketCapFetcherParseJSON(t *testing.T) {
 	test.NewApp()
 
 	raw := []byte(`{
-		"data": {
-			"historicalValues": {
-				"now": {
-					"marketCap": 3810312491062.81
-				},
-				"yesterday": {
-					"marketCap": 3800304306576.44
-				}
-			},
-			"thirtyDaysPercentage": 1.34
-		},
-		"status": {
-			"timestamp": "2025-09-06T06:35:06Z"
-		}
-	}`)
+  "data": {
+    "points": [],
+    "historicalValues": {
+      "now": {
+        "marketCap": 3111091432772.620260188216594964
+      },
+      "yesterday": {
+        "marketCap": 3041893784254.500000000000000000
+      },
+      "lastWeek": {
+        "marketCap": 3086627556076.250000000000000000
+      },
+      "lastMonth": {
+        "marketCap": 3371986733027.510000000000000000
+      }
+    },
+    "yearlyPerformance": {
+      "high": {
+        "marketCap": 4276096147344.240000000000000000,
+        "timestamp": "1759795200"
+      },
+      "low": {
+        "marketCap": 2420957450085.370000000000000000,
+        "timestamp": "1744156800"
+      }
+    },
+    "thirtyDaysPercentage": -7.74
+  },
+  "status": {
+    "timestamp": "2025-12-07T20:51:24.634Z",
+    "error_code": "0",
+    "error_message": "SUCCESS",
+    "elapsed": "101",
+    "credit_count": 0
+  }
+}`)
 
 	fetcher := NewMarketCapFetcher()
 	err := fetcher.parseJSON(raw)
@@ -89,19 +110,19 @@ func TestMarketCapFetcherParseJSON(t *testing.T) {
 		t.Errorf("Unexpected error parsing JSON: %v", err)
 	}
 
-	if fetcher.NowMarketCap != "3810312491062.81" {
-		t.Errorf("Expected NowMarketCap=3810312491062.81, got %s", fetcher.NowMarketCap)
+	if fetcher.NowMarketCap != "3111091432772.62" {
+		t.Errorf("Expected NowMarketCap=3111091432772.62, got %s", fetcher.NowMarketCap)
 	}
 
-	if fetcher.YesterdayMarketCap != "3800304306576.44" {
-		t.Errorf("Expected YesterdayMarketCap=3800304306576.44, got %s", fetcher.YesterdayMarketCap)
+	if fetcher.YesterdayMarketCap != "3041893784254.5" {
+		t.Errorf("Expected YesterdayMarketCap=3041893784254.5, got %s", fetcher.YesterdayMarketCap)
 	}
 
-	if fetcher.ThirtyDaysChangePct != "1.34" {
-		t.Errorf("Expected ThirtyDaysChangePct=1.34, got %s", fetcher.ThirtyDaysChangePct)
+	if fetcher.ThirtyDaysChangePct != "-7.74" {
+		t.Errorf("Expected ThirtyDaysChangePct=-7.74, got %s", fetcher.ThirtyDaysChangePct)
 	}
 
-	expectedTS, _ := time.Parse(time.RFC3339, "2025-09-06T06:35:06Z")
+	expectedTS, _ := time.Parse(time.RFC3339, "2025-12-07T20:51:24.634Z")
 	if !fetcher.LastUpdate.Equal(expectedTS) {
 		t.Errorf("Expected LastUpdate=%s, got %s", expectedTS, fetcher.LastUpdate)
 	}
