@@ -34,7 +34,6 @@ type dispatcher struct {
 	ctx           context.Context
 	cancel        context.CancelFunc
 	drainer       func()
-	ticker        *time.Ticker
 }
 
 func (d *dispatcher) Init() {
@@ -57,7 +56,6 @@ func (d *dispatcher) Init() {
 
 	d.queue = make(chan func(), d.buffer)
 	d.paused = false
-
 	d.ctx, d.cancel = context.WithCancel(context.Background())
 }
 
@@ -66,8 +64,7 @@ func (d *dispatcher) Start() {
 		if d.IsPaused() {
 			return
 		}
-
-		go d.worker()
+		go d.worker(i)
 	}
 }
 
@@ -75,9 +72,26 @@ func (d *dispatcher) Drain() {
 	d.mu.Lock()
 	queue := d.queue
 	d.mu.Unlock()
+
+	if queue == nil {
+		if d.drainer != nil {
+			d.drainer()
+		}
+		return
+	}
+
 	for {
 		select {
-		case <-queue:
+		case fn, ok := <-queue:
+			if !ok {
+				if d.drainer != nil {
+					d.drainer()
+				}
+				return
+			}
+			if fn != nil {
+				fn()
+			}
 		default:
 			if d.drainer != nil {
 				d.drainer()
@@ -105,44 +119,37 @@ func (d *dispatcher) Submit(fn func()) {
 func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
+	cancel := d.cancel
+	d.cancel = nil
+	d.ctx = nil
 	d.mu.Unlock()
-	if d.ticker != nil {
-		d.ticker.Stop()
-	}
-	if d.cancel != nil {
-		d.cancel()
-		d.ctx = nil
-		d.cancel = nil
+
+	if cancel != nil {
+		cancel()
 	}
 }
 
 func (d *dispatcher) Resume() {
 	d.mu.Lock()
 	d.paused = false
-	d.ctx = nil
-	d.cancel = nil
 	d.ctx, d.cancel = context.WithCancel(context.Background())
 	d.mu.Unlock()
-
 	d.Start()
 }
 
 func (d *dispatcher) Destroy() {
 	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	d.paused = true
-
 	if d.cancel != nil {
 		d.cancel()
 		d.ctx = nil
 		d.cancel = nil
 	}
-
 	if d.queue != nil {
 		close(d.queue)
 		d.queue = nil
 	}
+	d.mu.Unlock()
 }
 
 func (d *dispatcher) SetDrainer(fn func()) {
@@ -181,48 +188,46 @@ func (d *dispatcher) IsPaused() bool {
 	return d.paused
 }
 
-func (d *dispatcher) newTicker() *time.Ticker {
-	if d.GetDelay() > 0 {
-		return time.NewTicker(d.GetDelay())
+func (d *dispatcher) worker(id int) {
+	var ticker *time.Ticker
+	if delay := d.GetDelay(); delay > 0 {
+		ticker = time.NewTicker(delay)
+	} else {
+		ticker = &time.Ticker{C: make(chan time.Time)}
 	}
-	return &time.Ticker{C: make(chan time.Time)}
-}
-
-func (d *dispatcher) worker() {
-	d.ticker = d.newTicker()
-	defer d.ticker.Stop()
+	defer ticker.Stop()
 
 	for {
 		if d.ctx == nil {
 			return
 		}
 
-		if d.IsPaused() {
-			d.ticker.Stop()
-		}
-
 		select {
 		case <-d.ctx.Done():
-			d.ticker.Stop()
 			return
+		case <-ticker.C:
+			d.mu.Lock()
+			queue := d.queue
+			d.mu.Unlock()
 
-		case <-d.ticker.C:
+			if queue == nil {
+				continue
+			}
+
 			select {
-			case fn := <-d.queue:
+			case fn, ok := <-queue:
+				if !ok {
+					return
+				}
 				if d.IsPaused() {
-					// Most probably the dispatcher is destroyed
-					if d.ctx == nil && d.cancel == nil && d.queue == nil {
-						return
-					}
-
 					continue
 				}
-
-				fn()
+				if fn != nil {
+					fn()
+				}
 			default:
 			}
 		}
-
 	}
 }
 

@@ -81,7 +81,7 @@ func (m *fetcher) Init() {
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
 
-	m.dispatcher = NewDispatcher(80, 4, 500*time.Millisecond)
+	m.dispatcher = NewDispatcher(50, 4, 500*time.Millisecond)
 	m.dispatcher.Start()
 }
 
