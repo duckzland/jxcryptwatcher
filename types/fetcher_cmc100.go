@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	JC "jxwatcher/core"
-
 	"github.com/buger/jsonparser"
+
+	JC "jxwatcher/core"
 )
 
 type cmc100Fetcher struct {
@@ -18,8 +18,8 @@ type cmc100Fetcher struct {
 	NextUpdate    time.Time
 }
 
-func (er *cmc100Fetcher) ParseJSON(data []byte) error {
-	// Extract current value as float
+func (er *cmc100Fetcher) parseJSON(data []byte) error {
+
 	valFloat, err := jsonparser.GetFloat(data, "data", "summaryData", "currentValue", "value")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing value:", err)
@@ -27,7 +27,6 @@ func (er *cmc100Fetcher) ParseJSON(data []byte) error {
 	}
 	er.Value = strconv.FormatFloat(valFloat, 'f', -1, 64)
 
-	// Extract percent change as float
 	changeFloat, err := jsonparser.GetFloat(data, "data", "summaryData", "currentValue", "percentChange")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing percentChange:", err)
@@ -35,7 +34,6 @@ func (er *cmc100Fetcher) ParseJSON(data []byte) error {
 	}
 	er.PercentChange = strconv.FormatFloat(changeFloat, 'f', -1, 64)
 
-	// Extract next update timestamp
 	timStr, err := jsonparser.GetString(data, "data", "summaryData", "nextUpdateTimestamp")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing nextUpdateTimestamp:", err)
@@ -56,23 +54,21 @@ func (er *cmc100Fetcher) ParseJSON(data []byte) error {
 func (er *cmc100Fetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().CMC100Endpoint,
-		nil, // don’t auto‑decode, we’ll parse manually
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := er.ParseJSON(body); err != nil {
+			if err := er.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			// Insert into cache
 			tickerCacheStorage.Insert(TickerTypeCMC100, er.Value, er.NextUpdate)
 			tickerCacheStorage.Insert(TickerTypeCMC10024hChange, er.PercentChange, er.NextUpdate)
 

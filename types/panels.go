@@ -8,6 +8,7 @@ import (
 
 	"fyne.io/fyne/v2/storage"
 
+	"github.com/buger/jsonparser"
 	json "github.com/goccy/go-json"
 
 	JC "jxwatcher/core"
@@ -43,15 +44,49 @@ func (p *panelsType) load() *panelsType {
 		return p
 	}
 
-	if err := json.Unmarshal(buffer.Bytes(), p); err != nil {
-		p = &panelsType{}
-		JC.Logln(fmt.Errorf("Failed to decode panels.json: %w", err))
+	if err := p.parseJSON(buffer.Bytes()); err != nil {
+		*p = panelsType{}
+		JC.Logln(err)
 		JC.Notify(JC.NotifyUnableToLoadPanelsDataFromFile)
 	} else {
 		JC.Logln("Panels Loaded")
 	}
 
 	return p
+}
+
+func (p *panelsType) parseJSON(data []byte) error {
+	*p = nil
+
+	_, err := jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		var panel panelType
+
+		if src, e := jsonparser.GetInt(value, "source"); e == nil {
+			panel.Source = src
+		}
+		if tgt, e := jsonparser.GetInt(value, "target"); e == nil {
+			panel.Target = tgt
+		}
+		if val, e := jsonparser.GetFloat(value, "value"); e == nil {
+			panel.Value = val
+		}
+		if dec, e := jsonparser.GetInt(value, "decimals"); e == nil {
+			panel.Decimals = dec
+		}
+		if ss, e := jsonparser.GetString(value, "source_symbol"); e == nil {
+			panel.SourceSymbol = ss
+		}
+		if ts, e := jsonparser.GetString(value, "target_symbol"); e == nil {
+			panel.TargetSymbol = ts
+		}
+
+		*p = append(*p, panel)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to parse panels.json: %w", err)
+	}
+	return nil
 }
 
 func (p *panelsType) save(maps *panelsMapType) bool {

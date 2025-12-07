@@ -19,8 +19,8 @@ type marketCapFetcher struct {
 	LastUpdate          time.Time
 }
 
-func (mc *marketCapFetcher) ParseJSON(data []byte) error {
-	// Current market cap
+func (mc *marketCapFetcher) parseJSON(data []byte) error {
+
 	nowBytes, _, _, err := jsonparser.Get(data, "data", "historicalValues", "now", "marketCap")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing now marketCap:", err)
@@ -29,7 +29,6 @@ func (mc *marketCapFetcher) ParseJSON(data []byte) error {
 	nowFloat, _ := strconv.ParseFloat(string(nowBytes), 64)
 	mc.NowMarketCap = strconv.FormatFloat(nowFloat, 'f', -1, 64)
 
-	// Yesterday market cap
 	yesterdayBytes, _, _, err := jsonparser.Get(data, "data", "historicalValues", "yesterday", "marketCap")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing yesterday marketCap:", err)
@@ -38,16 +37,15 @@ func (mc *marketCapFetcher) ParseJSON(data []byte) error {
 	yesterdayFloat, _ := strconv.ParseFloat(string(yesterdayBytes), 64)
 	mc.YesterdayMarketCap = strconv.FormatFloat(yesterdayFloat, 'f', -1, 64)
 
-	// Thirty days percentage
 	thirtyBytes, _, _, err := jsonparser.Get(data, "data", "thirtyDaysPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing thirtyDaysPercentage:", err)
 		return err
 	}
+
 	thirtyFloat, _ := strconv.ParseFloat(string(thirtyBytes), 64)
 	mc.ThirtyDaysChangePct = strconv.FormatFloat(thirtyFloat, 'f', -1, 64)
 
-	// Timestamp
 	tsStr, err := jsonparser.GetString(data, "status", "timestamp")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing timestamp:", err)
@@ -67,18 +65,17 @@ func (mc *marketCapFetcher) ParseJSON(data []byte) error {
 func (mc *marketCapFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().MarketCapEndpoint,
-		nil, // manual parsing
 		func(url url.Values, req *http.Request) {
 			url.Add("convertId", "2781")
 			url.Add("range", "30d")
 		},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := mc.ParseJSON(body); err != nil {
+			if err := mc.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 

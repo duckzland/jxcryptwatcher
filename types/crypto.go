@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mozillazg/go-pinyin"
-
-	json "github.com/goccy/go-json"
-
 	JC "jxwatcher/core"
+
+	"github.com/buger/jsonparser"
+	"github.com/mozillazg/go-pinyin"
 )
 
 type cryptoType struct {
@@ -19,71 +18,48 @@ type cryptoType struct {
 	IsActive int64
 }
 
-func (cp *cryptoType) UnmarshalJSON(data []byte) error {
-	var v []interface{}
-	err := json.Unmarshal(data, &v)
+// ParseJSON replaces UnmarshalJSON
+func (cp *cryptoType) ParseJSON(data []byte) error {
+	// Expect array: [id, name, symbol, ..., is_active, status]
+	idFloat, err := jsonparser.GetFloat(data, "[0]")
 	if err != nil {
-		JC.Logln(err)
+		JC.Logln("Invalid 'id' field:", err)
+		return err
+	}
+	nameStr, err := jsonparser.GetString(data, "[1]")
+	if err != nil {
+		JC.Logln("Invalid 'name' field:", err)
+		return err
+	}
+	symbolStr, err := jsonparser.GetString(data, "[2]")
+	if err != nil {
+		JC.Logln("Invalid 'symbol' field:", err)
+		return err
+	}
+	isActiveFloat, err := jsonparser.GetFloat(data, "[4]")
+	if err != nil {
+		JC.Logln("Invalid 'is_active' field:", err)
+		return err
+	}
+	statusFloat, err := jsonparser.GetFloat(data, "[5]")
+	if err != nil {
+		JC.Logln("Invalid 'status' field:", err)
 		return err
 	}
 
-	if !cp.validate(v) {
-		return nil
-	}
-
-	isActive := int64(v[4].(float64))
-	status := int64(v[5].(float64))
-
+	isActive := int64(isActiveFloat)
+	status := int64(statusFloat)
 	if isActive == 0 || status == 0 {
 		return nil
 	}
 
-	cp.Id = int64(v[0].(float64))
-	cp.Name = cp.sanitizeText(v[1].(string), true, false, true)
-	cp.Symbol = cp.sanitizeText(v[2].(string), false, true, false)
-	cp.IsActive = int64(v[4].(float64))
-	cp.Status = int64(v[5].(float64))
+	cp.Id = int64(idFloat)
+	cp.Name = cp.sanitizeText(nameStr, true, false, true)
+	cp.Symbol = cp.sanitizeText(symbolStr, false, true, false)
+	cp.IsActive = isActive
+	cp.Status = status
 
 	return nil
-}
-
-func (cp *cryptoType) validate(v []interface{}) bool {
-	if len(v) < 6 {
-		JC.Logln("Invalid crypto data length, expected at least 6 fields")
-		return false
-	}
-
-	// Checking ID
-	if _, ok := v[0].(float64); !ok {
-		JC.Logln("Invalid 'id' field type in crypto data")
-		return false
-	}
-
-	// Checking Name
-	if _, ok := v[1].(string); !ok {
-		JC.Logln("Invalid 'name' field type in crypto data")
-		return false
-	}
-
-	// Checking Symbol
-	if _, ok := v[2].(string); !ok {
-		JC.Logln("Invalid 'symbol' field type in crypto data")
-		return false
-	}
-
-	// Checking Active
-	if _, ok := v[4].(float64); !ok {
-		JC.Logln("Invalid 'is_active' field type in crypto data")
-		return false
-	}
-
-	// Checking Name
-	if _, ok := v[5].(float64); !ok {
-		JC.Logln("Invalid 'status' field type in crypto data")
-		return false
-	}
-
-	return true
 }
 
 func (cp *cryptoType) containsCJK(s string) bool {
@@ -102,14 +78,12 @@ func (cp *cryptoType) containsCJK(s string) bool {
 
 func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, withSpace bool) string {
 	if cp.containsCJK(s) {
-
 		var buf strings.Builder
 		prevWasCJK := false
 
 		for _, r := range s {
 			if r >= 0x4E00 && r <= 0x9FFF {
 				a := pinyin.NewArgs()
-				// a.Style = pinyin.Tone
 				result := pinyin.Pinyin(string(r), a)
 
 				if len(result) > 0 {
@@ -128,14 +102,11 @@ func (cp *cryptoType) sanitizeText(s string, capitalize bool, allUpper bool, wit
 					continue
 				}
 			}
-
 			buf.WriteRune(r)
 			prevWasCJK = false
 		}
-
 		return buf.String()
 	}
-
 	return s
 }
 

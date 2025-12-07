@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	JC "jxwatcher/core"
-
 	"github.com/buger/jsonparser"
+
+	JC "jxwatcher/core"
 )
 
 type dominanceFetcher struct {
@@ -19,8 +19,8 @@ type dominanceFetcher struct {
 	LastUpdate     time.Time
 }
 
-func (df *dominanceFetcher) ParseJSON(data []byte) error {
-	// BTC dominance
+func (df *dominanceFetcher) parseJSON(data []byte) error {
+
 	btcBytes, _, _, err := jsonparser.Get(data, "data", "dominance", "[0]", "mcProportion")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing BTC dominance:", err)
@@ -29,7 +29,6 @@ func (df *dominanceFetcher) ParseJSON(data []byte) error {
 	btcFloat, _ := strconv.ParseFloat(string(btcBytes), 64)
 	df.DominanceBTC = strconv.FormatFloat(btcFloat, 'f', -1, 64)
 
-	// ETH dominance
 	etcBytes, _, _, err := jsonparser.Get(data, "data", "dominance", "[1]", "mcProportion")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing ETH dominance:", err)
@@ -38,7 +37,6 @@ func (df *dominanceFetcher) ParseJSON(data []byte) error {
 	etcFloat, _ := strconv.ParseFloat(string(etcBytes), 64)
 	df.DominanceETC = strconv.FormatFloat(etcFloat, 'f', -1, 64)
 
-	// Other dominance
 	otherBytes, _, _, err := jsonparser.Get(data, "data", "dominance", "[2]", "mcProportion")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing Other dominance:", err)
@@ -67,15 +65,14 @@ func (df *dominanceFetcher) ParseJSON(data []byte) error {
 func (df *dominanceFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().DominanceEndpoint,
-		nil, // manual parsing
 		func(url url.Values, req *http.Request) {},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := df.ParseJSON(body); err != nil {
+			if err := df.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 

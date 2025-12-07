@@ -46,7 +46,7 @@ func TestExchangeResultsParseJSONValid(t *testing.T) {
 	}`)
 
 	er := NewExchangeResults()
-	err := er.ParseJSON(raw)
+	err := er.parseJSON(raw)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestExchangeResultsParseJSONInvalid(t *testing.T) {
 	}`)
 
 	er := NewExchangeResults()
-	err := er.ParseJSON(raw)
+	err := er.parseJSON(raw)
 	if err == nil {
 		t.Errorf("Expected error for invalid payload, got nil")
 	}

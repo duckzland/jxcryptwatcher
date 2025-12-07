@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	JC "jxwatcher/core"
-
 	"github.com/buger/jsonparser"
+
+	JC "jxwatcher/core"
 )
 
 type fearGreedFetcher struct {
@@ -17,8 +17,8 @@ type fearGreedFetcher struct {
 	LastUpdate time.Time
 }
 
-func (fg *fearGreedFetcher) ParseJSON(data []byte) error {
-	// Extract score
+func (fg *fearGreedFetcher) parseJSON(data []byte) error {
+
 	scoreBytes, _, _, err := jsonparser.Get(data, "data", "historicalValues", "now", "score")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing score:", err)
@@ -27,7 +27,6 @@ func (fg *fearGreedFetcher) ParseJSON(data []byte) error {
 	scoreInt, _ := strconv.ParseInt(string(scoreBytes), 10, 64)
 	fg.Score = strconv.FormatInt(scoreInt, 10)
 
-	// Extract timestamp
 	tsStr, err := jsonparser.GetString(data, "data", "historicalValues", "now", "timestamp")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing timestamp:", err)
@@ -47,19 +46,18 @@ func (fg *fearGreedFetcher) ParseJSON(data []byte) error {
 func (fg *fearGreedFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().FearGreedEndpoint,
-		nil, // manual parsing
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := fg.ParseJSON(body); err != nil {
+			if err := fg.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 

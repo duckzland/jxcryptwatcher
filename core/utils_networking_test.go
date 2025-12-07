@@ -1,6 +1,7 @@
 package core
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -17,17 +18,10 @@ type netMockResponse struct {
 
 type netNullWriter struct{}
 
-func (n netNullWriter) Write(p []byte) (int, error) {
-	return len(p), nil
-}
+func (n netNullWriter) Write(p []byte) (int, error) { return len(p), nil }
 
-func netTurnOffLogs() {
-	log.SetOutput(netNullWriter{})
-}
-
-func netTurnOnLogs() {
-	log.SetOutput(os.Stdout)
-}
+func netTurnOffLogs() { log.SetOutput(netNullWriter{}) }
+func netTurnOnLogs()  { log.SetOutput(os.Stdout) }
 
 func TestGetRequest_Success(t *testing.T) {
 	netTurnOffLogs()
@@ -38,12 +32,17 @@ func TestGetRequest_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	var result netMockResponse
+	code := GetRequest(ts.URL, nil, func(resp *http.Response) int64 {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
 
-	code := GetRequest(ts.URL, &result, nil, func(resp *http.Response, dec any) int64 {
-		r, ok := dec.(*netMockResponse)
-		if !ok || r.Message != "Hello, world" {
-			t.Errorf("Unexpected callback data: %+v", dec)
+		var r netMockResponse
+		if err := json.Unmarshal(body, &r); err != nil {
+			t.Errorf("Failed to decode response: %v", err)
+			return NETWORKING_BAD_DATA_RECEIVED
+		}
+		if r.Message != "Hello, world" {
+			t.Errorf("Unexpected message: %s", r.Message)
 			return NETWORKING_BAD_DATA_RECEIVED
 		}
 		return NETWORKING_SUCCESS
@@ -58,10 +57,7 @@ func TestGetRequest_Success(t *testing.T) {
 
 func TestGetRequest_InvalidURL(t *testing.T) {
 	netTurnOffLogs()
-
-	var result netMockResponse
-	code := GetRequest(":://invalid-url", &result, nil, nil)
-
+	code := GetRequest(":://invalid-url", nil, nil)
 	netTurnOnLogs()
 
 	if code != NETWORKING_URL_ERROR {
@@ -75,8 +71,7 @@ func TestGetRequest_404(t *testing.T) {
 	ts := httptest.NewServer(http.NotFoundHandler())
 	defer ts.Close()
 
-	var result netMockResponse
-	code := GetRequest(ts.URL, &result, nil, nil)
+	code := GetRequest(ts.URL, nil, nil)
 
 	netTurnOnLogs()
 
@@ -93,8 +88,16 @@ func TestGetRequest_BadJSON(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	var result netMockResponse
-	code := GetRequest(ts.URL, &result, nil, nil)
+	code := GetRequest(ts.URL, nil, func(resp *http.Response) int64 {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+
+		var r netMockResponse
+		if err := json.Unmarshal(body, &r); err != nil {
+			return NETWORKING_BAD_DATA_RECEIVED
+		}
+		return NETWORKING_SUCCESS
+	})
 
 	netTurnOnLogs()
 
@@ -114,12 +117,24 @@ func TestGetRequest_WithPrefetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	var result netMockResponse
 	prefetch := func(q url.Values, req *http.Request) {
 		q.Set("test", "ok")
 	}
 
-	code := GetRequest(ts.URL, &result, prefetch, nil)
+	code := GetRequest(ts.URL, prefetch, func(resp *http.Response) int64 {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+
+		var r netMockResponse
+		if err := json.Unmarshal(body, &r); err != nil {
+			return NETWORKING_BAD_DATA_RECEIVED
+		}
+		if r.Message != "Prefetch success" {
+			t.Errorf("Unexpected message: %s", r.Message)
+			return NETWORKING_BAD_DATA_RECEIVED
+		}
+		return NETWORKING_SUCCESS
+	})
 
 	netTurnOnLogs()
 

@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	JC "jxwatcher/core"
-
 	"github.com/buger/jsonparser"
+
+	JC "jxwatcher/core"
 )
 
 type rsiFetcher struct {
@@ -21,8 +21,8 @@ type rsiFetcher struct {
 	LastUpdate           time.Time
 }
 
-func (rf *rsiFetcher) ParseJSON(data []byte) error {
-	// Average RSI
+func (rf *rsiFetcher) parseJSON(data []byte) error {
+
 	rsiBytes, _, _, err := jsonparser.Get(data, "data", "overall", "averageRsi")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing averageRsi:", err)
@@ -31,7 +31,6 @@ func (rf *rsiFetcher) ParseJSON(data []byte) error {
 	rsiFloat, _ := strconv.ParseFloat(string(rsiBytes), 64)
 	rf.AverageRSI = strconv.FormatFloat(rsiFloat, 'f', -1, 64)
 
-	// Overbought percentage
 	bpBytes, _, _, err := jsonparser.Get(data, "data", "overall", "overboughtPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing overboughtPercentage:", err)
@@ -40,7 +39,6 @@ func (rf *rsiFetcher) ParseJSON(data []byte) error {
 	bpFloat, _ := strconv.ParseFloat(string(bpBytes), 64)
 	rf.OverboughtPercentage = strconv.FormatFloat(bpFloat, 'f', -1, 64)
 
-	// Oversold percentage
 	spBytes, _, _, err := jsonparser.Get(data, "data", "overall", "oversoldPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing oversoldPercentage:", err)
@@ -49,7 +47,6 @@ func (rf *rsiFetcher) ParseJSON(data []byte) error {
 	spFloat, _ := strconv.ParseFloat(string(spBytes), 64)
 	rf.OversoldPercentage = strconv.FormatFloat(spFloat, 'f', -1, 64)
 
-	// Neutral percentage
 	npBytes, _, _, err := jsonparser.Get(data, "data", "overall", "neutralPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing neutralPercentage:", err)
@@ -58,7 +55,6 @@ func (rf *rsiFetcher) ParseJSON(data []byte) error {
 	npFloat, _ := strconv.ParseFloat(string(npBytes), 64)
 	rf.NeutralPercentage = strconv.FormatFloat(npFloat, 'f', -1, 64)
 
-	// Timestamp
 	tsStr, err := jsonparser.GetString(data, "status", "timestamp")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing timestamp:", err)
@@ -78,20 +74,19 @@ func (rf *rsiFetcher) ParseJSON(data []byte) error {
 func (rf *rsiFetcher) GetRate() int64 {
 	return JC.GetRequest(
 		UseConfig().RSIEndpoint,
-		nil, // manual parsing
 		func(url url.Values, req *http.Request) {
 			url.Add("timeframe", "4h")
 			url.Add("rsiPeriod", "14")
 			url.Add("volume24Range.min", "1000000")
 			url.Add("marketCapRange.min", "50000000")
 		},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := rf.ParseJSON(body); err != nil {
+			if err := rf.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 

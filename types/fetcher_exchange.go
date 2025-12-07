@@ -17,7 +17,7 @@ type exchangeResults struct {
 	Rates []exchangeDataType
 }
 
-func (er *exchangeResults) ParseJSON(data []byte) error {
+func (er *exchangeResults) parseJSON(data []byte) error {
 
 	er.Rates = nil
 
@@ -108,20 +108,19 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 
 	return JC.GetRequest(
 		UseConfig().ExchangeEndpoint,
-		nil,
 		func(url url.Values, req *http.Request) {
 			url.Add("amount", "1")
 			url.Add("id", sid)
 			url.Add("convert_id", tid)
 		},
-		func(resp *http.Response, cc any) int64 {
+		func(resp *http.Response) int64 {
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
-			if err := er.ParseJSON(body); err != nil {
+			if err := er.parseJSON(body); err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
