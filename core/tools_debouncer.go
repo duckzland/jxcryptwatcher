@@ -36,7 +36,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	if d.generations[key] > 1000000 {
 		d.generations[key] = 0
 	}
-
 	d.generations[key]++
 	gen := d.generations[key]
 
@@ -76,18 +75,22 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 		select {
 		case <-timer.C:
 
-			d.mu.Lock()
-			defer d.mu.Unlock()
-
 			// Allow last chance cancel
 			time.Sleep(1 * time.Millisecond)
 
-			if ctx.Err() != nil || d.destroyed {
+			if ctx.Err() != nil {
 				return
 			}
 
+			d.mu.Lock()
+			destroyed := d.destroyed
 			currentGen := d.generations[key]
 			fn := d.callbacks[key]
+			d.mu.Unlock()
+
+			if destroyed {
+				return
+			}
 
 			if gen == currentGen && fn != nil {
 				fn()
