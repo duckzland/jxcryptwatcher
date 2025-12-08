@@ -30,12 +30,29 @@ type fetchResult struct {
 	source string
 }
 
-func (r *fetchResult) Code() int64        { return r.code }
-func (r *fetchResult) Data() any          { return r.data }
-func (r *fetchResult) Err() error         { return r.err }
-func (r *fetchResult) Source() string     { return r.source }
-func (r *fetchResult) SetSource(s string) { r.source = s }
-func (r *fetchResult) SetError(e error)   { r.err = e }
+func (r *fetchResult) Code() int64 {
+	return r.code
+}
+
+func (r *fetchResult) Data() any {
+	return r.data
+}
+
+func (r *fetchResult) Err() error {
+	return r.err
+}
+
+func (r *fetchResult) Source() string {
+	return r.source
+}
+
+func (r *fetchResult) SetSource(s string) {
+	r.source = s
+}
+
+func (r *fetchResult) SetError(e error) {
+	r.err = e
+}
 
 type fetcher struct {
 	fetchers      map[string]FetcherInterface
@@ -51,11 +68,13 @@ type fetcher struct {
 var fetcherManager *fetcher = nil
 
 func (m *fetcher) Init() {
-	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.mu.Lock()
+
 	if m.fetchers != nil || m.activeWorkers != nil || m.dispatcher != nil {
 		return
 	}
+
 	m.fetchers = make(map[string]FetcherInterface)
 	m.delay = make(map[string]time.Duration)
 	m.callbacks = make(map[string]func(FetchResultInterface))
@@ -67,11 +86,13 @@ func (m *fetcher) Init() {
 }
 
 func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterface, callback func(FetchResultInterface), conditions func() bool) {
-	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.mu.Lock()
+
 	if m.destroyed {
 		return
 	}
+
 	m.fetchers[key] = fetcher
 	m.delay[key] = time.Duration(delaySeconds) * time.Second
 	m.callbacks[key] = callback
@@ -79,32 +100,36 @@ func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterf
 }
 
 func (m *fetcher) Call(key string, payload any) {
+	defer m.mu.Unlock()
 	m.mu.Lock()
+
 	if m.destroyed {
-		m.mu.Unlock()
 		return
 	}
+
 	if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
-		m.mu.Unlock()
 		return
 	}
+
 	callID := fmt.Sprintf("%s:%v", key, payload)
 	if oldCancel, exists := m.activeWorkers[callID]; exists {
 		oldCancel()
 		delete(m.activeWorkers, callID)
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	m.activeWorkers[callID] = cancel
-	m.mu.Unlock()
 
 	go func(callID string, ctx context.Context, cancel context.CancelFunc) {
 		defer func() {
-			cancel()
+			defer m.mu.Unlock()
 			m.mu.Lock()
+
+			cancel()
+
 			if m.activeWorkers != nil {
 				delete(m.activeWorkers, callID)
 			}
-			m.mu.Unlock()
 		}()
 
 		select {
@@ -113,18 +138,18 @@ func (m *fetcher) Call(key string, payload any) {
 
 		default:
 			m.executeCall(key, payload, func(result FetchResultInterface) {
+				defer m.mu.Unlock()
+				m.mu.Lock()
+
 				if ctx.Err() != nil {
 					return
 				}
 
-				m.mu.Lock()
 				if m.callbacks == nil || m.destroyed {
-					m.mu.Unlock()
 					return
 				}
 
 				cb := m.callbacks[key]
-				m.mu.Unlock()
 
 				if cb != nil {
 					cb(result)
@@ -136,9 +161,10 @@ func (m *fetcher) Call(key string, payload any) {
 }
 
 func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJob int), callback func(map[string]FetchResultInterface)) {
+	defer m.mu.Unlock()
 	m.mu.Lock()
+
 	if m.destroyed {
-		m.mu.Unlock()
 		return
 	}
 
@@ -164,6 +190,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	if preprocess != nil {
 		preprocess(total)
 	}
+
 	if oldCancel, exists := m.activeWorkers[mapKey]; exists {
 		oldCancel()
 		delete(m.activeWorkers, mapKey)
@@ -171,17 +198,16 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.activeWorkers[mapKey] = cancel
-	m.mu.Unlock()
 
 	if total == 0 {
 		if callback != nil {
 			callback(results)
 		}
-		m.mu.Lock()
+
 		if m.activeWorkers != nil {
 			delete(m.activeWorkers, mapKey)
 		}
-		m.mu.Unlock()
+
 		return
 	}
 
@@ -191,9 +217,12 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
 			continue
 		}
+
 		for _, item := range items {
+
 			k := key
 			payload := item
+
 			m.dispatcher.Submit(func() {
 				defer func() {
 					done <- struct{}{}
@@ -204,26 +233,28 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 				}
 
 				m.executeCall(k, payload, func(result FetchResultInterface) {
+					mu.Lock()
+					defer mu.Unlock()
 
 					if ctx.Err() != nil {
 						return
 					}
 
-					mu.Lock()
 					results[payload] = result
-					mu.Unlock()
 				})
 			})
 		}
 	}
 	go func(ctx context.Context, mapKey string) {
 		defer func() {
-			cancel()
+			defer m.mu.Unlock()
 			m.mu.Lock()
+
+			cancel()
+
 			if m.activeWorkers != nil {
 				delete(m.activeWorkers, mapKey)
 			}
-			m.mu.Unlock()
 		}()
 
 		count := 0
@@ -239,6 +270,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 					if callback != nil {
 						callback(results)
 					}
+
 					close(done)
 					return
 				}
@@ -248,21 +280,22 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 }
 
 func (m *fetcher) Destroy() {
+	defer m.mu.Unlock()
 	m.mu.Lock()
+
 	if m.destroyed {
-		m.mu.Unlock()
 		return
 	}
-	m.destroyed = true
-	m.mu.Unlock()
 
-	m.mu.Lock()
+	m.destroyed = true
+
 	for key, cancelFunc := range m.activeWorkers {
 		if cancelFunc != nil {
 			cancelFunc()
 		}
 		delete(m.activeWorkers, key)
 	}
+
 	m.activeWorkers = nil
 
 	if m.dispatcher != nil {
@@ -274,13 +307,13 @@ func (m *fetcher) Destroy() {
 	m.delay = nil
 	m.callbacks = nil
 	m.conditions = nil
-	m.mu.Unlock()
 }
 
 func (m *fetcher) executeCall(key string, payload any, setResult func(FetchResultInterface)) {
+	defer m.mu.Unlock()
 	m.mu.Lock()
+
 	f := m.fetchers[key]
-	m.mu.Unlock()
 
 	if f != nil {
 		f.Fetch(payload, func(result FetchResultInterface) {
@@ -289,9 +322,11 @@ func (m *fetcher) executeCall(key string, payload any, setResult func(FetchResul
 		})
 		return
 	}
+
 	r := NewFetchResult(-1, nil)
 	r.SetSource(key)
 	r.SetError(fmt.Errorf("no fetcher for key %s", key))
+
 	setResult(r)
 }
 
@@ -301,9 +336,11 @@ type dynamicPayloadFetcher struct {
 
 func (df *dynamicPayloadFetcher) Fetch(payload any, callback func(FetchResultInterface)) {
 	result, err := df.handler(payload)
+
 	if err != nil {
 		result.SetError(err)
 	}
+
 	callback(result)
 }
 
@@ -313,9 +350,11 @@ type genericFetcher struct {
 
 func (gf *genericFetcher) Fetch(_ any, callback func(FetchResultInterface)) {
 	result, err := gf.handler()
+
 	if err != nil {
 		result.SetError(err)
 	}
+
 	callback(result)
 }
 
