@@ -105,6 +105,7 @@ func (w *workerUnit) worker() {
 	defer w.wg.Done()
 	ticker := w.newTicker()
 	defer ticker.Stop()
+	defer w.cancel()
 
 	for {
 		w.mu.Lock()
