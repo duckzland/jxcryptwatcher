@@ -106,26 +106,32 @@ func (m *fetcher) Call(key string, payload any) {
 			}
 			m.mu.Unlock()
 		}()
+
 		select {
 		case <-ctx.Done():
 			return
+
 		default:
 			m.executeCall(key, payload, func(result FetchResultInterface) {
 				if ctx.Err() != nil {
 					return
 				}
+
 				m.mu.Lock()
 				if m.callbacks == nil || m.destroyed {
 					m.mu.Unlock()
 					return
 				}
+
 				cb := m.callbacks[key]
 				m.mu.Unlock()
+
 				if cb != nil {
 					cb(result)
 				}
 			})
 		}
+
 	}(callID, ctx, cancel)
 }
 
@@ -135,10 +141,12 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		m.mu.Unlock()
 		return
 	}
+
 	results := make(map[string]FetchResultInterface)
 	mu := sync.Mutex{}
 	total := 0
 	mapKeySeed := ""
+
 	for key, items := range payloads {
 		if cond, ok := m.conditions[key]; ok && cond != nil {
 			if cond() {
@@ -149,8 +157,10 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		}
 		mapKeySeed += key + strings.Join(items, "|")
 	}
+
 	hash := sha256.Sum256([]byte(mapKeySeed))
 	mapKey := hex.EncodeToString(hash[:])
+
 	if preprocess != nil {
 		preprocess(total)
 	}
@@ -158,6 +168,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		oldCancel()
 		delete(m.activeWorkers, mapKey)
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	m.activeWorkers[mapKey] = cancel
 	m.mu.Unlock()
@@ -175,6 +186,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	}
 
 	done := make(chan struct{}, total)
+
 	for key, items := range payloads {
 		if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
 			continue
@@ -183,8 +195,20 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 			k := key
 			payload := item
 			m.dispatcher.Submit(func() {
-				defer func() { done <- struct{}{} }()
+				defer func() {
+					done <- struct{}{}
+				}()
+
+				if ctx.Err() != nil {
+					return
+				}
+
 				m.executeCall(k, payload, func(result FetchResultInterface) {
+
+					if ctx.Err() != nil {
+						return
+					}
+
 					mu.Lock()
 					results[payload] = result
 					mu.Unlock()
@@ -201,17 +225,21 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 			}
 			m.mu.Unlock()
 		}()
+
 		count := 0
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
+
 			case <-done:
 				count++
 				if count == total {
 					if callback != nil {
 						callback(results)
 					}
+					close(done)
 					return
 				}
 			}
