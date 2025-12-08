@@ -72,26 +72,9 @@ func (d *dispatcher) Drain() {
 	d.mu.Lock()
 	queue := d.queue
 	d.mu.Unlock()
-
-	if queue == nil {
-		if d.drainer != nil {
-			d.drainer()
-		}
-		return
-	}
-
 	for {
 		select {
-		case fn, ok := <-queue:
-			if !ok {
-				if d.drainer != nil {
-					d.drainer()
-				}
-				return
-			}
-			if fn != nil {
-				fn()
-			}
+		case <-queue:
 		default:
 			if d.drainer != nil {
 				d.drainer()
@@ -119,13 +102,12 @@ func (d *dispatcher) Submit(fn func()) {
 func (d *dispatcher) Pause() {
 	d.mu.Lock()
 	d.paused = true
-	cancel := d.cancel
-	d.cancel = nil
-	d.ctx = nil
 	d.mu.Unlock()
 
-	if cancel != nil {
-		cancel()
+	if d.cancel != nil {
+		d.cancel()
+		d.ctx = nil
+		d.cancel = nil
 	}
 }
 
@@ -195,6 +177,7 @@ func (d *dispatcher) worker(id int) {
 	} else {
 		ticker = &time.Ticker{C: make(chan time.Time)}
 	}
+
 	defer ticker.Stop()
 
 	for {
