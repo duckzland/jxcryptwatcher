@@ -100,9 +100,10 @@ func (d *dispatcher) Submit(fn func()) {
 }
 
 func (d *dispatcher) Pause() {
+	defer d.mu.Unlock()
 	d.mu.Lock()
+
 	d.paused = true
-	d.mu.Unlock()
 
 	if d.cancel != nil {
 		d.cancel()
@@ -120,18 +121,21 @@ func (d *dispatcher) Resume() {
 }
 
 func (d *dispatcher) Destroy() {
+	defer d.mu.Unlock()
 	d.mu.Lock()
+
 	d.paused = true
+
 	if d.cancel != nil {
 		d.cancel()
 		d.ctx = nil
 		d.cancel = nil
 	}
+
 	if d.queue != nil {
 		close(d.queue)
 		d.queue = nil
 	}
-	d.mu.Unlock()
 }
 
 func (d *dispatcher) SetDrainer(fn func()) {
@@ -171,6 +175,7 @@ func (d *dispatcher) IsPaused() bool {
 }
 
 func (d *dispatcher) worker(id int) {
+
 	var ticker *time.Ticker
 	if delay := d.GetDelay(); delay > 0 {
 		ticker = time.NewTicker(delay)
@@ -179,6 +184,7 @@ func (d *dispatcher) worker(id int) {
 	}
 
 	defer ticker.Stop()
+	defer d.Drain()
 
 	for {
 		if d.ctx == nil {
@@ -188,6 +194,7 @@ func (d *dispatcher) worker(id int) {
 		select {
 		case <-d.ctx.Done():
 			return
+
 		case <-ticker.C:
 			d.mu.Lock()
 			queue := d.queue
@@ -202,12 +209,15 @@ func (d *dispatcher) worker(id int) {
 				if !ok {
 					return
 				}
+
 				if d.IsPaused() {
 					continue
 				}
+
 				if fn != nil {
 					fn()
 				}
+
 			default:
 			}
 		}

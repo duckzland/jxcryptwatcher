@@ -16,7 +16,6 @@ type workerUnit struct {
 	ctx         context.Context
 	cancel      context.CancelFunc
 	mu          sync.Mutex
-	wg          sync.WaitGroup
 	bufferSize  int
 }
 
@@ -31,6 +30,7 @@ func (w *workerUnit) Call(payload any) {
 	w.mu.Lock()
 	fn := w.fn
 	w.mu.Unlock()
+
 	if fn != nil {
 		fn(payload)
 	}
@@ -64,28 +64,26 @@ func (w *workerUnit) Start() {
 	if w.getDelay != nil {
 		w.delay = time.Duration(w.getDelay()) * time.Millisecond
 	}
+
 	if w.getInterval != nil {
 		w.interval = time.Duration(w.getInterval()) * time.Millisecond
 	}
 
 	w.ctx, w.cancel = context.WithCancel(context.Background())
-	w.wg.Add(1)
+
 	go w.worker()
 }
 
 func (w *workerUnit) Stop() {
+	defer w.mu.Unlock()
 	w.mu.Lock()
+
 	if w.cancel != nil {
 		w.cancel()
 	}
-	w.mu.Unlock()
 
-	w.wg.Wait()
-
-	w.mu.Lock()
 	w.ctx = nil
 	w.cancel = nil
-	w.mu.Unlock()
 }
 
 func (w *workerUnit) Reset() {
@@ -102,8 +100,9 @@ func (w *workerUnit) newTicker() *time.Ticker {
 }
 
 func (w *workerUnit) worker() {
-	defer w.wg.Done()
+
 	ticker := w.newTicker()
+
 	defer ticker.Stop()
 	defer w.cancel()
 
@@ -120,15 +119,19 @@ func (w *workerUnit) worker() {
 		select {
 		case <-ctx.Done():
 			return
+
 		case <-ticker.C:
 			w.Push(nil)
+
 		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
+
 			if delay > 0 {
 				time.Sleep(delay)
 			}
+
 			w.Call(x)
 		}
 	}
