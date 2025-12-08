@@ -89,7 +89,7 @@ func (s *tickerText) rasterize() {
 	}
 
 	current, _ := s.img.Image.(*image.NRGBA)
-	dst := JC.RasterizeText(current, s.text, s.textStyle, s.textSize, s.color)
+	dst := JC.RasterizeText(current, s.text, s.textStyle, s.textSize, s.textAlign, s.color)
 	if dst == nil {
 		return
 	}

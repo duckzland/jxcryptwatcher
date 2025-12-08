@@ -120,7 +120,7 @@ func (p *panelText) rasterize() {
 	}
 
 	current, _ := p.img.Image.(*image.NRGBA)
-	dst := JC.RasterizeText(current, p.text, p.textStyle, p.textSize, p.color)
+	dst := JC.RasterizeText(current, p.text, p.textStyle, p.textSize, p.textAlign, p.color)
 	if dst == nil {
 		return
 	}

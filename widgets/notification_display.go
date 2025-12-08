@@ -100,7 +100,7 @@ func (w *notificationDisplay) rasterize() {
 	}
 
 	current, _ := w.img.Image.(*image.NRGBA)
-	dst := JC.RasterizeText(current, w.text, w.textStyle, w.textSize, w.color)
+	dst := JC.RasterizeText(current, w.text, w.textStyle, w.textSize, fyne.TextAlignCenter, w.color)
 	if dst == nil {
 		return
 	}

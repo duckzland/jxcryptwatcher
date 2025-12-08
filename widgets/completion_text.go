@@ -184,7 +184,7 @@ func (s *completionText) rasterize() {
 	fs := JC.UseTheme().Size(JC.SizeCompletionText)
 
 	current, _ := s.img.Image.(*image.NRGBA)
-	dst := JC.RasterizeText(current, s.text, fyne.TextStyle{Bold: false}, fs, JC.UseTheme().GetColor(theme.ColorNameForeground))
+	dst := JC.RasterizeText(current, s.text, fyne.TextStyle{Bold: false}, fs, fyne.TextAlignLeading, JC.UseTheme().GetColor(theme.ColorNameForeground))
 	if dst == nil {
 		return
 	}
