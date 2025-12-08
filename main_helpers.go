@@ -762,6 +762,14 @@ func createPanel(pkt JT.PanelData) fyne.CanvasObject {
 }
 
 func appShutdown() {
+
+	// Must snapshot first, at this point the mutex can handle the locking properly!
+	status := JA.UseStatus()
+	snapshot := JA.UseSnapshot()
+	if status != nil && snapshot != nil && !snapshot.IsSnapshotted() && status.IsReady() {
+		snapshot.Save()
+	}
+
 	worker := JC.UseWorker()
 	if worker != nil {
 		worker.Destroy()
@@ -786,21 +794,4 @@ func appShutdown() {
 	if animDispatcher != nil {
 		animDispatcher.Destroy()
 	}
-
-	status := JA.UseStatus()
-	snapshot := JA.UseSnapshot()
-	if status != nil && snapshot != nil && !snapshot.IsSnapshotted() && status.IsReady() {
-		snapshot.Save()
-	}
-
-	panels := JT.UsePanelMaps()
-	if panels != nil {
-		panels.Destroy()
-	}
-
-	theme := JC.UseTheme()
-	if theme != nil {
-		theme.Destroy()
-	}
-
 }
