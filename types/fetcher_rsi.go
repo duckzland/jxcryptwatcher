@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -70,8 +71,9 @@ func (rf *rsiFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (rf *rsiFetcher) GetRate() int64 {
+func (rf *rsiFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().RSIEndpoint,
 		func(url url.Values, req *http.Request) {
 			url.Add("timeframe", "4h")

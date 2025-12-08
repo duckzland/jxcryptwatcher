@@ -26,7 +26,7 @@ var httpClient = &http.Client{
 	},
 }
 
-func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response) int64) int64 {
+func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response) int64) int64 {
 	PrintPerfStats("Fetching Request", time.Now())
 
 	parsedURL, err := url.Parse(targetUrl)
@@ -35,7 +35,11 @@ func GetRequest(targetUrl string, prefetch func(url url.Values, req *http.Reques
 		return NETWORKING_URL_ERROR
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)

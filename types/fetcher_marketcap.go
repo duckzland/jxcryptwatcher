@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -61,8 +62,9 @@ func (mc *marketCapFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (mc *marketCapFetcher) GetRate() int64 {
+func (mc *marketCapFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().MarketCapEndpoint,
 		func(url url.Values, req *http.Request) {
 			url.Add("convertId", "2781")

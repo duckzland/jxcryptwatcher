@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -42,8 +43,9 @@ func (fg *fearGreedFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (fg *fearGreedFetcher) GetRate() int64 {
+func (fg *fearGreedFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().FearGreedEndpoint,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())

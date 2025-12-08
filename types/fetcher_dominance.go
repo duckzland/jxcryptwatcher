@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -60,8 +61,9 @@ func (df *dominanceFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (df *dominanceFetcher) GetRate() int64 {
+func (df *dominanceFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().DominanceEndpoint,
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {

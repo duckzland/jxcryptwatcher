@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -62,8 +63,9 @@ func (ef *etfFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (ef *etfFetcher) GetRate() int64 {
+func (ef *etfFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().ETFEndpoint,
 		func(url url.Values, req *http.Request) {
 			url.Add("category", "all")

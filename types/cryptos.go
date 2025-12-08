@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -40,7 +41,7 @@ func (c *cryptosLoaderType) load() *cryptosLoaderType {
 }
 
 func (c *cryptosLoaderType) create() *cryptosLoaderType {
-	status := c.GetCryptos()
+	status := c.GetCryptos(nil)
 	switch status {
 	case JC.NETWORKING_FAILED_CREATE_FILE:
 		JC.Logln("Failed to create cryptos.json with new values")
@@ -149,8 +150,9 @@ func (c *cryptosLoaderType) parseJSON(data []byte) error {
 	return nil
 }
 
-func (c *cryptosLoaderType) GetCryptos() int64 {
+func (c *cryptosLoaderType) GetCryptos(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().DataEndpoint,
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {

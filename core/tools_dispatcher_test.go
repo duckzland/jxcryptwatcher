@@ -95,13 +95,13 @@ func TestDispatcherPauseResume(t *testing.T) {
 	d := NewDispatcher(5, 1, 10*time.Millisecond)
 	d.Pause()
 
-	if !d.IsPaused() {
+	if !d.isPaused() {
 		t.Error("Expected dispatcher to be paused")
 	}
 
 	d.Resume()
 
-	if d.IsPaused() {
+	if d.isPaused() {
 		t.Error("Expected dispatcher to be resumed")
 	}
 }
@@ -118,8 +118,8 @@ func TestDispatcherSetters(t *testing.T) {
 	if d.maxConcurrent != 3 {
 		t.Errorf("Expected maxConcurrent 3, got %d", d.maxConcurrent)
 	}
-	if d.GetDelay() != 100*time.Millisecond {
-		t.Errorf("Expected delay 100ms, got %v", d.GetDelay())
+	if d.getDelay() != 100*time.Millisecond {
+		t.Errorf("Expected delay 100ms, got %v", d.getDelay())
 	}
 }
 
@@ -146,8 +146,8 @@ func TestDispatcherConcurrentAccess(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			_ = d.GetDelay()
-			_ = d.IsPaused()
+			_ = d.getDelay()
+			_ = d.isPaused()
 		}
 	}()
 
@@ -202,7 +202,7 @@ func TestDispatcherDestroy(t *testing.T) {
 		t.Error("Expected context and cancel to be nil after destroy")
 	}
 
-	if !d.IsPaused() {
+	if !d.isPaused() {
 		t.Error("Expected dispatcher to be paused after destroy")
 	}
 }

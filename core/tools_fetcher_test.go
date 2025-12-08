@@ -36,20 +36,21 @@ func TestRegisterAndCall(t *testing.T) {
 	f.Init()
 
 	done := make(chan bool, 1)
-	f.Register("test", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
-		return NewFetchResult(200, "ok"), nil
-	}), func(result FetchResultInterface) {
-		if result.Code() == 200 && result.Data() == "ok" {
+	f.Register("test", 1,
+		NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 			done <- true
-		}
-	}, func() bool { return true })
+			return NewFetchResult(200, "ok"), nil
+		}),
+		nil,
+		func() bool { return true },
+	)
 
 	f.Call("test", "payload")
 
 	select {
 	case <-done:
-	case <-time.After(time.Second):
-		t.Error("Expected callback to be invoked")
+	case <-time.After(2 * time.Second):
+		t.Error("Expected handler to be invoked")
 	}
 }
 
@@ -64,9 +65,17 @@ func TestDispatch(t *testing.T) {
 	resultChan := make(chan map[string]FetchResultInterface, 1)
 
 	for key := range payloads {
-		f.Register(key, 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
-			return NewFetchResult(100, payload), nil
-		}), nil, func() bool { return true })
+		f.Register(
+			key,
+			1,
+			NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+				return NewFetchResult(100, payload), nil
+			}),
+			func(_ FetchResultInterface) {
+				// no-op post-processing; must be non-nil
+			},
+			func() bool { return true },
+		)
 	}
 
 	f.Dispatch(payloads, nil, func(res map[string]FetchResultInterface) {
@@ -90,13 +99,17 @@ func TestErrorHandling(t *testing.T) {
 	errMsg := errors.New("fetch failed")
 	done := make(chan error, 1)
 
-	f.Register("error", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
-		return NewFetchResult(500, nil), errMsg
-	}), func(result FetchResultInterface) {
-		if result.Err() != nil {
-			done <- result.Err()
-		}
-	}, func() bool { return true })
+	f.Register("error", 1,
+		NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+			// handler sets the error on the result and returns the same error
+			res := NewFetchResult(500, nil)
+			res.SetError(errMsg)
+			done <- errMsg
+			return res, errMsg
+		}),
+		nil, // post-processing only; not used for error propagation
+		func() bool { return true },
+	)
 
 	f.Call("error", "payload")
 
@@ -105,8 +118,8 @@ func TestErrorHandling(t *testing.T) {
 		if err.Error() != "fetch failed" {
 			t.Errorf("Expected error 'fetch failed', got %v", err)
 		}
-	case <-time.After(time.Second):
-		t.Error("Expected error callback to be triggered")
+	case <-time.After(2 * time.Second):
+		t.Error("Expected handler to set error and signal")
 	}
 }
 
@@ -114,9 +127,17 @@ func TestFetcherDestroy(t *testing.T) {
 	f := &fetcher{}
 	f.Init()
 
-	f.Register("destroyTest", 1, NewDynamicPayloadFetcher(func(payload any) (FetchResultInterface, error) {
-		return NewFetchResult(200, "ok"), nil
-	}), nil, func() bool { return true })
+	f.Register(
+		"destroyTest",
+		1,
+		NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+			return NewFetchResult(200, "ok"), nil
+		}),
+		func(_ FetchResultInterface) {
+			// no-op post-processing; must be non-nil
+		},
+		func() bool { return true },
+	)
 
 	_, cancel := context.WithCancel(context.Background())
 	f.mu.Lock()

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -78,7 +79,7 @@ func (er *exchangeResults) parseJSON(data []byte) error {
 	return nil
 }
 
-func (er *exchangeResults) GetRate(rk string) int64 {
+func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 
 	rko := strings.Split(rk, JC.STRING_PIPE)
 
@@ -106,6 +107,7 @@ func (er *exchangeResults) GetRate(rk string) int64 {
 	}
 
 	return JC.GetRequest(
+		ctx,
 		UseConfig().ExchangeEndpoint,
 		func(url url.Values, req *http.Request) {
 			url.Add("amount", "1")

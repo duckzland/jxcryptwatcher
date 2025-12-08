@@ -9,8 +9,6 @@ import (
 type Dispatcher interface {
 	Init()
 	Submit(fn func())
-	GetDelay() time.Duration
-	IsPaused() bool
 	Pause()
 	Resume()
 	Start()
@@ -34,6 +32,7 @@ type dispatcher struct {
 	ctx           context.Context
 	cancel        context.CancelFunc
 	drainer       func()
+	destroyed     bool
 }
 
 func (d *dispatcher) Init() {
@@ -60,8 +59,8 @@ func (d *dispatcher) Init() {
 }
 
 func (d *dispatcher) Start() {
-	for i := 0; i < d.maxConcurrent; i++ {
-		if d.IsPaused() {
+	for i := 0; i < d.getMaxConcurrent(); i++ {
+		if d.isPaused() || d.isDestroyed() {
 			return
 		}
 		go d.worker(i)
@@ -69,15 +68,11 @@ func (d *dispatcher) Start() {
 }
 
 func (d *dispatcher) Drain() {
-	d.mu.Lock()
-	queue := d.queue
-	d.mu.Unlock()
-
 	for {
 		select {
-		case <-queue:
+		case <-d.getQueue():
 		default:
-			if d.drainer != nil {
+			if d.hasDrainer() {
 				d.drainer()
 			}
 			return
@@ -86,16 +81,13 @@ func (d *dispatcher) Drain() {
 }
 
 func (d *dispatcher) Submit(fn func()) {
-	d.mu.Lock()
-	queue := d.queue
-	d.mu.Unlock()
 
-	if queue == nil {
+	if !d.hasQueue() {
 		return
 	}
 
 	select {
-	case queue <- fn:
+	case d.getQueue() <- fn:
 	default:
 	}
 }
@@ -126,6 +118,7 @@ func (d *dispatcher) Destroy() {
 	d.mu.Lock()
 
 	d.paused = true
+	d.destroyed = true
 
 	if d.cancel != nil {
 		d.cancel()
@@ -163,34 +156,61 @@ func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 	d.delay = delay
 }
 
-func (d *dispatcher) GetDelay() time.Duration {
+func (d *dispatcher) getDelay() time.Duration {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.delay
 }
 
-func (d *dispatcher) IsPaused() bool {
+func (d *dispatcher) isPaused() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.paused
 }
 
-func (d *dispatcher) call() {
+func (d *dispatcher) isDestroyed() bool {
+	defer d.mu.Unlock()
 	d.mu.Lock()
-	queue := d.queue
-	d.mu.Unlock()
+	return d.destroyed
+}
 
-	if queue == nil {
+func (d *dispatcher) hasQueue() bool {
+	defer d.mu.Unlock()
+	d.mu.Lock()
+	return d.queue != nil
+}
+
+func (d *dispatcher) hasDrainer() bool {
+	defer d.mu.Unlock()
+	d.mu.Lock()
+	return d.drainer != nil
+}
+
+func (d *dispatcher) getQueue() chan func() {
+	defer d.mu.Unlock()
+	d.mu.Lock()
+	return d.queue
+}
+
+func (d *dispatcher) getMaxConcurrent() int {
+	defer d.mu.Unlock()
+	d.mu.Lock()
+	return d.maxConcurrent
+}
+
+func (d *dispatcher) call() {
+
+	if !d.hasQueue() || d.isDestroyed() {
 		return
 	}
 
 	select {
-	case fn, ok := <-queue:
+	case fn, ok := <-d.getQueue():
 		if !ok {
 			return
 		}
 
-		if d.IsPaused() {
+		if d.isPaused() || d.isDestroyed() {
 			return
 		}
 
@@ -204,15 +224,20 @@ func (d *dispatcher) call() {
 
 func (d *dispatcher) worker(id int) {
 
-	defer d.cancel()
-	defer d.Drain()
+	defer func() {
+		if !d.isDestroyed() {
+			d.cancel()
+			d.Drain()
+		}
+	}()
 
-	if delay := d.GetDelay(); delay > 0 {
+	if delay := d.getDelay(); delay > 0 {
 		ticker := time.NewTicker(delay)
 		defer ticker.Stop()
 
 		for {
-			if d.ctx == nil {
+
+			if d.isDestroyed() {
 				return
 			}
 
@@ -227,6 +252,10 @@ func (d *dispatcher) worker(id int) {
 
 	} else {
 		for {
+			if d.isDestroyed() {
+				return
+			}
+
 			select {
 			case <-d.ctx.Done():
 				return

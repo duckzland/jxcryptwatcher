@@ -1,144 +1,95 @@
 package core
 
 import (
-	"io"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
+	"context"
+	"errors"
+	"fmt"
 	"testing"
-
-	json "github.com/goccy/go-json"
+	"time"
 )
 
-type netMockResponse struct {
-	Message string `json:"message"`
-}
-
-type netNullWriter struct{}
-
-func (n netNullWriter) Write(p []byte) (int, error) { return len(p), nil }
-
-func netTurnOffLogs() { log.SetOutput(netNullWriter{}) }
-func netTurnOnLogs()  { log.SetOutput(os.Stdout) }
-
-func TestGetRequest_Success(t *testing.T) {
-	netTurnOffLogs()
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		resp := netMockResponse{Message: "Hello, world"}
-		json.NewEncoder(w).Encode(resp)
-	}))
-	defer ts.Close()
-
-	code := GetRequest(ts.URL, nil, func(resp *http.Response) int64 {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-
-		var r netMockResponse
-		if err := json.Unmarshal(body, &r); err != nil {
-			t.Errorf("Failed to decode response: %v", err)
-			return NETWORKING_BAD_DATA_RECEIVED
-		}
-		if r.Message != "Hello, world" {
-			t.Errorf("Unexpected message: %s", r.Message)
-			return NETWORKING_BAD_DATA_RECEIVED
-		}
-		return NETWORKING_SUCCESS
+func TestDynamicPayloadFetcher_Success(t *testing.T) {
+	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+		return NewFetchResult(123, nil), nil
 	})
-
-	netTurnOnLogs()
-
-	if code != NETWORKING_SUCCESS {
-		t.Errorf("Expected NETWORKING_SUCCESS, got %d", code)
-	}
-}
-
-func TestGetRequest_InvalidURL(t *testing.T) {
-	netTurnOffLogs()
-	code := GetRequest(":://invalid-url", nil, nil)
-	netTurnOnLogs()
-
-	if code != NETWORKING_URL_ERROR {
-		t.Errorf("Expected NETWORKING_URL_ERROR, got %d", code)
-	}
-}
-
-func TestGetRequest_404(t *testing.T) {
-	netTurnOffLogs()
-
-	ts := httptest.NewServer(http.NotFoundHandler())
-	defer ts.Close()
-
-	code := GetRequest(ts.URL, nil, nil)
-
-	netTurnOnLogs()
-
-	if code != NETWORKING_BAD_CONFIG {
-		t.Errorf("Expected NETWORKING_BAD_CONFIG for 404, got %d", code)
-	}
-}
-
-func TestGetRequest_BadJSON(t *testing.T) {
-	netTurnOffLogs()
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("not-json"))
-	}))
-	defer ts.Close()
-
-	code := GetRequest(ts.URL, nil, func(resp *http.Response) int64 {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-
-		var r netMockResponse
-		if err := json.Unmarshal(body, &r); err != nil {
-			return NETWORKING_BAD_DATA_RECEIVED
+	f.Fetch(context.Background(), nil, func(res FetchResultInterface) {
+		if res.Code() != 123 {
+			t.Errorf("expected code 123, got %d", res.Code())
 		}
-		return NETWORKING_SUCCESS
 	})
-
-	netTurnOnLogs()
-
-	if code != NETWORKING_BAD_DATA_RECEIVED {
-		t.Errorf("Expected NETWORKING_BAD_DATA_RECEIVED, got %d", code)
-	}
 }
 
-func TestGetRequest_WithPrefetch(t *testing.T) {
-	netTurnOffLogs()
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("test") != "ok" {
-			t.Errorf("Expected query param 'test=ok', got %v", r.URL.Query())
+func TestDynamicPayloadFetcher_CancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+		select {
+		case <-ctx.Done():
+			return NewFetchResult(-1, nil), ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+			return NewFetchResult(123, nil), nil
 		}
-		json.NewEncoder(w).Encode(netMockResponse{Message: "Prefetch success"})
-	}))
-	defer ts.Close()
-
-	prefetch := func(q url.Values, req *http.Request) {
-		q.Set("test", "ok")
-	}
-
-	code := GetRequest(ts.URL, prefetch, func(resp *http.Response) int64 {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-
-		var r netMockResponse
-		if err := json.Unmarshal(body, &r); err != nil {
-			return NETWORKING_BAD_DATA_RECEIVED
-		}
-		if r.Message != "Prefetch success" {
-			t.Errorf("Unexpected message: %s", r.Message)
-			return NETWORKING_BAD_DATA_RECEIVED
-		}
-		return NETWORKING_SUCCESS
 	})
+	f.Fetch(ctx, nil, func(res FetchResultInterface) {
+		if !errors.Is(res.Err(), context.Canceled) {
+			t.Errorf("expected context.Canceled, got %v", res.Err())
+		}
+		if res.Code() != -1 {
+			t.Errorf("expected code -1 for cancelled, got %d", res.Code())
+		}
+	})
+}
 
-	netTurnOnLogs()
+func TestDynamicPayloadFetcher_DeadlineExceeded(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+		select {
+		case <-ctx.Done():
+			return NewFetchResult(-1, nil), ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+			return NewFetchResult(123, nil), nil
+		}
+	})
+	f.Fetch(ctx, nil, func(res FetchResultInterface) {
+		if !errors.Is(res.Err(), context.DeadlineExceeded) {
+			t.Errorf("expected deadline exceeded, got %v", res.Err())
+		}
+		if res.Code() != -1 {
+			t.Errorf("expected code -1 for deadline exceeded, got %d", res.Code())
+		}
+	})
+}
 
-	if code != NETWORKING_SUCCESS {
-		t.Errorf("Expected NETWORKING_SUCCESS with prefetch, got %d", code)
-	}
+func TestDynamicPayloadFetcher_UsesPayload(t *testing.T) {
+	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+		if payload == "ok" {
+			return NewFetchResult(200, nil), nil
+		}
+		return NewFetchResult(400, nil), fmt.Errorf("bad payload")
+	})
+	f.Fetch(context.Background(), "ok", func(res FetchResultInterface) {
+		if res.Code() != 200 {
+			t.Errorf("expected code 200, got %d", res.Code())
+		}
+	})
+	f.Fetch(context.Background(), "fail", func(res FetchResultInterface) {
+		if res.Code() != 400 {
+			t.Errorf("expected code 400 for bad payload, got %d", res.Code())
+		}
+		if res.Err() == nil {
+			t.Errorf("expected error for bad payload, got nil")
+		}
+	})
+}
+
+func TestGenericFetcher_Success(t *testing.T) {
+	f := NewGenericFetcher(func(ctx context.Context) (FetchResultInterface, error) {
+		return NewFetchResult(321, nil), nil
+	})
+	f.Fetch(context.Background(), nil, func(res FetchResultInterface) {
+		if res.Code() != 321 {
+			t.Errorf("expected code 321, got %d", res.Code())
+		}
+	})
 }

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -42,8 +43,9 @@ func (er *altSeasonFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (er *altSeasonFetcher) GetRate() int64 {
+func (er *altSeasonFetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().AltSeasonEndpoint,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -50,8 +51,9 @@ func (er *cmc100Fetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (er *cmc100Fetcher) GetRate() int64 {
+func (er *cmc100Fetcher) GetRate(ctx context.Context) int64 {
 	return JC.GetRequest(
+		ctx,
 		UseConfig().CMC100Endpoint,
 		func(url url.Values, req *http.Request) {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())

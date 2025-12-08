@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"syscall"
@@ -484,11 +485,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JC.ACT_CRYPTO_GET_MAP, 0,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(
-					JT.UseCryptosLoader().GetCryptos(),
-					nil,
-				), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx), nil), nil
 			},
 		),
 		func(result JC.FetchResultInterface) {
@@ -523,8 +521,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeCMC100, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -550,8 +548,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeMarketCap, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -577,8 +575,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeAltcoinIndex, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -604,8 +602,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeFearGreed, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -631,8 +629,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeRSI, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -658,8 +656,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeETF, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -685,8 +683,8 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JT.TickerTypeDominance, delay,
 		JC.NewGenericFetcher(
-			func() (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(), nil), nil
+			func(ctx context.Context) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
@@ -712,13 +710,13 @@ func registerFetchers() {
 	JC.UseFetcher().Register(
 		JC.ACT_EXCHANGE_GET_RATES, delay,
 		JC.NewDynamicPayloadFetcher(
-			func(payload any) (JC.FetchResultInterface, error) {
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)
 				if !ok {
 					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD, nil), fmt.Errorf("invalid rk")
 				}
 
-				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(rk), nil), nil
+				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(ctx, rk), nil), nil
 			},
 		),
 		func(fr JC.FetchResultInterface) {
