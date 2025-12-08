@@ -138,6 +138,9 @@ func (w *workerUnit) worker() {
 		}
 
 		select {
+		case <-ShutdownCtx.Done():
+			return
+
 		case <-ctx.Done():
 			return
 

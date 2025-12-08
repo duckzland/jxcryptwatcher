@@ -145,6 +145,9 @@ func (m *fetcher) Call(key string, payload any) {
 		}()
 
 		select {
+		case <-ShutdownCtx.Done():
+			return
+
 		case <-ctx.Done():
 			return
 
@@ -274,6 +277,9 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 
 		for {
 			select {
+			case <-ShutdownCtx.Done():
+				return
+
 			case <-ctx.Done():
 				return
 

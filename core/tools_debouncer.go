@@ -96,6 +96,9 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 				fn()
 			}
 
+		case <-ShutdownCtx.Done():
+			return
+
 		case <-ctx.Done():
 			return
 		}

@@ -49,6 +49,10 @@ func StartFadingText(
 
 			for _, alpha := range *fadeAlphas {
 				select {
+				case <-JC.ShutdownCtx.Done():
+					cancel()
+					return
+
 				case <-ctx.Done():
 					// Ensure final state is fully opaque if cancelled
 					fyne.Do(func() {

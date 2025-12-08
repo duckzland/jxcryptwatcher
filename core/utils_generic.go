@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"runtime"
 	"sort"
 	"time"
@@ -128,4 +129,8 @@ func EqualIntSlices(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+func IsShuttingDown() bool {
+	return ShutdownCtx.Err() == context.Canceled
 }

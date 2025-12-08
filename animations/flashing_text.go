@@ -62,6 +62,10 @@ func StartFlashingText(
 
 			for _, alpha := range alphaSequence {
 				select {
+				case <-JC.ShutdownCtx.Done():
+					cancel()
+					return
+
 				case <-ctx.Done():
 					fyne.Do(func() {
 						txt.SetAlpha(255)

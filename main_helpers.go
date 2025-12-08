@@ -17,6 +17,11 @@ import (
 )
 
 func updateDisplay() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
+
 	const chunkSize = 100
 
 	var allIDs []string
@@ -56,13 +61,26 @@ func updateDisplay() bool {
 	}
 
 	for _, chunk := range chunks {
+		if JC.IsShuttingDown() {
+			return false
+		}
+
 		ids := chunk
 		JC.UseDispatcher().Submit(func() {
+
+			if JC.IsShuttingDown() {
+				return
+			}
+
 			for _, id := range ids {
 				pkt := JT.UsePanelMaps().GetDataByID(id)
 
 				if pkt == nil {
 					continue
+				}
+
+				if JC.IsShuttingDown() {
+					return
 				}
 
 				if pkt.UpdateRate() {
@@ -88,6 +106,10 @@ func updateDisplay() bool {
 }
 
 func updateTickerDisplay() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
 
 	success := 0
 	tickers := []string{}
@@ -117,6 +139,11 @@ func updateTickerDisplay() bool {
 	for _, key := range tickers {
 		tktt := JT.UseTickerMaps().GetDataByType(key)
 		for _, tkt := range tktt {
+
+			if JC.IsShuttingDown() {
+				return false
+			}
+
 			if tkt.Update() {
 				if success == 0 {
 					success++
@@ -134,6 +161,10 @@ func updateTickerDisplay() bool {
 }
 
 func updateRates() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
 
 	if JA.UseStatus().IsFetchingRates() {
 		return false
@@ -182,6 +213,11 @@ func updateRates() bool {
 
 	JC.UseFetcher().Dispatch(payloads,
 		func(scheduledJobs int) {
+
+			if JC.IsShuttingDown() {
+				return
+			}
+
 			if scheduledJobs > 0 {
 				JA.UseStatus().StartFetchingRates()
 				JT.UseExchangeCache().SoftReset()
@@ -191,6 +227,10 @@ func updateRates() bool {
 			defer JA.UseStatus().EndFetchingRates()
 
 			for _, result := range results {
+
+				if JC.IsShuttingDown() {
+					return
+				}
 
 				ns := detectHTTPResponse(result.Code())
 				mu.Lock()
@@ -221,6 +261,10 @@ func updateRates() bool {
 }
 
 func updateTickers() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
 
 	if JA.UseStatus().IsFetchingTickers() {
 		return false
@@ -268,6 +312,10 @@ func updateTickers() bool {
 
 	JC.UseFetcher().Dispatch(payloads,
 		func(totalJob int) {
+			if JC.IsShuttingDown() {
+				return
+			}
+
 			if totalJob > 0 {
 				JA.UseStatus().StartFetchingTickers()
 				JT.UseTickerCache().SoftReset()
@@ -277,6 +325,10 @@ func updateTickers() bool {
 			defer JA.UseStatus().EndFetchingTickers()
 
 			for _, result := range results {
+				if JC.IsShuttingDown() {
+					return
+				}
+
 				ns := detectHTTPResponse(result.Code())
 				switch ns {
 				case JC.STATUS_SUCCESS:
@@ -769,6 +821,8 @@ func appShutdown() {
 	if status != nil && snapshot != nil && !snapshot.IsSnapshotted() && status.IsReady() {
 		snapshot.Save()
 	}
+
+	JC.ShutdownCancel()
 
 	worker := JC.UseWorker()
 	if worker != nil {

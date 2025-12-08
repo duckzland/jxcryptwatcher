@@ -275,6 +275,11 @@ func (p *tickerDataType) Insert(rate string) {
 }
 
 func (p *tickerDataType) Update() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

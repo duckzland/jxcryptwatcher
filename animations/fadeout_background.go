@@ -50,6 +50,10 @@ func StartFadeOutBackground(
 
 			for _, alpha := range alphaSteps {
 				select {
+				case <-JC.ShutdownCtx.Done():
+					cancel()
+					return
+
 				case <-ctx.Done():
 					if !JC.IsAlpha(rect.FillColor, 255) {
 						fyne.Do(func() {

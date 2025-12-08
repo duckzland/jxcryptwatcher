@@ -302,6 +302,11 @@ func (p *panelDataType) RefreshKey(key string) string {
 }
 
 func (p *panelDataType) Update(pk string) bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
+
 	opk := p.Get()
 	npk := pk
 	pks := p.UsePanelKey()
@@ -342,6 +347,10 @@ func (p *panelDataType) Update(pk string) bool {
 
 func (p *panelDataType) UpdateRate() bool {
 
+	if JC.IsShuttingDown() {
+		return false
+	}
+
 	pk := p.UsePanelKey()
 	ck := UseExchangeCache().CreateKeyFromInt(pk.GetSourceCoinInt(), pk.GetTargetCoinInt())
 
@@ -359,6 +368,10 @@ func (p *panelDataType) UpdateRate() bool {
 }
 
 func (p *panelDataType) UpdateStatus() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
 
 	switch p.GetStatus() {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:

@@ -125,6 +125,17 @@ func (c *completionWorker) run() {
 
 	go func() {
 		select {
+		case <-JC.ShutdownCtx.Done():
+			state.SetCancel()
+			cancel()
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return
+
 		case <-ctx.Done():
 			state.SetCancel()
 			return
@@ -143,6 +154,9 @@ func (c *completionWorker) run() {
 	}()
 
 	select {
+	case <-JC.ShutdownCtx.Done():
+		return
+
 	case <-ctx.Done():
 		return
 
@@ -204,6 +218,9 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 		}
 
 		select {
+		case <-JC.ShutdownCtx.Done():
+			return
+
 		case <-ctx.Done():
 			return
 

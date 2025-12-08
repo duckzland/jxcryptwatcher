@@ -118,8 +118,12 @@ func (n *completionList) Dragged(ev *fyne.DragEvent) {
 
 			for {
 				select {
+				case <-JC.ShutdownCtx.Done():
+					return
+
 				case <-n.done:
 					return
+
 				case <-ticker.C:
 					currentY := n.position.Y
 					deltaY := currentY - lastY

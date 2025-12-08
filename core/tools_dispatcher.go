@@ -242,6 +242,9 @@ func (d *dispatcher) worker(id int) {
 			}
 
 			select {
+			case <-ShutdownCtx.Done():
+				return
+
 			case <-d.ctx.Done():
 				return
 
@@ -257,8 +260,12 @@ func (d *dispatcher) worker(id int) {
 			}
 
 			select {
+			case <-ShutdownCtx.Done():
+				return
+
 			case <-d.ctx.Done():
 				return
+
 			default:
 				d.call()
 			}
