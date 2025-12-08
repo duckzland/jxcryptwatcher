@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"syscall"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -46,7 +45,6 @@ func registerBoot() {
 	JC.Window.SetOnClosed(func() {
 		JC.Logln("Window was closed")
 		JC.App.Quit()
-		JC.ShutdownSignal <- syscall.SIGTERM
 	})
 }
 

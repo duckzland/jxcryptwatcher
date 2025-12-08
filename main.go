@@ -1,9 +1,6 @@
 package main
 
 import (
-	"os/signal"
-	"syscall"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
@@ -11,8 +8,6 @@ import (
 )
 
 func main() {
-
-	signal.Notify(JC.ShutdownSignal, syscall.SIGINT, syscall.SIGTERM)
 
 	JC.App = app.NewWithID(JC.AppID)
 
@@ -48,11 +43,9 @@ func main() {
 
 	JC.Window.ShowAndRun()
 
-	sig := <-JC.ShutdownSignal
-
-	JC.Logf("Received signal: %v. Performing cleanup and exiting gracefully.", sig)
+	JC.Logln("Received exit signal, Performing cleanup and exiting gracefully.")
 
 	appShutdown()
 
-	signal.Stop(JC.ShutdownSignal)
+	<-JC.ShutdownCtx.Done()
 }
