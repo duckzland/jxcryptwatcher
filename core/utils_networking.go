@@ -39,6 +39,10 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 		ctx = context.Background()
 	}
 
+	if ctx.Err() != nil {
+		return NETWORKING_ERROR_CONNECTION
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 

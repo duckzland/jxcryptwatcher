@@ -52,6 +52,11 @@ func (er *cmc100Fetcher) parseJSON(data []byte) error {
 }
 
 func (er *cmc100Fetcher) GetRate(ctx context.Context) int64 {
+
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().CMC100Endpoint,
@@ -61,6 +66,10 @@ func (er *cmc100Fetcher) GetRate(ctx context.Context) int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_CMC100, resp)
 			defer close()

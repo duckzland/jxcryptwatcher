@@ -63,6 +63,11 @@ func (mc *marketCapFetcher) parseJSON(data []byte) error {
 }
 
 func (mc *marketCapFetcher) GetRate(ctx context.Context) int64 {
+
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().MarketCapEndpoint,
@@ -71,6 +76,10 @@ func (mc *marketCapFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("range", "30d")
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_MARKETCAP, resp)
 			defer close()

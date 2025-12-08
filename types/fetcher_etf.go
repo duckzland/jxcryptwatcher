@@ -64,6 +64,10 @@ func (ef *etfFetcher) parseJSON(data []byte) error {
 }
 
 func (ef *etfFetcher) GetRate(ctx context.Context) int64 {
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().ETFEndpoint,
@@ -72,6 +76,10 @@ func (ef *etfFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("range", "30d")
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_ETF, resp)
 			defer close()

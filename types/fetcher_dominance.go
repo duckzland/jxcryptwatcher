@@ -62,11 +62,19 @@ func (df *dominanceFetcher) parseJSON(data []byte) error {
 }
 
 func (df *dominanceFetcher) GetRate(ctx context.Context) int64 {
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().DominanceEndpoint,
 		func(url url.Values, req *http.Request) {},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_DOMINANCE, resp)
 			defer close()

@@ -106,6 +106,10 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 		return JC.NETWORKING_BAD_PAYLOAD
 	}
 
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().ExchangeEndpoint,
@@ -115,6 +119,10 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 			url.Add("convert_id", tid)
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_EXCHANGE_GET_RATES, resp)
 			defer close()

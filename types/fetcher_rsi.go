@@ -72,6 +72,11 @@ func (rf *rsiFetcher) parseJSON(data []byte) error {
 }
 
 func (rf *rsiFetcher) GetRate(ctx context.Context) int64 {
+
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().RSIEndpoint,
@@ -82,6 +87,11 @@ func (rf *rsiFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("marketCapRange.min", "50000000")
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
+
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_RSI, resp)
 			defer close()
 			if err != nil {

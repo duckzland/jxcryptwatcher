@@ -44,6 +44,11 @@ func (fg *fearGreedFetcher) parseJSON(data []byte) error {
 }
 
 func (fg *fearGreedFetcher) GetRate(ctx context.Context) int64 {
+
+	if ctx.Err() != nil {
+		return JC.NETWORKING_ERROR_CONNECTION
+	}
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().FearGreedEndpoint,
@@ -53,6 +58,10 @@ func (fg *fearGreedFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
 		func(resp *http.Response) int64 {
+
+			if ctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
 
 			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_FEARGREED, resp)
 			defer close()
