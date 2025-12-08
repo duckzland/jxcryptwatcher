@@ -39,8 +39,8 @@ func (w *worker) Init() {
 }
 
 func (w *worker) Register(key string, size int64, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -90,8 +90,8 @@ func (w *worker) Deregister(key string) {
 }
 
 func (w *worker) Call(key string, mode CallMode) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -126,8 +126,8 @@ func (w *worker) Call(key string, mode CallMode) {
 }
 
 func (w *worker) Push(key string, payload any) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -139,8 +139,8 @@ func (w *worker) Push(key string, payload any) {
 }
 
 func (w *worker) Flush(key string) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -152,8 +152,8 @@ func (w *worker) Flush(key string) {
 }
 
 func (w *worker) Reset(key string) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -165,8 +165,8 @@ func (w *worker) Reset(key string) {
 }
 
 func (w *worker) Pause() {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed || w.registry == nil {
 		return

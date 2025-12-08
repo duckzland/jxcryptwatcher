@@ -69,8 +69,8 @@ type fetcher struct {
 var fetcherManager *fetcher = nil
 
 func (m *fetcher) Init() {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.fetchers != nil || m.activeWorkers != nil || m.dispatcher != nil {
 		return
@@ -87,8 +87,8 @@ func (m *fetcher) Init() {
 }
 
 func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterface, callback func(FetchResultInterface), conditions func() bool) {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.destroyed {
 		return
@@ -112,8 +112,8 @@ func (m *fetcher) Deregister(key string) {
 }
 
 func (m *fetcher) Call(key string, payload any) {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.destroyed {
 		return
@@ -134,8 +134,8 @@ func (m *fetcher) Call(key string, payload any) {
 
 	go func(callID string, ctx context.Context, cancel context.CancelFunc) {
 		defer func() {
-			defer m.mu.Unlock()
 			m.mu.Lock()
+			defer m.mu.Unlock()
 
 			cancel()
 
@@ -150,8 +150,8 @@ func (m *fetcher) Call(key string, payload any) {
 
 		default:
 			m.executeCall(ctx, key, payload, func(result FetchResultInterface) {
-				defer m.mu.Unlock()
 				m.mu.Lock()
+				defer m.mu.Unlock()
 
 				if ctx.Err() != nil {
 					return
@@ -173,8 +173,8 @@ func (m *fetcher) Call(key string, payload any) {
 }
 
 func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJob int), callback func(map[string]FetchResultInterface)) {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.destroyed {
 		return
@@ -260,8 +260,8 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 
 	go func(ctx context.Context, mapKey string) {
 		defer func() {
-			defer m.mu.Unlock()
 			m.mu.Lock()
+			defer m.mu.Unlock()
 
 			cancel()
 
@@ -293,8 +293,8 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 }
 
 func (m *fetcher) Destroy() {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.destroyed {
 		return
@@ -354,8 +354,8 @@ func (m *fetcher) internalDestroy(key string) {
 }
 
 func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {
-	defer m.mu.Unlock()
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	f := m.fetchers[key]
 

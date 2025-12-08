@@ -21,8 +21,8 @@ type workerUnit struct {
 }
 
 func (w *workerUnit) Call(payload any) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	fn := w.fn
 
@@ -36,8 +36,8 @@ func (w *workerUnit) Call(payload any) {
 }
 
 func (w *workerUnit) Flush() {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -53,8 +53,8 @@ func (w *workerUnit) Flush() {
 }
 
 func (w *workerUnit) Push(payload any) {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -67,8 +67,8 @@ func (w *workerUnit) Push(payload any) {
 }
 
 func (w *workerUnit) Start() {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -92,8 +92,8 @@ func (w *workerUnit) Start() {
 }
 
 func (w *workerUnit) Stop() {
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return
@@ -161,8 +161,8 @@ func (w *workerUnit) worker() {
 func (w *workerUnit) Destroy() {
 	w.Flush()
 
-	defer w.mu.Unlock()
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	if w.destroyed {
 		return

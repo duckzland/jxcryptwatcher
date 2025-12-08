@@ -93,8 +93,8 @@ func (d *dispatcher) Submit(fn func()) {
 }
 
 func (d *dispatcher) Pause() {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	d.paused = true
 
@@ -114,8 +114,8 @@ func (d *dispatcher) Resume() {
 }
 
 func (d *dispatcher) Destroy() {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	d.paused = true
 	d.destroyed = true
@@ -169,14 +169,14 @@ func (d *dispatcher) isPaused() bool {
 }
 
 func (d *dispatcher) isDestroyed() bool {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.destroyed
 }
 
 func (d *dispatcher) hasQueue() bool {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.queue != nil
 }
 
@@ -187,14 +187,14 @@ func (d *dispatcher) hasDrainer() bool {
 }
 
 func (d *dispatcher) getQueue() chan func() {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.queue
 }
 
 func (d *dispatcher) getMaxConcurrent() int {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.maxConcurrent
 }
 
