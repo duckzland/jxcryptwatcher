@@ -39,12 +39,20 @@ func (w *worker) Init() {
 }
 
 func (w *worker) Register(key string, size int64, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-	defer w.mu.Unlock()
-	w.mu.Lock()
 
+	w.mu.Lock()
 	if w.destroyed {
 		return
 	}
+	_, registered := w.registry[key]
+	w.mu.Unlock()
+
+	if registered {
+		w.Deregister(key)
+	}
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
 	w.conditions[key] = shouldRun
 	w.lastRun[key] = time.Now()
@@ -76,6 +84,35 @@ func (w *worker) Register(key string, size int64, getDelay func() int64, getInte
 	}
 
 	w.registry[key].Start()
+}
+
+func (w *worker) Deregister(key string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.registry != nil {
+		if unit, exists := w.registry[key]; exists {
+			if unit != nil {
+				unit.Flush()
+				unit.Stop()
+				close(unit.queue)
+			}
+
+			delete(w.registry, key)
+		}
+	}
+
+	if w.conditions != nil {
+		if _, exists := w.conditions[key]; exists {
+			delete(w.conditions, key)
+		}
+	}
+
+	if w.lastRun != nil {
+		if _, exists := w.lastRun[key]; exists {
+			delete(w.lastRun, key)
+		}
+	}
 }
 
 func (w *worker) Call(key string, mode CallMode) {
@@ -115,18 +152,16 @@ func (w *worker) Call(key string, mode CallMode) {
 }
 
 func (w *worker) Push(key string, payload any) {
+	defer w.mu.Unlock()
 	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
-		return
-	}
-	unit := w.registry[key]
-	w.mu.Unlock()
 
-	if unit == nil {
+	if w.destroyed {
 		return
 	}
-	unit.Push(payload)
+
+	if unit, exists := w.registry[key]; exists && unit != nil {
+		unit.Push(payload)
+	}
 }
 
 func (w *worker) Flush(key string) {
@@ -137,13 +172,9 @@ func (w *worker) Flush(key string) {
 		return
 	}
 
-	unit := w.registry[key]
-
-	if unit == nil {
-		return
+	if unit, exists := w.registry[key]; exists && unit != nil {
+		unit.Flush()
 	}
-
-	unit.Flush()
 }
 
 func (w *worker) Reset(key string) {
@@ -154,47 +185,34 @@ func (w *worker) Reset(key string) {
 		return
 	}
 
-	unit := w.registry[key]
-
-	if unit == nil {
-		return
+	if unit, exists := w.registry[key]; exists && unit != nil {
+		unit.Reset()
 	}
-
-	unit.Reset()
 }
 
 func (w *worker) Pause() {
 	defer w.mu.Unlock()
 	w.mu.Lock()
 
-	if w.destroyed {
+	if w.destroyed || w.registry == nil {
 		return
 	}
 
-	units := make([]*workerUnit, 0, len(w.registry))
 	for _, unit := range w.registry {
-		units = append(units, unit)
-	}
-
-	for _, unit := range units {
 		unit.Stop()
 	}
+
 }
 
 func (w *worker) Resume() {
 	defer w.mu.Unlock()
 	w.mu.Lock()
 
-	if w.destroyed {
+	if w.destroyed || w.registry == nil {
 		return
 	}
 
-	units := make([]*workerUnit, 0, len(w.registry))
 	for _, unit := range w.registry {
-		units = append(units, unit)
-	}
-
-	for _, unit := range units {
 		unit.Start()
 	}
 }
@@ -223,16 +241,12 @@ func (w *worker) Destroy() {
 		return
 	}
 
-	units := make([]*workerUnit, 0, len(w.registry))
-	for _, unit := range w.registry {
-		units = append(units, unit)
-	}
-
 	w.destroyed = true
 
-	for _, unit := range units {
-		unit.Flush()
-		unit.Stop()
+	if w.registry != nil {
+		for key := range w.registry {
+			w.Deregister(key)
+		}
 	}
 
 	w.registry = nil
