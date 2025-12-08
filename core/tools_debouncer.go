@@ -35,7 +35,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	if d.generations[key] > 1000000 {
 		d.generations[key] = 0
 	}
-
 	d.generations[key]++
 	gen := d.generations[key]
 
@@ -50,7 +49,9 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	d.callbacks[key] = fn
 	d.mu.Unlock()
 
-	go func(gen int, ctx context.Context, cancel context.CancelFunc) {
+	timer := time.NewTimer(delay)
+
+	go func(gen int, ctx context.Context, cancel context.CancelFunc, timer *time.Timer) {
 		defer func() {
 			cancel()
 			d.mu.Lock()
@@ -60,11 +61,19 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 				delete(d.callbacks, key)
 			}
 			d.mu.Unlock()
+
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
 		}()
 
 		select {
-		case <-time.After(delay):
+		case <-timer.C:
 
+			// Allow last chance cancel
 			time.Sleep(1 * time.Millisecond)
 
 			if ctx.Err() != nil {
@@ -76,18 +85,15 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 			fn := d.callbacks[key]
 			d.mu.Unlock()
 
-			if gen == currentGen {
-				if fn != nil {
-					fn()
-				}
+			if gen == currentGen && fn != nil {
+				fn()
 			}
-
-			return
 
 		case <-ctx.Done():
 			return
 		}
-	}(gen, ctx, cancel)
+
+	}(gen, ctx, cancel, timer)
 }
 
 func (d *debouncer) Cancel(key string) {
