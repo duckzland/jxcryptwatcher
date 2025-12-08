@@ -176,6 +176,7 @@ func (w *workerUnit) Destroy() {
 
 	w.ctx = nil
 	w.cancel = nil
+
 	close(w.queue)
 }
 

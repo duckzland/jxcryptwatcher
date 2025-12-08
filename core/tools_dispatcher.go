@@ -72,6 +72,7 @@ func (d *dispatcher) Drain() {
 	d.mu.Lock()
 	queue := d.queue
 	d.mu.Unlock()
+
 	for {
 		select {
 		case <-queue:
