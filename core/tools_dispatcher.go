@@ -174,51 +174,63 @@ func (d *dispatcher) IsPaused() bool {
 	return d.paused
 }
 
-func (d *dispatcher) worker(id int) {
+func (d *dispatcher) call() {
+	d.mu.Lock()
+	queue := d.queue
+	d.mu.Unlock()
 
-	var ticker *time.Ticker
-	if delay := d.GetDelay(); delay > 0 {
-		ticker = time.NewTicker(delay)
-	} else {
-		ticker = &time.Ticker{C: make(chan time.Time)}
+	if queue == nil {
+		return
 	}
 
-	defer ticker.Stop()
-	defer d.Drain()
-
-	for {
-		if d.ctx == nil {
+	select {
+	case fn, ok := <-queue:
+		if !ok {
 			return
 		}
 
-		select {
-		case <-d.ctx.Done():
+		if d.IsPaused() {
 			return
+		}
 
-		case <-ticker.C:
-			d.mu.Lock()
-			queue := d.queue
-			d.mu.Unlock()
+		if fn != nil {
+			fn()
+		}
 
-			if queue == nil {
-				continue
+	default:
+	}
+}
+
+func (d *dispatcher) worker(id int) {
+
+	defer d.cancel()
+	defer d.Drain()
+
+	if delay := d.GetDelay(); delay > 0 {
+		ticker := time.NewTicker(delay)
+		defer ticker.Stop()
+
+		for {
+			if d.ctx == nil {
+				return
 			}
 
 			select {
-			case fn, ok := <-queue:
-				if !ok {
-					return
-				}
+			case <-d.ctx.Done():
+				return
 
-				if d.IsPaused() {
-					continue
-				}
+			case <-ticker.C:
+				d.call()
+			}
+		}
 
-				if fn != nil {
-					fn()
-				}
-
+	} else {
+		for {
+			select {
+			case <-d.ctx.Done():
+				return
 			default:
+				d.call()
 			}
 		}
 	}
