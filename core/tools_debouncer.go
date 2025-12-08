@@ -26,9 +26,10 @@ func (d *debouncer) Init() {
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
+	defer d.mu.Unlock()
 	d.mu.Lock()
+
 	if d.destroyed {
-		d.mu.Unlock()
 		return
 	}
 
@@ -47,13 +48,13 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	d.cancelMap[key] = cancel
 	d.callbacks[key] = fn
-	d.mu.Unlock()
 
 	timer := time.NewTimer(delay)
 
 	go func(gen int, ctx context.Context, cancel context.CancelFunc, timer *time.Timer) {
 		defer func() {
 			cancel()
+
 			d.mu.Lock()
 			currentGen := d.generations[key]
 			if gen == currentGen {
@@ -97,40 +98,56 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 }
 
 func (d *debouncer) Cancel(key string) {
+	defer d.mu.Unlock()
 	d.mu.Lock()
+
 	if d.destroyed {
-		d.mu.Unlock()
 		return
 	}
 
-	d.generations[key]++
-
-	if cancel, ok := d.cancelMap[key]; ok {
-		cancel()
-		delete(d.cancelMap, key)
-	}
-
-	delete(d.callbacks, key)
-	delete(d.generations, key)
-	d.mu.Unlock()
+	d.internalDestroy(key)
 }
 
 func (d *debouncer) Destroy() {
+	defer d.mu.Unlock()
 	d.mu.Lock()
+
 	if d.destroyed {
-		d.mu.Unlock()
 		return
 	}
+
 	d.destroyed = true
-	for _, cancel := range d.cancelMap {
-		if cancel != nil {
-			cancel()
-		}
+	for key := range d.cancelMap {
+		d.internalDestroy(key)
 	}
+
 	d.generations = nil
 	d.callbacks = nil
 	d.cancelMap = nil
-	d.mu.Unlock()
+}
+
+func (d *debouncer) internalDestroy(key string) {
+
+	d.generations[key]++
+
+	if d.cancelMap != nil {
+		if cancel, exists := d.cancelMap[key]; exists {
+			cancel()
+			delete(d.cancelMap, key)
+		}
+	}
+
+	if d.callbacks != nil {
+		if _, exists := d.callbacks[key]; exists {
+			delete(d.callbacks, key)
+		}
+	}
+
+	if d.generations != nil {
+		if _, exists := d.generations[key]; exists {
+			delete(d.generations, key)
+		}
+	}
 }
 
 func RegisterDebouncer() *debouncer {

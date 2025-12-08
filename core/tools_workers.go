@@ -39,20 +39,16 @@ func (w *worker) Init() {
 }
 
 func (w *worker) Register(key string, size int64, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-
+	defer w.mu.Unlock()
 	w.mu.Lock()
+
 	if w.destroyed {
 		return
 	}
-	_, registered := w.registry[key]
-	w.mu.Unlock()
 
-	if registered {
-		w.Deregister(key)
+	if _, registered := w.registry[key]; registered {
+		w.internalDestroy(key)
 	}
-
-	w.mu.Lock()
-	defer w.mu.Unlock()
 
 	w.conditions[key] = shouldRun
 	w.lastRun[key] = time.Now()
@@ -90,29 +86,7 @@ func (w *worker) Deregister(key string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.registry != nil {
-		if unit, exists := w.registry[key]; exists {
-			if unit != nil {
-				unit.Flush()
-				unit.Stop()
-				close(unit.queue)
-			}
-
-			delete(w.registry, key)
-		}
-	}
-
-	if w.conditions != nil {
-		if _, exists := w.conditions[key]; exists {
-			delete(w.conditions, key)
-		}
-	}
-
-	if w.lastRun != nil {
-		if _, exists := w.lastRun[key]; exists {
-			delete(w.lastRun, key)
-		}
-	}
+	w.internalDestroy(key)
 }
 
 func (w *worker) Call(key string, mode CallMode) {
@@ -245,13 +219,37 @@ func (w *worker) Destroy() {
 
 	if w.registry != nil {
 		for key := range w.registry {
-			w.Deregister(key)
+			w.internalDestroy(key)
 		}
 	}
 
 	w.registry = nil
 	w.conditions = nil
 	w.lastRun = nil
+}
+
+func (w *worker) internalDestroy(key string) {
+	if w.registry != nil {
+		if unit, exists := w.registry[key]; exists {
+			if unit != nil {
+				unit.Destroy()
+			}
+
+			delete(w.registry, key)
+		}
+	}
+
+	if w.conditions != nil {
+		if _, exists := w.conditions[key]; exists {
+			delete(w.conditions, key)
+		}
+	}
+
+	if w.lastRun != nil {
+		if _, exists := w.lastRun[key]; exists {
+			delete(w.lastRun, key)
+		}
+	}
 }
 
 func RegisterWorkerManager() *worker {

@@ -17,19 +17,18 @@ type workerUnit struct {
 	cancel      context.CancelFunc
 	mu          sync.Mutex
 	bufferSize  int
-}
-
-func NewWorkerUnit(buffer int) *workerUnit {
-	return &workerUnit{
-		bufferSize: buffer,
-		queue:      make(chan any, buffer),
-	}
+	destroyed   bool
 }
 
 func (w *workerUnit) Call(payload any) {
+	defer w.mu.Unlock()
 	w.mu.Lock()
+
 	fn := w.fn
-	w.mu.Unlock()
+
+	if w.destroyed {
+		return
+	}
 
 	if fn != nil {
 		fn(payload)
@@ -37,6 +36,13 @@ func (w *workerUnit) Call(payload any) {
 }
 
 func (w *workerUnit) Flush() {
+	defer w.mu.Unlock()
+	w.mu.Lock()
+
+	if w.destroyed {
+		return
+	}
+
 	for {
 		select {
 		case <-w.queue:
@@ -47,6 +53,13 @@ func (w *workerUnit) Flush() {
 }
 
 func (w *workerUnit) Push(payload any) {
+	defer w.mu.Unlock()
+	w.mu.Lock()
+
+	if w.destroyed {
+		return
+	}
+
 	select {
 	case w.queue <- payload:
 	default:
@@ -54,8 +67,12 @@ func (w *workerUnit) Push(payload any) {
 }
 
 func (w *workerUnit) Start() {
-	w.mu.Lock()
 	defer w.mu.Unlock()
+	w.mu.Lock()
+
+	if w.destroyed {
+		return
+	}
 
 	if w.ctx != nil {
 		return
@@ -77,6 +94,10 @@ func (w *workerUnit) Start() {
 func (w *workerUnit) Stop() {
 	defer w.mu.Unlock()
 	w.mu.Lock()
+
+	if w.destroyed {
+		return
+	}
 
 	if w.cancel != nil {
 		w.cancel()
@@ -134,5 +155,34 @@ func (w *workerUnit) worker() {
 
 			w.Call(x)
 		}
+	}
+}
+
+func (w *workerUnit) Destroy() {
+	w.Flush()
+
+	defer w.mu.Unlock()
+	w.mu.Lock()
+
+	if w.destroyed {
+		return
+	}
+
+	w.destroyed = true
+
+	if w.cancel != nil {
+		w.cancel()
+	}
+
+	w.ctx = nil
+	w.cancel = nil
+	close(w.queue)
+}
+
+func NewWorkerUnit(buffer int) *workerUnit {
+	return &workerUnit{
+		bufferSize: buffer,
+		queue:      make(chan any, buffer),
+		destroyed:  false,
 	}
 }
