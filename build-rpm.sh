@@ -127,6 +127,7 @@ Summary:        Cryptocurrency watcher
 License:        MIT
 Source0:        jxwatcher-${version}.tar.gz
 BuildArch:      x86_64
+Requires:       mesa-libGL, libX11, libxcb, libXau, libXdmcp, libbsd, libmd
 
 %description
 JXWatcher provides real-time updates and monitoring of various cryptocurrencies.
