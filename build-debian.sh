@@ -110,6 +110,7 @@ Section: base
 Priority: optional
 Architecture: amd64
 Maintainer: JXWatcher <nobody@example.com>
+Depends: libgl1, libglx-mesa0, libx11-6, libxcb1, libxau6, libxdmcp6, libbsd0, libmd0
 Description: JXWatcher is a cryptocurrency watcher application that provides real-time updates and monitoring of various cryptocurrencies.
 EOF
 
