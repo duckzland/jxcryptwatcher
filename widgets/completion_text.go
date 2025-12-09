@@ -216,7 +216,7 @@ func NewCompletionText(width float32, height float32, parent *completionList) *c
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
-	s.img.ScaleMode = canvas.ImageScaleFastest
+	s.img.ScaleMode = canvas.ImageScaleSmooth
 
 	s.ExtendBaseWidget(s)
 

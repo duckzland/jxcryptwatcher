@@ -856,13 +856,6 @@ func registerLifecycle() {
 
 			JC.Logln("App exited foreground")
 
-			if JC.IsMobile {
-				JC.Logln("Battery Saver: Pausing apps")
-				JA.UseStatus().Pause()
-				JC.UseWorker().Pause()
-				JC.UseDispatcher().Pause()
-			}
-
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return
@@ -870,6 +863,14 @@ func registerLifecycle() {
 
 			if !JA.UseSnapshot().IsSnapshotted() && JC.IsMobile {
 				JA.UseSnapshot().Save()
+			}
+
+			// This can cause unwanted locking! fire last!
+			if JC.IsMobile {
+				JC.Logln("Battery Saver: Pausing apps")
+				JA.UseStatus().Pause()
+				JC.UseWorker().Pause()
+				JC.UseDispatcher().Pause()
 			}
 		})
 

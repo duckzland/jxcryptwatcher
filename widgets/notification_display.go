@@ -137,7 +137,7 @@ func NewNotificationDisplay() *notificationDisplay {
 	}
 
 	w.img.FillMode = canvas.ImageFillOriginal
-	w.img.ScaleMode = canvas.ImageScaleFastest
+	w.img.ScaleMode = canvas.ImageScaleSmooth
 
 	w.ExtendBaseWidget(w)
 

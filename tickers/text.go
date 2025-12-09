@@ -117,7 +117,7 @@ func NewTickerText(text string, col color.Color, size float32, alignment fyne.Te
 	}
 
 	s.img.FillMode = canvas.ImageFillOriginal
-	s.img.ScaleMode = canvas.ImageScaleFastest
+	s.img.ScaleMode = canvas.ImageScaleSmooth
 
 	s.ExtendBaseWidget(s)
 
