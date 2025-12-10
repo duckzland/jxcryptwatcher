@@ -141,8 +141,7 @@ func updateDisplay() bool {
 		}
 	}
 
-	// if only one chunk, run directly
-	if len(chunks) == 1 {
+	if len(chunks) == 1 && len(chunks[0]) < chunkSize/2 {
 		processChunk(chunks[0])
 	} else {
 		for _, chunk := range chunks {
