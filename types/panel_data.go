@@ -123,9 +123,13 @@ func (p *panelDataType) SetRate(val *big.Float) bool {
 		return false
 	}
 
-	p.Set(p.UsePanelKey().UpdateValue(val))
+	pk := p.UsePanelKey()
+	if pk.IsValueMatching(val, JC.STRING_NOT_EQUAL) {
+		p.Set(pk.UpdateValue(val))
+		return true
+	}
 
-	return true
+	return false
 }
 
 func (p *panelDataType) Get() string {
