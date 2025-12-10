@@ -118,9 +118,9 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 			url.Add("id", sid)
 			url.Add("convert_id", tid)
 		},
-		func(resp *http.Response) int64 {
+		func(cctx context.Context, resp *http.Response) int64 {
 
-			if ctx.Err() != nil {
+			if cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 

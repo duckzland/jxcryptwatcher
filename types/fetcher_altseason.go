@@ -56,9 +56,9 @@ func (er *altSeasonFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
 		},
-		func(resp *http.Response) int64 {
+		func(cctx context.Context, resp *http.Response) int64 {
 
-			if ctx.Err() != nil {
+			if cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 

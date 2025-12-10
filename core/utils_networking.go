@@ -26,7 +26,7 @@ var httpClient = &http.Client{
 	},
 }
 
-func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(resp *http.Response) int64) int64 {
+func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(ctx context.Context, resp *http.Response) int64) int64 {
 	PrintPerfStats("Fetching Request", time.Now())
 
 	parsedURL, err := url.Parse(targetUrl)
@@ -126,7 +126,7 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 	}
 
 	if callback != nil {
-		output := callback(resp)
+		output := callback(ctx, resp)
 		return output
 	}
 

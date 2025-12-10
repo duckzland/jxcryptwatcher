@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/big"
 	"runtime"
 	"strings"
 	"sync"
@@ -105,12 +106,12 @@ func updateDisplay() bool {
 		return false
 	}
 
-	processChunk := func(ids []string) {
+	processChunk := func(targets []string, data map[string]*big.Float) {
 		if JC.IsShuttingDown() {
 			return
 		}
 
-		for _, id := range ids {
+		for _, id := range targets {
 			if JC.IsShuttingDown() {
 				return
 			}
@@ -126,7 +127,7 @@ func updateDisplay() bool {
 			}
 
 			ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
-			val, ok := recentUpdates[ck]
+			val, ok := data[ck]
 			if !ok || val == nil {
 				continue
 			}
@@ -148,12 +149,12 @@ func updateDisplay() bool {
 	}
 
 	if len(chunks) == 1 && len(chunks[0]) < chunkSize/2 {
-		processChunk(chunks[0])
+		processChunk(chunks[0], recentUpdates)
 	} else {
 		for _, chunk := range chunks {
 			ids := chunk
 			JC.UseDispatcher().Submit(func() {
-				processChunk(ids)
+				processChunk(ids, recentUpdates)
 			})
 		}
 	}
@@ -252,7 +253,6 @@ func updateRates() bool {
 		return false
 	}
 
-	var mu sync.Mutex
 	jb := make(map[string]string)
 	list := JT.UsePanelMaps().GetData()
 
@@ -293,13 +293,11 @@ func updateRates() bool {
 		jb[sid] = sid + JC.STRING_PIPE + strings.Join(uniq, ",")
 	}
 
-	payloads := make(map[string][]string)
+	payloads := make(map[string][]string, len(jb))
 
 	for _, rk := range jb {
 		payloads[JC.ACT_EXCHANGE_GET_RATES] = append(payloads[JC.ACT_EXCHANGE_GET_RATES], rk)
 	}
-	var hasError int = 0
-	successCount := 0
 
 	JC.Notify(JC.NotifyFetchingTheLatestExchangeRates)
 
@@ -318,6 +316,9 @@ func updateRates() bool {
 		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingRates()
 
+			hasError := 0
+			successCount := 0
+
 			for _, result := range results {
 
 				if JC.IsShuttingDown() {
@@ -325,7 +326,6 @@ func updateRates() bool {
 				}
 
 				ns := detectHTTPResponse(result.Code())
-				mu.Lock()
 				if hasError == JC.STATUS_SUCCESS || hasError < ns {
 					hasError = ns
 				}
@@ -333,18 +333,15 @@ func updateRates() bool {
 				if ns == JC.STATUS_SUCCESS {
 					successCount++
 				}
-				mu.Unlock()
 			}
 
 			processUpdatePanelComplete(hasError)
 
 			JC.Logf("Exchange rate updated: %v/%v", successCount, len(jb))
 
-			mu.Lock()
 			if successCount != 0 {
 				updateDisplay()
 			}
-			mu.Unlock()
 
 			JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
 		})
@@ -366,10 +363,8 @@ func updateTickers() bool {
 		return false
 	}
 
-	var mu sync.Mutex
-
 	// Prepare keys and payloads
-	payloads := map[string][]string{}
+	payloads := make(map[string][]string, 8)
 
 	if JT.UseConfig().CanDoCMC100() {
 		payloads[JT.TickerTypeCMC100] = []string{JT.TickerTypeCMC100}
@@ -397,9 +392,6 @@ func updateTickers() bool {
 		return false
 	}
 
-	var hasError int = 0
-	var successCount int = 0
-
 	JC.Notify(JC.NotifyFetchingTheLatestTickerData)
 
 	JC.UseFetcher().Dispatch(payloads,
@@ -416,6 +408,9 @@ func updateTickers() bool {
 		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingTickers()
 
+			hasError := 0
+			successCount := 0
+
 			for _, result := range results {
 				if JC.IsShuttingDown() {
 					return
@@ -424,17 +419,12 @@ func updateTickers() bool {
 				ns := detectHTTPResponse(result.Code())
 				switch ns {
 				case JC.STATUS_SUCCESS:
-
-					mu.Lock()
 					successCount++
-					mu.Unlock()
 				}
 
-				mu.Lock()
 				if hasError == 0 || hasError < ns {
 					hasError = ns
 				}
-				mu.Unlock()
 			}
 
 			processUpdateTickerComplete(hasError)

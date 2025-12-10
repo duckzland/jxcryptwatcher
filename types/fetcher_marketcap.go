@@ -75,9 +75,9 @@ func (mc *marketCapFetcher) GetRate(ctx context.Context) int64 {
 			url.Add("convertId", "2781")
 			url.Add("range", "30d")
 		},
-		func(resp *http.Response) int64 {
+		func(cctx context.Context, resp *http.Response) int64 {
 
-			if ctx.Err() != nil {
+			if cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 

@@ -155,7 +155,12 @@ func (c *cryptosLoaderType) GetCryptos(ctx context.Context) int64 {
 		ctx,
 		UseConfig().DataEndpoint,
 		func(url url.Values, req *http.Request) {},
-		func(resp *http.Response) int64 {
+		func(cctx context.Context, resp *http.Response) int64 {
+
+			if cctx.Err() != nil {
+				return JC.NETWORKING_ERROR_CONNECTION
+			}
+
 			body, _, err := JC.ReadResponse(JC.ACT_CRYPTO_GET_MAP, resp)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

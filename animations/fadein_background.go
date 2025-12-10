@@ -31,57 +31,60 @@ func StartFadeInBackground(
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeInRegistry.Set(tag, cancel)
 
-	run := func() {
-		if !rect.Visible() {
-			cancel()
-			fadeInRegistry.Delete(tag)
-			return
-		}
+	if dispatch {
+		UseAnimationDispatcher().Submit(func() {
+			processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
+		})
+	} else {
+		processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
+	}
+}
+
+func processFadeInBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
+
+	if !rect.Visible() {
+		cancel()
+		fadeInRegistry.Delete(tag)
+		return
+	}
+
+	go func(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
+		defer fadeInRegistry.Delete(tag)
 
 		alphaSteps := []uint8{100, 128, 192, 255}
 		interval := duration / time.Duration(len(alphaSteps))
 
-		go func() {
-			defer fadeInRegistry.Delete(tag)
+		for _, alpha := range alphaSteps {
+			select {
+			case <-JC.ShutdownCtx.Done():
+				cancel()
+				return
 
-			for _, alpha := range alphaSteps {
-				select {
-				case <-JC.ShutdownCtx.Done():
-					cancel()
-					return
-
-				case <-ctx.Done():
-					if !JC.IsAlpha(rect.FillColor, 255) {
-						fyne.Do(func() {
-							rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
-							canvas.Refresh(rect)
-						})
-					}
-					return
-				default:
-					if !rect.Visible() {
-						cancel()
-						return
-					}
-					time.Sleep(interval)
+			case <-ctx.Done():
+				if !JC.IsAlpha(rect.FillColor, 255) {
 					fyne.Do(func() {
-						rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
+						rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
 						canvas.Refresh(rect)
 					})
 				}
+				return
+			default:
+				if !rect.Visible() {
+					cancel()
+					return
+				}
+				time.Sleep(interval)
+				fyne.Do(func() {
+					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
+					canvas.Refresh(rect)
+				})
 			}
+		}
 
-			if callback != nil {
-				fyne.Do(callback)
-			}
-		}()
-	}
-
-	if dispatch {
-		UseAnimationDispatcher().Submit(run)
-	} else {
-		run()
-	}
+		if callback != nil {
+			fyne.Do(callback)
+		}
+	}(tag, rect, duration, callback, ctx, cancel)
 }
 
 func StopFadeInBackground(tag string) {

@@ -70,9 +70,9 @@ func (df *dominanceFetcher) GetRate(ctx context.Context) int64 {
 		ctx,
 		UseConfig().DominanceEndpoint,
 		func(url url.Values, req *http.Request) {},
-		func(resp *http.Response) int64 {
+		func(cctx context.Context, resp *http.Response) int64 {
 
-			if ctx.Err() != nil {
+			if cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 
