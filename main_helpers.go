@@ -324,7 +324,7 @@ func updateRates() bool {
 
 			processUpdatePanelComplete(hasError)
 
-			JC.Logf("Exchange Rate updated: %v/%v", successCount, len(jb))
+			JC.Logf("Exchange rate updated: %v/%v", successCount, len(jb))
 
 			mu.Lock()
 			if successCount != 0 {
@@ -425,7 +425,7 @@ func updateTickers() bool {
 
 			processUpdateTickerComplete(hasError)
 
-			JC.Logf("Tickers Rate updated: %v/%v", successCount, len(payloads))
+			JC.Logf("Tickers rate updated: %v/%v", successCount, len(payloads))
 
 			if successCount > 0 {
 				updateTickerDisplay()
