@@ -22,10 +22,11 @@ type tickerDataCacheEntry struct {
 }
 
 type tickerDataCacheType struct {
-	data        sync.Map
-	timestamp   time.Time
-	lastUpdated *time.Time
-	mu          sync.RWMutex
+	data          sync.Map
+	timestamp     time.Time
+	lastUpdated   *time.Time
+	recentUpdates sync.Map
+	mu            sync.RWMutex
 }
 
 func (tc *tickerDataCacheType) GetTimestamp() time.Time {
@@ -68,13 +69,33 @@ func (tc *tickerDataCacheType) Get(key string) string {
 	return JC.STRING_EMPTY
 }
 
+func (tc *tickerDataCacheType) GetRecentUpdates() map[string]string {
+	updates := make(map[string]string)
+	tc.recentUpdates.Range(func(k, v any) bool {
+		if strVal, ok := v.(string); ok {
+			updates[k.(string)] = strVal
+		}
+		return true
+	})
+	tc.recentUpdates = sync.Map{}
+	return updates
+}
+
 func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *tickerDataCacheType {
-	tc.data.Store(key, value)
-	tc.SetTimestamp(time.Now())
-	tc.SetLastUpdated(&timestamp)
+	if oldVal, ok := tc.data.Load(key); ok {
+		old := oldVal.(string)
+		if old != value {
+			tc.recentUpdates.Store(key, value)
+		}
+	} else {
+		tc.recentUpdates.Store(key, value)
+	}
 
 	// JC.Logf("Ticker received: [%s] = %s", key, value)
 
+	tc.data.Store(key, value)
+	tc.SetTimestamp(time.Now())
+	tc.SetLastUpdated(&timestamp)
 	return tc
 }
 

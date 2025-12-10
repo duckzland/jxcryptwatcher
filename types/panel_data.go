@@ -1,6 +1,7 @@
 package types
 
 import (
+	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ type PanelData interface {
 	SetID(val string)
 	SetOldKey(val string)
 	SetParent(val *panelsMapType)
+	SetRate(val *big.Float) bool
 	Get() string
 	GetStatus() int
 	GetID() string
@@ -114,6 +116,16 @@ func (p *panelDataType) SetParent(val *panelsMapType) {
 	p.mu.Lock()
 	p.parent = val
 	p.mu.Unlock()
+}
+
+func (p *panelDataType) SetRate(val *big.Float) bool {
+	if val == nil {
+		return false
+	}
+
+	p.Set(p.UsePanelKey().UpdateValue(val))
+
+	return true
 }
 
 func (p *panelDataType) Get() string {

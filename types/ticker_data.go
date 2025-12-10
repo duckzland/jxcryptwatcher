@@ -66,6 +66,7 @@ type TickerData interface {
 	IsKey(val string) bool
 	Insert(rate string)
 	Update() bool
+	UpdateStatus() bool
 	FormatContent() string
 	DidChange() bool
 	Serialize() tickerDataCache
@@ -313,6 +314,25 @@ func (p *tickerDataType) Update() bool {
 		// JC.Logln("Updating Ticker:", npk, opk, p.status)
 		p.oldKey = opk
 		p.data.Set(npk)
+		return true
+	}
+
+	return false
+}
+
+func (p *tickerDataType) UpdateStatus() bool {
+
+	if JC.IsShuttingDown() {
+		return false
+	}
+
+	ost, _ := p.status.Get()
+
+	switch ost {
+	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
+		p.status.Set(JC.STATE_LOADED)
+		return true
+	case JC.STATE_LOADED:
 		return true
 	}
 

@@ -54,9 +54,20 @@ func updateDisplay() bool {
 	var updateCount int
 	var mu sync.Mutex
 
+	recentUpdates := JT.UseExchangeCache().GetRecentUpdates()
+	if recentUpdates == nil || len(recentUpdates) == 0 {
+		JC.Logln("Unable to refresh display: No recent panel rates update available")
+		return false
+	}
+
 	registered := make(map[string]bool)
 	priority := JT.UsePanelMaps().GetVisiblePanels()
 	panels := JT.UsePanelMaps().GetData()
+
+	if panels == nil {
+		JC.Logln("Unable to refresh display: No panels available to update")
+		return false
+	}
 
 	for _, tag := range priority {
 		if JT.UsePanelMaps().GetDataByID(tag) == nil {
@@ -71,7 +82,10 @@ func updateDisplay() bool {
 
 	for _, pot := range panels {
 		id := pot.GetID()
-		if !registered[id] {
+		pkt := pot.UsePanelKey()
+		ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
+
+		if _, ok := recentUpdates[ck]; ok && !registered[id] {
 			allIDs = append(allIDs, id)
 			registered[id] = true
 		}
@@ -83,6 +97,11 @@ func updateDisplay() bool {
 			end = len(allIDs)
 		}
 		chunks = append(chunks, allIDs[i:end])
+	}
+
+	if len(allIDs) == 0 {
+		JC.Logln("Unable to refresh display: No panels eligible for update")
+		return false
 	}
 
 	for _, chunk := range chunks {
@@ -98,19 +117,31 @@ func updateDisplay() bool {
 			}
 
 			for _, id := range ids {
-				pkt := JT.UsePanelMaps().GetDataByID(id)
-
-				if pkt == nil {
-					continue
-				}
-
 				if JC.IsShuttingDown() {
 					return
 				}
 
-				if pkt.UpdateRate() {
+				pn := JT.UsePanelMaps().GetDataByID(id)
+				if pn == nil {
+					continue
+				}
 
-					pkt.UpdateStatus()
+				pkt := pn.UsePanelKey()
+				if pkt == nil {
+					continue
+				}
+
+				ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
+
+				dt, ok := recentUpdates[ck]
+
+				if !ok || dt.TargetAmount == nil {
+					continue
+				}
+
+				if pn.SetRate(dt.TargetAmount) {
+
+					pn.UpdateStatus()
 
 					mu.Lock()
 					if updateCount == 0 {
@@ -129,12 +160,20 @@ func updateDisplay() bool {
 
 	JA.UseLayout().RegisterDisplayUpdate(time.Now())
 
+	JC.Logf("Panels display updated: %d/%d/%d", len(recentUpdates), len(allIDs), len(panels))
+
 	return true
 }
 
 func updateTickerDisplay() bool {
 
 	if JC.IsShuttingDown() {
+		return false
+	}
+
+	recentUpdates := JT.UseTickerCache().GetRecentUpdates()
+	if recentUpdates == nil || len(recentUpdates) == 0 {
+		JC.Logln("Unable to refresh tickers: No recent ticker rates update available")
 		return false
 	}
 
@@ -163,7 +202,18 @@ func updateTickerDisplay() bool {
 		tickers = append(tickers, JT.TickerTypeDominance)
 	}
 
+	if len(tickers) == 0 {
+		JC.Logln("Unable to refresh tickers: No configured tickers")
+		return false
+	}
+
 	for _, key := range tickers {
+		rate, ok := recentUpdates[key]
+
+		if !ok {
+			continue
+		}
+
 		tktt := JT.UseTickerMaps().GetDataByType(key)
 		for _, tkt := range tktt {
 
@@ -171,18 +221,19 @@ func updateTickerDisplay() bool {
 				return false
 			}
 
-			if tkt.Update() {
-				if success == 0 {
-					success++
-					JC.Notify(JC.NotifyTickerDisplayRefreshedWithNewRates)
-				}
-			}
+			tkt.Insert(rate)
+			tkt.UpdateStatus()
+
+			success++
 		}
 
 		if success != 0 {
+			JC.Notify(JC.NotifyTickerDisplayRefreshedWithNewRates)
 			runtime.GC()
 		}
 	}
+
+	JC.Logf("Tickers display updated: %d/%d/%d", len(recentUpdates), success, len(tickers))
 
 	return true
 }
@@ -277,9 +328,7 @@ func updateRates() bool {
 
 			mu.Lock()
 			if successCount != 0 {
-				if updateDisplay() {
-					JC.Logf("Panel display updated: %v/%v", successCount, len(jb))
-				}
+				updateDisplay()
 			}
 			mu.Unlock()
 
