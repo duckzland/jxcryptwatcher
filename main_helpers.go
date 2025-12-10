@@ -22,6 +22,31 @@ func updateDisplay() bool {
 		return false
 	}
 
+	if !JA.UseStatus().ValidConfig() {
+		JC.Logln("Unable to refresh display: invalid configuration")
+		return false
+	}
+	if !JA.UseStatus().IsReady() {
+		JC.Logln("Unable to refresh display: app is not ready yet")
+		return false
+	}
+	if JA.UseStatus().IsPaused() {
+		JC.Logln("Unable to refresh display: app is paused")
+		return false
+	}
+	if !JT.UseExchangeCache().HasData() {
+		JC.Logln("Unable to refresh display: no cached data")
+		return false
+	}
+	if !JT.UseExchangeCache().GetTimestamp().After(JA.UseLayout().GetDisplayUpdate()) {
+		JC.Logln("Unable to refresh display: Data is older than display timestamp")
+		return false
+	}
+	if !JA.UseStatus().ValidPanels() {
+		JC.Logln("Unable to refresh display: No valid panels configured")
+		return false
+	}
+
 	const chunkSize = 100
 
 	var allIDs []string
@@ -101,6 +126,8 @@ func updateDisplay() bool {
 			}
 		})
 	}
+
+	JA.UseLayout().RegisterDisplayUpdate(time.Now())
 
 	return true
 }
@@ -250,7 +277,9 @@ func updateRates() bool {
 
 			mu.Lock()
 			if successCount != 0 {
-				JC.UseWorker().Call(JC.ACT_PANEL_UPDATE, JC.CallBypassImmediate)
+				if updateDisplay() {
+					JC.Logf("Panel display updated: %v/%v", successCount, len(jb))
+				}
 			}
 			mu.Unlock()
 
