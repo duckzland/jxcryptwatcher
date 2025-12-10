@@ -91,6 +91,8 @@ mkdir -p "${bin_path}" "${desktop_path}" \
          "${icons_path}/256x256/apps"
 
 # Build binary
+GOEXPERIMENT=greenteagc \
+GOGC=50 \
 CGO_ENABLED=1 \
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \

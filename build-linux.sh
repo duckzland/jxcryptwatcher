@@ -79,6 +79,8 @@ if [[ $1 == "local-debug" ]]; then
     tags="desktop,local,no_emoji,no_animations,no_fonts"
 fi
 
+GOEXPERIMENT=greenteagc \
+GOGC=50 \
 CGO_ENABLED=1 \
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \

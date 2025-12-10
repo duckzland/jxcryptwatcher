@@ -97,6 +97,8 @@ mkdir -p "${pkg_dir}/DEBIAN" \
          "${icons_path}/32x32/apps"
 
 # Build the Go binary
+GOEXPERIMENT=greenteagc \
+GOGC=50 \
 CGO_ENABLED=1 \
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \

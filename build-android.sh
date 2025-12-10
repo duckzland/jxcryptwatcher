@@ -187,6 +187,8 @@ cat > AndroidManifest.xml <<EOF
 </manifest>
 EOF
 
+GOEXPERIMENT=greenteagc \
+GOGC=50 \
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \
 ANDROID_NDK_HOME=$android_sdk \
