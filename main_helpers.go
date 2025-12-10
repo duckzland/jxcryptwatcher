@@ -122,11 +122,12 @@ func updateDisplay() bool {
 				continue
 			}
 			ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
-			dt, ok := recentUpdates[ck]
-			if !ok || dt.TargetAmount == nil {
+			val, ok := recentUpdates[ck]
+			if !ok || val == nil {
 				continue
 			}
-			if pn.SetRate(dt.TargetAmount) {
+
+			if pn.SetRate(val) {
 				pn.UpdateStatus()
 				mu.Lock()
 				if updateCount == 0 {

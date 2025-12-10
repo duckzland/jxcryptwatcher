@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -68,10 +69,11 @@ func (ec *exchangeDataCacheType) SetLastUpdated(t *time.Time) {
 	ec.mu.Unlock()
 }
 
-func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]exchangeDataType {
-	updates := make(map[string]exchangeDataType)
+func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
+	updates := make(map[string]*big.Float)
 	ec.recentUpdates.Range(func(k, v any) bool {
-		updates[k.(string)] = v.(exchangeDataType)
+		ed := v.(exchangeDataType)
+		updates[k.(string)] = ed.TargetAmount
 		return true
 	})
 	ec.recentUpdates = sync.Map{}

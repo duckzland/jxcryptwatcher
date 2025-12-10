@@ -79,7 +79,7 @@ func TestExchangeCacheInsertAndGet(t *testing.T) {
 	if len(updates) != 1 {
 		t.Errorf("Expected 1 recent update after changed insert, got %d", len(updates))
 	}
-	if updates[key].TargetAmount.Cmp(JC.ToBigFloat(20.0)) != 0 {
+	if updates[key].Cmp(JC.ToBigFloat(20.0)) != 0 {
 		t.Error("Expected recent update to contain new TargetAmount = 20.0")
 	}
 
@@ -225,7 +225,7 @@ func TestExchangeCacheRecentUpdates(t *testing.T) {
 	if len(updates) != 1 {
 		t.Errorf("Expected 1 recent update after changed insert, got %d", len(updates))
 	}
-	if updates[cache.CreateKeyFromExchangeData(ex3)].TargetAmount.Cmp(JC.ToBigFloat(20.0)) != 0 {
+	if updates[cache.CreateKeyFromExchangeData(ex3)].Cmp(JC.ToBigFloat(20.0)) != 0 {
 		t.Error("Expected recent update to contain new TargetAmount = 20.0")
 	}
 
