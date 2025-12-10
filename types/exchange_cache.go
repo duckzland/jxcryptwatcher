@@ -33,13 +33,13 @@ type exchangeDataCacheType struct {
 	data          sync.Map
 	timestamp     time.Time
 	lastUpdated   *time.Time
-	recentUpdates sync.Map
+	recentUpdates map[string]*big.Float
 	mu            sync.RWMutex
 }
 
 func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	ec.data = sync.Map{}
-	ec.recentUpdates = sync.Map{}
+	ec.recentUpdates = make(map[string]*big.Float, 30)
 	ec.SetTimestamp(time.Now())
 	ec.SetLastUpdated(nil)
 	return ec
@@ -70,13 +70,15 @@ func (ec *exchangeDataCacheType) SetLastUpdated(t *time.Time) {
 }
 
 func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
-	updates := make(map[string]*big.Float)
-	ec.recentUpdates.Range(func(k, v any) bool {
-		ed := v.(exchangeDataType)
-		updates[k.(string)] = ed.TargetAmount
-		return true
-	})
-	ec.recentUpdates = sync.Map{}
+	ec.mu.Lock()
+	defer ec.mu.Unlock()
+
+	updates := make(map[string]*big.Float, len(ec.recentUpdates))
+	for k, v := range ec.recentUpdates {
+		updates[k] = new(big.Float).Copy(v)
+		delete(ec.recentUpdates, k)
+	}
+
 	return updates
 }
 
@@ -94,10 +96,14 @@ func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCache
 	if oldVal, ok := ec.data.Load(ck); ok {
 		old := oldVal.(exchangeDataType)
 		if old.SourceAmount != ex.SourceAmount || old.TargetAmount.Cmp(ex.TargetAmount) != 0 {
-			ec.recentUpdates.Store(ck, *ex)
+			ec.mu.Lock()
+			ec.recentUpdates[ck] = ex.TargetAmount
+			ec.mu.Unlock()
 		}
 	} else {
-		ec.recentUpdates.Store(ck, *ex)
+		ec.mu.Lock()
+		ec.recentUpdates[ck] = ex.TargetAmount
+		ec.mu.Unlock()
 	}
 
 	ec.data.Store(ck, *ex)
