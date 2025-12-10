@@ -44,6 +44,13 @@ func registerBoot() {
 
 	JC.Window.SetOnClosed(func() {
 		JC.Logln("Window was closed")
+
+		// Must be destroyed here while fyne thread still active!
+		animDispatcher := JX.UseAnimationDispatcher()
+		if animDispatcher != nil {
+			animDispatcher.Destroy()
+		}
+
 		JC.App.Quit()
 	})
 }

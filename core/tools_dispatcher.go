@@ -117,6 +117,10 @@ func (d *dispatcher) Destroy() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	if d.destroyed {
+		return
+	}
+
 	d.paused = true
 	d.destroyed = true
 
