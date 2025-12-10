@@ -2,6 +2,7 @@ package main
 
 import (
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -104,58 +105,52 @@ func updateDisplay() bool {
 		return false
 	}
 
-	for _, chunk := range chunks {
+	processChunk := func(ids []string) {
 		if JC.IsShuttingDown() {
-			return false
+			return
 		}
-
-		ids := chunk
-		JC.UseDispatcher().Submit(func() {
-
+		for _, id := range ids {
 			if JC.IsShuttingDown() {
 				return
 			}
-
-			for _, id := range ids {
-				if JC.IsShuttingDown() {
-					return
-				}
-
-				pn := JT.UsePanelMaps().GetDataByID(id)
-				if pn == nil {
-					continue
-				}
-
-				pkt := pn.UsePanelKey()
-				if pkt == nil {
-					continue
-				}
-
-				ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
-
-				dt, ok := recentUpdates[ck]
-
-				if !ok || dt.TargetAmount == nil {
-					continue
-				}
-
-				if pn.SetRate(dt.TargetAmount) {
-
-					pn.UpdateStatus()
-
-					mu.Lock()
-					if updateCount == 0 {
-						updateCount++
-						JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
-					}
-					mu.Unlock()
-				}
+			pn := JT.UsePanelMaps().GetDataByID(id)
+			if pn == nil {
+				continue
 			}
-
-			if updateCount != 0 {
-				runtime.GC()
+			pkt := pn.UsePanelKey()
+			if pkt == nil {
+				continue
 			}
-		})
+			ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
+			dt, ok := recentUpdates[ck]
+			if !ok || dt.TargetAmount == nil {
+				continue
+			}
+			if pn.SetRate(dt.TargetAmount) {
+				pn.UpdateStatus()
+				mu.Lock()
+				if updateCount == 0 {
+					updateCount++
+					JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
+				}
+				mu.Unlock()
+			}
+		}
+		if updateCount != 0 {
+			runtime.GC()
+		}
+	}
+
+	// if only one chunk, run directly
+	if len(chunks) == 1 {
+		processChunk(chunks[0])
+	} else {
+		for _, chunk := range chunks {
+			ids := chunk
+			JC.UseDispatcher().Submit(func() {
+				processChunk(ids)
+			})
+		}
 	}
 
 	JA.UseLayout().RegisterDisplayUpdate(time.Now())
@@ -276,7 +271,21 @@ func updateRates() bool {
 	}
 
 	if len(jb) == 0 {
+		JC.Logln("Unable to retrieve rates: No valid payload generated")
 		return false
+	}
+
+	for sid, val := range jb {
+		parts := strings.Split(strings.TrimPrefix(val, sid+JC.STRING_PIPE), ",")
+		seen := make(map[string]struct{})
+		var uniq []string
+		for _, p := range parts {
+			if _, ok := seen[p]; !ok {
+				seen[p] = struct{}{}
+				uniq = append(uniq, p)
+			}
+		}
+		jb[sid] = sid + JC.STRING_PIPE + strings.Join(uniq, ",")
 	}
 
 	payloads := make(map[string][]string)

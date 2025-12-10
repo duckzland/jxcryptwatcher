@@ -39,7 +39,6 @@ type exchangeDataCacheType struct {
 func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	ec.data = sync.Map{}
 	ec.recentUpdates = sync.Map{}
-
 	ec.SetTimestamp(time.Now())
 	ec.SetLastUpdated(nil)
 	return ec

@@ -41,7 +41,6 @@ func (p *panelKeyType) IsValueMatching(rate *big.Float, op string) bool {
 	default:
 		return false
 	}
-
 }
 
 func (p *panelKeyType) IsValueMatchingFloat(val float64, op string) bool {

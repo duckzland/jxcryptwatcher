@@ -149,6 +149,9 @@ func (p *panelDataType) GetStatus() int {
 	p.mu.RLock()
 	s := p.status
 	p.mu.RUnlock()
+	if s == nil {
+		return JC.STATE_ERROR
+	}
 	v, err := s.Get()
 	if err != nil {
 		return JC.STATE_ERROR
@@ -373,10 +376,7 @@ func (p *panelDataType) UpdateRate() bool {
 	if UseExchangeCache().Has(ck) {
 		dt := UseExchangeCache().Get(ck)
 		if dt != nil && dt.TargetAmount != nil {
-			if pk.IsValueMatching(dt.TargetAmount, JC.STRING_NOT_EQUAL) {
-				p.Set(pk.UpdateValue(dt.TargetAmount))
-				return true
-			}
+			return p.SetRate(dt.TargetAmount)
 		}
 	}
 

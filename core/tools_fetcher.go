@@ -2,8 +2,6 @@ package core
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -186,7 +184,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	results := make(map[string]FetchResultInterface)
 	mu := sync.Mutex{}
 	total := 0
-	mapKeySeed := ""
+	mapKey := ""
 
 	for key, items := range payloads {
 		if cond, ok := m.conditions[key]; ok && cond != nil {
@@ -196,11 +194,8 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		} else {
 			total += len(items)
 		}
-		mapKeySeed += key + strings.Join(items, "|")
+		mapKey += key + strings.Join(items, "|")
 	}
-
-	hash := sha256.Sum256([]byte(mapKeySeed))
-	mapKey := hex.EncodeToString(hash[:])
 
 	if preprocess != nil {
 		preprocess(total)

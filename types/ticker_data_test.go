@@ -137,3 +137,94 @@ func TestTickerDataSerialize(t *testing.T) {
 	}
 	tickerDataTurnOnLogs()
 }
+
+func TestTickerDataUpdateStatus(t *testing.T) {
+	tickerDataTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	td := NewTickerData()
+	td.Init()
+	td.Set("100.00")
+
+	td.SetStatus(JC.STATE_LOADING)
+	if !td.UpdateStatus() {
+		t.Error("Expected UpdateStatus to return true from STATE_LOADING")
+	}
+	if !td.IsStatus(JC.STATE_LOADED) {
+		t.Error("Expected status to be STATE_LOADED after UpdateStatus")
+	}
+
+	td.SetStatus(JC.STATE_ERROR)
+	if !td.UpdateStatus() {
+		t.Error("Expected UpdateStatus to return true from STATE_ERROR")
+	}
+	if !td.IsStatus(JC.STATE_LOADED) {
+		t.Error("Expected status to be STATE_LOADED after UpdateStatus")
+	}
+
+	td.SetStatus(JC.STATE_LOADED)
+	if !td.UpdateStatus() {
+		t.Error("Expected UpdateStatus to return true when already STATE_LOADED")
+	}
+	if !td.IsStatus(JC.STATE_LOADED) {
+		t.Error("Expected status to remain STATE_LOADED")
+	}
+
+	tickerDataTurnOnLogs()
+}
+
+func TestTickerDataHasDataAndKeys(t *testing.T) {
+	td := NewTickerData()
+	td.Init()
+	if td.HasData() {
+		t.Error("Expected HasData to be false initially")
+	}
+	td.Set("100")
+	if !td.HasData() {
+		t.Error("Expected HasData to be true after Set")
+	}
+	if !td.IsKey("100") {
+		t.Error("IsKey should match current value")
+	}
+	td.Set("200")
+	if !td.IsOldKey("100") {
+		t.Error("IsOldKey should match previous value")
+	}
+}
+
+func TestTickerDataFormatVariants(t *testing.T) {
+	tickerDataTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	td := NewTickerData()
+	td.Init()
+
+	td.Set("1234.56")
+	td.SetFormat(TickerFormatShortCurrency)
+	if td.FormatContent() == "1234.56" {
+		t.Error("Expected short currency formatting to change output")
+	}
+
+	td.Set("-1234567")
+	td.SetFormat(TickerFormatShortCurrencyWithSign)
+	out := td.FormatContent()
+	if out[0] != '-' {
+		t.Errorf("Expected output to start with '-', got '%s'", out)
+	}
+
+	td.Set("12.3456")
+	td.SetFormat(TickerFormatShortPercentage)
+	if td.FormatContent() != "12.3%" {
+		t.Errorf("Expected '12.3%%', got '%s'", td.FormatContent())
+	}
+
+	td.Set("999.99")
+	td.SetFormat(TickerFormatPulse)
+	if td.FormatContent() != "999.99" {
+		t.Errorf("Expected raw value for pulse, got '%s'", td.FormatContent())
+	}
+
+	tickerDataTurnOnLogs()
+}

@@ -39,6 +39,30 @@ func TestTickerCacheInsertAndGet(t *testing.T) {
 	if !tc.Has("BTC") {
 		t.Error("Expected key 'BTC' to exist")
 	}
+
+	updates := tc.GetRecentUpdates()
+	if len(updates) != 1 {
+		t.Errorf("Expected 1 recent update after first insert, got %d", len(updates))
+	}
+	if updates["BTC"] != "42000" {
+		t.Errorf("Expected recent update value '42000', got '%s'", updates["BTC"])
+	}
+
+	tc.Insert("BTC", "42000", time.Now())
+	updates = tc.GetRecentUpdates()
+	if len(updates) != 0 {
+		t.Errorf("Expected 0 recent updates after identical insert, got %d", len(updates))
+	}
+
+	tc.Insert("BTC", "43000", time.Now())
+	updates = tc.GetRecentUpdates()
+	if len(updates) != 1 {
+		t.Errorf("Expected 1 recent update after changed insert, got %d", len(updates))
+	}
+	if updates["BTC"] != "43000" {
+		t.Errorf("Expected recent update value '43000', got '%s'", updates["BTC"])
+	}
+
 	tickerTurnOnLogs()
 }
 
@@ -82,5 +106,45 @@ func TestTickerCacheSerializeAndHydrate(t *testing.T) {
 	if newCache.Get("SOL") != "19.5" {
 		t.Error("Hydration failed to restore value")
 	}
+	tickerTurnOnLogs()
+}
+
+func TestTickerCacheGetRecentUpdates(t *testing.T) {
+	tickerTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	tc := RegisterTickerCache().Init()
+	now := time.Now()
+
+	tc.Insert("BTC", "42000", now)
+	updates := tc.GetRecentUpdates()
+	if len(updates) != 1 {
+		t.Errorf("Expected 1 recent update after first insert, got %d", len(updates))
+	}
+	if updates["BTC"] != "42000" {
+		t.Errorf("Expected recent update value '42000', got '%s'", updates["BTC"])
+	}
+
+	updates = tc.GetRecentUpdates()
+	if len(updates) != 0 {
+		t.Errorf("Expected 0 recent updates after retrieval, got %d", len(updates))
+	}
+
+	tc.Insert("BTC", "42000", time.Now())
+	updates = tc.GetRecentUpdates()
+	if len(updates) != 0 {
+		t.Errorf("Expected 0 recent updates after identical insert, got %d", len(updates))
+	}
+
+	tc.Insert("BTC", "43000", time.Now())
+	updates = tc.GetRecentUpdates()
+	if len(updates) != 1 {
+		t.Errorf("Expected 1 recent update after changed insert, got %d", len(updates))
+	}
+	if updates["BTC"] != "43000" {
+		t.Errorf("Expected recent update value '43000', got '%s'", updates["BTC"])
+	}
+
 	tickerTurnOnLogs()
 }
