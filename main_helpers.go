@@ -109,18 +109,22 @@ func updateDisplay() bool {
 		if JC.IsShuttingDown() {
 			return
 		}
+
 		for _, id := range ids {
 			if JC.IsShuttingDown() {
 				return
 			}
+
 			pn := JT.UsePanelMaps().GetDataByID(id)
 			if pn == nil {
 				continue
 			}
+
 			pkt := pn.UsePanelKey()
 			if pkt == nil {
 				continue
 			}
+
 			ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
 			val, ok := recentUpdates[ck]
 			if !ok || val == nil {
@@ -137,6 +141,7 @@ func updateDisplay() bool {
 				mu.Unlock()
 			}
 		}
+
 		if updateCount != 0 {
 			runtime.GC()
 		}
