@@ -51,8 +51,8 @@ func processFadingText(tag string, text AnimatableText, callback func(), fadeAlp
 		ticker := time.NewTicker(interval)
 
 		defer ticker.Stop()
-		defer fadeTextRegistry.Delete(tag)
 		defer cancel()
+		defer fadeTextRegistry.Delete(tag)
 
 		for _, alpha := range *fadeAlphas {
 			select {

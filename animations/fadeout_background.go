@@ -55,8 +55,8 @@ func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.
 		ticker := time.NewTicker(interval)
 
 		defer ticker.Stop()
-		defer fadeOutRegistry.Delete(tag)
 		defer cancel()
+		defer fadeOutRegistry.Delete(tag)
 
 		for _, alpha := range alphaSteps {
 			select {

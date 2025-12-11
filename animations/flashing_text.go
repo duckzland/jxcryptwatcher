@@ -62,8 +62,8 @@ func processFlashingText(tag string, txt AnimatableText, interval time.Duration,
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
-		defer flashRegistry.Delete(tag)
 		defer cancel()
+		defer flashRegistry.Delete(tag)
 
 		for _, alpha := range alphaSequence {
 			select {
