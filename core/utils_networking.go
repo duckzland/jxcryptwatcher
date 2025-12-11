@@ -176,10 +176,7 @@ func ReadResponse(key string, resp *http.Response, minSize int) ([]byte, func(),
 		n, err := resp.Body.Read(tmp)
 		if n > 0 {
 			if len(buf)+n > cap(buf) {
-				newCap := cap(buf) * 2
-				if newCap < len(buf)+n {
-					newCap = len(buf) + n
-				}
+				newCap := max(cap(buf)*2, len(buf)+n)
 				newBuf := make([]byte, len(buf), newCap)
 				copy(newBuf, buf)
 				buf = newBuf
