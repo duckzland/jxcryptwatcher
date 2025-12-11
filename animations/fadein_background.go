@@ -50,6 +50,7 @@ func processFadeInBackground(tag string, rect *canvas.Rectangle, duration time.D
 
 	go func(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
 		defer fadeInRegistry.Delete(tag)
+		defer cancel()
 
 		alphaSteps := []uint8{100, 128, 192, 255}
 		interval := duration / time.Duration(len(alphaSteps))
