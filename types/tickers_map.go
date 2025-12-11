@@ -16,7 +16,7 @@ type tickersMapType struct {
 func (pc *tickersMapType) Init() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
-	pc.data = []TickerData{}
+	pc.data = make([]TickerData, 0, 10)
 }
 
 func (pc *tickersMapType) SetData(data []TickerData) {

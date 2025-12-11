@@ -19,7 +19,7 @@ func (pc *panelsMapType) Init() {
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	pc.data = []PanelData{}
+	pc.data = make([]PanelData, 0, 20)
 	pc.visiblePanels = []string{}
 }
 
@@ -83,11 +83,20 @@ func (pc *panelsMapType) GetVisiblePanels() []string {
 func (pc *panelsMapType) Remove(uuid string) bool {
 	index := pc.GetIndex(uuid)
 	pc.mu.Lock()
+
 	if index < 0 || index >= len(pc.data) {
 		return false
 	}
 
 	pc.data = append(pc.data[:index], pc.data[index+1:]...)
+
+	// Free memory if slice capacity got too big
+	if cap(pc.data) > 0 && len(pc.data) < cap(pc.data)*2 {
+		tmp := make([]PanelData, len(pc.data))
+		copy(tmp, pc.data)
+		pc.data = tmp
+	}
+
 	pc.mu.Unlock()
 
 	pd := pc.GetDataByID(uuid)

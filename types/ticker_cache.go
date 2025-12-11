@@ -55,7 +55,7 @@ func (tc *tickerDataCacheType) SetLastUpdated(t *time.Time) {
 
 func (tc *tickerDataCacheType) Init() *tickerDataCacheType {
 	tc.data = sync.Map{}
-	tc.recentUpdates = make(map[string]string, 8)
+	tc.recentUpdates = make(map[string]string, 12)
 	tc.SetTimestamp(time.Now())
 	tc.SetLastUpdated(nil)
 	return tc

@@ -57,9 +57,22 @@ func (p *panelsType) load() *panelsType {
 }
 
 func (p *panelsType) parseJSON(data []byte) error {
-	*p = nil
 
+	// Avoid increase slice as it is memory costly due to go will copying slices to increase slices
+	count := 0
 	_, err := jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if _, e := jsonparser.GetString(value, "target_symbol"); e == nil {
+			count++
+		}
+	})
+
+	if err != nil {
+		return err
+	}
+
+	*p = make([]panelType, 0, count)
+
+	_, err = jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		var panel panelType
 
 		if src, e := jsonparser.GetInt(value, "source"); e == nil {
