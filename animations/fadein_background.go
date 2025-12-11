@@ -12,42 +12,32 @@ import (
 
 var fadeInRegistry = JC.NewCancelRegistry(50)
 
-func StartFadeInBackground(
-	tag string,
-	rect *canvas.Rectangle,
-	duration time.Duration,
-	callback func(),
-	dispatch bool,
-) {
-	if cancel, ok := fadeInRegistry.Get(tag); ok {
-		cancel()
-		fadeInRegistry.Delete(tag)
-	}
+func StartFadeInBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), dispatch bool) {
+
+	StopFadeInBackground(tag)
 
 	if !rect.Visible() {
+		return
+	}
+
+	if dispatch {
+		UseAnimationDispatcher().Submit(func() {
+			processFadeInBackground(tag, rect, duration, callback)
+		})
+	} else {
+		go processFadeInBackground(tag, rect, duration, callback)
+	}
+}
+
+func processFadeInBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func()) {
+
+	if !rect.Visible() {
+		fadeInRegistry.Delete(tag)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeInRegistry.Set(tag, cancel)
-
-	if dispatch {
-		UseAnimationDispatcher().Submit(func() {
-			processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
-		})
-	} else {
-		go processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
-	}
-}
-
-func processFadeInBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
-
-	if !rect.Visible() {
-		cancel()
-		fadeInRegistry.Delete(tag)
-		return
-	}
-
 	defer cancel()
 	defer fadeInRegistry.Delete(tag)
 

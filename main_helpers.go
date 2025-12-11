@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math/big"
 	"runtime"
 	"strings"
 	"time"
@@ -103,57 +102,48 @@ func updateDisplay() bool {
 		return false
 	}
 
-	processChunk := func(targets []string, data map[string]*big.Float) {
-		if JC.IsShuttingDown() {
-			return
-		}
-
-		updateCount := 0
-
-		for _, id := range targets {
+	for _, chunk := range chunks {
+		JC.UseDispatcher().Submit(func() {
 			if JC.IsShuttingDown() {
 				return
 			}
 
-			pn := JT.UsePanelMaps().GetDataByID(id)
-			if pn == nil {
-				continue
-			}
+			updateCount := 0
 
-			pkt := pn.UsePanelKey()
-			if pkt == nil {
-				continue
-			}
+			for _, id := range chunk {
+				if JC.IsShuttingDown() {
+					return
+				}
 
-			ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
-			val, ok := data[ck]
-			if !ok || val == nil {
-				continue
-			}
+				pn := JT.UsePanelMaps().GetDataByID(id)
+				if pn == nil {
+					continue
+				}
 
-			if pn.SetRate(val) {
-				pn.UpdateStatus()
-				if updateCount == 0 {
-					updateCount++
-					JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
+				pkt := pn.UsePanelKey()
+				if pkt == nil {
+					continue
+				}
+
+				ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
+				val, ok := recentUpdates[ck]
+				if !ok || val == nil {
+					continue
+				}
+
+				if pn.SetRate(val) {
+					pn.UpdateStatus()
+					if updateCount == 0 {
+						updateCount++
+						JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
+					}
 				}
 			}
-		}
 
-		if updateCount != 0 {
-			runtime.GC()
-		}
-	}
-
-	if len(chunks) == 1 && len(chunks[0]) < chunkSize/2 {
-		processChunk(chunks[0], recentUpdates)
-	} else {
-		for _, chunk := range chunks {
-			ids := chunk
-			JC.UseDispatcher().Submit(func() {
-				processChunk(ids, recentUpdates)
-			})
-		}
+			if updateCount != 0 {
+				runtime.GC()
+			}
+		})
 	}
 
 	JA.UseLayout().RegisterDisplayUpdate(time.Now())

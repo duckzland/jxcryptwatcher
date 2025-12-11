@@ -12,36 +12,30 @@ import (
 
 var flashRegistry = JC.NewCancelRegistry(50)
 
-func StartFlashingText(
-	tag string,
-	txt AnimatableText,
-	interval time.Duration,
-	visibleColor color.Color,
-	flashes int,
-) {
-	if cancel, ok := flashRegistry.Get(tag); ok {
-		cancel()
-		flashRegistry.Delete(tag)
-	}
+func StartFlashingText(tag string, txt AnimatableText, interval time.Duration, visibleColor color.Color, flashes int) {
+
+	StopFlashingText(tag)
 
 	if txt == nil || !txt.Visible() {
+		return
+	}
+
+	UseAnimationDispatcher().Submit(func() {
+		processFlashingText(tag, txt, interval, visibleColor, flashes)
+	})
+}
+
+func processFlashingText(tag string, txt AnimatableText, interval time.Duration, visibleColor color.Color, flashes int) {
+
+	if txt == nil || !txt.Visible() {
+		flashRegistry.Delete(tag)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	flashRegistry.Set(tag, cancel)
-
-	UseAnimationDispatcher().Submit(func() {
-		processFlashingText(tag, txt, interval, visibleColor, flashes, ctx, cancel)
-	})
-}
-
-func processFlashingText(tag string, txt AnimatableText, interval time.Duration, visibleColor color.Color, flashes int, ctx context.Context, cancel context.CancelFunc) {
-	if txt == nil || !txt.Visible() {
-		cancel()
-		flashRegistry.Delete(tag)
-		return
-	}
+	defer cancel()
+	defer flashRegistry.Delete(tag)
 
 	r, g, b, _ := visibleColor.RGBA()
 	baseR := float64(r >> 8)
@@ -60,8 +54,6 @@ func processFlashingText(tag string, txt AnimatableText, interval time.Duration,
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	defer cancel()
-	defer flashRegistry.Delete(tag)
 
 	for _, alpha := range alphaSequence {
 		select {

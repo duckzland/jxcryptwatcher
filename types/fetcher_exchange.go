@@ -124,7 +124,7 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 
-			body, close, err := JC.ReadResponse(JC.ACT_EXCHANGE_GET_RATES, resp)
+			body, close, err := JC.ReadResponse(JC.ACT_EXCHANGE_GET_RATES, resp, 2)
 			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

@@ -161,7 +161,7 @@ func (c *cryptosLoaderType) GetCryptos(ctx context.Context) int64 {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 
-			body, _, err := JC.ReadResponse(JC.ACT_CRYPTO_GET_MAP, resp)
+			body, _, err := JC.ReadResponse(JC.ACT_CRYPTO_GET_MAP, resp, 5*1024)
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}

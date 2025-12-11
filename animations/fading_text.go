@@ -11,36 +11,29 @@ import (
 
 var fadeTextRegistry = JC.NewCancelRegistry(5)
 
-func StartFadingText(
-	tag string,
-	text AnimatableText,
-	callback func(),
-	fadeAlphas *[]uint8,
-) {
-	// Cancel any existing animation for this tag
-	if cancel, ok := fadeTextRegistry.Get(tag); ok {
-		cancel()
-		fadeTextRegistry.Delete(tag)
-	}
+func StartFadingText(tag string, text AnimatableText, callback func(), fadeAlphas *[]uint8) {
+
+	StopFadingText(tag)
 
 	if text == nil || !text.Visible() {
+		return
+	}
+
+	UseAnimationDispatcher().Submit(func() {
+		processFadingText(tag, text, callback, fadeAlphas)
+	})
+}
+
+func processFadingText(tag string, text AnimatableText, callback func(), fadeAlphas *[]uint8) {
+	if text == nil || !text.Visible() {
+		fadeTextRegistry.Delete(tag)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	fadeTextRegistry.Set(tag, cancel)
-
-	UseAnimationDispatcher().Submit(func() {
-		processFadingText(tag, text, callback, fadeAlphas, ctx, cancel)
-	})
-}
-
-func processFadingText(tag string, text AnimatableText, callback func(), fadeAlphas *[]uint8, ctx context.Context, cancel context.CancelFunc) {
-	if text == nil || !text.Visible() {
-		cancel()
-		fadeTextRegistry.Delete(tag)
-		return
-	}
+	defer cancel()
+	defer fadeTextRegistry.Delete(tag)
 
 	if fadeAlphas == nil || len(*fadeAlphas) == 0 {
 		fadeAlphas = &[]uint8{255, 160, 80, 0}
@@ -50,8 +43,6 @@ func processFadingText(tag string, text AnimatableText, callback func(), fadeAlp
 	ticker := time.NewTicker(interval)
 
 	defer ticker.Stop()
-	defer cancel()
-	defer fadeTextRegistry.Delete(tag)
 
 	for _, alpha := range *fadeAlphas {
 		select {

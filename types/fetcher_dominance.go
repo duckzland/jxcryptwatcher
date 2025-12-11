@@ -76,7 +76,7 @@ func (df *dominanceFetcher) GetRate(ctx context.Context) int64 {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 
-			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_DOMINANCE, resp)
+			body, close, err := JC.ReadResponse(JC.ACT_TICKER_GET_DOMINANCE, resp, 2)
 			defer close()
 			if err != nil {
 				return JC.NETWORKING_BAD_DATA_RECEIVED

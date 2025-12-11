@@ -135,7 +135,7 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 
 var networkingBufPools sync.Map
 
-func getPool(key string, size int) *sync.Pool {
+func getNetworkingBufferPool(key string, size int) *sync.Pool {
 	if p, ok := networkingBufPools.Load(key); ok {
 		return p.(*sync.Pool)
 	}
@@ -148,25 +148,42 @@ func getPool(key string, size int) *sync.Pool {
 	return newPool
 }
 
-func ReadResponse(key string, resp *http.Response) ([]byte, func(), error) {
-	size := 4096
-	if resp.ContentLength > 0 {
-		size = int(resp.ContentLength)
+func ReadResponse(key string, resp *http.Response, minSize int) ([]byte, func(), error) {
+	size := minSize * 1024
+	if size <= 0 {
+		size = 4096
 	}
 
-	pool := getPool(key, size)
-	buf := pool.Get().([]byte)
-	buf = buf[:0]
+	if resp.ContentLength > 0 {
+		contentSize := int(resp.ContentLength)
+		if contentSize > size {
+			size = contentSize
+		}
+	}
 
-	// ensure capacity
+	pool := getNetworkingBufferPool(key, size)
+	buf := pool.Get().([]byte)
 	if cap(buf) < size {
 		buf = make([]byte, 0, size)
+	} else {
+		buf = buf[:0]
 	}
 
-	tmp := make([]byte, 32*1024)
+	scratch := min(size, 64*1024)
+	tmp := make([]byte, scratch)
+
 	for {
 		n, err := resp.Body.Read(tmp)
 		if n > 0 {
+			if len(buf)+n > cap(buf) {
+				newCap := cap(buf) * 2
+				if newCap < len(buf)+n {
+					newCap = len(buf) + n
+				}
+				newBuf := make([]byte, len(buf), newCap)
+				copy(newBuf, buf)
+				buf = newBuf
+			}
 			buf = append(buf, tmp[:n]...)
 		}
 		if err == io.EOF {
@@ -182,6 +199,8 @@ func ReadResponse(key string, resp *http.Response) ([]byte, func(), error) {
 		buf = buf[:0]
 		pool.Put(buf)
 	}
+
+	// Logf("Networking data buffer for [%s]: %.2fKB/%.2fKB (%+.2fKB)", key, float64(len(buf))/1024.0, float64(size)/1024.0, float64(cap(buf)-size)/1024.0)
 
 	return buf, cleanup, nil
 }

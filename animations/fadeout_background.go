@@ -12,49 +12,40 @@ import (
 
 var fadeOutRegistry = JC.NewCancelRegistry(5)
 
-func StartFadeOutBackground(
-	tag string,
-	rect *canvas.Rectangle,
-	duration time.Duration,
-	callback func(),
-	dispatch bool,
-) {
-	if cancel, ok := fadeOutRegistry.Get(tag); ok {
-		cancel()
-		fadeOutRegistry.Delete(tag)
-	}
+func StartFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), dispatch bool) {
+
+	StopFadeOutBackground(tag)
 
 	if !rect.Visible() {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	fadeOutRegistry.Set(tag, cancel)
-
 	if dispatch {
 		UseAnimationDispatcher().Submit(func() {
-			processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
+			processFadeOutBackground(tag, rect, duration, callback)
 		})
 	} else {
-		go processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
+		go processFadeOutBackground(tag, rect, duration, callback)
 	}
 
 }
 
-func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
+func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func()) {
 	if rect == nil || !rect.Visible() {
-		cancel()
 		fadeOutRegistry.Delete(tag)
 		return
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	fadeOutRegistry.Set(tag, cancel)
+	defer cancel()
+	defer fadeOutRegistry.Delete(tag)
 
 	alphaSteps := []uint8{255, 128, 80, 0}
 	interval := duration / time.Duration(len(alphaSteps))
 	ticker := time.NewTicker(interval)
 
 	defer ticker.Stop()
-	defer cancel()
-	defer fadeOutRegistry.Delete(tag)
 
 	for _, alpha := range alphaSteps {
 		select {
