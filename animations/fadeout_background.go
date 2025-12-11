@@ -58,7 +58,7 @@ func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.
 			if !JC.IsAlpha(rect.FillColor, 255) {
 				fyne.Do(func() {
 					rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
-					canvas.Refresh(rect)
+					rect.Refresh()
 				})
 			}
 			return
@@ -70,7 +70,7 @@ func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.
 			}
 			fyne.Do(func() {
 				rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
-				canvas.Refresh(rect)
+				rect.Refresh()
 			})
 		}
 	}

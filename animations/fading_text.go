@@ -52,7 +52,6 @@ func processFadingText(tag string, text AnimatableText, callback func(), fadeAlp
 		case <-ctx.Done():
 			fyne.Do(func() {
 				text.SetAlpha(255)
-				text.Refresh()
 			})
 			return
 		case <-ticker.C:
@@ -62,7 +61,6 @@ func processFadingText(tag string, text AnimatableText, callback func(), fadeAlp
 			}
 			fyne.Do(func() {
 				text.SetAlpha(alpha)
-				text.Refresh()
 			})
 		}
 	}

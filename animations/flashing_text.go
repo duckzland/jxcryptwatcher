@@ -63,8 +63,7 @@ func processFlashingText(tag string, txt AnimatableText, interval time.Duration,
 
 		case <-ctx.Done():
 			fyne.Do(func() {
-				txt.SetAlpha(255)
-				txt.Refresh()
+				txt.SetColor(visibleColor)
 			})
 			return
 
@@ -82,7 +81,6 @@ func processFlashingText(tag string, txt AnimatableText, interval time.Duration,
 					A: 255,
 				}
 				txt.SetColor(newCol)
-				txt.Refresh()
 			})
 		}
 	}
