@@ -31,7 +31,7 @@ func StartFadingText(
 	fadeTextRegistry.Set(tag, cancel)
 
 	UseAnimationDispatcher().Submit(func() {
-		processFadingText(tag, text, callback, fadeAlphas, ctx, cancel)
+		go processFadingText(tag, text, callback, fadeAlphas, ctx, cancel)
 	})
 }
 
@@ -42,45 +42,44 @@ func processFadingText(tag string, text AnimatableText, callback func(), fadeAlp
 		return
 	}
 
-	go func(tag string, text AnimatableText, callback func(), fadeAlphas *[]uint8, ctx context.Context, cancel context.CancelFunc) {
-		if fadeAlphas == nil || len(*fadeAlphas) == 0 {
-			fadeAlphas = &[]uint8{255, 160, 80, 0}
-		}
+	if fadeAlphas == nil || len(*fadeAlphas) == 0 {
+		fadeAlphas = &[]uint8{255, 160, 80, 0}
+	}
 
-		interval := 80 * time.Millisecond
-		ticker := time.NewTicker(interval)
+	interval := 80 * time.Millisecond
+	ticker := time.NewTicker(interval)
 
-		defer ticker.Stop()
-		defer cancel()
-		defer fadeTextRegistry.Delete(tag)
+	defer ticker.Stop()
+	defer cancel()
+	defer fadeTextRegistry.Delete(tag)
 
-		for _, alpha := range *fadeAlphas {
-			select {
-			case <-JC.ShutdownCtx.Done():
+	for _, alpha := range *fadeAlphas {
+		select {
+		case <-JC.ShutdownCtx.Done():
+			cancel()
+			return
+		case <-ctx.Done():
+			fyne.Do(func() {
+				text.SetAlpha(255)
+				text.Refresh()
+			})
+			return
+		case <-ticker.C:
+			if !text.Visible() {
 				cancel()
 				return
-			case <-ctx.Done():
-				fyne.Do(func() {
-					text.SetAlpha(255)
-					text.Refresh()
-				})
-				return
-			case <-ticker.C:
-				if !text.Visible() {
-					cancel()
-					return
-				}
-				fyne.Do(func() {
-					text.SetAlpha(alpha)
-					text.Refresh()
-				})
 			}
+			fyne.Do(func() {
+				text.SetAlpha(alpha)
+				text.Refresh()
+			})
 		}
+	}
 
-		if callback != nil {
-			fyne.Do(callback)
-		}
-	}(tag, text, callback, fadeAlphas, ctx, cancel)
+	if callback != nil {
+		fyne.Do(callback)
+	}
+
 }
 
 func StopFadingText(tag string) {

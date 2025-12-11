@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -53,8 +52,6 @@ func updateDisplay() bool {
 
 	var allIDs []string
 	var chunks [][]string
-	var updateCount int
-	var mu sync.Mutex
 
 	recentUpdates := JT.UseExchangeCache().GetRecentUpdates()
 	if recentUpdates == nil || len(recentUpdates) == 0 {
@@ -111,6 +108,8 @@ func updateDisplay() bool {
 			return
 		}
 
+		updateCount := 0
+
 		for _, id := range targets {
 			if JC.IsShuttingDown() {
 				return
@@ -134,12 +133,10 @@ func updateDisplay() bool {
 
 			if pn.SetRate(val) {
 				pn.UpdateStatus()
-				mu.Lock()
 				if updateCount == 0 {
 					updateCount++
 					JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
 				}
-				mu.Unlock()
 			}
 		}
 
@@ -867,28 +864,24 @@ func toggleDraggable() {
 	}
 }
 
+func notificationResetCallback() {
+	if JW.UseNotification().GetText() == JC.STRING_EMPTY {
+		return
+	}
+	if JA.UseStatus().IsPaused() {
+		return
+	}
+	last := JC.UseWorker().GetLastUpdate(JC.ACT_NOTIFICATION_PUSH)
+	if time.Since(last) > 6*time.Second {
+		JC.Logln("Clearing notification display due to inactivity")
+		JW.UseNotification().ClearText()
+	} else {
+		scheduledNotificationReset()
+	}
+}
+
 func scheduledNotificationReset() {
-	JC.UseDebouncer().Call(JC.ACT_NOTIFICATION_CLEAR, 6000*time.Millisecond, func() {
-
-		// Break loop once notification is empty
-		if JW.UseNotification().GetText() == JC.STRING_EMPTY {
-			return
-		}
-
-		if JA.UseStatus().IsPaused() {
-			return
-		}
-
-		// Ensure message shown for at least 6 seconds
-		last := JC.UseWorker().GetLastUpdate(JC.ACT_NOTIFICATION_PUSH)
-		if time.Since(last) > 6*time.Second {
-			JC.Logln("Clearing notification display due to inactivity")
-			JW.UseNotification().ClearText()
-
-		} else {
-			scheduledNotificationReset()
-		}
-	})
+	JC.UseDebouncer().Call(JC.ACT_NOTIFICATION_CLEAR, 6000*time.Millisecond, notificationResetCallback)
 }
 
 func createPanel(pkt JT.PanelData) fyne.CanvasObject {

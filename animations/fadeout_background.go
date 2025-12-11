@@ -33,10 +33,10 @@ func StartFadeOutBackground(
 
 	if dispatch {
 		UseAnimationDispatcher().Submit(func() {
-			processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
+			go processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
 		})
 	} else {
-		processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
+		go processFadeOutBackground(tag, rect, duration, callback, ctx, cancel)
 	}
 
 }
@@ -48,48 +48,45 @@ func processFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.
 		return
 	}
 
-	go func(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), ctx context.Context, cancel context.CancelFunc) {
+	alphaSteps := []uint8{255, 128, 80, 0}
+	interval := duration / time.Duration(len(alphaSteps))
+	ticker := time.NewTicker(interval)
 
-		alphaSteps := []uint8{255, 128, 80, 0}
-		interval := duration / time.Duration(len(alphaSteps))
-		ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	defer cancel()
+	defer fadeOutRegistry.Delete(tag)
 
-		defer ticker.Stop()
-		defer cancel()
-		defer fadeOutRegistry.Delete(tag)
+	for _, alpha := range alphaSteps {
+		select {
+		case <-JC.ShutdownCtx.Done():
+			cancel()
+			return
 
-		for _, alpha := range alphaSteps {
-			select {
-			case <-JC.ShutdownCtx.Done():
-				cancel()
-				return
-
-			case <-ctx.Done():
-				// Reset to fully opaque if cancelled mid-way
-				if !JC.IsAlpha(rect.FillColor, 255) {
-					fyne.Do(func() {
-						rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
-						canvas.Refresh(rect)
-					})
-				}
-				return
-
-			case <-ticker.C:
-				if !rect.Visible() {
-					cancel()
-					return
-				}
+		case <-ctx.Done():
+			// Reset to fully opaque if cancelled mid-way
+			if !JC.IsAlpha(rect.FillColor, 255) {
 				fyne.Do(func() {
-					rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
+					rect.FillColor = JC.SetAlpha(rect.FillColor, 255)
 					canvas.Refresh(rect)
 				})
 			}
-		}
+			return
 
-		if callback != nil {
-			fyne.Do(callback)
+		case <-ticker.C:
+			if !rect.Visible() {
+				cancel()
+				return
+			}
+			fyne.Do(func() {
+				rect.FillColor = JC.SetAlpha(rect.FillColor, float32(alpha))
+				canvas.Refresh(rect)
+			})
 		}
-	}(tag, rect, duration, callback, ctx, cancel)
+	}
+
+	if callback != nil {
+		fyne.Do(callback)
+	}
 }
 
 func StopFadeOutBackground(tag string) {
