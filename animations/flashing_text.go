@@ -32,7 +32,7 @@ func StartFlashingText(
 	flashRegistry.Set(tag, cancel)
 
 	UseAnimationDispatcher().Submit(func() {
-		go processFlashingText(tag, txt, interval, visibleColor, flashes, ctx, cancel)
+		processFlashingText(tag, txt, interval, visibleColor, flashes, ctx, cancel)
 	})
 }
 

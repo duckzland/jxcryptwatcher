@@ -31,7 +31,7 @@ func StartFadingText(
 	fadeTextRegistry.Set(tag, cancel)
 
 	UseAnimationDispatcher().Submit(func() {
-		go processFadingText(tag, text, callback, fadeAlphas, ctx, cancel)
+		processFadingText(tag, text, callback, fadeAlphas, ctx, cancel)
 	})
 }
 

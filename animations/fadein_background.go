@@ -33,7 +33,7 @@ func StartFadeInBackground(
 
 	if dispatch {
 		UseAnimationDispatcher().Submit(func() {
-			go processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
+			processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
 		})
 	} else {
 		go processFadeInBackground(tag, rect, duration, callback, ctx, cancel)
