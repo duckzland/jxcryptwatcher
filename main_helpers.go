@@ -115,12 +115,6 @@ func updateDisplay() bool {
 
 	JC.Logf("Panels display updated: %d/%d/%d/%d", len(recentUpdates), updateCount, len(allIDs), len(panels))
 
-	allIDs = nil
-	recentUpdates = nil
-	priority = nil
-	panels = nil
-	registered = nil
-
 	runtime.GC()
 
 	return true
@@ -194,9 +188,6 @@ func updateTickerDisplay() bool {
 	}
 
 	JC.Logf("Tickers display updated: %d/%d/%d", len(recentUpdates), success, len(tickers))
-
-	tickers = nil
-	recentUpdates = nil
 
 	runtime.GC()
 
@@ -310,10 +301,6 @@ func updateRates() bool {
 			JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
 		})
 
-	payloads = nil
-	jb = nil
-	list = nil
-
 	runtime.GC()
 
 	return true
@@ -407,8 +394,6 @@ func updateTickers() bool {
 
 			JC.UseWorker().Reset(JC.ACT_TICKER_UPDATE)
 		})
-
-	payloads = nil
 
 	runtime.GC()
 
