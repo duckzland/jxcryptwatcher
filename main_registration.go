@@ -794,7 +794,7 @@ func registerLifecycle() {
 				JC.Logln("Battery Saver: Continuing apps")
 				JC.UseWorker().Resume()
 				JA.UseStatus().Resume()
-				JC.UseDispatcher().Resume()
+				JX.UseAnimationDispatcher().Resume()
 			}
 
 			if !JA.UseStatus().IsReady() {
@@ -835,7 +835,7 @@ func registerLifecycle() {
 				JC.Logln("Battery Saver: Pausing apps")
 				JA.UseStatus().Pause()
 				JC.UseWorker().Pause()
-				JC.UseDispatcher().Pause()
+				JX.UseAnimationDispatcher().Pause()
 			}
 		})
 
@@ -864,20 +864,6 @@ func registerDispatcher() {
 	}
 
 	ad.Start()
-
-	d := JC.UseDispatcher()
-	d.SetBufferSize(100)
-
-	if JC.IsMobile {
-		d.SetDelayBetween(10 * time.Millisecond)
-		d.SetMaxConcurrent(2)
-
-	} else {
-		d.SetDelayBetween(5 * time.Millisecond)
-		d.SetMaxConcurrent(JC.MaximumThreads(6))
-	}
-
-	d.Start()
 }
 
 func registerCache() {
@@ -885,52 +871,4 @@ func registerCache() {
 	JT.RegisterExchangeCache().Init()
 
 	JT.RegisterTickerCache().Init()
-
-	JC.RegisterCharWidthCache().Init()
-
-	// Prepopulating character sizes
-	sizes := []float32{
-		JC.UseTheme().Size(JC.SizePanelTitle),
-		JC.UseTheme().Size(JC.SizePanelSubTitle),
-		JC.UseTheme().Size(JC.SizePanelBottomText),
-		JC.UseTheme().Size(JC.SizePanelContent),
-		JC.UseTheme().Size(JC.SizePanelTitleSmall),
-		JC.UseTheme().Size(JC.SizePanelSubTitleSmall),
-		JC.UseTheme().Size(JC.SizePanelBottomTextSmall),
-		JC.UseTheme().Size(JC.SizePanelContentSmall),
-		JC.UseTheme().Size(JC.SizeTickerTitle),
-		JC.UseTheme().Size(JC.SizeTickerContent),
-		JC.UseTheme().Size(JC.SizeNotificationText),
-		JC.UseTheme().Size(JC.SizeCompletionText),
-	}
-
-	for _, size := range sizes {
-		// Normal
-		styleBits := 0
-		key := int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{}))
-		}
-
-		// Bold
-		styleBits = 1
-		key = int(size)*10 + styleBits
-		if !JC.UseCharWidthCache().Has(key) {
-			JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Bold: true}))
-		}
-
-		// Italic
-		// styleBits = 2
-		// key = int(size)*10 + styleBits
-		// if !JC.UseCharWidthCache().Has(key) {
-		// 	JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Italic: true}))
-		// }
-
-		// Monospace
-		// styleBits = 4
-		// key = int(size)*10 + styleBits
-		// if !JC.UseCharWidthCache().Has(key) {
-		// 	JC.UseCharWidthCache().Add(key, JC.MeasureText("a", size, fyne.TextStyle{Monospace: true}))
-		// }
-	}
 }

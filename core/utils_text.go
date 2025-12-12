@@ -66,33 +66,15 @@ func TruncateText(str string, maxWidth float32, fontSize float32, style fyne.Tex
 		return str
 	}
 
-	styleBits := 0
-	if style.Bold {
-		styleBits |= 1 << 0
-	}
-
-	if style.Italic {
-		styleBits |= 1 << 1
-	}
-
-	if style.Monospace {
-		styleBits |= 1 << 2
-	}
-
-	key := int(fontSize)*10 + styleBits
-	charWidth, ok := UseCharWidthCache().Get(key)
-	if !ok {
-		return str
-	}
-
-	estimatedWidth := float32(sc) * charWidth
+	estimatedWidth := MeasureText(str, fontSize, style)
 	if estimatedWidth <= maxWidth {
 		return str
 	}
 
+	charWidth := estimatedWidth / float32(sc)
 	ellipsisWidth := 3 * charWidth
 	availableWidth := maxWidth - ellipsisWidth
-	maxChars := int(availableWidth / charWidth)
+	maxChars := int(availableWidth/charWidth) - 3
 
 	if maxChars <= 0 {
 		return STRING_EMPTY
@@ -110,6 +92,11 @@ func MeasureText(text string, fontSize float32, style fyne.TextStyle) float32 {
 
 	// This is memory hungry!
 	// return fyne.MeasureText(text, fontSize, style).Width
+
+	face := UseTheme().GetFontFace(style, fontSize)
+	if face != nil {
+		return float32(font.MeasureString(face, text)) / 64.0
+	}
 
 	baseFactor := float32(0.58)
 	styleMultiplier := float32(1.0)

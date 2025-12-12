@@ -100,8 +100,6 @@ func (d *dispatcher) Pause() {
 
 	if d.cancel != nil {
 		d.cancel()
-		d.ctx = nil
-		d.cancel = nil
 	}
 }
 
@@ -230,7 +228,9 @@ func (d *dispatcher) worker(id int) {
 
 	defer func() {
 		if !d.isDestroyed() {
-			d.cancel()
+			if d.cancel != nil {
+				d.cancel()
+			}
 			d.Drain()
 		}
 	}()
