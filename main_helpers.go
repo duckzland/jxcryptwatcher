@@ -21,10 +21,12 @@ func updateDisplay() bool {
 	if JC.IsShuttingDown() {
 		return false
 	}
+
 	if !JA.UseStatus().IsReady() {
 		JC.Logln("Unable to refresh display: app is not ready yet")
 		return false
 	}
+
 	if JA.UseStatus().IsPaused() {
 		JC.Logln("Unable to refresh display: app is paused")
 		return false
@@ -42,7 +44,7 @@ func updateDisplay() bool {
 	priority := JT.UsePanelMaps().GetVisiblePanels()
 	panels := JT.UsePanelMaps().GetData()
 
-	if panels == nil {
+	if panels == nil || len(panels) == 0 {
 		JC.Logln("Unable to refresh display: No panels available to update")
 		return false
 	}
@@ -110,7 +112,7 @@ func updateDisplay() bool {
 
 	JA.UseLayout().RegisterDisplayUpdate(time.Now())
 
-	JC.Logf("Panels display updated: %d/%d/%d", len(recentUpdates), len(allIDs), len(panels))
+	JC.Logf("Panels display updated: %d/%d/%d/%d", len(recentUpdates), updateCount, len(allIDs), len(panels))
 
 	runtime.GC()
 
