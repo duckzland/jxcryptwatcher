@@ -166,8 +166,8 @@ rm -f static/windows/rsrc_windows*
 echo_success "Successfully generated windows assets: $rsrc_file"
 
 # Build Go binary
-# GOEXPERIMENT=greenteagc \
-# GOGC=50 \
+#GOEXPERIMENT=greenteagc \
+GOGC=20 \
 GOOS=windows \
 GOARCH=amd64  \
 CGO_ENABLED=1 \
