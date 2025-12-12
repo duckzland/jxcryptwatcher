@@ -133,8 +133,6 @@ func (p *panelText) rasterize() {
 	p.cSize = size
 	p.Resize(size)
 	p.img.Refresh()
-
-	dst = nil
 }
 
 func NewPanelText(text string, col color.Color, size float32, alignment fyne.TextAlign, style fyne.TextStyle) *panelText {
