@@ -104,9 +104,10 @@ func updateDisplay() bool {
 		if pn.SetRate(val) {
 			pn.UpdateStatus()
 			if updateCount == 0 {
-				updateCount++
 				JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
 			}
+
+			updateCount++
 		}
 	}
 
