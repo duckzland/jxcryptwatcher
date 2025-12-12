@@ -193,8 +193,6 @@ func (s *completionText) rasterize() {
 	s.img.Resize(size)
 	s.img.Image = dst
 	s.img.Refresh()
-
-	dst = nil
 }
 
 func NewCompletionText(width float32, height float32, parent *completionList) *completionText {

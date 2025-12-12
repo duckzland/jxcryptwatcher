@@ -114,7 +114,6 @@ func (w *notificationDisplay) rasterize() {
 	w.img.Resize(size)
 	w.img.Refresh()
 
-	dst = nil
 }
 
 func UseNotification() *notificationDisplay {
