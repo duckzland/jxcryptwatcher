@@ -233,9 +233,6 @@ func NewPanelForm(
 			se.Destroy()
 			te.Destroy()
 
-			cm = nil
-			cs = nil
-
 			if !JC.IsMobile {
 				JT.UsePanelMaps().GetMaps().ClearMapCache()
 			}
