@@ -92,7 +92,7 @@ mkdir -p "${bin_path}" "${desktop_path}" \
 
 # Build binary
 # GOEXPERIMENT=greenteagc \
-# GOGC=50 \
+GOGC=20 \
 CGO_ENABLED=1 \
 CGO_CFLAGS="${cflags}" \
 CGO_LDFLAGS="${cldflags}" \
