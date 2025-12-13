@@ -28,3 +28,5 @@ const ACT_TICKER_GET_ETF = "ticker_get_etf"
 const ACT_TICKER_GET_FEARGREED = "ticker_get_feargreed"
 const ACT_TICKER_GET_MARKETCAP = "ticker_get_marketcap"
 const ACT_TICKER_GET_RSI = "ticker_get_rsi"
+
+const ACT_COMPLETION_ENTRY_CLOSE = "close_entry"
