@@ -713,7 +713,7 @@ func openNewPanelForm() {
 			JA.UseLayout().RegisterOverlay(layer)
 			if JC.IsMobile {
 				JA.UseStatus().Pause()
-				// JN.UseAnimationDispatcher().Pause()
+				JN.UseAnimationDispatcher().Pause()
 			}
 		},
 		func(layer *fyne.Container) {
@@ -721,7 +721,7 @@ func openNewPanelForm() {
 			JA.UseStatus().SetOverlayShownStatus(false)
 			if JC.IsMobile {
 				JA.UseStatus().Resume()
-				// JN.UseAnimationDispatcher().Resume()
+				JN.UseAnimationDispatcher().Resume()
 			}
 		},
 	)
