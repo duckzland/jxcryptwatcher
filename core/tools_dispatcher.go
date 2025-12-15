@@ -200,27 +200,29 @@ func (d *dispatcher) getMaxConcurrent() int {
 	return d.maxConcurrent
 }
 
-func (d *dispatcher) call() {
-
+func (d *dispatcher) call() bool {
 	if !d.hasQueue() || d.isDestroyed() {
-		return
+		return false
 	}
 
 	select {
 	case fn, ok := <-d.getQueue():
 		if !ok {
-			return
+			return false
 		}
-
 		if d.isPaused() || d.isDestroyed() {
-			return
+			return false
 		}
-
 		if fn != nil {
 			fn()
 		}
+		return true
 
-	default:
+	case <-d.ctx.Done():
+		return false
+
+	case <-ShutdownCtx.Done():
+		return false
 	}
 }
 
@@ -231,47 +233,45 @@ func (d *dispatcher) worker(id int) {
 			if d.cancel != nil {
 				d.cancel()
 			}
+		} else {
 			d.Drain()
 		}
 	}()
 
+	var ticker *time.Ticker
 	if delay := d.getDelay(); delay > 0 {
-		ticker := time.NewTicker(delay)
+		ticker = time.NewTicker(delay)
 		defer ticker.Stop()
+	}
 
-		for {
+	for {
 
-			if d.isDestroyed() {
-				return
-			}
-
-			select {
-			case <-ShutdownCtx.Done():
-				return
-
-			case <-d.ctx.Done():
-				return
-
-			case <-ticker.C:
-				d.call()
-			}
+		if d.isDestroyed() {
+			return
 		}
 
-	} else {
-		for {
-			if d.isDestroyed() {
+		select {
+		case <-ShutdownCtx.Done():
+			return
+
+		case <-d.ctx.Done():
+			return
+
+		case <-func() <-chan time.Time {
+			if ticker != nil {
+				return ticker.C
+			}
+			return nil
+		}():
+			if !d.call() {
 				return
 			}
 
-			select {
-			case <-ShutdownCtx.Done():
-				return
-
-			case <-d.ctx.Done():
-				return
-
-			default:
-				d.call()
+		default:
+			if ticker == nil {
+				if !d.call() {
+					return
+				}
 			}
 		}
 	}
