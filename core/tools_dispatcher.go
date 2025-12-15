@@ -220,6 +220,7 @@ func (d *dispatcher) worker(id int) {
 	var tickCh <-chan time.Time
 	var injectCh chan time.Time
 	workCh := make(chan func(), 1)
+	defer close(workCh)
 
 	delay := d.getDelay()
 	if delay > 0 {
@@ -230,6 +231,7 @@ func (d *dispatcher) worker(id int) {
 		injectCh = make(chan time.Time, 1)
 		injectCh <- time.Now()
 		tickCh = injectCh
+		defer close(injectCh)
 	}
 
 	for {
