@@ -792,8 +792,8 @@ func registerLifecycle() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
-				JC.UseWorker().Resume()
 				JA.UseStatus().Resume()
+				JC.UseWorker().Resume()
 				JX.UseAnimationDispatcher().Resume()
 			}
 
