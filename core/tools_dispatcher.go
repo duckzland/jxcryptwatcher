@@ -182,6 +182,12 @@ func (d *dispatcher) hasQueue() bool {
 	return d.queue != nil
 }
 
+func (d *dispatcher) hasCancel() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.cancel != nil
+}
+
 func (d *dispatcher) hasDrainer() bool {
 	defer d.mu.Unlock()
 	d.mu.Lock()
@@ -200,37 +206,10 @@ func (d *dispatcher) getMaxConcurrent() int {
 	return d.maxConcurrent
 }
 
-func (d *dispatcher) call() bool {
-	if !d.hasQueue() || d.isDestroyed() {
-		return false
-	}
-
-	select {
-	case fn, ok := <-d.getQueue():
-		if !ok {
-			return false
-		}
-		if d.isPaused() || d.isDestroyed() {
-			return false
-		}
-		if fn != nil {
-			fn()
-		}
-		return true
-
-	case <-d.ctx.Done():
-		return false
-
-	case <-ShutdownCtx.Done():
-		return false
-	}
-}
-
 func (d *dispatcher) worker(id int) {
-
 	defer func() {
 		if !d.isDestroyed() {
-			if d.cancel != nil {
+			if d.hasCancel() {
 				d.cancel()
 			}
 		} else {
@@ -238,18 +217,22 @@ func (d *dispatcher) worker(id int) {
 		}
 	}()
 
-	var ticker *time.Ticker
-	if delay := d.getDelay(); delay > 0 {
-		ticker = time.NewTicker(delay)
+	var tickCh <-chan time.Time
+	var injectCh chan time.Time
+	workCh := make(chan func(), 1)
+
+	delay := d.getDelay()
+	if delay > 0 {
+		ticker := time.NewTicker(delay)
 		defer ticker.Stop()
+		tickCh = ticker.C
+	} else {
+		injectCh = make(chan time.Time, 1)
+		injectCh <- time.Now()
+		tickCh = injectCh
 	}
 
 	for {
-
-		if d.isDestroyed() {
-			return
-		}
-
 		select {
 		case <-ShutdownCtx.Done():
 			return
@@ -257,26 +240,29 @@ func (d *dispatcher) worker(id int) {
 		case <-d.ctx.Done():
 			return
 
-		case <-func() <-chan time.Time {
-			if ticker != nil {
-				return ticker.C
-			}
-			return nil
-		}():
-			if !d.call() {
+		case <-tickCh:
+			if d.isPaused() || d.isDestroyed() || !d.hasQueue() {
 				return
 			}
 
-		default:
-			if ticker == nil {
-				if !d.call() {
-					return
-				}
+			fn, ok := <-d.getQueue()
+			if !ok {
+				return
 			}
+
+			if fn != nil {
+				workCh <- fn
+			}
+
+			if delay == 0 {
+				injectCh <- time.Now()
+			}
+
+		case fn := <-workCh:
+			fn()
 		}
 	}
 }
-
 func RegisterDispatcher() *dispatcher {
 	if coreDispatcher == nil {
 		coreDispatcher = &dispatcher{}
