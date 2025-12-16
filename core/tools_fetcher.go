@@ -197,6 +197,13 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 	if m.paused || m.destroyed {
 		cancelled = true
 		cancel()
+		if m.activeWorkers != nil {
+			delete(m.activeWorkers, mapKey)
+		}
+		if onCancel != nil {
+			onCancel()
+		}
+		close(done)
 		return
 	}
 
