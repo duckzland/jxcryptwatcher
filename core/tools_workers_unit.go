@@ -18,6 +18,7 @@ type workerUnit struct {
 	mu          sync.Mutex
 	bufferSize  int
 	destroyed   bool
+	active      bool
 }
 
 func (w *workerUnit) Call(payload any) {
@@ -26,7 +27,7 @@ func (w *workerUnit) Call(payload any) {
 
 	fn := w.fn
 
-	if w.destroyed {
+	if w.destroyed || !w.active {
 		return
 	}
 
@@ -56,7 +57,7 @@ func (w *workerUnit) Push(payload any) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.destroyed {
+	if w.destroyed || !w.active {
 		return
 	}
 
@@ -74,7 +75,7 @@ func (w *workerUnit) Start() {
 		return
 	}
 
-	if w.ctx != nil {
+	if w.active {
 		return
 	}
 
@@ -85,6 +86,8 @@ func (w *workerUnit) Start() {
 	if w.getInterval != nil {
 		w.interval = time.Duration(w.getInterval()) * time.Millisecond
 	}
+
+	w.active = true
 
 	w.ctx, w.cancel = context.WithCancel(context.Background())
 
@@ -99,18 +102,20 @@ func (w *workerUnit) Stop() {
 		return
 	}
 
+	w.active = false
+
 	if w.cancel != nil {
 		w.cancel()
 	}
-
-	w.ctx = nil
-	w.cancel = nil
 }
 
 func (w *workerUnit) Reset() {
 	w.Flush()
-	w.Stop()
-	w.Start()
+
+	if w.active {
+		w.Stop()
+		w.Start()
+	}
 }
 
 func (w *workerUnit) newTicker() *time.Ticker {
@@ -131,9 +136,10 @@ func (w *workerUnit) worker() {
 		w.mu.Lock()
 		ctx := w.ctx
 		delay := w.delay
+		active := w.active
 		w.mu.Unlock()
 
-		if ctx == nil {
+		if ctx == nil || !active {
 			return
 		}
 
@@ -154,6 +160,10 @@ func (w *workerUnit) worker() {
 
 			if delay > 0 {
 				time.Sleep(delay)
+			}
+
+			if active == false {
+				return
 			}
 
 			w.Call(x)
@@ -188,5 +198,6 @@ func NewWorkerUnit(buffer int) *workerUnit {
 		bufferSize: buffer,
 		queue:      make(chan any, buffer),
 		destroyed:  false,
+		active:     false,
 	}
 }

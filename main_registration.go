@@ -792,9 +792,9 @@ func registerLifecycle() {
 
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
+				JX.UseAnimationDispatcher().Resume()
 				JA.UseStatus().Resume()
 				JC.UseWorker().Resume()
-				JX.UseAnimationDispatcher().Resume()
 			}
 
 			if !JA.UseStatus().IsReady() {
@@ -833,9 +833,9 @@ func registerLifecycle() {
 			// This can cause unwanted locking! fire last!
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
+				JX.UseAnimationDispatcher().Pause()
 				JA.UseStatus().Pause()
 				JC.UseWorker().Pause()
-				JX.UseAnimationDispatcher().Pause()
 			}
 		})
 

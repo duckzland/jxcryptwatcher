@@ -25,14 +25,15 @@ var coreDispatcher *dispatcher = nil
 type dispatcher struct {
 	queue         chan func()
 	mu            sync.Mutex
-	paused        bool
 	buffer        int
 	maxConcurrent int
+	generated     int
 	delay         time.Duration
 	ctx           context.Context
 	cancel        context.CancelFunc
 	drainer       func()
 	destroyed     bool
+	paused        bool
 }
 
 func (d *dispatcher) Init() {
@@ -53,18 +54,43 @@ func (d *dispatcher) Init() {
 		d.delay = 16 * time.Millisecond
 	}
 
+	d.generated = 0
 	d.queue = make(chan func(), d.buffer)
-	d.paused = false
 	d.ctx, d.cancel = context.WithCancel(context.Background())
 }
 
 func (d *dispatcher) Start() {
+	d.mu.Lock()
+	generated := d.generated
+	d.mu.Unlock()
+
+	if generated == d.getMaxConcurrent() {
+		return
+	}
+
 	for i := 0; i < d.getMaxConcurrent(); i++ {
-		if d.isPaused() || d.isDestroyed() {
+		if d.isDestroyed() {
 			return
 		}
 		go d.worker(i)
+
+		d.mu.Lock()
+		d.generated++
+		d.mu.Unlock()
 	}
+}
+
+func (d *dispatcher) Pause() {
+	d.mu.Lock()
+	d.paused = true
+	d.mu.Unlock()
+	d.Drain()
+}
+
+func (d *dispatcher) Resume() {
+	d.mu.Lock()
+	d.paused = false
+	d.mu.Unlock()
 }
 
 func (d *dispatcher) Drain() {
@@ -82,6 +108,14 @@ func (d *dispatcher) Drain() {
 
 func (d *dispatcher) Submit(fn func()) {
 
+	d.mu.Lock()
+	paused := d.paused
+	d.mu.Unlock()
+
+	if paused {
+		return
+	}
+
 	if !d.hasQueue() {
 		return
 	}
@@ -92,25 +126,6 @@ func (d *dispatcher) Submit(fn func()) {
 	}
 }
 
-func (d *dispatcher) Pause() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	d.paused = true
-
-	if d.cancel != nil {
-		d.cancel()
-	}
-}
-
-func (d *dispatcher) Resume() {
-	d.mu.Lock()
-	d.paused = false
-	d.ctx, d.cancel = context.WithCancel(context.Background())
-	d.mu.Unlock()
-	d.Start()
-}
-
 func (d *dispatcher) Destroy() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -119,7 +134,6 @@ func (d *dispatcher) Destroy() {
 		return
 	}
 
-	d.paused = true
 	d.destroyed = true
 
 	if d.cancel != nil {
@@ -164,12 +178,6 @@ func (d *dispatcher) getDelay() time.Duration {
 	return d.delay
 }
 
-func (d *dispatcher) isPaused() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.paused
-}
-
 func (d *dispatcher) isDestroyed() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -180,12 +188,6 @@ func (d *dispatcher) hasQueue() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.queue != nil
-}
-
-func (d *dispatcher) hasCancel() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.cancel != nil
 }
 
 func (d *dispatcher) hasDrainer() bool {
@@ -206,65 +208,87 @@ func (d *dispatcher) getMaxConcurrent() int {
 	return d.maxConcurrent
 }
 
+func (d *dispatcher) call() {
+
+	if !d.hasQueue() || d.isDestroyed() {
+		return
+	}
+
+	select {
+	case fn, ok := <-d.getQueue():
+		if !ok {
+			return
+		}
+
+		if d.isDestroyed() {
+			return
+		}
+
+		if fn != nil {
+			fn()
+		}
+
+	default:
+	}
+}
+
 func (d *dispatcher) worker(id int) {
 	defer func() {
+		d.mu.Lock()
+		cancel := d.cancel
+		d.generated--
+		d.mu.Unlock()
+
 		if !d.isDestroyed() {
-			if d.hasCancel() {
-				d.cancel()
+			if cancel != nil {
+				cancel()
 			}
-		} else {
 			d.Drain()
 		}
 	}()
 
-	var tickCh <-chan time.Time
-	var injectCh chan time.Time
-	workCh := make(chan func(), 1)
-	defer close(workCh)
-
-	delay := d.getDelay()
-	if delay > 0 {
+	if delay := d.getDelay(); delay > 0 {
 		ticker := time.NewTicker(delay)
 		defer ticker.Stop()
-		tickCh = ticker.C
+
+		for {
+
+			if d.isDestroyed() {
+				return
+			}
+
+			select {
+			case <-ShutdownCtx.Done():
+				return
+
+			case <-d.ctx.Done():
+				return
+
+			case <-ticker.C:
+				d.call()
+			}
+		}
+
 	} else {
-		injectCh = make(chan time.Time, 1)
-		injectCh <- time.Now()
-		tickCh = injectCh
-		defer close(injectCh)
-	}
-
-	for {
-		select {
-		case <-ShutdownCtx.Done():
-			return
-
-		case <-d.ctx.Done():
-			return
-
-		case <-tickCh:
-			if d.isPaused() || d.isDestroyed() || !d.hasQueue() {
+		for {
+			if d.isDestroyed() {
 				return
 			}
 
-			fn, ok := <-d.getQueue()
-			if !ok {
+			select {
+			case <-ShutdownCtx.Done():
 				return
-			}
 
-			if fn != nil {
-				workCh <- fn
-			}
+			case <-d.ctx.Done():
+				return
 
-			if delay == 0 {
-				injectCh <- time.Now()
+			default:
+				d.call()
 			}
-
-		case fn := <-workCh:
-			fn()
 		}
 	}
 }
+
 func RegisterDispatcher() *dispatcher {
 	if coreDispatcher == nil {
 		coreDispatcher = &dispatcher{}
@@ -281,7 +305,7 @@ func NewDispatcher(buffer, maxConcurrent int, delay time.Duration) *dispatcher {
 		buffer:        buffer,
 		maxConcurrent: maxConcurrent,
 		delay:         delay,
-		paused:        false,
+		destroyed:     false,
 	}
 	d.Init()
 	return d

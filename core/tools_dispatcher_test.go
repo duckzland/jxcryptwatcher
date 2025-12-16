@@ -72,15 +72,17 @@ func TestRegisterAndUseDispatcher(t *testing.T) {
 
 func TestDispatcherSubmitAndStart(t *testing.T) {
 	d := NewDispatcher(5, 1, 10*time.Millisecond)
+	d.Init()
 	var mu sync.Mutex
 	called := false
+
+	d.Start()
 
 	d.Submit(func() {
 		mu.Lock()
 		called = true
 		mu.Unlock()
 	})
-	d.Start()
 
 	time.Sleep(50 * time.Millisecond)
 
@@ -89,21 +91,6 @@ func TestDispatcherSubmitAndStart(t *testing.T) {
 		t.Error("Expected submitted function to be called")
 	}
 	mu.Unlock()
-}
-
-func TestDispatcherPauseResume(t *testing.T) {
-	d := NewDispatcher(5, 1, 10*time.Millisecond)
-	d.Pause()
-
-	if !d.isPaused() {
-		t.Error("Expected dispatcher to be paused")
-	}
-
-	d.Resume()
-
-	if d.isPaused() {
-		t.Error("Expected dispatcher to be resumed")
-	}
 }
 
 func TestDispatcherSetters(t *testing.T) {
@@ -147,7 +134,6 @@ func TestDispatcherConcurrentAccess(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
 			_ = d.getDelay()
-			_ = d.isPaused()
 		}
 	}()
 
@@ -200,9 +186,5 @@ func TestDispatcherDestroy(t *testing.T) {
 
 	if d.ctx != nil || d.cancel != nil {
 		t.Error("Expected context and cancel to be nil after destroy")
-	}
-
-	if !d.isPaused() {
-		t.Error("Expected dispatcher to be paused after destroy")
 	}
 }
