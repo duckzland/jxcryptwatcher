@@ -71,7 +71,7 @@ func (rf *rsiFetcher) parseJSON(data []byte) error {
 	return nil
 }
 
-func (rf *rsiFetcher) GetRate(ctx context.Context) int64 {
+func (rf *rsiFetcher) GetRate(ctx context.Context, payload any) int64 {
 
 	if ctx.Err() != nil {
 		return JC.NETWORKING_ERROR_CONNECTION

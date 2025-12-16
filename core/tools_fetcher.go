@@ -56,12 +56,12 @@ func (r *fetchResult) SetError(e error) {
 type fetcher struct {
 	fetchers      map[string]FetcherInterface
 	delay         map[string]time.Duration
-	callbacks     map[string]func(FetchResultInterface)
 	conditions    map[string]func() bool
 	activeWorkers map[string]context.CancelFunc
 	mu            sync.Mutex
 	dispatcher    *dispatcher
 	destroyed     bool
+	paused        bool
 }
 
 var fetcherManager *fetcher = nil
@@ -76,19 +76,19 @@ func (m *fetcher) Init() {
 
 	m.fetchers = make(map[string]FetcherInterface)
 	m.delay = make(map[string]time.Duration)
-	m.callbacks = make(map[string]func(FetchResultInterface))
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
 	m.destroyed = false
+	m.paused = false
 	m.dispatcher = NewDispatcher(50, 4, 500*time.Millisecond)
 	m.dispatcher.Start()
 }
 
-func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterface, callback func(FetchResultInterface), conditions func() bool) {
+func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterface, conditions func() bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.destroyed {
+	if m.destroyed || m.paused {
 		return
 	}
 
@@ -98,7 +98,6 @@ func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterf
 
 	m.fetchers[key] = fetcher
 	m.delay[key] = time.Duration(delaySeconds) * time.Second
-	m.callbacks[key] = callback
 	m.conditions[key] = conditions
 }
 
@@ -109,75 +108,11 @@ func (m *fetcher) Deregister(key string) {
 	m.internalDestroy(key)
 }
 
-func (m *fetcher) Call(key string, payload any) {
+func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob int), onSuccess func(map[string]FetchResultInterface), onCancel func()) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.destroyed {
-		return
-	}
-
-	if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
-		return
-	}
-
-	callID := fmt.Sprintf("%s:%v", key, payload)
-	if oldCancel, exists := m.activeWorkers[callID]; exists {
-		oldCancel()
-		delete(m.activeWorkers, callID)
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	m.activeWorkers[callID] = cancel
-
-	go func(callID string, ctx context.Context, cancel context.CancelFunc) {
-		defer func() {
-			m.mu.Lock()
-			defer m.mu.Unlock()
-
-			cancel()
-
-			if m.activeWorkers != nil {
-				delete(m.activeWorkers, callID)
-			}
-		}()
-
-		select {
-		case <-ShutdownCtx.Done():
-			return
-
-		case <-ctx.Done():
-			return
-
-		default:
-			m.executeCall(ctx, key, payload, func(result FetchResultInterface) {
-				m.mu.Lock()
-				defer m.mu.Unlock()
-
-				if ctx.Err() != nil {
-					return
-				}
-
-				if m.callbacks == nil || m.destroyed {
-					return
-				}
-
-				cb := m.callbacks[key]
-
-				if cb != nil {
-					cb(result)
-				}
-			})
-		}
-
-	}(callID, ctx, cancel)
-}
-
-func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJob int), callback func(map[string]FetchResultInterface)) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.destroyed {
+	if m.destroyed || m.paused {
 		return
 	}
 
@@ -210,8 +145,8 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 	m.activeWorkers[mapKey] = cancel
 
 	if total == 0 {
-		if callback != nil {
-			callback(results)
+		if onSuccess != nil {
+			onSuccess(results)
 		}
 
 		if m.activeWorkers != nil {
@@ -221,6 +156,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		return
 	}
 
+	cancelled := false
 	done := make(chan struct{}, total)
 
 	for key, items := range payloads {
@@ -235,10 +171,12 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 
 			m.dispatcher.Submit(func() {
 				defer func() {
-					done <- struct{}{}
+					if !cancelled {
+						done <- struct{}{}
+					}
 				}()
 
-				if ctx.Err() != nil {
+				if ctx.Err() != nil || cancelled {
 					return
 				}
 
@@ -246,7 +184,7 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 					mu.Lock()
 					defer mu.Unlock()
 
-					if ctx.Err() != nil {
+					if ctx.Err() != nil || cancelled {
 						return
 					}
 
@@ -266,6 +204,14 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 			if m.activeWorkers != nil {
 				delete(m.activeWorkers, mapKey)
 			}
+
+			if cancelled {
+				if onCancel != nil {
+					onCancel()
+				}
+
+				close(done)
+			}
 		}()
 
 		count := 0
@@ -273,16 +219,18 @@ func (m *fetcher) Dispatch(payloads map[string][]string, preprocess func(totalJo
 		for {
 			select {
 			case <-ShutdownCtx.Done():
+				cancelled = true
 				return
 
 			case <-ctx.Done():
+				cancelled = true
 				return
 
 			case <-done:
 				count++
 				if count == total {
-					if callback != nil {
-						callback(results)
+					if onSuccess != nil {
+						onSuccess(results)
 					}
 
 					close(done)
@@ -315,8 +263,33 @@ func (m *fetcher) Destroy() {
 	m.activeWorkers = nil
 	m.fetchers = nil
 	m.delay = nil
-	m.callbacks = nil
 	m.conditions = nil
+}
+
+func (m *fetcher) Pause() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for key, cancel := range m.activeWorkers {
+		if cancel != nil {
+			cancel()
+		}
+
+		delete(m.activeWorkers, key)
+	}
+
+	m.paused = true
+
+	m.dispatcher.Pause()
+}
+
+func (m *fetcher) Resume() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.paused = false
+
+	m.dispatcher.Resume()
 }
 
 func (m *fetcher) internalDestroy(key string) {
@@ -338,12 +311,6 @@ func (m *fetcher) internalDestroy(key string) {
 	if m.delay != nil {
 		if _, exists := m.delay[key]; exists {
 			delete(m.delay, key)
-		}
-	}
-
-	if m.callbacks != nil {
-		if _, exists := m.callbacks[key]; exists {
-			delete(m.callbacks, key)
 		}
 	}
 
@@ -375,26 +342,12 @@ func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setR
 	setResult(r)
 }
 
-type dynamicPayloadFetcher struct {
+type fetcherUnit struct {
 	handler func(ctx context.Context, payload any) (FetchResultInterface, error)
 }
 
-func (df *dynamicPayloadFetcher) Fetch(ctx context.Context, payload any, callback func(FetchResultInterface)) {
+func (df *fetcherUnit) Fetch(ctx context.Context, payload any, callback func(FetchResultInterface)) {
 	result, err := df.handler(ctx, payload)
-
-	if err != nil {
-		result.SetError(err)
-	}
-
-	callback(result)
-}
-
-type genericFetcher struct {
-	handler func(ctx context.Context) (FetchResultInterface, error)
-}
-
-func (gf *genericFetcher) Fetch(ctx context.Context, _ any, callback func(FetchResultInterface)) {
-	result, err := gf.handler(ctx)
 
 	if err != nil {
 		result.SetError(err)
@@ -410,12 +363,8 @@ func NewFetchResult(code int64, data any) FetchResultInterface {
 	}
 }
 
-func NewDynamicPayloadFetcher(handler func(ctx context.Context, payload any) (FetchResultInterface, error)) *dynamicPayloadFetcher {
-	return &dynamicPayloadFetcher{handler: handler}
-}
-
-func NewGenericFetcher(handler func(ctx context.Context) (FetchResultInterface, error)) *genericFetcher {
-	return &genericFetcher{handler: handler}
+func NewFetcherUnit(handler func(ctx context.Context, payload any) (FetchResultInterface, error)) *fetcherUnit {
+	return &fetcherUnit{handler: handler}
 }
 
 func RegisterFetcherManager() *fetcher {

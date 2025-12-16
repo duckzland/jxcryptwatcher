@@ -35,11 +35,6 @@ func updateDisplay() bool {
 	var allIDs []string
 
 	recentUpdates := JT.UseExchangeCache().GetRecentUpdates()
-	if recentUpdates == nil || len(recentUpdates) == 0 {
-		JC.Logln("Unable to refresh display: No recent panel rates update available")
-		return false
-	}
-
 	registered := make(map[string]bool)
 	priority := JT.UsePanelMaps().GetVisiblePanels()
 	panels := JT.UsePanelMaps().GetData()
@@ -65,7 +60,16 @@ func updateDisplay() bool {
 		pkt := pot.UsePanelKey()
 		ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
 
-		if _, ok := recentUpdates[ck]; ok && !registered[id] {
+		if !registered[id] {
+			_, hasRecentUpdates := recentUpdates[ck]
+
+			// Edge case where panel stuck not in loaded state, refresh status and rate using exchangerate directly
+			if !hasRecentUpdates && !pot.IsStatus(JC.STATE_LOADED) {
+				pot.UpdateRate()
+				pot.UpdateStatus()
+				continue
+			}
+
 			allIDs = append(allIDs, id)
 			registered[id] = true
 		}
@@ -163,14 +167,17 @@ func updateTickerDisplay() bool {
 	}
 
 	for _, key := range tickers {
-		rate, ok := recentUpdates[key]
-
-		if !ok {
-			continue
-		}
-
+		rate, hasRateUpdate := recentUpdates[key]
 		tktt := JT.UseTickerMaps().GetDataByType(key)
 		for _, tkt := range tktt {
+
+			// Edge case where ticker is stuck not at loaded state, try to update via tickercache data
+			if !hasRateUpdate {
+				if !tkt.IsStatus(JC.STATE_LOADED) {
+					tkt.Update()
+				}
+				continue
+			}
 
 			if JC.IsShuttingDown() {
 				return false
@@ -256,7 +263,7 @@ func updateRates() bool {
 
 	JC.Notify(JC.NotifyFetchingTheLatestExchangeRates)
 
-	JC.UseFetcher().Dispatch(payloads,
+	JC.UseFetcher().Call(payloads,
 		func(scheduledJobs int) {
 
 			if JC.IsShuttingDown() {
@@ -299,6 +306,9 @@ func updateRates() bool {
 			}
 
 			JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
+		},
+		func() {
+			JA.UseStatus().EndFetchingRates()
 		})
 
 	runtime.GC()
@@ -351,7 +361,7 @@ func updateTickers() bool {
 
 	JC.Notify(JC.NotifyFetchingTheLatestTickerData)
 
-	JC.UseFetcher().Dispatch(payloads,
+	JC.UseFetcher().Call(payloads,
 		func(totalJob int) {
 			if JC.IsShuttingDown() {
 				return
@@ -393,6 +403,9 @@ func updateTickers() bool {
 			}
 
 			JC.UseWorker().Reset(JC.ACT_TICKER_UPDATE)
+		},
+		func() {
+			JA.UseStatus().EndFetchingTickers()
 		})
 
 	runtime.GC()
@@ -655,7 +668,7 @@ func savePanelForm(pdt JT.PanelData) {
 				payloads := map[string][]string{}
 				payloads[JC.ACT_EXCHANGE_GET_RATES] = []string{sid + JC.STRING_PIPE + tid}
 
-				JC.UseFetcher().Dispatch(payloads,
+				JC.UseFetcher().Call(payloads,
 					func(totalScheduled int) {
 					},
 					func(results map[string]JC.FetchResultInterface) {
@@ -676,6 +689,9 @@ func savePanelForm(pdt JT.PanelData) {
 
 							processUpdatePanelComplete(status)
 						}
+					},
+					func() {
+						JA.UseStatus().EndFetchingRates()
 					})
 			}
 

@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func TestDynamicPayloadFetcher_Success(t *testing.T) {
-	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+func TestFetcher_Success(t *testing.T) {
+	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		return NewFetchResult(123, nil), nil
 	})
 	f.Fetch(context.Background(), nil, func(res FetchResultInterface) {
@@ -19,10 +19,10 @@ func TestDynamicPayloadFetcher_Success(t *testing.T) {
 	})
 }
 
-func TestDynamicPayloadFetcher_CancelledContext(t *testing.T) {
+func TestFetcher_CancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		select {
 		case <-ctx.Done():
 			return NewFetchResult(-1, nil), ctx.Err()
@@ -40,10 +40,10 @@ func TestDynamicPayloadFetcher_CancelledContext(t *testing.T) {
 	})
 }
 
-func TestDynamicPayloadFetcher_DeadlineExceeded(t *testing.T) {
+func TestFetcher_DeadlineExceeded(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
-	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		select {
 		case <-ctx.Done():
 			return NewFetchResult(-1, nil), ctx.Err()
@@ -61,8 +61,8 @@ func TestDynamicPayloadFetcher_DeadlineExceeded(t *testing.T) {
 	})
 }
 
-func TestDynamicPayloadFetcher_UsesPayload(t *testing.T) {
-	f := NewDynamicPayloadFetcher(func(ctx context.Context, payload any) (FetchResultInterface, error) {
+func TestFetcher_UsesPayload(t *testing.T) {
+	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		if payload == "ok" {
 			return NewFetchResult(200, nil), nil
 		}
@@ -79,17 +79,6 @@ func TestDynamicPayloadFetcher_UsesPayload(t *testing.T) {
 		}
 		if res.Err() == nil {
 			t.Errorf("expected error for bad payload, got nil")
-		}
-	})
-}
-
-func TestGenericFetcher_Success(t *testing.T) {
-	f := NewGenericFetcher(func(ctx context.Context) (FetchResultInterface, error) {
-		return NewFetchResult(321, nil), nil
-	})
-	f.Fetch(context.Background(), nil, func(res FetchResultInterface) {
-		if res.Code() != 321 {
-			t.Errorf("expected code 321, got %d", res.Code())
 		}
 	})
 }

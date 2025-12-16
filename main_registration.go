@@ -85,7 +85,31 @@ func registerActions() {
 	// Refresh ticker data
 	JA.UseAction().Add(JW.NewActionButton(JC.ACT_CRYPTO_REFRESH_MAP, JC.STRING_EMPTY, theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
-			JC.UseFetcher().Call(JC.ACT_CRYPTO_GET_MAP, nil)
+			payloads := make(map[string][]string, 1)
+			payloads[JC.ACT_CRYPTO_GET_MAP] = []string{JC.ACT_CRYPTO_GET_MAP}
+
+			JC.UseFetcher().Call(payloads,
+				func(scheduledJobs int) {
+					if JC.IsShuttingDown() {
+						return
+					}
+
+					if scheduledJobs > 0 {
+						JA.UseStatus().StartFetchingCryptos()
+					}
+				},
+				func(results map[string]JC.FetchResultInterface) {
+					defer JA.UseStatus().EndFetchingCryptos()
+
+					for _, result := range results {
+
+						status := detectHTTPResponse(result.Code())
+						processFetchingCryptosComplete(status)
+					}
+				},
+				func() {
+					JA.UseStatus().EndFetchingCryptos()
+				})
 		},
 		func(btn JW.ActionButton) {
 			if !JA.UseStatus().IsReady() {
@@ -447,17 +471,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JC.ACT_CRYPTO_GET_MAP, 0,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx, payload), nil), nil
 			},
 		),
-		func(result JC.FetchResultInterface) {
-			defer JA.UseStatus().EndFetchingCryptos()
-
-			status := detectHTTPResponse(result.Code())
-			processFetchingCryptosComplete(status)
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch cryptos: app is not ready yet")
@@ -472,25 +490,18 @@ func registerFetchers() {
 				JC.Logln("Unable to do fetch cryptos: Invalid config")
 				return false
 			}
-			if JA.UseStatus().IsFetchingCryptos() {
-				JC.Logln("Unable to do fetch cryptos: Another fetcher is running")
-				return false
-			}
-			JA.UseStatus().StartFetchingCryptos()
+
 			return true
 		},
 	)
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeCMC100, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch CMC100: app is not ready yet")
@@ -510,14 +521,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeMarketCap, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch marketcap: app is not ready yet")
@@ -537,14 +545,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeAltcoinIndex, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch altcoin index: app is not ready yet")
@@ -564,14 +569,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeFearGreed, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch feargreed: app is not ready yet")
@@ -591,14 +593,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeRSI, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch rsi: app is not ready yet")
@@ -618,14 +617,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeETF, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch etf: app is not ready yet")
@@ -645,14 +641,11 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JT.TickerTypeDominance, delay,
-		JC.NewGenericFetcher(
-			func(ctx context.Context) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx), nil), nil
+		JC.NewFetcherUnit(
+			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
+				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx, payload), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch dominance: app is not ready yet")
@@ -672,7 +665,7 @@ func registerFetchers() {
 
 	JC.UseFetcher().Register(
 		JC.ACT_EXCHANGE_GET_RATES, delay,
-		JC.NewDynamicPayloadFetcher(
+		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)
 				if !ok {
@@ -682,9 +675,6 @@ func registerFetchers() {
 				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(ctx, rk), nil), nil
 			},
 		),
-		func(fr JC.FetchResultInterface) {
-			// Results is processed at GetRate()
-		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Unable to fetch rates: app is not ready yet")
@@ -794,6 +784,7 @@ func registerLifecycle() {
 				JC.Logln("Battery Saver: Continuing apps")
 				JX.UseAnimationDispatcher().Resume()
 				JA.UseStatus().Resume()
+				JC.UseFetcher().Resume()
 				JC.UseWorker().Resume()
 			}
 
@@ -835,6 +826,7 @@ func registerLifecycle() {
 				JC.Logln("Battery Saver: Pausing apps")
 				JX.UseAnimationDispatcher().Pause()
 				JA.UseStatus().Pause()
+				JC.UseFetcher().Pause()
 				JC.UseWorker().Pause()
 			}
 		})
