@@ -209,30 +209,6 @@ func (d *dispatcher) getMaxConcurrent() int {
 	return d.maxConcurrent
 }
 
-func (d *dispatcher) call() {
-
-	if !d.hasQueue() || d.isDestroyed() {
-		return
-	}
-
-	select {
-	case fn, ok := <-d.getQueue():
-		if !ok {
-			return
-		}
-
-		if d.isDestroyed() {
-			return
-		}
-
-		if fn != nil {
-			fn()
-		}
-
-	default:
-	}
-}
-
 func (d *dispatcher) worker(id int) {
 	defer func() {
 		d.mu.Lock()
@@ -248,44 +224,43 @@ func (d *dispatcher) worker(id int) {
 		}
 	}()
 
-	if delay := d.getDelay(); delay > 0 {
-		ticker := time.NewTicker(delay)
-		defer ticker.Stop()
-
-		for {
-
-			if d.isDestroyed() {
-				return
-			}
-
-			select {
-			case <-ShutdownCtx.Done():
-				return
-
-			case <-d.ctx.Done():
-				return
-
-			case <-ticker.C:
-				d.call()
-			}
+	for {
+		if d.isDestroyed() {
+			return
 		}
 
-	} else {
-		for {
-			if d.isDestroyed() {
+		select {
+		case <-ShutdownCtx.Done():
+			return
+
+		case <-d.ctx.Done():
+			return
+
+		case fn, ok := <-d.getQueue():
+			if !ok || d.isDestroyed() {
 				return
+
+			}
+			if fn != nil {
+				delay := max(d.getDelay(), time.Millisecond)
+				timer := time.NewTimer(delay)
+
+				select {
+				case <-timer.C:
+					fn()
+
+				case <-ShutdownCtx.Done():
+					timer.Stop()
+					return
+
+				case <-d.ctx.Done():
+					timer.Stop()
+					return
+				}
+
+				timer.Stop()
 			}
 
-			select {
-			case <-ShutdownCtx.Done():
-				return
-
-			case <-d.ctx.Done():
-				return
-
-			default:
-				d.call()
-			}
 		}
 	}
 }
