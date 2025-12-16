@@ -779,7 +779,7 @@ func registerLifecycle() {
 			JC.Logln("App entered foreground")
 
 			JA.UseSnapshot().Reset()
-			JC.UseFetcher().Resume()
+
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JX.UseAnimationDispatcher().Resume()
@@ -820,7 +820,7 @@ func registerLifecycle() {
 			if !JA.UseSnapshot().IsSnapshotted() && JC.IsMobile {
 				JA.UseSnapshot().Save()
 			}
-			JC.UseFetcher().Pause()
+
 			// This can cause unwanted locking! fire last!
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
