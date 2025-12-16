@@ -89,8 +89,8 @@ func (d *dispatcher) Pause() {
 
 func (d *dispatcher) Resume() {
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.paused = false
-	d.mu.Unlock()
 }
 
 func (d *dispatcher) Drain() {
@@ -107,12 +107,7 @@ func (d *dispatcher) Drain() {
 }
 
 func (d *dispatcher) Submit(fn func()) {
-
-	d.mu.Lock()
-	paused := d.paused
-	d.mu.Unlock()
-
-	if paused {
+	if d.isPaused() {
 		return
 	}
 
@@ -182,6 +177,12 @@ func (d *dispatcher) isDestroyed() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.destroyed
+}
+
+func (d *dispatcher) isPaused() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.paused
 }
 
 func (d *dispatcher) hasQueue() bool {
