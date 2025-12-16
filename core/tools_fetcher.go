@@ -194,6 +194,12 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		}
 	}
 
+	if m.paused || m.destroyed {
+		cancelled = true
+		cancel()
+		return
+	}
+
 	go func(ctx context.Context, mapKey string) {
 		defer func() {
 			m.mu.Lock()
@@ -324,6 +330,10 @@ func (m *fetcher) internalDestroy(key string) {
 func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if ctx.Err() != nil {
+		return
+	}
 
 	f := m.fetchers[key]
 
