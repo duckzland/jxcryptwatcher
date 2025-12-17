@@ -31,7 +31,7 @@ func (pc *tickersMapType) Add(ticker TickerData) {
 	defer pc.mu.Unlock()
 
 	if pc.data == nil {
-		pc.data = []TickerData{}
+		pc.data = make([]TickerData, 0, 10)
 	}
 
 	ticker.Init()

@@ -20,7 +20,7 @@ func (pc *panelsMapType) Init() {
 	defer pc.mu.Unlock()
 
 	pc.data = make([]PanelData, 0, 20)
-	pc.visiblePanels = []string{}
+	pc.visiblePanels = make([]string, 0, 100)
 }
 
 func (pc *panelsMapType) SetData(data []PanelData) {
@@ -112,7 +112,7 @@ func (pc *panelsMapType) Append(pk string) PanelData {
 	defer pc.mu.Unlock()
 
 	if pc.data == nil {
-		pc.data = []PanelData{}
+		pc.data = make([]PanelData, 0, 20)
 	}
 
 	ref := &panelDataType{}
