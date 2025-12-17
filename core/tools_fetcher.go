@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+const FETCHER_MODE_DISPATCH = 0
+const FETCHER_MODE_CALL = 1
+
 type FetchResultInterface interface {
 	Code() int64
 	Data() any
@@ -116,8 +119,6 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		return
 	}
 
-	results := make(map[string]FetchResultInterface)
-	mu := sync.Mutex{}
 	total := 0
 	mapKey := ""
 
@@ -145,8 +146,10 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 	m.activeWorkers[mapKey] = cancel
 
 	if total == 0 {
-		if onSuccess != nil {
-			onSuccess(results)
+		cancel()
+
+		if onCancel != nil {
+			onCancel()
 		}
 
 		if m.activeWorkers != nil {
@@ -156,102 +159,169 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		return
 	}
 
-	cancelled := false
-	done := make(chan struct{}, total)
+	mode := FETCHER_MODE_DISPATCH
+	if len(payloads) == 1 {
+		for _, v := range payloads {
+			if len(v) == 1 {
+				mode = FETCHER_MODE_CALL
+			}
+		}
+	}
 
-	for key, items := range payloads {
-		if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
-			continue
+	switch mode {
+	case FETCHER_MODE_CALL:
+
+		for key, items := range payloads {
+			if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
+				continue
+			}
+
+			for _, item := range items {
+
+				k := key
+				payload := item
+
+				m.dispatcher.Submit(func() {
+					defer func() {
+						if ctx.Err() != nil {
+							if onCancel != nil {
+								onCancel()
+							}
+							return
+						}
+
+						cancel()
+
+						if m.activeWorkers != nil {
+							delete(m.activeWorkers, mapKey)
+						}
+					}()
+
+					if ctx.Err() != nil {
+						return
+					}
+
+					m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
+						if ctx.Err() != nil {
+							return
+						}
+
+						rs := make(map[string]FetchResultInterface, 1)
+						rs[payload] = result
+
+						if onSuccess != nil {
+							onSuccess(rs)
+						}
+					})
+				})
+			}
 		}
 
-		for _, item := range items {
+	case FETCHER_MODE_DISPATCH:
 
-			k := key
-			payload := item
+		results := make(map[string]FetchResultInterface)
+		mu := sync.Mutex{}
+		cancelled := false
+		done := make(chan struct{}, total)
 
-			m.dispatcher.Submit(func() {
-				defer func() {
-					if !cancelled {
-						done <- struct{}{}
-					}
-				}()
+		for key, items := range payloads {
+			if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
+				continue
+			}
 
-				if ctx.Err() != nil || cancelled {
-					return
-				}
+			for _, item := range items {
 
-				m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
-					mu.Lock()
-					defer mu.Unlock()
+				k := key
+				payload := item
+
+				m.dispatcher.Submit(func() {
+					defer func() {
+						if !cancelled {
+							done <- struct{}{}
+						}
+					}()
 
 					if ctx.Err() != nil || cancelled {
 						return
 					}
 
-					results[payload] = result
+					m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
+						mu.Lock()
+						defer mu.Unlock()
+
+						if ctx.Err() != nil || cancelled {
+							return
+						}
+
+						results[payload] = result
+					})
 				})
-			})
+			}
 		}
-	}
 
-	if m.paused || m.destroyed {
-		cancelled = true
-		cancel()
-		if m.activeWorkers != nil {
-			delete(m.activeWorkers, mapKey)
-		}
-		if onCancel != nil {
-			onCancel()
-		}
-		close(done)
-		return
-	}
-
-	go func(ctx context.Context, mapKey string) {
-		defer func() {
-			m.mu.Lock()
-			defer m.mu.Unlock()
-
+		if m.paused || m.destroyed {
+			cancelled = true
 			cancel()
 
 			if m.activeWorkers != nil {
 				delete(m.activeWorkers, mapKey)
 			}
 
-			if cancelled {
-				if onCancel != nil {
-					onCancel()
+			if onCancel != nil {
+				onCancel()
+			}
+
+			close(done)
+
+			return
+		}
+
+		go func(ctx context.Context, mapKey string) {
+			defer func() {
+				m.mu.Lock()
+				defer m.mu.Unlock()
+
+				cancel()
+
+				if m.activeWorkers != nil {
+					delete(m.activeWorkers, mapKey)
 				}
 
-				close(done)
-			}
-		}()
-
-		count := 0
-
-		for {
-			select {
-			case <-ShutdownCtx.Done():
-				cancelled = true
-				return
-
-			case <-ctx.Done():
-				cancelled = true
-				return
-
-			case <-done:
-				count++
-				if count == total {
-					if onSuccess != nil {
-						onSuccess(results)
+				if cancelled {
+					if onCancel != nil {
+						onCancel()
 					}
 
 					close(done)
+				}
+			}()
+
+			count := 0
+
+			for {
+				select {
+				case <-ShutdownCtx.Done():
+					cancelled = true
 					return
+
+				case <-ctx.Done():
+					cancelled = true
+					return
+
+				case <-done:
+					count++
+					if count == total {
+						if onSuccess != nil {
+							onSuccess(results)
+						}
+
+						close(done)
+						return
+					}
 				}
 			}
-		}
-	}(ctx, mapKey)
+		}(ctx, mapKey)
+	}
 }
 
 func (m *fetcher) Destroy() {

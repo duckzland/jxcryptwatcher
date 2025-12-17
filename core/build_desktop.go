@@ -3,5 +3,5 @@
 
 package core
 
-const IsMobile = false
+const IsMobile = true
 const AppID = "jxcryptwatcher"
