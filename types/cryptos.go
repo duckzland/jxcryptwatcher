@@ -151,6 +151,9 @@ func (c *cryptosLoaderType) parseJSON(data []byte) error {
 }
 
 func (c *cryptosLoaderType) GetCryptos(ctx context.Context, payload any) int64 {
+
+	JC.Notify(JC.NotifyRequestingLatestCryptosDataFromExchange)
+
 	return JC.GetRequest(
 		ctx,
 		UseConfig().DataEndpoint,

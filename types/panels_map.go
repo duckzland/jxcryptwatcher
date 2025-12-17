@@ -171,6 +171,7 @@ func (pc *panelsMapType) RefreshData() bool {
 	pc.mu.RLock()
 	defer pc.mu.RUnlock()
 
+	refreshed := 0
 	for _, pot := range pc.data {
 		pdt := pc.GetDataByID(pot.GetID())
 		if pdt == nil {
@@ -194,8 +195,12 @@ func (pc *panelsMapType) RefreshData() bool {
 			pdt.SetStatus(JC.STATE_BAD_CONFIG)
 		}
 
-		JC.Logln("Panel refreshed: ", pdt.Get())
+		refreshed++
+
+		// JC.Logln("Panel refreshed: ", pdt.Get())
 	}
+
+	JC.Logf("Panel refreshed %d/%d", refreshed, len(pc.data))
 
 	return true
 }
