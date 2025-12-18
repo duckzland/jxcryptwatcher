@@ -880,6 +880,8 @@ func registerLifecycle() {
 
 			JC.Logln("App exited foreground")
 
+			JA.UseAction().HideTooltip()
+
 			if !JA.UseStatus().IsReady() {
 				JC.Logln("Refused to take snapshot as app is not ready yet")
 				return

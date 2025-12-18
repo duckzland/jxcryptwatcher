@@ -36,6 +36,7 @@ type ActionButton interface {
 	Destroy()
 	Refresh()
 	GetTag() string
+	HideTooltip()
 }
 
 type actionButton struct {
@@ -147,6 +148,12 @@ func (b *actionButton) Cursor() desktop.Cursor {
 		return desktop.PointerCursor
 	}
 	return desktop.DefaultCursor
+}
+
+func (b *actionButton) HideTooltip() {
+	if b.hastip {
+		b.ToolTipWidgetExtend.MouseOut()
+	}
 }
 
 func (b *actionButton) IsDisabled() bool {

@@ -81,6 +81,19 @@ func (a *actionManager) Disable() {
 
 }
 
+func (a *actionManager) HideTooltip() {
+	a.mu.Lock()
+	buttons := a.buttons
+	a.mu.Unlock()
+
+	for _, btn := range buttons {
+		if btn != nil {
+			btn.HideTooltip()
+		}
+	}
+
+}
+
 func RegisterActionManager() *actionManager {
 	if actionManagerStorage == nil {
 		actionManagerStorage = &actionManager{}

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
@@ -45,7 +48,22 @@ func main() {
 
 	JC.Logln("Received exit signal, Performing cleanup and exiting gracefully.")
 
+	timer := time.NewTimer(2 * time.Second)
+	go func() {
+		<-timer.C
+		JC.Logln("Force exiting after timeout...")
+		os.Exit(1)
+	}()
+
 	appShutdown()
 
 	<-JC.ShutdownCtx.Done()
+
+	if !timer.Stop() {
+		select {
+		case <-timer.C:
+		default:
+		}
+
+	}
 }
