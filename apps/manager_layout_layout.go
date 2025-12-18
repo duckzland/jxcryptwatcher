@@ -30,7 +30,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 
 	padding := a.padding
 
-	var topHeight fyne.Size
+	var topSize fyne.Size
 	var tickerHeight fyne.Size
 	var contentY float32 = padding
 
@@ -52,29 +52,38 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	}
 
 	if size.Width >= splitThreshold {
-		tickerWidth := size.Width * 0.4
-		if tickerWidth < minTickerWidth {
-			tickerWidth = minTickerWidth
-		}
 
-		topBarWidth := size.Width - tickerWidth - 3*padding
-		topHeight := fyne.NewSize(topBarWidth, fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height))
-
-		tickerSize := fyne.NewSize(tickerWidth, topHeight.Height)
-		tickerPos := fyne.NewPos(padding, contentY)
-
-		if a.tickers.Size() != tickerSize {
-			a.tickers.Resize(tickerSize)
-		}
-
-		if a.tickers.Position() != tickerPos {
-			a.tickers.Move(tickerPos)
-		}
-
+		topBarWidth := size.Width - 2*padding
 		topBarHeight := a.topBar.MinSize().Height
-		topBarY := (topHeight.Height - topBarHeight) / 2
-		topBarSize := fyne.NewSize(topBarWidth, topHeight.Height)
-		topBarPos := fyne.NewPos(tickerWidth+2*padding, contentY+topBarY)
+		topBarY := float32(0)
+		topBarSize := fyne.NewSize(topBarWidth, topBarHeight)
+		topBarPos := fyne.NewPos(padding, contentY)
+		topHeight := fyne.NewSize(topBarWidth, topBarHeight)
+
+		if a.tickers.Size().Height > 0 {
+			tickerWidth := size.Width * 0.4
+			if tickerWidth < minTickerWidth {
+				tickerWidth = minTickerWidth
+			}
+
+			topBarWidth = size.Width - tickerWidth - 3*padding
+			topHeight = fyne.NewSize(topBarWidth, fyne.Max(a.topBar.MinSize().Height, a.tickers.MinSize().Height))
+
+			tickerSize := fyne.NewSize(tickerWidth, topHeight.Height)
+			tickerPos := fyne.NewPos(padding, contentY)
+
+			if a.tickers.Size() != tickerSize {
+				a.tickers.Resize(tickerSize)
+			}
+
+			if a.tickers.Position() != tickerPos {
+				a.tickers.Move(tickerPos)
+			}
+
+			topBarY = (topHeight.Height - topBarHeight) / 2
+			topBarSize = fyne.NewSize(topBarWidth, topHeight.Height)
+			topBarPos = fyne.NewPos(tickerWidth+2*padding, contentY+topBarY)
+		}
 
 		if a.topBar.Size() != topBarSize {
 			a.topBar.Resize(topBarSize)
@@ -87,8 +96,8 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 		contentY += topHeight.Height + padding
 
 	} else {
-		topHeight = a.topBar.MinSize()
-		topBarSize := fyne.NewSize(size.Width-2*padding, topHeight.Height)
+		topSize = a.topBar.MinSize()
+		topBarSize := fyne.NewSize(size.Width-2*padding, topSize.Height)
 		topBarPos := fyne.NewPos(padding, contentY)
 
 		if a.topBar.Size() != topBarSize {
@@ -99,7 +108,7 @@ func (a *mainLayout) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 			a.topBar.Move(topBarPos)
 		}
 
-		contentY += topHeight.Height + padding
+		contentY += topSize.Height + padding
 
 		if a.tickers != nil && len(a.tickers.Objects) > 0 {
 			tickerHeight = a.tickers.MinSize()
