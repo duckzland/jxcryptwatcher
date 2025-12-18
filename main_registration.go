@@ -839,6 +839,9 @@ func registerLifecycle() {
 		})
 
 		lc.SetOnEnteredForeground(func() {
+
+			JC.AppInFocus = true
+
 			if !isAppStarted {
 				JC.Logln("App is not started yet, refuse to init app entered foreground")
 				return
@@ -873,6 +876,9 @@ func registerLifecycle() {
 		})
 
 		lc.SetOnExitedForeground(func() {
+
+			JC.AppInFocus = false
+
 			if !isAppStarted {
 				JC.Logln("App is not started yet, refuse to init app exited foreground")
 				return

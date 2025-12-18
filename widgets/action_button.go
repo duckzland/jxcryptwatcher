@@ -84,7 +84,7 @@ func (b *actionButton) MouseIn(e *desktop.MouseEvent) {
 		return
 	}
 
-	if b.hastip {
+	if b.hastip && JC.AppInFocus {
 		b.ToolTipWidgetExtend.MouseIn(e)
 	}
 
