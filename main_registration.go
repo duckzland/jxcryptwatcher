@@ -82,7 +82,36 @@ func registerActions() {
 
 	JA.RegisterActionManager().Init()
 
-	// Refresh ticker data
+	// Ticker toggle
+	JA.UseAction().Add(JW.NewActionButton(JC.ACT_TICKER_TOGGLE, JC.STRING_EMPTY, theme.VisibilityOffIcon(), "Hide / Show Tickers", "disabled",
+		func(btn JW.ActionButton) {
+			JA.UseStatus().ToggleTickers()
+		},
+		func(btn JW.ActionButton) {
+			if !JA.UseStatus().IsReady() {
+				btn.Disable()
+				return
+			}
+
+			if JA.UseStatus().IsOverlayShown() {
+				btn.DisallowActions()
+				return
+			}
+
+			if !JA.UseStatus().ValidTickers() {
+				btn.Disable()
+				return
+			}
+
+			if !JA.UseStatus().IsTickerShown() {
+				btn.Error()
+				return
+			}
+
+			btn.Enable()
+		}))
+
+	// Refresh crypto data
 	JA.UseAction().Add(JW.NewActionButton(JC.ACT_CRYPTO_REFRESH_MAP, JC.STRING_EMPTY, theme.ViewRestoreIcon(), "Refresh cryptos data", "disabled",
 		func(btn JW.ActionButton) {
 			payloads := make(map[string][]string, 1)
@@ -431,6 +460,10 @@ func registerWorkers() {
 				JC.Logln("Unable to refresh tickers: Ticker cache shouldn't be refreshed yet")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to refresh tickers: Ticker is not visible")
+				return false
+			}
 			return true
 		},
 	)
@@ -515,6 +548,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch CMC100: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch CMC100: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -539,6 +577,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch marketcap: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch marketcap: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -563,6 +606,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch altcoin index: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch altcoin index: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -587,6 +635,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch feargreed: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch feargreed: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -611,6 +664,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch rsi: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch rsi: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -635,6 +693,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch etf: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch etf: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)
@@ -659,6 +722,11 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch dominance: Invalid config")
 				return false
 			}
+			if !JA.UseStatus().IsTickerShown() {
+				JC.Logln("Unable to fetch dominance: Ticker is not visible")
+				return false
+			}
+
 			return true
 		},
 	)

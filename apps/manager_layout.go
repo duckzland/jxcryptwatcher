@@ -104,7 +104,7 @@ func (m *layoutManager) UpdateState() {
 	}
 
 	if UseStatus().IsReady() {
-		if !UseStatus().ValidCryptos() {
+		if !UseStatus().ValidCryptos() || !UseStatus().IsTickerShown() {
 			m.setTickers(container.NewWithoutLayout())
 			return
 		}

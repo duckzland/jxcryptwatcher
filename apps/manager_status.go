@@ -30,6 +30,7 @@ type statusManager struct {
 	valid_cryptos    bool
 	network_status   bool
 	overlay_shown    bool
+	show_tickers     bool
 	lastChange       time.Time
 	lastRefresh      time.Time
 }
@@ -48,6 +49,7 @@ func (a *statusManager) Init() {
 	a.valid_config = true
 	a.valid_cryptos = true
 	a.network_status = true
+	a.show_tickers = true
 	a.lastChange = time.Now()
 	a.mu.Unlock()
 }
@@ -110,6 +112,12 @@ func (a *statusManager) IsGoodNetworkStatus() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.network_status
+}
+
+func (a *statusManager) IsTickerShown() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.show_tickers
 }
 
 func (a *statusManager) IsDirty() bool {
@@ -271,6 +279,17 @@ func (a *statusManager) DisallowDragging() *statusManager {
 	if changed {
 		a.Refresh()
 	}
+	return a
+}
+
+func (a *statusManager) ToggleTickers() *statusManager {
+	a.mu.Lock()
+
+	a.show_tickers = !a.show_tickers
+	a.lastChange = time.Now()
+	a.mu.Unlock()
+
+	a.Refresh()
 	return a
 }
 

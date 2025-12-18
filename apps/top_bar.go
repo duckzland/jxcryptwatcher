@@ -27,6 +27,7 @@ func NewTopBar() *fyne.Container {
 		UseAction().Get(JC.ACT_EXCHANGE_REFRESH_RATES),
 		UseAction().Get(JC.ACT_OPEN_SETTINGS),
 		UseAction().Get(JC.ACT_PANEL_DRAG),
+		UseAction().Get(JC.ACT_TICKER_TOGGLE),
 		UseAction().Get(JC.ACT_PANEL_ADD),
 	)
 }

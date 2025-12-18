@@ -130,6 +130,10 @@ func updateTickerDisplay() bool {
 		return false
 	}
 
+	if !JA.UseStatus().IsTickerShown() {
+		return false
+	}
+
 	recentUpdates := JT.UseTickerCache().GetRecentUpdates()
 	if recentUpdates == nil || len(recentUpdates) == 0 {
 		JC.Logln("Unable to refresh tickers: No recent ticker rates update available")
@@ -191,7 +195,9 @@ func updateTickerDisplay() bool {
 	}
 
 	if success != 0 {
-		JC.Notify(JC.NotifyTickerDisplayRefreshedWithNewRates)
+		if JA.UseStatus().IsTickerShown() {
+			JC.Notify(JC.NotifyTickerDisplayRefreshedWithNewRates)
+		}
 	}
 
 	JC.Logf("Tickers display updated: %d/%d/%d", len(recentUpdates), success, len(tickers))
@@ -330,6 +336,10 @@ func updateTickers() bool {
 		return false
 	}
 
+	if !JA.UseStatus().IsTickerShown() {
+		return false
+	}
+
 	// Prepare keys and payloads
 	payloads := make(map[string][]string, 8)
 
@@ -359,7 +369,9 @@ func updateTickers() bool {
 		return false
 	}
 
-	JC.Notify(JC.NotifyFetchingTheLatestTickerData)
+	if JA.UseStatus().IsTickerShown() {
+		JC.Notify(JC.NotifyFetchingTheLatestTickerData)
+	}
 
 	JC.UseFetcher().Call(payloads,
 		func(totalJob int) {
@@ -484,7 +496,9 @@ func processUpdateTickerComplete(status int) {
 	switch status {
 	case JC.STATUS_SUCCESS:
 
-		JC.Notify(JC.NotifyTickerFetchCompleted)
+		if JA.UseStatus().IsTickerShown() {
+			JC.Notify(JC.NotifyTickerFetchCompleted)
+		}
 		JA.UseStatus().SetNetworkStatus(true)
 		JA.UseStatus().SetConfigStatus(true)
 

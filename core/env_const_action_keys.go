@@ -19,6 +19,7 @@ const ACT_PANEL_NEW = "panels_new"
 const ACT_PANEL_EDIT = "panels_edit"
 const ACT_PANEL_DELETE = "panels_delete"
 
+const ACT_TICKER_TOGGLE = "tickers_toggle"
 const ACT_TICKER_UPDATE = "tickers_update"
 
 const ACT_TICKER_GET_ALTSEASON = "ticker_get_alt_season"
