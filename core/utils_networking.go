@@ -39,7 +39,7 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 		ctx = context.Background()
 	}
 
-	if ctx.Err() != nil {
+	if ctx != nil && ctx.Err() != nil {
 		return NETWORKING_ERROR_CONNECTION
 	}
 
@@ -188,7 +188,7 @@ func ReadResponse(key string, resp *http.Response, minSize int) ([]byte, func(),
 		}
 		if err != nil {
 			pool.Put(buf[:0])
-			return nil, nil, err
+			return nil, func() {}, err
 		}
 	}
 

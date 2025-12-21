@@ -44,7 +44,7 @@ func (er *altSeasonFetcher) parseJSON(data []byte) error {
 }
 
 func (er *altSeasonFetcher) GetRate(ctx context.Context, payload any) int64 {
-	if ctx.Err() != nil {
+	if ctx != nil && ctx.Err() != nil {
 		return JC.NETWORKING_ERROR_CONNECTION
 	}
 
@@ -58,7 +58,7 @@ func (er *altSeasonFetcher) GetRate(ctx context.Context, payload any) int64 {
 		},
 		func(cctx context.Context, resp *http.Response) int64 {
 
-			if cctx.Err() != nil {
+			if cctx != nil && cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 

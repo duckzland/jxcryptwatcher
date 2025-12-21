@@ -183,7 +183,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 				m.dispatcher.Submit(func() {
 					defer func() {
-						if ctx.Err() != nil {
+						if ctx != nil && ctx.Err() != nil {
 							if onCancel != nil {
 								onCancel()
 							}
@@ -197,12 +197,12 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 						}
 					}()
 
-					if ctx.Err() != nil {
+					if ctx != nil && ctx.Err() != nil {
 						return
 					}
 
 					m.executeCall(ctx, k, payload, func(result FetchResultInterface) {
-						if ctx.Err() != nil {
+						if ctx != nil && ctx.Err() != nil {
 							return
 						}
 
@@ -241,7 +241,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 						}
 					}()
 
-					if ctx.Err() != nil || cancelled {
+					if ctx != nil && ctx.Err() != nil || cancelled {
 						return
 					}
 
@@ -249,7 +249,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 						mu.Lock()
 						defer mu.Unlock()
 
-						if ctx.Err() != nil || cancelled {
+						if ctx != nil && ctx.Err() != nil || cancelled {
 							return
 						}
 
@@ -408,7 +408,7 @@ func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setR
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if ctx.Err() != nil {
+	if ctx != nil && ctx.Err() != nil {
 		return
 	}
 

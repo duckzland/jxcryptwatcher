@@ -78,7 +78,7 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 			// Allow last chance cancel
 			time.Sleep(1 * time.Millisecond)
 
-			if ctx.Err() != nil {
+			if ctx != nil && ctx.Err() != nil {
 				return
 			}
 

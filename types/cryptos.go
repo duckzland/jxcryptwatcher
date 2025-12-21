@@ -160,7 +160,7 @@ func (c *cryptosLoaderType) GetCryptos(ctx context.Context, payload any) int64 {
 		func(url url.Values, req *http.Request) {},
 		func(cctx context.Context, resp *http.Response) int64 {
 
-			if cctx.Err() != nil {
+			if cctx != nil && cctx.Err() != nil {
 				return JC.NETWORKING_ERROR_CONNECTION
 			}
 
