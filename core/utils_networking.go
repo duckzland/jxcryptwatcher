@@ -15,6 +15,7 @@ import (
 )
 
 var httpClient = &http.Client{
+	Timeout: 15 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
 		MaxIdleConns:          20,
@@ -23,6 +24,10 @@ var httpClient = &http.Client{
 		ResponseHeaderTimeout: 10 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
 	},
 }
 

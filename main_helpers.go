@@ -283,6 +283,7 @@ func updateRates() bool {
 		},
 		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingRates()
+			defer JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
 
 			hasError := 0
 			successCount := 0
@@ -310,8 +311,6 @@ func updateRates() bool {
 			if successCount != 0 {
 				updateDisplay()
 			}
-
-			JC.UseWorker().Reset(JC.ACT_EXCHANGE_UPDATE_RATES)
 		},
 		func() {
 			JA.UseStatus().EndFetchingRates()
@@ -386,6 +385,7 @@ func updateTickers() bool {
 		},
 		func(results map[string]JC.FetchResultInterface) {
 			defer JA.UseStatus().EndFetchingTickers()
+			defer JC.UseWorker().Reset(JC.ACT_TICKER_UPDATE)
 
 			hasError := 0
 			successCount := 0
@@ -413,8 +413,6 @@ func updateTickers() bool {
 			if successCount > 0 {
 				updateTickerDisplay()
 			}
-
-			JC.UseWorker().Reset(JC.ACT_TICKER_UPDATE)
 		},
 		func() {
 			JA.UseStatus().EndFetchingTickers()
