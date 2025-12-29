@@ -18,15 +18,15 @@ var httpClient = &http.Client{
 	Timeout: 15 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
-		MaxIdleConns:          20,
-		MaxIdleConnsPerHost:   2,
-		IdleConnTimeout:       30 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
+		MaxIdleConns:          1,
+		MaxIdleConnsPerHost:   1,
+		IdleConnTimeout:       5 * time.Second,
+		ResponseHeaderTimeout: 5 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		DialContext: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 30 * time.Second,
+			Timeout:   5 * time.Second,
+			KeepAlive: 5 * time.Second,
 		}).DialContext,
 	},
 }

@@ -83,7 +83,7 @@ func (m *fetcher) Init() {
 	m.activeWorkers = make(map[string]context.CancelFunc)
 	m.destroyed = false
 	m.paused = false
-	m.dispatcher = NewDispatcher(50, 4, 500*time.Millisecond)
+	m.dispatcher = NewDispatcher(50, 15, 500*time.Millisecond)
 	m.dispatcher.Start()
 }
 
