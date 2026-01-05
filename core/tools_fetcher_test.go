@@ -11,7 +11,7 @@ func TestFetcherInit(t *testing.T) {
 	f := &fetcher{}
 	f.Init()
 
-	if f.fetchers == nil || f.delay == nil || f.conditions == nil || f.activeWorkers == nil || f.dispatcher == nil {
+	if f.fetchers == nil || f.conditions == nil || f.activeWorkers == nil || f.dispatcher == nil {
 		t.Error("Expected internal maps and dispatcher to be initialized")
 	}
 
@@ -44,7 +44,6 @@ func TestDispatch(t *testing.T) {
 	for key := range payloads {
 		f.Register(
 			key,
-			1,
 			NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 				return NewFetchResult(100, payload), nil
 			}),
@@ -76,7 +75,7 @@ func TestErrorHandling(t *testing.T) {
 	errMsg := errors.New("fetch failed")
 	done := make(chan error, 1)
 
-	f.Register("error", 1,
+	f.Register("error",
 		NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 			// handler sets the error on the result and returns the same error
 			res := NewFetchResult(500, nil)
@@ -110,7 +109,6 @@ func TestFetcherDestroy(t *testing.T) {
 
 	f.Register(
 		"destroyTest",
-		1,
 		NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 			return NewFetchResult(200, "ok"), nil
 		}),
@@ -129,9 +127,6 @@ func TestFetcherDestroy(t *testing.T) {
 
 	if f.fetchers != nil {
 		t.Error("Expected fetchers to be nil after destroy")
-	}
-	if f.delay != nil {
-		t.Error("Expected delay to be nil after destroy")
 	}
 	if f.conditions != nil {
 		t.Error("Expected conditions to be nil after destroy")

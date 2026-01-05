@@ -58,7 +58,6 @@ func (r *fetchResult) SetError(e error) {
 
 type fetcher struct {
 	fetchers      map[string]FetcherInterface
-	delay         map[string]time.Duration
 	conditions    map[string]func() bool
 	activeWorkers map[string]context.CancelFunc
 	mu            sync.Mutex
@@ -78,16 +77,16 @@ func (m *fetcher) Init() {
 	}
 
 	m.fetchers = make(map[string]FetcherInterface)
-	m.delay = make(map[string]time.Duration)
 	m.conditions = make(map[string]func() bool)
 	m.activeWorkers = make(map[string]context.CancelFunc)
 	m.destroyed = false
 	m.paused = false
-	m.dispatcher = NewDispatcher(50, 15, 500*time.Millisecond)
+	m.dispatcher = NewDispatcher(NETWORKING_MAXIMUM_CONNECTION*2, NETWORKING_MAXIMUM_CONNECTION, 50*time.Millisecond)
+	m.dispatcher.SetKey("Fetchers")
 	m.dispatcher.Start()
 }
 
-func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterface, conditions func() bool) {
+func (m *fetcher) Register(key string, fetcher FetcherInterface, conditions func() bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -100,7 +99,6 @@ func (m *fetcher) Register(key string, delaySeconds int64, fetcher FetcherInterf
 	}
 
 	m.fetchers[key] = fetcher
-	m.delay[key] = time.Duration(delaySeconds) * time.Second
 	m.conditions[key] = conditions
 }
 
@@ -345,7 +343,6 @@ func (m *fetcher) Destroy() {
 	m.dispatcher = nil
 	m.activeWorkers = nil
 	m.fetchers = nil
-	m.delay = nil
 	m.conditions = nil
 }
 
@@ -388,12 +385,6 @@ func (m *fetcher) internalDestroy(key string) {
 	if m.fetchers != nil {
 		if _, exists := m.fetchers[key]; exists {
 			delete(m.fetchers, key)
-		}
-	}
-
-	if m.delay != nil {
-		if _, exists := m.delay[key]; exists {
-			delete(m.delay, key)
 		}
 	}
 

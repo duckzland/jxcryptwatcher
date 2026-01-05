@@ -18,14 +18,14 @@ var httpClient = &http.Client{
 	Timeout: 15 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
-		MaxIdleConns:          1,
-		MaxIdleConnsPerHost:   1,
+		MaxIdleConns:          NETWORKING_MAXIMUM_CONNECTION,
+		MaxIdleConnsPerHost:   NETWORKING_MAXIMUM_CONNECTION,
 		IdleConnTimeout:       5 * time.Second,
 		ResponseHeaderTimeout: 5 * time.Second,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		DialContext: (&net.Dialer{
-			Timeout:   5 * time.Second,
+			Timeout:   20 * time.Second,
 			KeepAlive: 5 * time.Second,
 		}).DialContext,
 	},

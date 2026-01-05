@@ -498,12 +498,11 @@ func registerWorkers() {
 }
 
 func registerFetchers() {
-	var delay int64 = 100
 
 	JC.RegisterFetcherManager().Init()
 
 	JC.UseFetcher().Register(
-		JC.ACT_CRYPTO_GET_MAP, 0,
+		JC.ACT_CRYPTO_GET_MAP,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx, payload), nil), nil
@@ -529,7 +528,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeCMC100, delay,
+		JT.TickerTypeCMC100,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx, payload), nil), nil
@@ -558,7 +557,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeMarketCap, delay,
+		JT.TickerTypeMarketCap,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx, payload), nil), nil
@@ -587,7 +586,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeAltcoinIndex, delay,
+		JT.TickerTypeAltcoinIndex,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx, payload), nil), nil
@@ -616,7 +615,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeFearGreed, delay,
+		JT.TickerTypeFearGreed,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx, payload), nil), nil
@@ -645,7 +644,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeRSI, delay,
+		JT.TickerTypeRSI,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx, payload), nil), nil
@@ -674,7 +673,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeETF, delay,
+		JT.TickerTypeETF,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx, payload), nil), nil
@@ -703,7 +702,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JT.TickerTypeDominance, delay,
+		JT.TickerTypeDominance,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx, payload), nil), nil
@@ -732,7 +731,7 @@ func registerFetchers() {
 	)
 
 	JC.UseFetcher().Register(
-		JC.ACT_EXCHANGE_GET_RATES, delay,
+		JC.ACT_EXCHANGE_GET_RATES,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)

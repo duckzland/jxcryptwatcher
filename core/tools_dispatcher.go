@@ -18,6 +18,7 @@ type Dispatcher interface {
 	SetBufferSize(int)
 	SetDelayBetween(time.Duration)
 	SetMaxConcurrent(int)
+	SetKey(string)
 }
 
 var coreDispatcher *dispatcher = nil
@@ -34,6 +35,7 @@ type dispatcher struct {
 	drainer       func()
 	destroyed     bool
 	paused        bool
+	key           string
 }
 
 func (d *dispatcher) Init() {
@@ -68,7 +70,7 @@ func (d *dispatcher) Start() {
 		return
 	}
 
-	for i := 0; i < d.getMaxConcurrent(); i++ {
+	for i := 1; i <= d.getMaxConcurrent(); i++ {
 		if d.isDestroyed() {
 			return
 		}
@@ -78,6 +80,8 @@ func (d *dispatcher) Start() {
 		d.generated++
 		d.mu.Unlock()
 	}
+
+	Logf("Initializing Dispatcher [%s]: %d/%d", d.key, d.generated, d.getMaxConcurrent())
 }
 
 func (d *dispatcher) Pause() {
@@ -167,6 +171,12 @@ func (d *dispatcher) SetDelayBetween(delay time.Duration) {
 	d.delay = delay
 }
 
+func (d *dispatcher) SetKey(key string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.key = key
+}
+
 func (d *dispatcher) getDelay() time.Duration {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -242,23 +252,11 @@ func (d *dispatcher) worker(id int) {
 
 			}
 			if fn != nil {
+				// Logf("Dispatcher firing worker: [%s] %d", d.key, id)
+				fn()
+
 				delay := max(d.getDelay(), time.Millisecond)
-				timer := time.NewTimer(delay)
-
-				select {
-				case <-timer.C:
-					fn()
-
-				case <-ShutdownCtx.Done():
-					timer.Stop()
-					return
-
-				case <-d.ctx.Done():
-					timer.Stop()
-					return
-				}
-
-				timer.Stop()
+				time.Sleep(delay)
 			}
 
 		}
