@@ -15,17 +15,17 @@ import (
 )
 
 var httpClient = &http.Client{
-	Timeout: 15 * time.Second,
+	Timeout: 25 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
 		MaxIdleConns:          NETWORKING_MAXIMUM_CONNECTION,
 		MaxIdleConnsPerHost:   NETWORKING_MAXIMUM_CONNECTION,
 		IdleConnTimeout:       5 * time.Second,
-		ResponseHeaderTimeout: 5 * time.Second,
-		TLSHandshakeTimeout:   5 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 10 * time.Second,
 		DialContext: (&net.Dialer{
-			Timeout:   20 * time.Second,
+			Timeout:   25 * time.Second,
 			KeepAlive: 5 * time.Second,
 		}).DialContext,
 	},
