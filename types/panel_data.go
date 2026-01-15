@@ -333,10 +333,10 @@ func (p *panelDataType) Update(pk string) bool {
 	ck := UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
 
 	if UseExchangeCache().Has(ck) {
-		Data := UseExchangeCache().Get(ck)
-		if Data != nil && Data.TargetAmount != nil {
+		data := UseExchangeCache().Get(ck)
+		if data != nil && data.TargetAmount != nil {
 			pko := panelKeyType{value: npk}
-			npk = pko.UpdateValue(Data.TargetAmount)
+			npk = pko.UpdateValue(data.TargetAmount)
 		}
 	}
 

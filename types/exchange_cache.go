@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	"math/big"
-	"sync"
 	"time"
 
 	JC "jxwatcher/core"
@@ -30,60 +29,37 @@ type exchangeDataSnapshot struct {
 }
 
 type exchangeDataCacheType struct {
-	data          sync.Map
-	timestamp     time.Time
-	lastUpdated   *time.Time
-	recentUpdates map[string]*big.Float
-	mu            sync.RWMutex
+	JC.Database
 }
 
 func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
-	ec.data = sync.Map{}
-	ec.recentUpdates = make(map[string]*big.Float, 30)
-	ec.SetTimestamp(time.Now())
-	ec.SetLastUpdated(nil)
+	ec.Reset()
+
 	return ec
 }
 
-func (ec *exchangeDataCacheType) GetTimestamp() time.Time {
-	ec.mu.RLock()
-	defer ec.mu.RUnlock()
-	return ec.timestamp
-}
-
-func (ec *exchangeDataCacheType) SetTimestamp(t time.Time) {
-	ec.mu.Lock()
-	ec.timestamp = t
-	ec.mu.Unlock()
-}
-
-func (ec *exchangeDataCacheType) GetLastUpdated() *time.Time {
-	ec.mu.RLock()
-	defer ec.mu.RUnlock()
-	return ec.lastUpdated
-}
-
-func (ec *exchangeDataCacheType) SetLastUpdated(t *time.Time) {
-	ec.mu.Lock()
-	ec.lastUpdated = t
-	ec.mu.Unlock()
-}
-
 func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
-	ec.mu.Lock()
-	defer ec.mu.Unlock()
+	updates := make(map[string]*big.Float)
 
-	updates := make(map[string]*big.Float, len(ec.recentUpdates))
-	for k, v := range ec.recentUpdates {
+	ec.RangeRecentUpdates(func(key, value any) bool {
+		k, ok1 := key.(string)
+		v, ok2 := value.(*big.Float)
+		if !ok1 || !ok2 || v == nil {
+			ec.DeleteRecentUpdates(key)
+			return true
+		}
+
+		// copy value to avoid sharing mutable big.Float
 		updates[k] = new(big.Float).Copy(v)
-		delete(ec.recentUpdates, k)
-	}
+		ec.DeleteRecentUpdates(key)
+		return true
+	})
 
 	return updates
 }
 
 func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
-	if val, ok := ec.data.Load(ck); ok {
+	if val, ok := ec.Load(ck); ok {
 		ex := val.(exchangeDataType)
 		return &ex
 	}
@@ -93,60 +69,21 @@ func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCacheType {
 	ck := ec.CreateKeyFromExchangeData(ex)
 
-	if oldVal, ok := ec.data.Load(ck); ok {
+	if oldVal, ok := ec.Load(ck); ok {
 		old := oldVal.(exchangeDataType)
 		if old.SourceAmount != ex.SourceAmount || old.TargetAmount.Cmp(ex.TargetAmount) != 0 {
-			ec.mu.Lock()
-			ec.recentUpdates[ck] = ex.TargetAmount
-			ec.mu.Unlock()
+			ec.StoreRecentUpdates(ck, ex.TargetAmount)
 		}
 	} else {
-		ec.mu.Lock()
-		ec.recentUpdates[ck] = ex.TargetAmount
-		ec.mu.Unlock()
+		ec.StoreRecentUpdates(ck, ex.TargetAmount)
 	}
 
-	ec.data.Store(ck, *ex)
-	ec.SetTimestamp(time.Now())
+	ec.Store(ck, *ex)
+	now := time.Now()
+	ec.SetTimestamp(now)
 	ec.SetLastUpdated(&ex.Timestamp)
+
 	return ec
-}
-
-func (ec *exchangeDataCacheType) Remove(ck string) *exchangeDataCacheType {
-	ec.data.Delete(ck)
-	ec.SetTimestamp(time.Now())
-	return ec
-}
-
-func (ec *exchangeDataCacheType) SoftReset() *exchangeDataCacheType {
-	ec.SetTimestamp(time.Now())
-	ec.SetLastUpdated(nil)
-	return ec
-}
-
-func (ec *exchangeDataCacheType) Reset() *exchangeDataCacheType {
-	ec.data = sync.Map{}
-	ec.SetTimestamp(time.Now())
-	ec.SetLastUpdated(nil)
-	return ec
-}
-
-func (ec *exchangeDataCacheType) Has(ck string) bool {
-	d, ok := ec.data.Load(ck)
-	return ok && d != nil
-}
-
-func (ec *exchangeDataCacheType) HasData() bool {
-	isEmpty := true
-	ec.data.Range(func(_, _ interface{}) bool {
-		isEmpty = false
-		return false
-	})
-	return !isEmpty
-}
-
-func (ec *exchangeDataCacheType) IsEmpty() bool {
-	return !ec.HasData()
 }
 
 func (ec *exchangeDataCacheType) ShouldRefresh() bool {
@@ -161,7 +98,7 @@ func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 	var result []exchangeDataSnapshot
 	cutoff := time.Now().Add(-24 * time.Hour)
 
-	ec.data.Range(func(_, value any) bool {
+	ec.Range(func(_, value any) bool {
 		if ex, ok := value.(exchangeDataType); ok {
 			if ex.Timestamp.After(cutoff) && ex.TargetAmount != nil {
 				raw := ex.TargetAmount.Text('g', -1)
@@ -205,7 +142,9 @@ func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 }
 
 func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
-	ec.data = sync.Map{}
+
+	ec.Reset()
+
 	cutoff := time.Now().Add(-24 * time.Hour)
 
 	for _, snap := range snapshot.Data {
@@ -226,7 +165,7 @@ func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 			}
 
 			ck := ec.CreateKeyFromExchangeData(&ex)
-			ec.data.Store(ck, ex)
+			ec.Store(ck, ex)
 		}
 	}
 
@@ -252,7 +191,7 @@ func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
 
 func RegisterExchangeCache() *exchangeDataCacheType {
 	if exchangeCacheStorage == nil {
-		exchangeCacheStorage = &exchangeDataCacheType{}
+		exchangeCacheStorage = (&exchangeDataCacheType{}).Init()
 	}
 	return exchangeCacheStorage
 }
