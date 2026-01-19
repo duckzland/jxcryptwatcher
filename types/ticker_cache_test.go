@@ -75,7 +75,7 @@ func TestTickerCacheResetAndSoftReset(t *testing.T) {
 	tc.Insert("ETH", "3100", time.Now())
 
 	tc.SoftReset()
-	if tc.GetLastUpdated() != nil {
+	if tc.IsUpdatedAt() != nil {
 		t.Error("Expected lastUpdated to be nil after SoftReset")
 	}
 

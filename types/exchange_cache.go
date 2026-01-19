@@ -8,14 +8,11 @@ import (
 	JC "jxwatcher/core"
 )
 
-const exchangeCacheUpdateThreshold = 10 * time.Second
-
 var exchangeCacheStorage *exchangeDataCacheType = nil
 
 type exchangeDataCacheSnapshot struct {
-	Data        []exchangeDataSnapshot `json:"data"`
-	Timestamp   time.Time              `json:"timestamp"`
-	LastUpdated time.Time              `json:"last_updated"`
+	Data      []exchangeDataSnapshot `json:"data"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 type exchangeDataSnapshot struct {
@@ -35,23 +32,25 @@ type exchangeDataCacheType struct {
 func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
 	ec.Reset()
 
+	ec.SetUpdateTreshold(10 * time.Second)
+
 	return ec
 }
 
 func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
 	updates := make(map[string]*big.Float)
 
-	ec.RangeRecentUpdates(func(key, value any) bool {
+	ec.UseUpdates().Range(func(key, value any) bool {
 		k, ok1 := key.(string)
 		v, ok2 := value.(*big.Float)
 		if !ok1 || !ok2 || v == nil {
-			ec.DeleteRecentUpdates(key)
+			ec.UseUpdates().Delete(key)
 			return true
 		}
 
 		// copy value to avoid sharing mutable big.Float
 		updates[k] = new(big.Float).Copy(v)
-		ec.DeleteRecentUpdates(key)
+		ec.UseUpdates().Delete(key)
 		return true
 	})
 
@@ -59,7 +58,7 @@ func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
 }
 
 func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
-	if val, ok := ec.Load(ck); ok {
+	if val, ok := ec.UseData().Load(ck); ok {
 		ex := val.(exchangeDataType)
 		return &ex
 	}
@@ -69,36 +68,26 @@ func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCacheType {
 	ck := ec.CreateKeyFromExchangeData(ex)
 
-	if oldVal, ok := ec.Load(ck); ok {
+	if oldVal, ok := ec.UseData().Load(ck); ok {
 		old := oldVal.(exchangeDataType)
 		if old.SourceAmount != ex.SourceAmount || old.TargetAmount.Cmp(ex.TargetAmount) != 0 {
-			ec.StoreRecentUpdates(ck, ex.TargetAmount)
+			ec.UseUpdates().Store(ck, ex.TargetAmount)
 		}
 	} else {
-		ec.StoreRecentUpdates(ck, ex.TargetAmount)
+		ec.UseUpdates().Store(ck, ex.TargetAmount)
 	}
 
-	ec.Store(ck, *ex)
-	now := time.Now()
-	ec.SetTimestamp(now)
-	ec.SetLastUpdated(&ex.Timestamp)
+	ec.UseData().Store(ck, *ex)
+	ec.UpdatedAt(&ex.Timestamp)
 
 	return ec
-}
-
-func (ec *exchangeDataCacheType) ShouldRefresh() bool {
-	last := ec.GetLastUpdated()
-	if last == nil {
-		return true
-	}
-	return time.Now().After(last.Add(exchangeCacheUpdateThreshold))
 }
 
 func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 	var result []exchangeDataSnapshot
 	cutoff := time.Now().Add(-24 * time.Hour)
 
-	ec.Range(func(_, value any) bool {
+	ec.UseData().Range(func(_, value any) bool {
 		if ex, ok := value.(exchangeDataType); ok {
 			if ex.Timestamp.After(cutoff) && ex.TargetAmount != nil {
 				raw := ex.TargetAmount.Text('g', -1)
@@ -127,17 +116,15 @@ func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
 		return true
 	})
 
-	timestamp := ec.GetTimestamp()
-	last := ec.GetLastUpdated()
+	last := ec.IsUpdatedAt()
 	var lastUpdated time.Time
 	if last != nil {
 		lastUpdated = *last
 	}
 
 	return exchangeDataCacheSnapshot{
-		Data:        result,
-		Timestamp:   timestamp,
-		LastUpdated: lastUpdated,
+		Data:      result,
+		Timestamp: lastUpdated,
 	}
 }
 
@@ -165,12 +152,11 @@ func (ec *exchangeDataCacheType) Hydrate(snapshot exchangeDataCacheSnapshot) {
 			}
 
 			ck := ec.CreateKeyFromExchangeData(&ex)
-			ec.Store(ck, ex)
+			ec.UseData().Store(ck, ex)
 		}
 	}
 
-	ec.SetTimestamp(snapshot.Timestamp)
-	ec.SetLastUpdated(&snapshot.LastUpdated)
+	ec.UpdatedAt(&snapshot.Timestamp)
 }
 
 func (ec *exchangeDataCacheType) CreateKeyFromExchangeData(ex *exchangeDataType) string {

@@ -135,7 +135,7 @@ func TestExchangeCacheSoftResetAndReset(t *testing.T) {
 	})
 
 	cache.SoftReset()
-	if cache.GetLastUpdated() != nil {
+	if cache.IsUpdatedAt() != nil {
 		t.Error("Expected lastUpdated to be nil after SoftReset")
 	}
 
@@ -157,13 +157,13 @@ func TestExchangeCacheShouldRefresh(t *testing.T) {
 	}
 
 	past := time.Now().Add(-30 * time.Second)
-	cache.SetLastUpdated(&past)
+	cache.UpdatedAt(&past)
 	if !cache.ShouldRefresh() {
 		t.Error("Expected ShouldRefresh to be true when lastUpdated is stale")
 	}
 
 	recent := time.Now()
-	cache.SetLastUpdated(&recent)
+	cache.UpdatedAt(&recent)
 	if cache.ShouldRefresh() {
 		t.Error("Expected ShouldRefresh to be false when lastUpdated is recent")
 	}
