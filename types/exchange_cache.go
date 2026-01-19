@@ -29,12 +29,9 @@ type exchangeDataCacheType struct {
 	JC.Database
 }
 
-func (ec *exchangeDataCacheType) Init() *exchangeDataCacheType {
+func (ec *exchangeDataCacheType) Init() {
 	ec.Reset()
-
 	ec.SetUpdateTreshold(10 * time.Second)
-
-	return ec
 }
 
 func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
@@ -65,7 +62,7 @@ func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 	return nil
 }
 
-func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCacheType {
+func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) {
 	ck := ec.CreateKeyFromExchangeData(ex)
 
 	if oldVal, ok := ec.UseData().Load(ck); ok {
@@ -79,8 +76,6 @@ func (ec *exchangeDataCacheType) Insert(ex *exchangeDataType) *exchangeDataCache
 
 	ec.UseData().Store(ck, *ex)
 	ec.UpdatedAt(&ex.Timestamp)
-
-	return ec
 }
 
 func (ec *exchangeDataCacheType) Serialize() exchangeDataCacheSnapshot {
@@ -177,7 +172,8 @@ func NewExchangeDataCacheSnapshot() *exchangeDataCacheSnapshot {
 
 func RegisterExchangeCache() *exchangeDataCacheType {
 	if exchangeCacheStorage == nil {
-		exchangeCacheStorage = (&exchangeDataCacheType{}).Init()
+		exchangeCacheStorage = &exchangeDataCacheType{}
+		exchangeCacheStorage.Init()
 	}
 	return exchangeCacheStorage
 }

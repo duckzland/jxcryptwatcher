@@ -28,7 +28,8 @@ func TestTickerCacheInsertAndGet(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	tc := RegisterTickerCache().Init()
+	tc := RegisterTickerCache()
+	tc.Init()
 	now := time.Now()
 
 	tc.Insert("BTC", "42000", now)
@@ -71,7 +72,8 @@ func TestTickerCacheResetAndSoftReset(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	tc := RegisterTickerCache().Init()
+	tc := RegisterTickerCache()
+	tc.Init()
 	tc.Insert("ETH", "3100", time.Now())
 
 	tc.SoftReset()
@@ -92,7 +94,8 @@ func TestTickerCacheSerializeAndHydrate(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	tc := RegisterTickerCache().Init()
+	tc := RegisterTickerCache()
+	tc.Init()
 	now := time.Now()
 	tc.Insert("SOL", "19.5", now)
 
@@ -101,7 +104,8 @@ func TestTickerCacheSerializeAndHydrate(t *testing.T) {
 		t.Errorf("Expected 1 entry in snapshot, got %d", len(snapshot.Data))
 	}
 
-	newCache := (&tickerDataCacheType{}).Init()
+	newCache := &tickerDataCacheType{}
+	newCache.Init()
 	newCache.Hydrate(snapshot)
 	if newCache.Get("SOL") != "19.5" {
 		t.Error("Hydration failed to restore value")
@@ -114,7 +118,8 @@ func TestTickerCacheGetRecentUpdates(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	tc := RegisterTickerCache().Init()
+	tc := RegisterTickerCache()
+	tc.Init()
 	now := time.Now()
 
 	tc.Insert("BTC", "42000", now)

@@ -30,7 +30,8 @@ func TestExchangeCacheInsertAndGet(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	cache := (&exchangeDataCacheType{}).Init()
+	cache := &exchangeDataCacheType{}
+	cache.Init()
 	now := time.Now()
 
 	ex := &exchangeDataType{
@@ -91,7 +92,8 @@ func TestExchangeCacheSerializeAndHydrate(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	cache := (&exchangeDataCacheType{}).Init()
+	cache := &exchangeDataCacheType{}
+	cache.Init()
 	now := time.Now()
 
 	ex := &exchangeDataType{
@@ -106,7 +108,8 @@ func TestExchangeCacheSerializeAndHydrate(t *testing.T) {
 	cache.Insert(ex)
 
 	snapshot := cache.Serialize()
-	newCache := (&exchangeDataCacheType{}).Init()
+	newCache := &exchangeDataCacheType{}
+	newCache.Init()
 	newCache.Hydrate(snapshot)
 
 	key := newCache.CreateKeyFromExchangeData(ex)
@@ -123,7 +126,8 @@ func TestExchangeCacheSoftResetAndReset(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	cache := (&exchangeDataCacheType{}).Init()
+	cache := &exchangeDataCacheType{}
+	cache.Init()
 	cache.Insert(&exchangeDataType{
 		SourceSymbol: "BTC",
 		SourceId:     1,
@@ -151,7 +155,8 @@ func TestExchangeCacheShouldRefresh(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	cache := (&exchangeDataCacheType{}).Init()
+	cache := &exchangeDataCacheType{}
+	cache.Init()
 	if !cache.ShouldRefresh() {
 		t.Error("Expected ShouldRefresh to be true when lastUpdated is nil")
 	}
@@ -175,7 +180,8 @@ func TestExchangeCacheRecentUpdates(t *testing.T) {
 	t.Setenv("FYNE_STORAGE", t.TempDir())
 	test.NewApp()
 
-	cache := (&exchangeDataCacheType{}).Init()
+	cache := &exchangeDataCacheType{}
+	cache.Init()
 	now := time.Now()
 
 	ex1 := &exchangeDataType{

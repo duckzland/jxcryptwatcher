@@ -22,10 +22,9 @@ type tickerDataCacheType struct {
 	JC.Database
 }
 
-func (tc *tickerDataCacheType) Init() *tickerDataCacheType {
+func (tc *tickerDataCacheType) Init() {
 	tc.Reset()
 	tc.SetUpdateTreshold(10 * time.Second)
-	return tc
 }
 
 func (tc *tickerDataCacheType) Get(key string) string {
@@ -49,7 +48,7 @@ func (tc *tickerDataCacheType) GetRecentUpdates() map[string]string {
 	return updates
 }
 
-func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *tickerDataCacheType {
+func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) {
 	if oldVal, ok := tc.UseData().Load(key); ok {
 		old := oldVal.(string)
 		if old != value {
@@ -63,7 +62,6 @@ func (tc *tickerDataCacheType) Insert(key, value string, timestamp time.Time) *t
 
 	tc.UseData().Store(key, value)
 	tc.UpdatedAt(&timestamp)
-	return tc
 }
 
 func (tc *tickerDataCacheType) Serialize() tickerDataCacheSnapshot {
@@ -110,6 +108,7 @@ func NewTickerDataCacheSnapshot() *tickerDataCacheSnapshot {
 func RegisterTickerCache() *tickerDataCacheType {
 	if tickerCacheStorage == nil {
 		tickerCacheStorage = &tickerDataCacheType{}
+		tickerCacheStorage.Init()
 	}
 
 	return tickerCacheStorage
