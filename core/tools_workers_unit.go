@@ -23,13 +23,12 @@ type workerUnit struct {
 
 func (w *workerUnit) Call(payload any) {
 	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	fn := w.fn
-
 	if w.destroyed || !w.active {
+		w.mu.Unlock()
 		return
 	}
+	fn := w.fn
+	w.mu.Unlock()
 
 	if fn != nil {
 		fn(payload)
@@ -38,15 +37,16 @@ func (w *workerUnit) Call(payload any) {
 
 func (w *workerUnit) Flush() {
 	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if w.destroyed {
+		w.mu.Unlock()
 		return
 	}
+	q := w.queue
+	w.mu.Unlock()
 
 	for {
 		select {
-		case <-w.queue:
+		case <-q:
 		default:
 			return
 		}
@@ -112,31 +112,49 @@ func (w *workerUnit) Stop() {
 func (w *workerUnit) Reset() {
 	w.Flush()
 
-	if w.active {
+	w.mu.Lock()
+	active := w.active
+	w.mu.Unlock()
+
+	if active {
 		w.Stop()
 		w.Start()
 	}
 }
 
-func (w *workerUnit) newTicker() *time.Ticker {
-	if w.interval > 0 {
-		return time.NewTicker(w.interval)
+func (w *workerUnit) newTicker() (<-chan time.Time, func()) {
+	w.mu.Lock()
+	interval := w.interval
+	w.mu.Unlock()
+
+	if interval <= 0 {
+		return nil, func() {}
 	}
-	return &time.Ticker{C: make(chan time.Time)}
+
+	t := time.NewTicker(interval)
+	return t.C, func() { t.Stop() }
 }
 
 func (w *workerUnit) worker() {
 
-	ticker := w.newTicker()
+	tickC, stop := w.newTicker()
 
-	defer ticker.Stop()
-	defer w.cancel()
+	defer stop()
+	defer func() {
+		w.mu.Lock()
+		cancel := w.cancel
+		w.mu.Unlock()
+		if cancel != nil {
+			cancel()
+		}
+	}()
 
 	for {
 		w.mu.Lock()
 		ctx := w.ctx
 		delay := w.delay
 		active := w.active
+		queue := w.queue
 		w.mu.Unlock()
 
 		if ctx == nil || !active {
@@ -150,10 +168,10 @@ func (w *workerUnit) worker() {
 		case <-ctx.Done():
 			return
 
-		case <-ticker.C:
+		case <-tickC:
 			w.Push(nil)
 
-		case x, ok := <-w.queue:
+		case x, ok := <-queue:
 			if !ok {
 				return
 			}
@@ -161,6 +179,10 @@ func (w *workerUnit) worker() {
 			if delay > 0 {
 				time.Sleep(delay)
 			}
+
+			w.mu.Lock()
+			active = w.active
+			w.mu.Unlock()
 
 			if active == false {
 				return

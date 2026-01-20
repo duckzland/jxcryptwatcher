@@ -62,18 +62,22 @@ func (d *dispatcher) Init() {
 }
 
 func (d *dispatcher) Start() {
+
+	max := d.getMaxConcurrent()
+
 	d.mu.Lock()
 	generated := d.generated
 	d.mu.Unlock()
 
-	if generated == d.getMaxConcurrent() {
+	if generated == max {
 		return
 	}
 
-	for i := 1; i <= d.getMaxConcurrent(); i++ {
+	for i := 1; i <= max; i++ {
 		if d.isDestroyed() {
 			return
 		}
+
 		go d.worker(i)
 
 		d.mu.Lock()
@@ -81,7 +85,7 @@ func (d *dispatcher) Start() {
 		d.mu.Unlock()
 	}
 
-	Logf("Initializing Dispatcher [%s]: %d/%d", d.key, d.generated, d.getMaxConcurrent())
+	Logf("Initializing Dispatcher [%s]: %d/%d", d.key, d.generated, d.maxConcurrent)
 }
 
 func (d *dispatcher) Pause() {
@@ -99,8 +103,19 @@ func (d *dispatcher) Resume() {
 
 func (d *dispatcher) Drain() {
 	for {
+		d.mu.Lock()
+		q := d.queue
+		d.mu.Unlock()
+
+		if q == nil {
+			if d.hasDrainer() {
+				d.drainer()
+			}
+			return
+		}
+
 		select {
-		case <-d.getQueue():
+		case <-q:
 		default:
 			if d.hasDrainer() {
 				d.drainer()
@@ -112,6 +127,10 @@ func (d *dispatcher) Drain() {
 
 func (d *dispatcher) Submit(fn func()) {
 	if d.isPaused() {
+		return
+	}
+
+	if d.isDestroyed() {
 		return
 	}
 
@@ -244,11 +263,20 @@ func (d *dispatcher) worker(id int) {
 			return
 		}
 
+		d.mu.Lock()
+		ctx := d.ctx
+		d.mu.Unlock()
+
+		var ctxDone <-chan struct{}
+		if ctx != nil {
+			ctxDone = ctx.Done()
+		}
+
 		select {
 		case <-ShutdownCtx.Done():
 			return
 
-		case <-d.ctx.Done():
+		case <-ctxDone:
 			return
 
 		case fn, ok := <-q:

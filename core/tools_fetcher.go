@@ -70,9 +70,8 @@ var fetcherManager *fetcher = nil
 
 func (m *fetcher) Init() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if m.fetchers != nil || m.activeWorkers != nil || m.dispatcher != nil {
+		m.mu.Unlock()
 		return
 	}
 
@@ -82,6 +81,8 @@ func (m *fetcher) Init() {
 	m.destroyed = false
 	m.paused = false
 	m.dispatcher = NewDispatcher(NETWORKING_MAXIMUM_CONNECTION*2, NETWORKING_MAXIMUM_CONNECTION, 50*time.Millisecond)
+	m.mu.Unlock()
+
 	m.dispatcher.SetKey("Fetchers")
 	m.dispatcher.Start()
 }
@@ -111,9 +112,9 @@ func (m *fetcher) Deregister(key string) {
 
 func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob int), onSuccess func(map[string]FetchResultInterface), onCancel func()) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	if m.destroyed || m.paused {
+		m.mu.Unlock()
 		return
 	}
 
@@ -131,10 +132,6 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		mapKey += key + strings.Join(items, "|")
 	}
 
-	if preprocess != nil {
-		preprocess(total)
-	}
-
 	if oldCancel, exists := m.activeWorkers[mapKey]; exists {
 		oldCancel()
 		delete(m.activeWorkers, mapKey)
@@ -142,6 +139,11 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.activeWorkers[mapKey] = cancel
+	m.mu.Unlock()
+
+	if preprocess != nil {
+		preprocess(total)
+	}
 
 	if total == 0 {
 		cancel()
@@ -150,9 +152,11 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			onCancel()
 		}
 
+		m.mu.Lock()
 		if m.activeWorkers != nil {
 			delete(m.activeWorkers, mapKey)
 		}
+		m.mu.Unlock()
 
 		return
 	}
@@ -190,9 +194,11 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 						cancel()
 
+						m.mu.Lock()
 						if m.activeWorkers != nil {
 							delete(m.activeWorkers, mapKey)
 						}
+						m.mu.Unlock()
 					}()
 
 					if ctx != nil && ctx.Err() != nil {
@@ -221,9 +227,13 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		mu := sync.Mutex{}
 		cancelled := false
 		done := make(chan struct{}, total)
+		m.mu.Lock()
+		conditions := m.conditions
+		m.mu.Unlock()
 
 		for key, items := range payloads {
-			if cond, ok := m.conditions[key]; ok && cond != nil && !cond() {
+
+			if cond, ok := conditions[key]; ok && cond != nil && !cond() {
 				continue
 			}
 
@@ -257,13 +267,20 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			}
 		}
 
-		if m.paused || m.destroyed {
+		m.mu.Lock()
+		paused := m.paused
+		destroyed := m.destroyed
+		m.mu.Unlock()
+
+		if paused || destroyed {
 			cancelled = true
 			cancel()
 
+			m.mu.Lock()
 			if m.activeWorkers != nil {
 				delete(m.activeWorkers, mapKey)
 			}
+			m.mu.Unlock()
 
 			if onCancel != nil {
 				onCancel()
@@ -276,14 +293,13 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 		go func(ctx context.Context, mapKey string) {
 			defer func() {
-				m.mu.Lock()
-				defer m.mu.Unlock()
-
 				cancel()
 
+				m.mu.Lock()
 				if m.activeWorkers != nil {
 					delete(m.activeWorkers, mapKey)
 				}
+				m.mu.Unlock()
 
 				if cancelled {
 					if onCancel != nil {
@@ -324,9 +340,8 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 func (m *fetcher) Destroy() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if m.destroyed {
+		m.mu.Unlock()
 		return
 	}
 
@@ -336,20 +351,24 @@ func (m *fetcher) Destroy() {
 		m.internalDestroy(key)
 	}
 
-	if m.dispatcher != nil {
-		m.dispatcher.Destroy()
+	dispatcher := m.dispatcher
+
+	m.mu.Unlock()
+
+	if dispatcher != nil {
+		dispatcher.Destroy()
 	}
 
+	m.mu.Lock()
 	m.dispatcher = nil
 	m.activeWorkers = nil
 	m.fetchers = nil
 	m.conditions = nil
+	m.mu.Unlock()
 }
 
 func (m *fetcher) Pause() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	for key, cancel := range m.activeWorkers {
 		if cancel != nil {
 			cancel()
@@ -359,15 +378,15 @@ func (m *fetcher) Pause() {
 	}
 
 	m.paused = true
+	m.mu.Unlock()
 
 	m.dispatcher.Pause()
 }
 
 func (m *fetcher) Resume() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.paused = false
+	m.mu.Unlock()
 
 	m.dispatcher.Resume()
 }
@@ -397,13 +416,13 @@ func (m *fetcher) internalDestroy(key string) {
 
 func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if ctx != nil && ctx.Err() != nil {
+		m.mu.Unlock()
 		return
 	}
 
 	f := m.fetchers[key]
+	m.mu.Unlock()
 
 	if f != nil {
 		f.Fetch(ctx, payload, func(result FetchResultInterface) {
@@ -416,7 +435,6 @@ func (m *fetcher) executeCall(ctx context.Context, key string, payload any, setR
 	r := NewFetchResult(-1, nil)
 	r.SetSource(key)
 	r.SetError(fmt.Errorf("no fetcher for key %s", key))
-
 	setResult(r)
 }
 
