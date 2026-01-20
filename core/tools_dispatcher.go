@@ -202,8 +202,8 @@ func (d *dispatcher) hasQueue() bool {
 }
 
 func (d *dispatcher) hasDrainer() bool {
-	defer d.mu.Unlock()
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.drainer != nil
 }
 
@@ -239,6 +239,11 @@ func (d *dispatcher) worker(id int) {
 			return
 		}
 
+		q := d.getQueue()
+		if q == nil {
+			return
+		}
+
 		select {
 		case <-ShutdownCtx.Done():
 			return
@@ -246,7 +251,7 @@ func (d *dispatcher) worker(id int) {
 		case <-d.ctx.Done():
 			return
 
-		case fn, ok := <-d.getQueue():
+		case fn, ok := <-q:
 			if !ok || d.isDestroyed() {
 				return
 
