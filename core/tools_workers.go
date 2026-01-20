@@ -39,7 +39,6 @@ func (w *worker) Init() {
 }
 
 func (w *worker) Register(key string, size int, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-	var oldUnit *workerUnit
 
 	w.mu.Lock()
 	if w.destroyed {
@@ -48,7 +47,9 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 	}
 
 	if existing, registered := w.registry[key]; registered {
-		oldUnit = existing
+		w.mu.Unlock()
+		existing.Destroy()
+		w.mu.Lock()
 		w.internalDeleteKey(key)
 	}
 
@@ -86,10 +87,6 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 
 	w.registry[key] = unit
 	w.mu.Unlock()
-
-	if oldUnit != nil {
-		oldUnit.Destroy()
-	}
 
 	unit.Start()
 }

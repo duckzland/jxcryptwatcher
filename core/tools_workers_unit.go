@@ -122,29 +122,28 @@ func (w *workerUnit) Reset() {
 	}
 }
 
-func (w *workerUnit) newTicker() (<-chan time.Time, func()) {
+func (w *workerUnit) newTicker() *time.Ticker {
 	w.mu.Lock()
 	interval := w.interval
 	w.mu.Unlock()
 
-	if interval <= 0 {
-		return nil, func() {}
+	if interval > 0 {
+		return time.NewTicker(interval)
 	}
-
-	t := time.NewTicker(interval)
-	return t.C, func() { t.Stop() }
+	return &time.Ticker{C: make(chan time.Time)}
 }
 
 func (w *workerUnit) worker() {
 
-	tickC, stop := w.newTicker()
+	ticker := w.newTicker()
 
-	defer stop()
+	defer ticker.Stop()
 	defer func() {
 		w.mu.Lock()
 		cancel := w.cancel
+		active := w.active
 		w.mu.Unlock()
-		if cancel != nil {
+		if cancel != nil && !active {
 			cancel()
 		}
 	}()
@@ -168,7 +167,7 @@ func (w *workerUnit) worker() {
 		case <-ctx.Done():
 			return
 
-		case <-tickC:
+		case <-ticker.C:
 			w.Push(nil)
 
 		case x, ok := <-queue:
@@ -184,7 +183,7 @@ func (w *workerUnit) worker() {
 			active = w.active
 			w.mu.Unlock()
 
-			if active == false {
+			if !active {
 				return
 			}
 
