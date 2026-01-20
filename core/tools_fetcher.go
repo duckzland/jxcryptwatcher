@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -225,7 +226,9 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 		results := make(map[string]FetchResultInterface)
 		mu := sync.Mutex{}
-		cancelled := false
+		var cancelled atomic.Bool
+		cancelled.Store(false)
+
 		done := make(chan struct{}, total)
 		m.mu.Lock()
 		conditions := m.conditions
@@ -244,12 +247,12 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 				m.dispatcher.Submit(func() {
 					defer func() {
-						if !cancelled {
+						if !cancelled.Load() {
 							done <- struct{}{}
 						}
 					}()
 
-					if ctx != nil && ctx.Err() != nil || cancelled {
+					if (ctx != nil && ctx.Err() != nil) || cancelled.Load() {
 						return
 					}
 
@@ -257,7 +260,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 						mu.Lock()
 						defer mu.Unlock()
 
-						if ctx != nil && ctx.Err() != nil || cancelled {
+						if (ctx != nil && ctx.Err() != nil) || cancelled.Load() {
 							return
 						}
 
@@ -273,7 +276,8 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		m.mu.Unlock()
 
 		if paused || destroyed {
-			cancelled = true
+			cancelled.Store(true)
+
 			cancel()
 
 			m.mu.Lock()
@@ -301,7 +305,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 				}
 				m.mu.Unlock()
 
-				if cancelled {
+				if cancelled.Load() {
 					if onCancel != nil {
 						onCancel()
 					}
@@ -315,11 +319,11 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			for {
 				select {
 				case <-ShutdownCtx.Done():
-					cancelled = true
+					cancelled.Store(true)
 					return
 
 				case <-ctx.Done():
-					cancelled = true
+					cancelled.Store(true)
 					return
 
 				case <-done:
