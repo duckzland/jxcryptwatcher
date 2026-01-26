@@ -3,65 +3,64 @@ package core
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 var coreDebouncer *debouncer
 
 type debouncer struct {
-	mu          sync.Mutex
-	generations map[string]int
-	callbacks   map[string]func()
-	cancelMap   map[string]context.CancelFunc
-	destroyed   bool
+	generations sync.Map
+	callbacks   sync.Map
+	cancelMap   sync.Map
+	destroyed   atomic.Bool
 }
 
 func (d *debouncer) Init() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.generations = make(map[string]int)
-	d.callbacks = make(map[string]func())
-	d.cancelMap = make(map[string]context.CancelFunc)
-	d.destroyed = false
+	d.destroyed.Store(false)
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
-	defer d.mu.Unlock()
-	d.mu.Lock()
-
-	if d.destroyed {
+	if d.destroyed.Load() {
 		return
 	}
 
-	if d.generations[key] > 1000000 {
-		d.generations[key] = 0
+	var genCounter *atomic.Int64
+	if val, ok := d.generations.Load(key); ok {
+		genCounter = val.(*atomic.Int64)
+	} else {
+		genCounter = &atomic.Int64{}
+		d.generations.Store(key, genCounter)
 	}
-	d.generations[key]++
-	gen := d.generations[key]
 
-	if cancel, exists := d.cancelMap[key]; exists {
-		cancel()
-		delete(d.cancelMap, key)
-		delete(d.callbacks, key)
+	if genCounter.Load() > 1000000 {
+		genCounter.Store(0)
+	}
+
+	gen := genCounter.Add(1)
+
+	if cancelAny, ok := d.cancelMap.Load(key); ok {
+		cancelAny.(context.CancelFunc)()
+		d.cancelMap.Delete(key)
+		d.callbacks.Delete(key)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	d.cancelMap[key] = cancel
-	d.callbacks[key] = fn
+	d.cancelMap.Store(key, cancel)
+	d.callbacks.Store(key, fn)
 
 	timer := time.NewTimer(delay)
 
-	go func(gen int, ctx context.Context, cancel context.CancelFunc, timer *time.Timer) {
+	go func(gen int64, ctx context.Context, cancel context.CancelFunc, timer *time.Timer) {
 		defer func() {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-
 			cancel()
 
-			currentGen := d.generations[key]
-			if gen == currentGen {
-				delete(d.cancelMap, key)
-				delete(d.callbacks, key)
+			if val, ok := d.generations.Load(key); ok {
+				currentGen := val.(*atomic.Int64).Load()
+				if gen == currentGen {
+					d.cancelMap.Delete(key)
+					d.callbacks.Delete(key)
+				}
 			}
 
 			if !timer.Stop() {
@@ -74,7 +73,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 		select {
 		case <-timer.C:
-
 			// Allow last chance cancel
 			time.Sleep(1 * time.Millisecond)
 
@@ -82,18 +80,19 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 				return
 			}
 
-			d.mu.Lock()
-			destroyed := d.destroyed
-			currentGen := d.generations[key]
-			fn := d.callbacks[key]
-			d.mu.Unlock()
-
-			if destroyed {
+			if d.destroyed.Load() {
 				return
 			}
 
-			if gen == currentGen && fn != nil {
-				fn()
+			if val, ok := d.generations.Load(key); ok {
+				currentGen := val.(*atomic.Int64).Load()
+				if gen == currentGen {
+					if fnAny, ok := d.callbacks.Load(key); ok {
+						if fn := fnAny.(func()); fn != nil {
+							fn()
+						}
+					}
+				}
 			}
 
 		case <-ShutdownCtx.Done():
@@ -102,61 +101,44 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 		case <-ctx.Done():
 			return
 		}
-
 	}(gen, ctx, cancel, timer)
 }
 
 func (d *debouncer) Cancel(key string) {
-	defer d.mu.Unlock()
-	d.mu.Lock()
-
-	if d.destroyed {
+	if d.destroyed.Load() {
 		return
 	}
-
-	d.internalDestroy(key)
+	d.delete(key)
 }
 
 func (d *debouncer) Destroy() {
-	defer d.mu.Unlock()
-	d.mu.Lock()
-
-	if d.destroyed {
+	if d.destroyed.Swap(true) {
 		return
 	}
 
-	d.destroyed = true
-	for key := range d.cancelMap {
-		d.internalDestroy(key)
-	}
+	d.cancelMap.Range(func(k, v any) bool {
+		d.delete(k.(string))
+		return true
+	})
 
-	d.generations = nil
-	d.callbacks = nil
-	d.cancelMap = nil
+	// clear maps
+	d.generations = sync.Map{}
+	d.callbacks = sync.Map{}
+	d.cancelMap = sync.Map{}
 }
 
-func (d *debouncer) internalDestroy(key string) {
-
-	d.generations[key]++
-
-	if d.cancelMap != nil {
-		if cancel, exists := d.cancelMap[key]; exists {
-			cancel()
-			delete(d.cancelMap, key)
-		}
+func (d *debouncer) delete(key string) {
+	if val, ok := d.generations.Load(key); ok {
+		val.(*atomic.Int64).Add(1)
 	}
 
-	if d.callbacks != nil {
-		if _, exists := d.callbacks[key]; exists {
-			delete(d.callbacks, key)
-		}
+	if cancelAny, ok := d.cancelMap.Load(key); ok {
+		cancelAny.(context.CancelFunc)()
+		d.cancelMap.Delete(key)
 	}
 
-	if d.generations != nil {
-		if _, exists := d.generations[key]; exists {
-			delete(d.generations, key)
-		}
-	}
+	d.callbacks.Delete(key)
+	d.generations.Delete(key)
 }
 
 func RegisterDebouncer() *debouncer {

@@ -7,10 +7,8 @@ import (
 
 func stopWorker(w *worker, key string, delayMs int64) {
 	time.Sleep(time.Duration(delayMs) * time.Millisecond)
-	w.mu.Lock()
-	unit := w.registry[key]
-	w.mu.Unlock()
-	if unit != nil {
+	if unitAny, ok := w.registry.Load(key); ok {
+		unit := unitAny.(*workerUnit)
 		unit.Stop()
 	}
 }
@@ -18,8 +16,8 @@ func stopWorker(w *worker, key string, delayMs int64) {
 func TestWorkerInit(t *testing.T) {
 	w := &worker{}
 	w.Init()
-	if w.registry == nil || w.conditions == nil || w.lastRun == nil {
-		t.Error("Expected internal maps to be initialized")
+	if w.destroyed.Load() {
+		t.Error("Expected worker not destroyed after Init")
 	}
 }
 
@@ -48,7 +46,6 @@ func TestWorkerCallImmediate(t *testing.T) {
 
 	select {
 	case <-done:
-		// success
 	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected function to be called immediately")
 	}
@@ -91,14 +88,13 @@ func TestWorkerCallBypassImmediateIgnoresCondition(t *testing.T) {
 			close(done)
 			return true
 		},
-		func() bool { return false }, // condition is false
+		func() bool { return false },
 	)
 
 	w.Call("bypass", CallBypassImmediate)
 
 	select {
 	case <-done:
-		// success
 	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected function to be called despite false condition")
 	}
@@ -200,23 +196,27 @@ func TestWorkerDestroy(t *testing.T) {
 
 	select {
 	case <-done:
-		// Proceed to destroy after function is confirmed to be called
 	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected function to be called")
 	}
 
 	w.Destroy()
 
-	w.mu.Lock()
-	defer w.mu.Unlock()
+	if !w.destroyed.Load() {
+		t.Error("Expected worker destroyed flag to be true")
+	}
 
-	if w.registry != nil {
-		t.Error("Expected registry to be nil after destroy")
+	var found bool
+	w.registry.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected registry to be empty after destroy")
 	}
-	if w.conditions != nil {
-		t.Error("Expected conditions to be nil after destroy")
+	w.conditions.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected conditions to be empty after destroy")
 	}
-	if w.lastRun != nil {
-		t.Error("Expected lastRun to be nil after destroy")
+	w.lastRun.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected lastRun to be empty after destroy")
 	}
 }

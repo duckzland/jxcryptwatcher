@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -13,29 +14,32 @@ func TestDispatcherInit(t *testing.T) {
 	if d.queue == nil {
 		t.Error("Expected queue to be initialized")
 	}
-	if d.buffer != 100 {
-		t.Errorf("Expected default buffer size 1000, got %d", d.buffer)
+	if d.buffer.Load() != 100 {
+		t.Errorf("Expected default buffer size 100, got %d", d.buffer.Load())
 	}
-	if d.maxConcurrent != 4 {
-		t.Errorf("Expected default maxConcurrent 4, got %d", d.maxConcurrent)
+	if d.maxConcurrent.Load() != 4 {
+		t.Errorf("Expected default maxConcurrent 4, got %d", d.maxConcurrent.Load())
 	}
-	if d.delay != 16*time.Millisecond {
-		t.Errorf("Expected default delay 16ms, got %v", d.delay)
+	if time.Duration(d.delay.Load()) != 16*time.Millisecond {
+		t.Errorf("Expected default delay 16ms, got %v", time.Duration(d.delay.Load()))
 	}
-	if d.ctx == nil || d.cancel == nil {
+	if d.ctx.Load() == nil || d.cancel.Load() == nil {
 		t.Error("Expected context and cancel to be initialized")
 	}
 
+	// cancellation propagation
 	done := make(chan struct{})
 	go func() {
+		ctxPtr := d.ctx.Load().(*context.Context)
 		select {
-		case <-d.ctx.Done():
+		case <-(*ctxPtr).Done():
 			close(done)
 		case <-time.After(100 * time.Millisecond):
 			t.Error("Expected context to be canceled")
 		}
 	}()
-	d.cancel()
+	cancelPtr := d.cancel.Load().(*context.CancelFunc)
+	(*cancelPtr)()
 
 	select {
 	case <-done:
@@ -47,16 +51,16 @@ func TestDispatcherInit(t *testing.T) {
 func TestNewDispatcher(t *testing.T) {
 	d := NewDispatcher(10, 2, 50*time.Millisecond)
 
-	if d.buffer != 10 {
-		t.Errorf("Expected buffer size 10, got %d", d.buffer)
+	if d.buffer.Load() != 10 {
+		t.Errorf("Expected buffer size 10, got %d", d.buffer.Load())
 	}
-	if d.maxConcurrent != 2 {
-		t.Errorf("Expected maxConcurrent 2, got %d", d.maxConcurrent)
+	if d.maxConcurrent.Load() != 2 {
+		t.Errorf("Expected maxConcurrent 2, got %d", d.maxConcurrent.Load())
 	}
-	if d.delay != 50*time.Millisecond {
-		t.Errorf("Expected delay 50ms, got %v", d.delay)
+	if time.Duration(d.delay.Load()) != 50*time.Millisecond {
+		t.Errorf("Expected delay 50ms, got %v", time.Duration(d.delay.Load()))
 	}
-	if d.queue == nil || d.ctx == nil || d.cancel == nil {
+	if d.queue == nil || d.ctx.Load() == nil || d.cancel.Load() == nil {
 		t.Error("Expected internal fields to be initialized")
 	}
 }
@@ -99,11 +103,11 @@ func TestDispatcherSetters(t *testing.T) {
 	d.SetMaxConcurrent(3)
 	d.SetDelayBetween(100 * time.Millisecond)
 
-	if d.buffer != 20 {
-		t.Errorf("Expected buffer size 20, got %d", d.buffer)
+	if d.buffer.Load() != 20 {
+		t.Errorf("Expected buffer size 20, got %d", d.buffer.Load())
 	}
-	if d.maxConcurrent != 3 {
-		t.Errorf("Expected maxConcurrent 3, got %d", d.maxConcurrent)
+	if d.maxConcurrent.Load() != 3 {
+		t.Errorf("Expected maxConcurrent 3, got %d", d.maxConcurrent.Load())
 	}
 	if d.getDelay() != 100*time.Millisecond {
 		t.Errorf("Expected delay 100ms, got %v", d.getDelay())
@@ -174,7 +178,7 @@ func TestDispatcherDestroy(t *testing.T) {
 	if d.queue == nil {
 		t.Fatal("Expected queue to be initialized before destroy")
 	}
-	if d.ctx == nil || d.cancel == nil {
+	if d.ctx.Load() == nil || d.cancel.Load() == nil {
 		t.Fatal("Expected context and cancel to be initialized before destroy")
 	}
 
@@ -184,7 +188,10 @@ func TestDispatcherDestroy(t *testing.T) {
 		t.Error("Expected queue to be nil after destroy")
 	}
 
-	if d.ctx != nil || d.cancel != nil {
-		t.Error("Expected context and cancel to be nil after destroy")
+	if ctxPtr, ok := d.ctx.Load().(*context.Context); ok && ctxPtr != nil {
+		t.Error("Expected ctx to be nil after destroy")
+	}
+	if cancelPtr, ok := d.cancel.Load().(*context.CancelFunc); ok && cancelPtr != nil {
+		t.Error("Expected cancel to be nil after destroy")
 	}
 }

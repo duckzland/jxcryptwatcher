@@ -11,18 +11,17 @@ func TestFetcherInit(t *testing.T) {
 	f := &fetcher{}
 	f.Init()
 
-	if f.fetchers == nil || f.conditions == nil || f.activeWorkers == nil || f.dispatcher == nil {
-		t.Error("Expected internal maps and dispatcher to be initialized")
+	if f.dispatcher == nil {
+		t.Error("Expected dispatcher to be initialized")
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("Mutex caused panic: %v", r)
-		}
-	}()
-	f.mu.Lock()
-	_ = f
-	f.mu.Unlock()
+	if f.destroyed.Load() {
+		t.Error("Fetcher should not be marked destroyed after Init")
+	}
+
+	if f.paused.Load() {
+		t.Error("Fetcher should not be marked paused after Init")
+	}
 }
 
 func TestSingletonFetcherManager(t *testing.T) {
@@ -77,7 +76,6 @@ func TestErrorHandling(t *testing.T) {
 
 	f.Register("error",
 		NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
-			// handler sets the error on the result and returns the same error
 			res := NewFetchResult(500, nil)
 			res.SetError(errMsg)
 			done <- errMsg
@@ -85,8 +83,9 @@ func TestErrorHandling(t *testing.T) {
 		}),
 		func() bool { return true },
 	)
-	payloads := make(map[string][]string, 1)
-	payloads["error"] = []string{"payload"}
+
+	payloads := map[string][]string{"error": {"payload"}}
+
 	f.Call(payloads,
 		func(scheduledJobs int) {},
 		func(results map[string]FetchResultInterface) {},
@@ -116,24 +115,30 @@ func TestFetcherDestroy(t *testing.T) {
 	)
 
 	_, cancel := context.WithCancel(context.Background())
-	f.mu.Lock()
-	f.activeWorkers["destroyTest"] = cancel
-	f.mu.Unlock()
+	f.activeWorkers.Store("destroyTest", cancel)
 
 	f.Destroy()
 
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	if !f.destroyed.Load() {
+		t.Error("Expected fetcher to be marked destroyed after Destroy")
+	}
 
-	if f.fetchers != nil {
-		t.Error("Expected fetchers to be nil after destroy")
+	var found bool
+	f.fetchers.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected fetchers to be empty after destroy")
 	}
-	if f.conditions != nil {
-		t.Error("Expected conditions to be nil after destroy")
+
+	f.conditions.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected conditions to be empty after destroy")
 	}
-	if f.activeWorkers != nil {
-		t.Error("Expected activeWorkers to be nil after destroy")
+
+	f.activeWorkers.Range(func(_, _ any) bool { found = true; return false })
+	if found {
+		t.Error("Expected activeWorkers to be empty after destroy")
 	}
+
 	if f.dispatcher != nil {
 		t.Error("Expected dispatcher to be nil after destroy")
 	}

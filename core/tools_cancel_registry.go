@@ -3,47 +3,45 @@ package core
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 )
 
 type CancelRegistry struct {
-	mu    sync.Mutex
-	store map[string]context.CancelFunc
+	store    sync.Map
+	lenCount atomic.Int64
 }
 
 func (r *CancelRegistry) Set(tag string, cancel context.CancelFunc) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.store[tag] = cancel
+	if _, loaded := r.store.LoadOrStore(tag, cancel); loaded {
+		r.store.Store(tag, cancel)
+	} else {
+		r.lenCount.Add(1)
+	}
 }
 
 func (r *CancelRegistry) Get(tag string) (context.CancelFunc, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	cancel, ok := r.store[tag]
-	return cancel, ok
+	if val, ok := r.store.Load(tag); ok {
+		return val.(context.CancelFunc), true
+	}
+	return nil, false
 }
 
 func (r *CancelRegistry) Exists(tag string) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	_, ok := r.store[tag]
+	_, ok := r.store.Load(tag)
 	return ok
 }
 
 func (r *CancelRegistry) Delete(tag string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.store, tag)
+	if _, ok := r.store.Load(tag); ok {
+		r.store.Delete(tag)
+		r.lenCount.Add(-1)
+	}
 }
 
 func (r *CancelRegistry) Len() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return len(r.store)
+	return int(r.lenCount.Load())
 }
 
-func NewCancelRegistry(bsize int) *CancelRegistry {
-	return &CancelRegistry{
-		store: make(map[string]context.CancelFunc, bsize),
-	}
+func NewCancelRegistry(_ int) *CancelRegistry {
+	return &CancelRegistry{}
 }

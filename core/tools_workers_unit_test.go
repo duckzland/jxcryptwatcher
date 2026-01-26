@@ -10,19 +10,23 @@ import (
 func TestWorkerUnitListenerStartAndCall(t *testing.T) {
 	called := make(chan bool, 1)
 
-	w := &workerUnit{
-		getDelay: func() int64 { return 1 },
-		fn: func(payload any) bool {
+	w := NewWorkerUnit(
+		1,
+		func() int64 { return 1 },
+		nil,
+		func(payload any) bool {
 			called <- true
 			return true
 		},
-		queue: make(chan any, 1),
-	}
+	)
 
 	w.Start()
-	if w.ctx == nil || w.cancel == nil {
+
+	// ctx and cancel are atomic.Value, check Load() not nil
+	if w.ctx.Load() == nil || w.cancel.Load() == nil {
 		t.Error("Expected listener to create cancel context")
 	}
+
 	w.Push("test")
 
 	select {
@@ -37,16 +41,17 @@ func TestWorkerUnitSchedulerTriggers(t *testing.T) {
 	var mu sync.Mutex
 	count := 0
 
-	w := &workerUnit{
-		getInterval: func() int64 { return 20 },
-		fn: func(payload any) bool {
+	w := NewWorkerUnit(
+		10,
+		nil,
+		func() int64 { return 20 },
+		func(payload any) bool {
 			mu.Lock()
 			count++
 			mu.Unlock()
 			return true
 		},
-		queue: make(chan any, 10),
-	}
+	)
 
 	w.Start()
 	time.Sleep(150 * time.Millisecond)
@@ -60,7 +65,7 @@ func TestWorkerUnitSchedulerTriggers(t *testing.T) {
 }
 
 func TestWorkerUnitFlush(t *testing.T) {
-	w := &workerUnit{queue: make(chan any, 5)}
+	w := NewWorkerUnit(5, nil, nil, func(any) bool { return true })
 	for i := 0; i < 5; i++ {
 		w.queue <- i
 	}
@@ -76,14 +81,15 @@ func TestWorkerUnitFlush(t *testing.T) {
 func TestWorkerUnitReset(t *testing.T) {
 	called := make(chan bool, 2)
 
-	w := &workerUnit{
-		getDelay: func() int64 { return 10 },
-		fn: func(payload any) bool {
+	w := NewWorkerUnit(
+		2,
+		func() int64 { return 10 },
+		nil,
+		func(payload any) bool {
 			called <- true
 			return true
 		},
-		queue: make(chan any, 2),
-	}
+	)
 
 	w.Start()
 	w.Push("before reset")
@@ -100,18 +106,17 @@ func TestWorkerUnitReset(t *testing.T) {
 }
 
 func TestWorkerUnitGetDelayOverride(t *testing.T) {
-	w := &workerUnit{
-		getDelay: func() int64 { return 25 },
-		fn:       func(payload any) bool { return true },
-		queue:    make(chan any, 1),
-	}
+	w := NewWorkerUnit(
+		1,
+		func() int64 { return 25 },
+		nil,
+		func(any) bool { return true },
+	)
 
 	w.Start()
-	w.mu.Lock()
-	delay := w.delay
-	w.mu.Unlock()
+	delay := w.delay.Load()
 
-	if delay != 25*time.Millisecond {
+	if delay != 25 {
 		t.Errorf("Expected delay override to be 25ms, got %v", delay)
 	}
 
@@ -120,14 +125,15 @@ func TestWorkerUnitGetDelayOverride(t *testing.T) {
 
 func TestWorkerUnitMultipleResets(t *testing.T) {
 	called := 0
-	w := &workerUnit{
-		getInterval: func() int64 { return 10 },
-		fn: func(payload any) bool {
+	w := NewWorkerUnit(
+		5,
+		nil,
+		func() int64 { return 10 },
+		func(payload any) bool {
 			called++
 			return true
 		},
-		queue: make(chan any, 5),
-	}
+	)
 
 	for i := 0; i < 3; i++ {
 		w.Start()
@@ -146,11 +152,12 @@ func TestWorkerUnitMultipleResets(t *testing.T) {
 func TestWorkerUnitStopCleansGoroutine(t *testing.T) {
 	startG := runtime.NumGoroutine()
 
-	w := &workerUnit{
-		getInterval: func() int64 { return 10 },
-		fn:          func(payload any) bool { return true },
-		queue:       make(chan any, 2),
-	}
+	w := NewWorkerUnit(
+		2,
+		nil,
+		func() int64 { return 10 },
+		func(any) bool { return true },
+	)
 
 	w.Start()
 	w.Push("payload")
@@ -170,16 +177,17 @@ func TestWorkerUnitConcurrentPushAndCall(t *testing.T) {
 	var mu sync.Mutex
 	count := 0
 
-	w := &workerUnit{
-		getDelay: func() int64 { return 1 },
-		fn: func(payload any) bool {
+	w := NewWorkerUnit(
+		20,
+		func() int64 { return 1 },
+		nil,
+		func(payload any) bool {
 			mu.Lock()
 			count++
 			mu.Unlock()
 			return true
 		},
-		queue: make(chan any, 20),
-	}
+	)
 
 	w.Start()
 

@@ -2,6 +2,7 @@ package core
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -17,107 +18,74 @@ const (
 )
 
 type worker struct {
-	registry   map[string]*workerUnit
-	conditions map[string]func() bool
-	lastRun    map[string]time.Time
-	mu         sync.Mutex
-	destroyed  bool
+	registry   sync.Map
+	conditions sync.Map
+	lastRun    sync.Map
+	destroyed  atomic.Bool
 }
 
 func (w *worker) Init() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.registry != nil {
-		return
-	}
-
-	w.conditions = make(map[string]func() bool, 3)
-	w.registry = make(map[string]*workerUnit, 3)
-	w.lastRun = make(map[string]time.Time, 3)
-	w.destroyed = false
+	w.destroyed.Store(false)
 }
 
 func (w *worker) Register(key string, size int, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
 
-	if existing, registered := w.registry[key]; registered {
-		w.mu.Unlock()
+	if existingAny, ok := w.registry.Load(key); ok {
+		existing := existingAny.(*workerUnit)
 		existing.Destroy()
-		w.mu.Lock()
-		w.internalDeleteKey(key)
+		w.delete(key)
 	}
 
-	w.conditions[key] = shouldRun
-	w.lastRun[key] = time.Now()
+	w.conditions.Store(key, shouldRun)
+	w.lastRun.Store(key, time.Now())
 
-	unit := &workerUnit{
-		getInterval: getInterval,
-		getDelay:    getDelay,
-		queue:       make(chan any, size),
-		fn: func(payload any) bool {
+	unit := NewWorkerUnit(size, getDelay, getInterval, func(payload any) bool {
+		if w.destroyed.Load() {
+			return false
+		}
 
-			w.mu.Lock()
-			if w.destroyed || (w.registry == nil && w.conditions == nil && w.lastRun == nil) {
-				w.mu.Unlock()
+		if mode, ok := payload.(CallMode); !ok || mode != CallBypassImmediate {
+			if shouldRun != nil && !shouldRun() {
 				return false
 			}
-			w.mu.Unlock()
+		}
 
-			if mode, ok := payload.(CallMode); !ok || mode != CallBypassImmediate {
-				if shouldRun != nil && !shouldRun() {
-					return false
-				}
-			}
+		w.lastRun.Store(key, time.Now())
+		return fn(payload)
+	})
 
-			w.mu.Lock()
-			if w.lastRun != nil {
-				w.lastRun[key] = time.Now()
-			}
-			w.mu.Unlock()
-
-			return fn(payload)
-		},
-	}
-
-	w.registry[key] = unit
-	w.mu.Unlock()
-
+	w.registry.Store(key, unit)
 	unit.Start()
 }
 
 func (w *worker) Deregister(key string) {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
-	unit := w.internalDeleteKey(key)
-	w.mu.Unlock()
 
-	if unit != nil {
+	if unit := w.delete(key); unit != nil {
 		unit.Destroy()
 	}
 }
 
 func (w *worker) Call(key string, mode CallMode) {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
 
-	unit := w.registry[key]
-	cond := w.conditions[key]
-	w.mu.Unlock()
-
-	if unit == nil {
+	unitAny, ok := w.registry.Load(key)
+	if !ok {
 		return
+	}
+	unit := unitAny.(*workerUnit)
+
+	condAny, _ := w.conditions.Load(key)
+	var cond func() bool
+	if condAny != nil {
+		cond = condAny.(func() bool)
 	}
 
 	if mode != CallBypassImmediate && cond != nil && !cond() {
@@ -142,85 +110,62 @@ func (w *worker) Call(key string, mode CallMode) {
 }
 
 func (w *worker) Push(key string, payload any) {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
-	unit := w.registry[key]
-	w.mu.Unlock()
 
-	if unit != nil {
+	if unitAny, ok := w.registry.Load(key); ok {
+		unit := unitAny.(*workerUnit)
 		unit.Push(payload)
 	}
 }
 
 func (w *worker) Flush(key string) {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
-	unit := w.registry[key]
-	w.mu.Unlock()
 
-	if unit != nil {
+	if unitAny, ok := w.registry.Load(key); ok {
+		unit := unitAny.(*workerUnit)
 		unit.Flush()
 	}
 }
 
 func (w *worker) Reset(key string) {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
-	unit := w.registry[key]
-	w.mu.Unlock()
 
-	if unit != nil {
+	if unitAny, ok := w.registry.Load(key); ok {
+		unit := unitAny.(*workerUnit)
 		unit.Reset()
 	}
 }
 
 func (w *worker) Pause() {
-	w.mu.Lock()
-	if w.destroyed || w.registry == nil {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
 
-	units := make([]*workerUnit, 0, len(w.registry))
-	for _, unit := range w.registry {
-		if unit != nil {
-			units = append(units, unit)
+	w.registry.Range(func(_, v any) bool {
+		if unit, ok := v.(*workerUnit); ok {
+			unit.Stop()
 		}
-	}
-	w.mu.Unlock()
-
-	for _, unit := range units {
-		unit.Stop()
-	}
+		return true
+	})
 }
 
 func (w *worker) Resume() {
-	w.mu.Lock()
-	if w.destroyed || w.registry == nil {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return
 	}
 
-	units := make([]*workerUnit, 0, len(w.registry))
-	for _, unit := range w.registry {
-		if unit != nil {
-			units = append(units, unit)
+	w.registry.Range(func(_, v any) bool {
+		if unit, ok := v.(*workerUnit); ok {
+			unit.Start()
 		}
-	}
-	w.mu.Unlock()
-
-	for _, unit := range units {
-		unit.Start()
-	}
+		return true
+	})
 }
 
 func (w *worker) Reload() {
@@ -229,61 +174,49 @@ func (w *worker) Reload() {
 }
 
 func (w *worker) GetLastUpdate(key string) time.Time {
-	w.mu.Lock()
-	if w.destroyed || w.lastRun == nil {
-		w.mu.Unlock()
+	if w.destroyed.Load() {
 		return time.Time{}
 	}
-	t := w.lastRun[key]
-	w.mu.Unlock()
-	return t
+
+	if tAny, ok := w.lastRun.Load(key); ok {
+		return tAny.(time.Time)
+	}
+
+	return time.Time{}
 }
 
 func (w *worker) Destroy() {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.destroyed.Swap(true) {
 		return
 	}
 
-	w.destroyed = true
-
 	var units []*workerUnit
-	if w.registry != nil {
-		for key := range w.registry {
-			if unit := w.internalDeleteKey(key); unit != nil {
-				units = append(units, unit)
-			}
+	w.registry.Range(func(_, v any) bool {
+		if unit, ok := v.(*workerUnit); ok {
+			units = append(units, unit)
 		}
-	}
+		return true
+	})
 
-	w.registry = nil
-	w.conditions = nil
-	w.lastRun = nil
-	w.mu.Unlock()
+	w.registry = sync.Map{}
+	w.conditions = sync.Map{}
+	w.lastRun = sync.Map{}
 
 	for _, unit := range units {
 		unit.Destroy()
 	}
 }
 
-func (w *worker) internalDeleteKey(key string) *workerUnit {
+func (w *worker) delete(key string) *workerUnit {
 	var unit *workerUnit
 
-	if w.registry != nil {
-		if u, exists := w.registry[key]; exists {
-			unit = u
-			delete(w.registry, key)
-		}
+	if u, ok := w.registry.Load(key); ok {
+		unit = u.(*workerUnit)
+		w.registry.Delete(key)
 	}
 
-	if w.conditions != nil {
-		delete(w.conditions, key)
-	}
-
-	if w.lastRun != nil {
-		delete(w.lastRun, key)
-	}
+	w.conditions.Delete(key)
+	w.lastRun.Delete(key)
 
 	return unit
 }

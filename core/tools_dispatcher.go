@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -25,100 +25,80 @@ var coreDispatcher *dispatcher = nil
 
 type dispatcher struct {
 	queue         chan func()
-	mu            sync.Mutex
-	buffer        int
-	maxConcurrent int
-	generated     int
-	delay         time.Duration
-	ctx           context.Context
-	cancel        context.CancelFunc
-	drainer       func()
-	destroyed     bool
-	paused        bool
-	key           string
+	buffer        atomic.Int32
+	maxConcurrent atomic.Int32
+	generated     atomic.Int32
+	delay         atomic.Int64
+	ctx           atomic.Value
+	cancel        atomic.Value
+	drainer       atomic.Value
+	key           atomic.Value
+	destroyed     atomic.Bool
+	paused        atomic.Bool
 }
 
 func (d *dispatcher) Init() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	if d.queue != nil {
 		return
 	}
 
-	if d.buffer == 0 {
-		d.buffer = 100
+	if d.buffer.Load() == 0 {
+		d.buffer.Store(100)
 	}
-	if d.maxConcurrent == 0 {
-		d.maxConcurrent = 4
+	if d.maxConcurrent.Load() == 0 {
+		d.maxConcurrent.Store(4)
 	}
-	if d.delay == 0 {
-		d.delay = 16 * time.Millisecond
+	if d.delay.Load() == 0 {
+		d.delay.Store(int64(16 * time.Millisecond))
 	}
 
-	d.generated = 0
-	d.queue = make(chan func(), d.buffer)
-	d.ctx, d.cancel = context.WithCancel(context.Background())
+	d.generated.Store(0)
+	d.queue = make(chan func(), int(d.buffer.Load()))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	d.ctx.Store(&ctx)
+	d.cancel.Store(&cancel)
 }
 
 func (d *dispatcher) Start() {
-
-	max := d.getMaxConcurrent()
-
-	d.mu.Lock()
-	generated := d.generated
-	d.mu.Unlock()
-
-	if generated == max {
+	max := int(d.maxConcurrent.Load())
+	if int(d.generated.Load()) == max {
 		return
 	}
 
 	for i := 1; i <= max; i++ {
-		if d.isDestroyed() {
+		if d.destroyed.Load() {
 			return
 		}
-
 		go d.worker(i)
-
-		d.mu.Lock()
-		d.generated++
-		d.mu.Unlock()
+		d.generated.Add(1)
 	}
 
-	Logf("Initializing Dispatcher [%s]: %d/%d", d.key, d.generated, d.maxConcurrent)
+	Logf("Initializing Dispatcher [%s]: %d/%d", d.getKey(), d.generated.Load(), d.maxConcurrent.Load())
 }
 
 func (d *dispatcher) Pause() {
-	d.mu.Lock()
-	d.paused = true
-	d.mu.Unlock()
+	d.paused.Store(true)
 	d.Drain()
 }
 
 func (d *dispatcher) Resume() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.paused = false
+	d.paused.Store(false)
 }
 
 func (d *dispatcher) Drain() {
 	for {
-		d.mu.Lock()
-		q := d.queue
-		d.mu.Unlock()
-
-		if q == nil {
+		if d.queue == nil {
 			if d.hasDrainer() {
-				d.drainer()
+				d.getDrainer()()
 			}
 			return
 		}
-
 		select {
-		case <-q:
+		case <-d.queue:
 		default:
 			if d.hasDrainer() {
-				d.drainer()
+				d.getDrainer()()
 			}
 			return
 		}
@@ -126,38 +106,24 @@ func (d *dispatcher) Drain() {
 }
 
 func (d *dispatcher) Submit(fn func()) {
-	if d.isPaused() {
+	if d.paused.Load() || d.destroyed.Load() || d.queue == nil {
 		return
 	}
-
-	if d.isDestroyed() {
-		return
-	}
-
-	if !d.hasQueue() {
-		return
-	}
-
 	select {
-	case d.getQueue() <- fn:
+	case d.queue <- fn:
 	default:
 	}
 }
 
 func (d *dispatcher) Destroy() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if d.destroyed {
+	if d.destroyed.Swap(true) {
 		return
 	}
 
-	d.destroyed = true
-
-	if d.cancel != nil {
-		d.cancel()
-		d.ctx = nil
-		d.cancel = nil
+	if cancelPtr := d.cancel.Load(); cancelPtr != nil {
+		(*cancelPtr.(*context.CancelFunc))()
+		d.ctx.Store((*context.Context)(nil))
+		d.cancel.Store((*context.CancelFunc)(nil))
 	}
 
 	if d.queue != nil {
@@ -167,131 +133,88 @@ func (d *dispatcher) Destroy() {
 }
 
 func (d *dispatcher) SetDrainer(fn func()) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.drainer = fn
+	d.drainer.Store(fn)
 }
 
 func (d *dispatcher) SetBufferSize(size int) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.buffer = size
+	d.buffer.Store(int32(size))
 }
 
 func (d *dispatcher) SetMaxConcurrent(n int) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.maxConcurrent = n
+	d.maxConcurrent.Store(int32(n))
 }
 
 func (d *dispatcher) SetDelayBetween(delay time.Duration) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.delay = delay
+	d.delay.Store(int64(delay))
 }
 
 func (d *dispatcher) SetKey(key string) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.key = key
+	d.key.Store(key)
 }
 
 func (d *dispatcher) getDelay() time.Duration {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.delay
-}
-
-func (d *dispatcher) isDestroyed() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.destroyed
-}
-
-func (d *dispatcher) isPaused() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.paused
-}
-
-func (d *dispatcher) hasQueue() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.queue != nil
+	return time.Duration(d.delay.Load())
 }
 
 func (d *dispatcher) hasDrainer() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.drainer != nil
+	return d.drainer.Load() != nil
 }
 
-func (d *dispatcher) getQueue() chan func() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.queue
+func (d *dispatcher) getDrainer() func() {
+	if fnAny := d.drainer.Load(); fnAny != nil {
+		return fnAny.(func())
+	}
+	return nil
 }
 
-func (d *dispatcher) getMaxConcurrent() int {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.maxConcurrent
+func (d *dispatcher) getKey() string {
+	if kAny := d.key.Load(); kAny != nil {
+		return kAny.(string)
+	}
+	return ""
 }
 
 func (d *dispatcher) worker(id int) {
 	defer func() {
-		d.mu.Lock()
-		cancel := d.cancel
-		d.generated--
-		d.mu.Unlock()
-
-		if !d.isDestroyed() {
-			if cancel != nil {
-				cancel()
+		d.generated.Add(-1)
+		if !d.destroyed.Load() {
+			if cancelPtr := d.cancel.Load(); cancelPtr != nil {
+				(*cancelPtr.(*context.CancelFunc))()
 			}
 			d.Drain()
 		}
 	}()
 
 	for {
-		if d.isDestroyed() {
+		if d.destroyed.Load() {
 			return
 		}
-
-		q := d.getQueue()
-		if q == nil {
+		if d.queue == nil {
 			return
 		}
-
-		d.mu.Lock()
-		ctx := d.ctx
-		d.mu.Unlock()
 
 		var ctxDone <-chan struct{}
-		if ctx != nil {
-			ctxDone = ctx.Done()
+		if ctxPtr := d.ctx.Load(); ctxPtr != nil {
+			ctxDone = (*ctxPtr.(*context.Context)).Done()
 		}
 
 		select {
 		case <-ShutdownCtx.Done():
 			return
-
 		case <-ctxDone:
 			return
-
-		case fn, ok := <-q:
-			if !ok || d.isDestroyed() {
+		case fn, ok := <-d.queue:
+			if !ok || d.destroyed.Load() {
 				return
-
 			}
 			if fn != nil {
-				// Logf("Dispatcher firing worker: [%s] %d", d.key, id)
 				fn()
-
-				delay := max(d.getDelay(), time.Millisecond)
+				delay := d.getDelay()
+				if delay < time.Millisecond {
+					delay = time.Millisecond
+				}
 				time.Sleep(delay)
 			}
-
 		}
 	}
 }
@@ -308,12 +231,11 @@ func UseDispatcher() *dispatcher {
 }
 
 func NewDispatcher(buffer, maxConcurrent int, delay time.Duration) *dispatcher {
-	d := &dispatcher{
-		buffer:        buffer,
-		maxConcurrent: maxConcurrent,
-		delay:         delay,
-		destroyed:     false,
-	}
+	d := &dispatcher{}
+	d.buffer.Store(int32(buffer))
+	d.maxConcurrent.Store(int32(maxConcurrent))
+	d.delay.Store(int64(delay))
+	d.destroyed.Store(false)
 	d.Init()
 	return d
 }

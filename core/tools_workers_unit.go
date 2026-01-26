@@ -2,51 +2,43 @@ package core
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
+const WORKER_UNIT_IDLE int32 = 1
+const WORKER_UNIT_ACTIVE int32 = 2
+const WORKER_UNIT_DESTROYED int32 = 3
+
 type workerUnit struct {
-	delay       time.Duration
-	interval    time.Duration
-	fn          func(any) bool
+	delay       atomic.Int64
+	interval    atomic.Int64
+	fn          atomic.Value
 	getDelay    func() int64
 	getInterval func() int64
 	queue       chan any
-	ctx         context.Context
-	cancel      context.CancelFunc
-	mu          sync.Mutex
-	bufferSize  int
-	destroyed   bool
-	active      bool
+	ctx         atomic.Value
+	cancel      atomic.Value
+	state       atomic.Int32
 }
 
 func (w *workerUnit) Call(payload any) {
-	w.mu.Lock()
-	if w.destroyed || !w.active {
-		w.mu.Unlock()
+	if w.state.Load() != WORKER_UNIT_ACTIVE {
 		return
 	}
-	fn := w.fn
-	w.mu.Unlock()
-
-	if fn != nil {
+	if fnAny := w.fn.Load(); fnAny != nil {
+		fn := fnAny.(func(any) bool)
 		fn(payload)
 	}
 }
 
 func (w *workerUnit) Flush() {
-	w.mu.Lock()
-	if w.destroyed {
-		w.mu.Unlock()
+	if w.state.Load() == WORKER_UNIT_DESTROYED {
 		return
 	}
-	q := w.queue
-	w.mu.Unlock()
-
 	for {
 		select {
-		case <-q:
+		case <-w.queue:
 		default:
 			return
 		}
@@ -54,13 +46,9 @@ func (w *workerUnit) Flush() {
 }
 
 func (w *workerUnit) Push(payload any) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.destroyed || !w.active {
+	if w.state.Load() != WORKER_UNIT_ACTIVE {
 		return
 	}
-
 	select {
 	case w.queue <- payload:
 	default:
@@ -68,95 +56,113 @@ func (w *workerUnit) Push(payload any) {
 }
 
 func (w *workerUnit) Start() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.destroyed {
-		return
-	}
-
-	if w.active {
+	if w.state.Load() == WORKER_UNIT_DESTROYED || w.state.Load() == WORKER_UNIT_ACTIVE {
 		return
 	}
 
 	if w.getDelay != nil {
-		w.delay = time.Duration(w.getDelay()) * time.Millisecond
+		w.delay.Store(w.getDelay())
 	}
 
 	if w.getInterval != nil {
-		w.interval = time.Duration(w.getInterval()) * time.Millisecond
+		w.interval.Store(w.getInterval())
 	}
 
-	w.active = true
+	w.state.Store(WORKER_UNIT_ACTIVE)
 
-	w.ctx, w.cancel = context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	w.ctx.Store(&ctx)
+	w.cancel.Store(&cancel)
 
 	go w.worker()
 }
 
 func (w *workerUnit) Stop() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.destroyed {
+	if w.state.Load() == WORKER_UNIT_DESTROYED {
 		return
 	}
 
-	w.active = false
+	w.state.Store(WORKER_UNIT_IDLE)
 
-	if w.cancel != nil {
-		w.cancel()
+	if cAny := w.cancel.Load(); cAny != nil {
+		if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
+			cancel := *cPtr
+			if cancel != nil {
+				cancel()
+			}
+		}
 	}
 }
 
 func (w *workerUnit) Reset() {
 	w.Flush()
-
-	w.mu.Lock()
-	active := w.active
-	w.mu.Unlock()
-
-	if active {
+	if w.state.Load() == WORKER_UNIT_ACTIVE {
 		w.Stop()
 		w.Start()
 	}
 }
 
-func (w *workerUnit) newTicker() *time.Ticker {
-	w.mu.Lock()
-	interval := w.interval
-	w.mu.Unlock()
+func (w *workerUnit) Destroy() {
+	w.Flush()
 
+	if w.state.Load() == WORKER_UNIT_DESTROYED {
+		return
+	}
+	w.state.Store(WORKER_UNIT_DESTROYED)
+
+	if cAny := w.cancel.Load(); cAny != nil {
+		if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
+			cancel := *cPtr
+			if cancel != nil {
+				cancel()
+			}
+		}
+	}
+
+	w.ctx.Store((*context.Context)(nil))
+	w.cancel.Store((*context.CancelFunc)(nil))
+
+	close(w.queue)
+}
+
+func (w *workerUnit) newTicker() *time.Ticker {
+	interval := w.interval.Load()
 	if interval > 0 {
-		return time.NewTicker(interval)
+		return time.NewTicker(time.Duration(interval) * time.Millisecond)
 	}
 	return &time.Ticker{C: make(chan time.Time)}
 }
 
 func (w *workerUnit) worker() {
-
 	ticker := w.newTicker()
-
 	defer ticker.Stop()
+
 	defer func() {
-		w.mu.Lock()
-		cancel := w.cancel
-		active := w.active
-		w.mu.Unlock()
-		if cancel != nil && !active {
-			cancel()
+		if w.state.Load() != WORKER_UNIT_ACTIVE {
+			if cAny := w.cancel.Load(); cAny != nil {
+				if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
+					cancel := *cPtr
+					if cancel != nil {
+						cancel()
+					}
+				}
+			}
 		}
 	}()
 
 	for {
-		w.mu.Lock()
-		ctx := w.ctx
-		delay := w.delay
-		active := w.active
-		queue := w.queue
-		w.mu.Unlock()
+		ctxAny := w.ctx.Load()
+		if ctxAny == nil {
+			return
+		}
+		ctxPtr := ctxAny.(*context.Context)
+		if ctxPtr == nil || *ctxPtr == nil {
+			return
+		}
+		ctx := *ctxPtr
+		delay := w.delay.Load()
 
-		if ctx == nil || !active {
+		if w.state.Load() != WORKER_UNIT_ACTIVE {
 			return
 		}
 
@@ -166,24 +172,19 @@ func (w *workerUnit) worker() {
 
 		case <-ctx.Done():
 			return
-
 		case <-ticker.C:
 			w.Push(nil)
 
-		case x, ok := <-queue:
+		case x, ok := <-w.queue:
 			if !ok {
 				return
 			}
 
 			if delay > 0 {
-				time.Sleep(delay)
+				time.Sleep(time.Duration(delay) * time.Millisecond)
 			}
 
-			w.mu.Lock()
-			active = w.active
-			w.mu.Unlock()
-
-			if !active {
+			if w.state.Load() != WORKER_UNIT_ACTIVE {
 				return
 			}
 
@@ -192,33 +193,17 @@ func (w *workerUnit) worker() {
 	}
 }
 
-func (w *workerUnit) Destroy() {
-	w.Flush()
-
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.destroyed {
-		return
+func NewWorkerUnit(size int, getDelay func() int64, getInterval func() int64, fn func(any) bool) *workerUnit {
+	unit := &workerUnit{
+		queue:       make(chan any, size),
+		getDelay:    getDelay,
+		getInterval: getInterval,
 	}
+	unit.fn.Store(fn)
+	unit.state.Store(WORKER_UNIT_IDLE)
 
-	w.destroyed = true
+	unit.ctx.Store((*context.Context)(nil))
+	unit.cancel.Store((*context.CancelFunc)(nil))
 
-	if w.cancel != nil {
-		w.cancel()
-	}
-
-	w.ctx = nil
-	w.cancel = nil
-
-	close(w.queue)
-}
-
-func NewWorkerUnit(buffer int) *workerUnit {
-	return &workerUnit{
-		bufferSize: buffer,
-		queue:      make(chan any, buffer),
-		destroyed:  false,
-		active:     false,
-	}
+	return unit
 }

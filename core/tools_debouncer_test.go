@@ -15,14 +15,9 @@ func TestDebouncerInit(t *testing.T) {
 	d := &debouncer{}
 	d.Init()
 
-	if d.generations == nil {
-		t.Error("Expected generations map to be initialized")
-	}
-	if d.cancelMap == nil {
-		t.Error("Expected cancelMap to be initialized")
-	}
-	if d.callbacks == nil {
-		t.Error("Expected callbacks map to be initialized")
+	// sync.Map is always initialized, so just check destroyed flag
+	if d.destroyed.Load() {
+		t.Error("Expected debouncer not destroyed after init")
 	}
 }
 
@@ -63,7 +58,8 @@ func TestDebouncerCallFires(t *testing.T) {
 	if !called {
 		t.Error("Expected function to be called after delay")
 	}
-	if _, ok := d.cancelMap["test"]; ok {
+	// cancelMap should be cleaned
+	if _, ok := d.cancelMap.Load("test"); ok {
 		t.Error("Expected cancelMap entry cleaned after callback")
 	}
 }
@@ -88,7 +84,7 @@ func TestDebouncerCancelPreventsCallback(t *testing.T) {
 	if called {
 		t.Error("Expected function to be canceled and not called")
 	}
-	if _, ok := d.cancelMap["cancelTest"]; ok {
+	if _, ok := d.cancelMap.Load("cancelTest"); ok {
 		t.Error("Expected cancelMap entry cleaned after cancel")
 	}
 }
@@ -122,21 +118,26 @@ func TestDebouncerDestroyCleansMaps(t *testing.T) {
 	d := RegisterDebouncer()
 
 	d.Call("destroyTest", 50*time.Millisecond, func() {})
-	if d.generations == nil || d.cancelMap == nil || d.callbacks == nil {
-		t.Fatal("Expected debouncer maps to be initialized before destroy")
-	}
 
 	d.Destroy()
 
-	if d.generations != nil {
-		t.Error("Expected generations map to be nil after destroy")
+	// After destroy, destroyed flag should be true and maps emptied
+	if !d.destroyed.Load() {
+		t.Error("Expected debouncer destroyed flag set")
 	}
-	if d.cancelMap != nil {
-		t.Error("Expected cancelMap to be nil after destroy")
-	}
-	if d.callbacks != nil {
-		t.Error("Expected callbacks map to be nil after destroy")
-	}
+	// Check maps are empty
+	d.cancelMap.Range(func(k, v any) bool {
+		t.Error("Expected cancelMap to be empty after destroy")
+		return false
+	})
+	d.callbacks.Range(func(k, v any) bool {
+		t.Error("Expected callbacks to be empty after destroy")
+		return false
+	})
+	d.generations.Range(func(k, v any) bool {
+		t.Error("Expected generations to be empty after destroy")
+		return false
+	})
 }
 
 func TestDebouncerIgnoresAfterDestroy(t *testing.T) {
@@ -148,7 +149,18 @@ func TestDebouncerIgnoresAfterDestroy(t *testing.T) {
 	d.Cancel("afterDestroy")
 
 	time.Sleep(20 * time.Millisecond)
-	if d.generations != nil || d.cancelMap != nil || d.callbacks != nil {
-		t.Error("Expected maps to remain nil after destroy")
-	}
+
+	// Maps should remain empty
+	d.cancelMap.Range(func(k, v any) bool {
+		t.Error("Expected cancelMap to remain empty after destroy")
+		return false
+	})
+	d.callbacks.Range(func(k, v any) bool {
+		t.Error("Expected callbacks to remain empty after destroy")
+		return false
+	})
+	d.generations.Range(func(k, v any) bool {
+		t.Error("Expected generations to remain empty after destroy")
+		return false
+	})
 }
