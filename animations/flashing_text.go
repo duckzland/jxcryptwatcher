@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var flashRegistry = JC.NewCancelRegistry(50)
+var flashRegistry = JC.NewCancelRegistry()
 
 func StartFlashingText(tag string, txt AnimatableText, interval time.Duration, visibleColor color.Color, flashes int) {
 

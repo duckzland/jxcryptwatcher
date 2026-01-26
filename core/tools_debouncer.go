@@ -17,7 +17,7 @@ type debouncer struct {
 
 func (d *debouncer) Init() {
 	d.destroyed.Store(false)
-	d.registry = NewCancelRegistry(0)
+	d.registry = NewCancelRegistry()
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
@@ -124,7 +124,7 @@ func (d *debouncer) Destroy() {
 	d.registry.Destroy()
 
 	d.generations = sync.Map{}
-	d.registry = NewCancelRegistry(0)
+	d.registry = NewCancelRegistry()
 }
 
 func RegisterDebouncer() *debouncer {

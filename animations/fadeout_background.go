@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeOutRegistry = JC.NewCancelRegistry(5)
+var fadeOutRegistry = JC.NewCancelRegistry()
 
 func StartFadeOutBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), dispatch bool) {
 

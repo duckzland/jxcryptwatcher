@@ -7,7 +7,7 @@ import (
 )
 
 func TestCancelRegistry(t *testing.T) {
-	reg := NewCancelRegistry(10)
+	reg := NewCancelRegistry()
 
 	tag := "test:fade"
 	_, cancel := context.WithCancel(context.Background())
@@ -41,7 +41,7 @@ func TestCancelRegistry(t *testing.T) {
 }
 
 func TestCancelRegistryRange(t *testing.T) {
-	reg := NewCancelRegistry(10)
+	reg := NewCancelRegistry()
 
 	keys := []string{"a", "b", "c"}
 	for _, k := range keys {
@@ -63,7 +63,7 @@ func TestCancelRegistryRange(t *testing.T) {
 }
 
 func TestCancelRegistryDestroy(t *testing.T) {
-	reg := NewCancelRegistry(10)
+	reg := NewCancelRegistry()
 
 	var canceledCount atomic.Int64
 

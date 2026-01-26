@@ -9,7 +9,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeTextRegistry = JC.NewCancelRegistry(5)
+var fadeTextRegistry = JC.NewCancelRegistry()
 
 func StartFadingText(tag string, text AnimatableText, callback func(), fadeAlphas *[]uint8) {
 

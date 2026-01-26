@@ -58,6 +58,6 @@ func (r *cancelRegistry) Destroy() {
 	r.count.Store(0)
 }
 
-func NewCancelRegistry(_ int) *cancelRegistry {
+func NewCancelRegistry() *cancelRegistry {
 	return &cancelRegistry{}
 }

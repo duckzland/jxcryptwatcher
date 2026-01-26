@@ -10,7 +10,7 @@ import (
 	JC "jxwatcher/core"
 )
 
-var fadeInRegistry = JC.NewCancelRegistry(50)
+var fadeInRegistry = JC.NewCancelRegistry()
 
 func StartFadeInBackground(tag string, rect *canvas.Rectangle, duration time.Duration, callback func(), dispatch bool) {
 
