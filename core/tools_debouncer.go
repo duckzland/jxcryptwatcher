@@ -11,13 +11,13 @@ var coreDebouncer *debouncer
 
 type debouncer struct {
 	generations sync.Map
-	callbacks   sync.Map
-	cancelMap   sync.Map
+	registry    *cancelRegistry
 	destroyed   atomic.Bool
 }
 
 func (d *debouncer) Init() {
 	d.destroyed.Store(false)
+	d.registry = NewCancelRegistry(0)
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
@@ -33,33 +33,30 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 		d.generations.Store(key, genCounter)
 	}
 
-	if genCounter.Load() > 1000000 {
+	if genCounter.Load() > 1_000_000 {
 		genCounter.Store(0)
 	}
 
 	gen := genCounter.Add(1)
 
-	if cancelAny, ok := d.cancelMap.Load(key); ok {
-		cancelAny.(context.CancelFunc)()
-		d.cancelMap.Delete(key)
-		d.callbacks.Delete(key)
+	if cancel, ok := d.registry.Get(key); ok {
+		cancel()
+		d.registry.Delete(key)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	d.cancelMap.Store(key, cancel)
-	d.callbacks.Store(key, fn)
+	d.registry.Set(key, cancel)
 
 	timer := time.NewTimer(delay)
 
-	go func(gen int64, ctx context.Context, cancel context.CancelFunc, timer *time.Timer) {
+	go func(gen int64, ctx context.Context, cancel context.CancelFunc, timer *time.Timer, fn func()) {
 		defer func() {
 			cancel()
 
 			if val, ok := d.generations.Load(key); ok {
 				currentGen := val.(*atomic.Int64).Load()
 				if gen == currentGen {
-					d.cancelMap.Delete(key)
-					d.callbacks.Delete(key)
+					d.registry.Delete(key)
 				}
 			}
 
@@ -73,7 +70,6 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 		select {
 		case <-timer.C:
-			// Allow last chance cancel
 			time.Sleep(1 * time.Millisecond)
 
 			if ctx != nil && ctx.Err() != nil {
@@ -86,29 +82,38 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 			if val, ok := d.generations.Load(key); ok {
 				currentGen := val.(*atomic.Int64).Load()
-				if gen == currentGen {
-					if fnAny, ok := d.callbacks.Load(key); ok {
-						if fn := fnAny.(func()); fn != nil {
-							fn()
-						}
-					}
+				if gen == currentGen && fn != nil {
+					// Logf("Debouncer fired for %s/%d", key, gen)
+					fn()
 				}
 			}
 
 		case <-ShutdownCtx.Done():
+			// Logf("Debouncer shutdown for %s/%d", key, gen)
 			return
 
 		case <-ctx.Done():
+			// Logf("Debouncer cancelled for %s/%d", key, gen)
 			return
 		}
-	}(gen, ctx, cancel, timer)
+	}(gen, ctx, cancel, timer, fn)
 }
 
 func (d *debouncer) Cancel(key string) {
 	if d.destroyed.Load() {
 		return
 	}
-	d.delete(key)
+
+	if val, ok := d.generations.Load(key); ok {
+		val.(*atomic.Int64).Add(1)
+	}
+
+	if cancel, ok := d.registry.Get(key); ok {
+		cancel()
+		d.registry.Delete(key)
+	}
+
+	d.generations.Delete(key)
 }
 
 func (d *debouncer) Destroy() {
@@ -116,29 +121,10 @@ func (d *debouncer) Destroy() {
 		return
 	}
 
-	d.cancelMap.Range(func(k, v any) bool {
-		d.delete(k.(string))
-		return true
-	})
+	d.registry.Destroy()
 
-	// clear maps
 	d.generations = sync.Map{}
-	d.callbacks = sync.Map{}
-	d.cancelMap = sync.Map{}
-}
-
-func (d *debouncer) delete(key string) {
-	if val, ok := d.generations.Load(key); ok {
-		val.(*atomic.Int64).Add(1)
-	}
-
-	if cancelAny, ok := d.cancelMap.Load(key); ok {
-		cancelAny.(context.CancelFunc)()
-		d.cancelMap.Delete(key)
-	}
-
-	d.callbacks.Delete(key)
-	d.generations.Delete(key)
+	d.registry = NewCancelRegistry(0)
 }
 
 func RegisterDebouncer() *debouncer {
