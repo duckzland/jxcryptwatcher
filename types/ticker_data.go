@@ -3,9 +3,6 @@ package types
 import (
 	"math"
 	"strconv"
-	"sync"
-
-	"fyne.io/fyne/v2/data/binding"
 
 	JC "jxwatcher/core"
 )
@@ -54,8 +51,7 @@ type TickerData interface {
 	GetStatus() int
 	GetID() string
 	GetOldKey() string
-	UseData() binding.String
-	UseStatus() binding.Int
+	UseData() *JC.DataBinding
 	HasData() bool
 	IsType(val string) bool
 	IsTitle(val string) bool
@@ -82,138 +78,89 @@ type tickerDataCache struct {
 }
 
 type tickerDataType struct {
-	mu       sync.RWMutex
-	data     binding.String
+	data     *JC.DataBinding
 	oldKey   string
 	category string
 	title    string
 	format   string
 	id       string
-	status   binding.Int
 }
 
 func (p *tickerDataType) Init() {
-	p.mu.Lock()
-	p.data = binding.NewString()
-	p.status = binding.NewInt()
+	p.data = JC.NewDataBinding(JC.STRING_EMPTY, JC.STATE_ERROR)
 	p.id = JC.STRING_EMPTY
 	p.oldKey = JC.STRING_EMPTY
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) Set(rate string) {
-	p.mu.Lock()
-	old, err := p.data.Get()
-	if err == nil {
-		p.oldKey = old
+	if p.data != nil {
+		p.oldKey = p.data.GetData()
+		p.data.SetData(rate)
 	}
-	p.data.Set(rate)
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetType(val string) {
-	p.mu.Lock()
 	p.category = val
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetTitle(val string) {
-	p.mu.Lock()
 	p.title = val
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetFormat(val string) {
-	p.mu.Lock()
 	p.format = val
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetStatus(val int) {
-	if p.IsStatus(val) {
-		return
+	if p.data != nil && p.data.GetStatus() != val {
+		p.data.SetStatus(val)
 	}
-	p.mu.Lock()
-	p.status.Set(val)
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetID(val string) {
-	p.mu.Lock()
 	p.id = val
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) SetOldKey(val string) {
-	p.mu.Lock()
 	p.oldKey = val
-	p.mu.Unlock()
 }
 
 func (p *tickerDataType) Get() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	if p.data == nil {
 		return JC.STRING_EMPTY
 	}
-	val, err := p.data.Get()
-	if err != nil {
-		return JC.STRING_EMPTY
-	}
-	return val
+	return p.data.GetData()
 }
 
 func (p *tickerDataType) GetType() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.category
 }
 
 func (p *tickerDataType) GetTitle() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.title
 }
 
 func (p *tickerDataType) GetFormat() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.format
 }
 
 func (p *tickerDataType) GetStatus() int {
-	p.mu.RLock()
-	s := p.status
-	p.mu.RUnlock()
-	v, err := s.Get()
-	if err != nil {
+	if p.data == nil {
 		return JC.STATE_ERROR
 	}
-	return v
+	return p.data.GetStatus()
 }
 
 func (p *tickerDataType) GetID() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.id
 }
 
 func (p *tickerDataType) GetOldKey() string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.oldKey
 }
 
-func (p *tickerDataType) UseData() binding.String {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+func (p *tickerDataType) UseData() *JC.DataBinding {
 	return p.data
-}
-
-func (p *tickerDataType) UseStatus() binding.Int {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.status
 }
 
 func (p *tickerDataType) HasData() bool {
@@ -221,54 +168,31 @@ func (p *tickerDataType) HasData() bool {
 }
 
 func (p *tickerDataType) IsType(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.category == val
 }
 
 func (p *tickerDataType) IsTitle(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.title == val
 }
 
 func (p *tickerDataType) IsFormat(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.format == val
 }
 
 func (p *tickerDataType) IsStatus(val int) bool {
-	p.mu.RLock()
-	s := p.status
-	p.mu.RUnlock()
-	v, _ := s.Get()
-	return v == val
+	return p.GetStatus() == val
 }
 
 func (p *tickerDataType) IsID(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.id == val
 }
 
 func (p *tickerDataType) IsOldKey(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.oldKey == val
 }
 
 func (p *tickerDataType) IsKey(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if p.data == nil {
-		return val == JC.STRING_EMPTY
-	}
-	current, err := p.data.Get()
-	if err != nil {
-		return false
-	}
-	return current == val
+	return p.Get() == val
 }
 
 func (p *tickerDataType) Insert(rate string) {
@@ -276,44 +200,33 @@ func (p *tickerDataType) Insert(rate string) {
 }
 
 func (p *tickerDataType) Update() bool {
-
 	if JC.IsShuttingDown() {
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	if !tickerCacheStorage.Has(p.category) {
 		return false
 	}
+
 	npk := tickerCacheStorage.Get(p.category)
 	if npk == JC.STRING_EMPTY {
 		return false
 	}
 
-	opk := JC.STRING_EMPTY
-	if p.data != nil {
-		v, err := p.data.Get()
-		if err == nil {
-			opk = v
-		}
-	}
-
-	ost, _ := p.status.Get()
+	opk := p.Get()
+	ost := p.GetStatus()
 	nst := ost
 
 	switch ost {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
 		nst = JC.STATE_LOADED
-	case JC.STATE_LOADED:
 	}
 
-	p.status.Set(nst)
+	p.SetStatus(nst)
+
 	if npk != opk || ost != nst {
-		// JC.Logln("Updating Ticker:", npk, opk, p.status)
 		p.oldKey = opk
-		p.data.Set(npk)
+		p.Set(npk)
 		return true
 	}
 
@@ -321,16 +234,15 @@ func (p *tickerDataType) Update() bool {
 }
 
 func (p *tickerDataType) UpdateStatus() bool {
-
 	if JC.IsShuttingDown() {
 		return false
 	}
 
-	ost, _ := p.status.Get()
+	ost := p.GetStatus()
 
 	switch ost {
 	case JC.STATE_LOADING, JC.STATE_FETCHING_NEW, JC.STATE_ERROR:
-		p.status.Set(JC.STATE_LOADED)
+		p.SetStatus(JC.STATE_LOADED)
 		return true
 	case JC.STATE_LOADED:
 		return true
@@ -380,25 +292,16 @@ func (p *tickerDataType) FormatContent() string {
 }
 
 func (p *tickerDataType) DidChange() bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	if !p.IsStatus(JC.STATE_LOADED) || p.oldKey == JC.STRING_EMPTY {
+	if p.oldKey == JC.STRING_EMPTY {
 		return false
 	}
-	if p.data != nil {
-		v, err := p.data.Get()
-		if err == nil && v != p.oldKey {
-			return true
-		}
+	if !p.IsStatus(JC.STATE_LOADED) {
+		return false
 	}
-	return false
+	return p.Get() != p.oldKey
 }
 
 func (p *tickerDataType) Serialize() tickerDataCache {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	return tickerDataCache{
 		Type:   p.category,
 		Title:  p.title,

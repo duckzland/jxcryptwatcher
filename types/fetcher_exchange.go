@@ -137,7 +137,8 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 			for _, ex := range er.Rates {
 
 				// Debug to force display refresh!
-				// ex.TargetAmount = ex.TargetAmount * (rand.Float64() * 5)
+				// factor := new(big.Float).SetFloat64(rand.Float64() * 5)
+				// ex.TargetAmount = new(big.Float).Mul(ex.TargetAmount, factor)
 
 				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)" ex.SourceSymbol, ex.SourceId, ex.TargetAmount.Text('f', -1), ex.TargetSymbol, ex.TargetId)
 

@@ -219,7 +219,6 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 	tl.background.CornerRadius = JC.UseTheme().Size(JC.SizeTickerBorderRadius)
 
 	tv := tdt.UseData()
-	ts := tdt.UseStatus()
 
 	tk := &tickerDisplay{
 		tag: uuid,
@@ -238,8 +237,11 @@ func NewtickerDisplay(tdt JT.TickerData) *tickerDisplay {
 
 	tk.ExtendBaseWidget(tk)
 
-	tv.AddListener(binding.NewDataListener(tk.updateContent))
-	ts.AddListener(binding.NewDataListener(tk.updateContent))
+	tv.AddListener(binding.NewDataListener(func() {
+		fyne.Do(func() {
+			tk.updateContent()
+		})
+	}))
 
 	tk.updateContent()
 

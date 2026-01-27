@@ -536,7 +536,6 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
 	pv := pdt.UseData()
-	ps := pdt.UseStatus()
 
 	pd := &panelDisplay{
 		tag:           uuid,
@@ -549,10 +548,7 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 	if onEdit != nil {
 		pd.onEdit = func() {
 			pdt := JT.UsePanelMaps().GetDataByID(pd.GetTag())
-			pv := pdt.UseData()
-			dynpk, _ := pv.Get()
-
-			onEdit(dynpk, pd.GetTag())
+			onEdit(pdt.Get(), pd.GetTag())
 		}
 	}
 
@@ -571,11 +567,12 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 	}
 
 	pd.ExtendBaseWidget(pd)
-
 	pd.status = pdt.GetStatus()
-
-	pv.AddListener(binding.NewDataListener(pd.updateContent))
-	ps.AddListener(binding.NewDataListener(pd.updateContent))
+	pv.AddListener(binding.NewDataListener(func() {
+		fyne.Do(func() {
+			pd.updateContent()
+		})
+	}))
 
 	pd.Hide()
 

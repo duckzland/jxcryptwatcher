@@ -4,9 +4,6 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"sync"
-
-	"fyne.io/fyne/v2/data/binding"
 
 	JC "jxwatcher/core"
 )
@@ -31,8 +28,7 @@ type PanelData interface {
 	GetParent() *panelsMapType
 	GetValueString() string
 	GetOldValueString() string
-	UseData() binding.String
-	UseStatus() binding.Int
+	UseData() *JC.DataBinding
 	UsePanelKey() *panelKeyType
 	IsStatus(val int) bool
 	IsID(val string) bool
@@ -64,58 +60,42 @@ type panelDataCache struct {
 }
 
 type panelDataType struct {
-	mu     sync.RWMutex
-	data   binding.String
+	data   *JC.DataBinding
 	oldKey string
 	id     string
-	status binding.Int
 	parent *panelsMapType
 }
 
 func (p *panelDataType) Init() {
-	p.mu.Lock()
-	p.data = binding.NewString()
-	p.status = binding.NewInt()
+	p.data = JC.NewDataBinding(JC.STRING_EMPTY, JC.STATE_ERROR)
 	p.id = JC.STRING_EMPTY
 	p.oldKey = JC.STRING_EMPTY
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) Set(val string) {
-	p.mu.Lock()
-	old, err := p.data.Get()
-	if err == nil {
-		p.oldKey = old
+	if p.data != nil {
+		p.oldKey = p.data.GetData()
+		p.data.SetData(val)
 	}
-	p.data.Set(val)
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) SetStatus(val int) {
-	if p.IsStatus(val) {
+	if p.IsStatus(val) || p.data == nil {
 		return
 	}
-	p.mu.Lock()
-	p.status.Set(val)
-	p.mu.Unlock()
+	p.data.SetStatus(val)
 }
 
 func (p *panelDataType) SetID(val string) {
-	p.mu.Lock()
 	p.id = val
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) SetOldKey(val string) {
-	p.mu.Lock()
 	p.oldKey = val
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) SetParent(val *panelsMapType) {
-	p.mu.Lock()
 	p.parent = val
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) SetRate(val *big.Float) bool {
@@ -133,49 +113,28 @@ func (p *panelDataType) SetRate(val *big.Float) bool {
 }
 
 func (p *panelDataType) Get() string {
-	p.mu.RLock()
-	val := JC.STRING_EMPTY
-	if p.data != nil {
-		v, err := p.data.Get()
-		if err == nil {
-			val = v
-		}
+	if p.data == nil {
+		return JC.STRING_EMPTY
 	}
-	p.mu.RUnlock()
-	return val
+	return p.data.GetData()
 }
 
 func (p *panelDataType) GetStatus() int {
-	p.mu.RLock()
-	s := p.status
-	p.mu.RUnlock()
-	if s == nil {
+	if p.data == nil {
 		return JC.STATE_ERROR
 	}
-	v, err := s.Get()
-	if err != nil {
-		return JC.STATE_ERROR
-	}
-	return v
+	return p.data.GetStatus()
 }
 
 func (p *panelDataType) GetID() string {
-	p.mu.RLock()
-	v := p.id
-	p.mu.RUnlock()
-	return v
+	return p.id
 }
 
 func (p *panelDataType) GetOldKey() string {
-	p.mu.RLock()
-	v := p.oldKey
-	p.mu.RUnlock()
-	return v
+	return p.oldKey
 }
 
 func (p *panelDataType) GetParent() *panelsMapType {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.parent
 }
 
@@ -184,25 +143,12 @@ func (p *panelDataType) GetValueString() string {
 }
 
 func (p *panelDataType) GetOldValueString() string {
-	p.mu.RLock()
-	old := p.oldKey
-	p.mu.RUnlock()
-	pko := panelKeyType{value: old}
+	pko := panelKeyType{value: p.oldKey}
 	return pko.GetValueString()
 }
 
-func (p *panelDataType) UseData() binding.String {
-	p.mu.RLock()
-	d := p.data
-	p.mu.RUnlock()
-	return d
-}
-
-func (p *panelDataType) UseStatus() binding.Int {
-	p.mu.RLock()
-	d := p.status
-	p.mu.RUnlock()
-	return d
+func (p *panelDataType) UseData() *JC.DataBinding {
+	return p.data
 }
 
 func (p *panelDataType) UsePanelKey() *panelKeyType {
@@ -210,35 +156,18 @@ func (p *panelDataType) UsePanelKey() *panelKeyType {
 }
 
 func (p *panelDataType) IsStatus(val int) bool {
-	p.mu.RLock()
-	s := p.status
-	p.mu.RUnlock()
-	v, _ := s.Get()
-	return v == val
+	return p.GetStatus() == val
 }
 
 func (p *panelDataType) IsID(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.id == val
 }
 
 func (p *panelDataType) IsKey(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if p.data == nil {
-		return val == JC.STRING_EMPTY
-	}
-	current, err := p.data.Get()
-	if err != nil {
-		return false
-	}
-	return current == val
+	return p.Get() == val
 }
 
 func (p *panelDataType) IsOldKey(val string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.oldKey == val
 }
 
@@ -247,11 +176,10 @@ func (p *panelDataType) IsEqualContentString(pk string) bool {
 }
 
 func (p *panelDataType) IsOnInitialValue() bool {
-	p.mu.RLock()
-	old := p.oldKey
-	p.mu.RUnlock()
-	opt := &panelKeyType{value: old}
-	return opt.IsValueMatchingFloat(-1, JC.STRING_DOUBLE_EQUAL) && p.IsStatus(JC.STATE_LOADED)
+	opt := &panelKeyType{value: p.oldKey}
+	return p.oldKey != JC.STRING_EMPTY &&
+		opt.IsValueMatchingFloat(-1, JC.STRING_DOUBLE_EQUAL) &&
+		p.IsStatus(JC.STATE_LOADED)
 }
 
 func (p *panelDataType) IsValueIncrease() int {
@@ -281,20 +209,19 @@ func (p *panelDataType) IsValueIncrease() int {
 }
 
 func (p *panelDataType) HasParent() bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
 	return p.parent != nil
 }
 
 func (p *panelDataType) RefreshData() {
+	if p.data == nil {
+		return
+	}
 	npk := p.UsePanelKey().UpdateValue(JC.ToBigFloat(-3))
-	p.mu.Lock()
-	p.data.Set(npk)
-	p.mu.Unlock()
+	p.data.SetData(npk)
 }
 
 func (p *panelDataType) RefreshKey(key string) string {
-	if !p.parent.ValidateKey(key) {
+	if p.parent == nil || !p.parent.ValidateKey(key) {
 		return key
 	}
 
@@ -307,21 +234,18 @@ func (p *panelDataType) RefreshKey(key string) string {
 	decimals := pkt.GetDecimalsString()
 	rate := pkt.GetValueFloat()
 
-	parent := p.GetParent()
-
-	if parent != nil && sourceSymbol == JC.STRING_EMPTY {
-		sourceSymbol = parent.GetSymbolById(source)
+	if sourceSymbol == JC.STRING_EMPTY {
+		sourceSymbol = p.parent.GetSymbolById(source)
 	}
 
-	if parent != nil && targetSymbol == JC.STRING_EMPTY {
-		targetSymbol = parent.GetSymbolById(target)
+	if targetSymbol == JC.STRING_EMPTY {
+		targetSymbol = p.parent.GetSymbolById(target)
 	}
 
 	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
 }
 
 func (p *panelDataType) Update(pk string) bool {
-
 	if JC.IsShuttingDown() {
 		return false
 	}
@@ -355,7 +279,6 @@ func (p *panelDataType) Update(pk string) bool {
 	p.SetStatus(nst)
 
 	if npk != opk || nst != ost {
-		// JC.Logln("Updating panel:", npk, opk, p.status)
 		p.Set(npk)
 		p.SetOldKey(opk)
 		return true
@@ -365,7 +288,6 @@ func (p *panelDataType) Update(pk string) bool {
 }
 
 func (p *panelDataType) UpdateRate() bool {
-
 	if JC.IsShuttingDown() {
 		return false
 	}
@@ -384,7 +306,6 @@ func (p *panelDataType) UpdateRate() bool {
 }
 
 func (p *panelDataType) UpdateStatus() bool {
-
 	if JC.IsShuttingDown() {
 		return false
 	}
@@ -403,11 +324,7 @@ func (p *panelDataType) UpdateStatus() bool {
 }
 
 func (p *panelDataType) Destroy() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	p.data = nil
-	p.status = nil
 	p.parent = nil
 	p.oldKey = JC.STRING_EMPTY
 	p.id = JC.STRING_EMPTY
@@ -416,13 +333,6 @@ func (p *panelDataType) Destroy() {
 func (p *panelDataType) FormatTitle() string {
 	pk := p.UsePanelKey()
 
-	// Ensure minimum decimal precision
-	frac := int(JC.NumDecPlaces(pk.GetSourceValueFloat()))
-	if frac < 3 {
-		frac = 2
-	}
-
-	// Use strings.Builder for efficient string construction
 	var b strings.Builder
 	b.WriteString(pk.GetSourceValueFormattedString())
 	b.WriteString(fmtSpace)
@@ -473,23 +383,19 @@ func (p *panelDataType) FormatContent() string {
 }
 
 func (p *panelDataType) DidChange() bool {
-	p.mu.RLock()
-	old := p.oldKey
-	p.mu.RUnlock()
-	opt := &panelKeyType{value: old}
-	return old != p.Get() && opt.IsValueMatchingFloat(-1, JC.STRING_NOT_EQUAL) && p.IsStatus(JC.STATE_LOADED)
+	opt := &panelKeyType{value: p.oldKey}
+	return p.oldKey != p.Get() &&
+		opt.IsValueMatchingFloat(-1, JC.STRING_NOT_EQUAL) &&
+		p.IsStatus(JC.STATE_LOADED)
 }
 
 func (p *panelDataType) Insert(panel panelType, rate float64) {
-	p.mu.Lock()
-	old, err := p.data.Get()
-	if err == nil {
-		p.oldKey = old
+	if p.data != nil {
+		p.oldKey = p.data.GetData()
+		pkt := &panelKeyType{}
+		r := JC.ToBigFloat(rate)
+		p.data.SetData(pkt.GenerateKeyFromPanel(panel, r))
 	}
-	pkt := &panelKeyType{}
-	r := JC.ToBigFloat(rate)
-	p.data.Set(pkt.GenerateKeyFromPanel(panel, r))
-	p.mu.Unlock()
 }
 
 func (p *panelDataType) Serialize() panelDataCache {
