@@ -15,18 +15,18 @@ import (
 )
 
 var httpClient = &http.Client{
-	Timeout: 25 * time.Second,
+	Timeout: 120 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives:     false,
 		MaxIdleConns:          NETWORKING_MAXIMUM_CONNECTION,
 		MaxIdleConnsPerHost:   NETWORKING_MAXIMUM_CONNECTION,
-		IdleConnTimeout:       5 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 10 * time.Second,
+		IdleConnTimeout:       30 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		TLSHandshakeTimeout:   15 * time.Second,
+		ExpectContinueTimeout: 5 * time.Second,
 		DialContext: (&net.Dialer{
-			Timeout:   25 * time.Second,
-			KeepAlive: 5 * time.Second,
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
 		}).DialContext,
 	},
 }
@@ -48,7 +48,7 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)

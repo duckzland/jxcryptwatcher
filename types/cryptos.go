@@ -47,6 +47,7 @@ func (c *cryptosLoaderType) create() *cryptosLoaderType {
 		JC.Logln("Failed to create cryptos.json with new values")
 		return nil
 	case JC.NETWORKING_BAD_DATA_RECEIVED, JC.NETWORKING_ERROR_CONNECTION, JC.NETWORKING_URL_ERROR:
+		JC.Logln("Failed to create cryptos.json due to networking error ", status)
 		return nil
 	}
 	return c
@@ -166,6 +167,7 @@ func (c *cryptosLoaderType) GetCryptos(ctx context.Context, payload any) int64 {
 
 			body, _, err := JC.ReadResponse(JC.ACT_CRYPTO_GET_MAP, resp, 5*1024)
 			if err != nil {
+				JC.Logln("Failed to read cryptos.json body response:", err)
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 
@@ -177,6 +179,7 @@ func (c *cryptosLoaderType) GetCryptos(ctx context.Context, payload any) int64 {
 
 			if err := loader.parseJSON(body); err != nil {
 				JC.Notify(JC.NotifyFailedToFetchCryptosData)
+				JC.Logln("Failed to parse cryptos.json body response:", err)
 				return JC.NETWORKING_BAD_DATA_RECEIVED
 			}
 

@@ -464,6 +464,7 @@ func registerWorkers() {
 				JC.Logln("Unable to refresh tickers: Ticker is not visible")
 				return false
 			}
+
 			return true
 		},
 	)

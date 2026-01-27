@@ -26,11 +26,9 @@ type statusManager struct {
 	network_status   atomic.Bool
 	overlay_shown    atomic.Bool
 	show_tickers     atomic.Bool
-
-	panels_count atomic.Int64
-
-	lastChange  atomic.Int64 // UnixNano
-	lastRefresh atomic.Int64 // UnixNano
+	panels_count     atomic.Int64
+	lastChange       atomic.Int64
+	lastRefresh      atomic.Int64
 }
 
 func (a *statusManager) Init() {
@@ -210,6 +208,13 @@ func (a *statusManager) ToggleTickers() *statusManager {
 	return a
 }
 
+func (a *statusManager) HideTickers() *statusManager {
+	a.show_tickers.Store(false)
+	a.touch()
+	a.Refresh()
+	return a
+}
+
 func (a *statusManager) SetOverlayShownStatus(status bool) *statusManager {
 	if a.overlay_shown.Load() != status {
 		a.overlay_shown.Store(status)
@@ -340,7 +345,7 @@ func (a *statusManager) Refresh() *statusManager {
 	})
 
 	if !a.IsReady() || a.HasError() {
-		JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d", a.IsReady(), a.ValidPanels(), !a.ValidConfig(), !a.ValidCryptos(), a.bad_tickers.Load(), a.lastChange.Load(), a.lastRefresh.Load())
+		JC.Logf("Application Status: Ready: %v | NoPanels: %v|%d | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d", a.IsReady(), a.ValidPanels(), a.PanelsCount(), !a.ValidConfig(), !a.ValidCryptos(), a.bad_tickers.Load(), a.lastChange.Load(), a.lastRefresh.Load())
 	}
 
 	return a

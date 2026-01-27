@@ -68,12 +68,12 @@ func (m *layoutManager) UpdateState() {
 		scroll.Content = m.loading
 		m.state = -1
 		m.mu.Unlock()
-	} else if !UseStatus().ValidConfig() {
+	} else if !UseStatus().ValidConfig() && !UseStatus().ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
 		m.state = -2
 		m.mu.Unlock()
-	} else if !UseStatus().ValidCryptos() {
+	} else if !UseStatus().ValidCryptos() && !UseStatus().ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
 		m.state = -3
@@ -83,7 +83,7 @@ func (m *layoutManager) UpdateState() {
 		scroll.Content = m.actionAddPanel
 		m.state = 0
 		m.mu.Unlock()
-	} else if !UseStatus().HasError() {
+	} else if !UseStatus().HasError() || UseStatus().ValidPanels() {
 		m.mu.Lock()
 		scroll.Content = *content
 		m.state = UseStatus().PanelsCount()
