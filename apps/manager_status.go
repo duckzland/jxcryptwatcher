@@ -1,7 +1,7 @@
 package apps
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -10,182 +10,139 @@ import (
 	JT "jxwatcher/types"
 )
 
-var statusManagerStorage *statusManager = nil
+var statusManagerStorage *statusManager
 
 type statusManager struct {
-	mu               sync.RWMutex
-	ready            bool
-	paused           bool
-	bad_config       bool
-	bad_cryptos      bool
-	bad_tickers      bool
-	no_panels        bool
-	allow_dragging   bool
-	fetching_cryptos bool
-	fetching_rates   bool
-	fetching_tickers bool
-	is_dirty         bool
-	panels_count     int
-	valid_config     bool
-	valid_cryptos    bool
-	network_status   bool
-	overlay_shown    bool
-	show_tickers     bool
-	lastChange       time.Time
-	lastRefresh      time.Time
+	ready            atomic.Bool
+	paused           atomic.Bool
+	bad_config       atomic.Bool
+	bad_cryptos      atomic.Bool
+	bad_tickers      atomic.Bool
+	no_panels        atomic.Bool
+	allow_dragging   atomic.Bool
+	fetching_cryptos atomic.Bool
+	fetching_rates   atomic.Bool
+	fetching_tickers atomic.Bool
+	network_status   atomic.Bool
+	overlay_shown    atomic.Bool
+	show_tickers     atomic.Bool
+
+	panels_count atomic.Int64
+
+	lastChange  atomic.Int64 // UnixNano
+	lastRefresh atomic.Int64 // UnixNano
 }
 
 func (a *statusManager) Init() {
-	a.mu.Lock()
-	a.ready = false
-	a.paused = false
-	a.bad_config = false
-	a.bad_cryptos = false
-	a.bad_tickers = false
-	a.no_panels = false
-	a.allow_dragging = false
-	a.is_dirty = false
-	a.panels_count = 0
-	a.valid_config = true
-	a.valid_cryptos = true
-	a.network_status = true
-	a.show_tickers = true
-	a.lastChange = time.Now()
-	a.mu.Unlock()
+	a.ready.Store(false)
+	a.paused.Store(false)
+	a.bad_config.Store(false)
+	a.bad_cryptos.Store(false)
+	a.bad_tickers.Store(false)
+	a.no_panels.Store(false)
+	a.allow_dragging.Store(false)
+	a.fetching_cryptos.Store(false)
+	a.fetching_rates.Store(false)
+	a.fetching_tickers.Store(false)
+	a.network_status.Store(true)
+	a.overlay_shown.Store(false)
+	a.show_tickers.Store(true)
+
+	a.panels_count.Store(0)
+
+	now := time.Now().UnixNano()
+	a.lastChange.Store(now)
+	a.lastRefresh.Store(now)
 }
 
 func (a *statusManager) IsReady() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.ready
+	return a.ready.Load()
 }
 
 func (a *statusManager) IsPaused() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.paused
+	return a.paused.Load()
 }
 
 func (a *statusManager) IsDraggable() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.allow_dragging
+	return a.allow_dragging.Load()
 }
 
 func (a *statusManager) IsFetchingCryptos() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.fetching_cryptos
+	return a.fetching_cryptos.Load()
 }
 
 func (a *statusManager) IsFetchingRates() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.fetching_rates
+	return a.fetching_rates.Load()
 }
 
 func (a *statusManager) IsFetchingTickers() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.fetching_tickers
+	return a.fetching_tickers.Load()
 }
 
 func (a *statusManager) IsOverlayShown() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.overlay_shown
+	return a.overlay_shown.Load()
 }
 
 func (a *statusManager) IsValidConfig() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.valid_config
+	return !a.bad_config.Load()
 }
 
 func (a *statusManager) IsValidCrypto() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.valid_cryptos
+	return !a.bad_cryptos.Load()
 }
 
 func (a *statusManager) IsGoodNetworkStatus() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.network_status
+	return a.network_status.Load()
 }
 
 func (a *statusManager) IsTickerShown() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.show_tickers
+	return a.show_tickers.Load()
 }
 
 func (a *statusManager) IsDirty() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.lastChange.After(a.lastRefresh)
+	return a.lastChange.Load() > a.lastRefresh.Load()
+}
+
+func (a *statusManager) touch() {
+	a.lastChange.Store(time.Now().UnixNano())
 }
 
 func (a *statusManager) AppReady() *statusManager {
-	a.mu.Lock()
-	changed := !a.ready
-	if changed {
-		a.ready = true
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if !a.ready.Load() {
+		a.ready.Store(true)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) Pause() *statusManager {
-	a.mu.Lock()
-	a.paused = true
-	a.lastChange = time.Now()
-	a.mu.Unlock()
-
+	a.paused.Store(true)
+	a.touch()
 	a.Refresh()
 	return a
 }
 
 func (a *statusManager) Resume() *statusManager {
-	a.mu.Lock()
-	a.paused = false
-	a.lastChange = time.Now()
-	a.mu.Unlock()
-
+	a.paused.Store(false)
+	a.touch()
 	a.Refresh()
 	return a
 }
 
 func (a *statusManager) StartFetchingCryptos() *statusManager {
-	a.mu.Lock()
-	changed := !a.fetching_cryptos
-	if changed {
-		a.fetching_cryptos = true
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if !a.fetching_cryptos.Load() {
+		a.fetching_cryptos.Store(true)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) EndFetchingCryptos() *statusManager {
-	a.mu.Lock()
-	changed := a.fetching_cryptos
-	if changed {
-		a.fetching_cryptos = false
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.fetching_cryptos.Load() {
+		a.fetching_cryptos.Store(false)
+		a.touch()
 		a.DetectData()
 		a.Refresh()
 	}
@@ -193,164 +150,104 @@ func (a *statusManager) EndFetchingCryptos() *statusManager {
 }
 
 func (a *statusManager) StartFetchingRates() *statusManager {
-	a.mu.Lock()
-	changed := !a.fetching_rates
-	if changed {
-		a.fetching_rates = true
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if !a.fetching_rates.Load() {
+		a.fetching_rates.Store(true)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) EndFetchingRates() *statusManager {
-	a.mu.Lock()
-	changed := a.fetching_rates
-	if changed {
-		a.fetching_rates = false
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.fetching_rates.Load() {
+		a.fetching_rates.Store(false)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) StartFetchingTickers() *statusManager {
-	a.mu.Lock()
-	changed := !a.fetching_tickers
-	if changed {
-		a.fetching_tickers = true
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if !a.fetching_tickers.Load() {
+		a.fetching_tickers.Store(true)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) EndFetchingTickers() *statusManager {
-	a.mu.Lock()
-	changed := a.fetching_tickers
-	if changed {
-		a.fetching_tickers = false
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.fetching_tickers.Load() {
+		a.fetching_tickers.Store(false)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) AllowDragging() *statusManager {
-	a.mu.Lock()
-	changed := !a.allow_dragging
-	if changed {
-		a.allow_dragging = true
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if !a.allow_dragging.Load() {
+		a.allow_dragging.Store(true)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) DisallowDragging() *statusManager {
-	a.mu.Lock()
-	changed := a.allow_dragging
-	if changed {
-		a.allow_dragging = false
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.allow_dragging.Load() {
+		a.allow_dragging.Store(false)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) ToggleTickers() *statusManager {
-	a.mu.Lock()
-
-	a.show_tickers = !a.show_tickers
-	a.lastChange = time.Now()
-	a.mu.Unlock()
-
+	a.show_tickers.Store(!a.show_tickers.Load())
+	a.touch()
 	a.Refresh()
 	return a
 }
 
 func (a *statusManager) SetOverlayShownStatus(status bool) *statusManager {
-	a.mu.Lock()
-	changed := a.overlay_shown != status
-	if changed {
-		a.overlay_shown = status
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.overlay_shown.Load() != status {
+		a.overlay_shown.Store(status)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) SetConfigStatus(status bool) *statusManager {
-	a.mu.Lock()
-	changed := a.valid_config != status
-	if changed {
-		a.valid_config = status
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.IsValidConfig() != status {
+		a.bad_config.Store(!status)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) SetCryptoStatus(status bool) *statusManager {
-	a.mu.Lock()
-	changed := a.valid_cryptos != status
-	if changed {
-		a.valid_cryptos = status
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.IsValidCrypto() != status {
+		a.bad_cryptos.Store(!status)
+		a.touch()
 		a.Refresh()
 	}
 	return a
 }
 
 func (a *statusManager) SetNetworkStatus(status bool) *statusManager {
-	a.mu.Lock()
-	changed := a.network_status != status
-	if changed {
-		a.network_status = status
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+	if a.network_status.Load() != status {
+		a.network_status.Store(status)
+		a.touch()
 		a.Refresh()
 	}
 	return a
+}
+
+func (a *statusManager) PanelsCount() int {
+	return int(a.panels_count.Load())
 }
 
 func (a *statusManager) InitData() *statusManager {
@@ -361,15 +258,13 @@ func (a *statusManager) InitData() *statusManager {
 	panelsCount := JT.UsePanelMaps().TotalData()
 	badTickers := !JT.UseConfig().IsValidTickers()
 
-	a.mu.Lock()
-	a.ready = ready
-	a.no_panels = noPanels
-	a.bad_config = badConfig
-	a.bad_cryptos = badCryptos
-	a.panels_count = panelsCount
-	a.bad_tickers = badTickers
-	a.lastChange = time.Now()
-	a.mu.Unlock()
+	a.ready.Store(ready)
+	a.no_panels.Store(noPanels)
+	a.bad_config.Store(badConfig)
+	a.bad_cryptos.Store(badCryptos)
+	a.bad_tickers.Store(badTickers)
+	a.panels_count.Store(int64(panelsCount))
+	a.touch()
 
 	return a
 }
@@ -382,83 +277,79 @@ func (a *statusManager) DetectData() *statusManager {
 	newPanelsCount := JT.UsePanelMaps().TotalData()
 	newBadTickers := !JT.UseConfig().IsValidTickers()
 
-	a.mu.Lock()
-	changed := a.ready != newReady ||
-		a.no_panels != newNoPanels ||
-		a.bad_config != newBadConfig ||
-		a.bad_cryptos != newBadCryptos ||
-		a.bad_tickers != newBadTickers ||
-		a.panels_count != newPanelsCount
+	changed := newReady != a.ready.Load() ||
+		newNoPanels != a.no_panels.Load() ||
+		newBadConfig != a.bad_config.Load() ||
+		newBadCryptos != a.bad_cryptos.Load() ||
+		newBadTickers != a.bad_tickers.Load() ||
+		int64(newPanelsCount) != a.panels_count.Load()
 
 	if changed {
-		a.ready = newReady
-		a.no_panels = newNoPanels
-		a.bad_config = newBadConfig
-		a.bad_cryptos = newBadCryptos
-		a.bad_tickers = newBadTickers
-		a.panels_count = newPanelsCount
-		a.lastChange = time.Now()
-	}
-	a.mu.Unlock()
-
-	if changed {
+		a.ready.Store(newReady)
+		a.no_panels.Store(newNoPanels)
+		a.bad_config.Store(newBadConfig)
+		a.bad_cryptos.Store(newBadCryptos)
+		a.bad_tickers.Store(newBadTickers)
+		a.panels_count.Store(int64(newPanelsCount))
+		a.touch()
 		a.Refresh()
 	}
+
 	return a
 }
 
 func (a *statusManager) HasError() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.bad_config || a.bad_cryptos
+	return a.bad_config.Load() || a.bad_cryptos.Load()
 }
 
 func (a *statusManager) ValidConfig() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return !a.bad_config
+	return !a.bad_config.Load()
 }
 
 func (a *statusManager) ValidCryptos() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return !a.bad_cryptos
+	return !a.bad_cryptos.Load()
 }
 
 func (a *statusManager) ValidPanels() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return !a.no_panels
+	return !a.no_panels.Load()
 }
 
 func (a *statusManager) ValidTickers() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return !a.bad_tickers
+	return !a.bad_tickers.Load()
 }
 
 func (a *statusManager) Refresh() *statusManager {
-	a.mu.Lock()
-	shouldUpdate := a.lastChange.After(a.lastRefresh)
-	a.lastRefresh = time.Now()
-	a.mu.Unlock()
+	lastChange := a.lastChange.Load()
+	lastRefresh := a.lastRefresh.Load()
 
-	if shouldUpdate {
-		// Always protect fyne.Do as this most likely called inside go routine
-		fyne.Do(func() {
-			UseLayout().UpdateState()
-		})
-
-		// Have to use debouncer as too many refresh called and its expensive to relayout!
-		JC.UseDebouncer().Call("refreshing_main_layout", 60*time.Millisecond, func() {
-			fyne.Do(func() {
-				UseAction().Refresh()
-			})
-		})
+	if lastChange <= lastRefresh {
+		return a
 	}
 
+	now := time.Now().UnixNano()
+	a.lastRefresh.Store(now)
+
+	fyne.Do(func() {
+		UseLayout().UpdateState()
+	})
+
+	JC.UseDebouncer().Call("refreshing_main_layout", 60*time.Millisecond, func() {
+		fyne.Do(func() {
+			UseAction().Refresh()
+		})
+	})
+
 	if !a.IsReady() || a.HasError() {
-		JC.Logf("Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d", a.IsReady(), a.ValidPanels(), !a.ValidConfig(), !a.ValidCryptos(), a.bad_tickers, a.lastChange.UnixNano(), a.lastRefresh.UnixNano())
+		JC.Logf(
+			"Application Status: Ready: %v | NoPanels: %v | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d",
+			a.IsReady(),
+			a.ValidPanels(),
+			!a.ValidConfig(),
+			!a.ValidCryptos(),
+			a.bad_tickers.Load(),
+			a.lastChange.Load(),
+			a.lastRefresh.Load(),
+		)
 	}
 
 	return a

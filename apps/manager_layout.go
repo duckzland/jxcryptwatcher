@@ -86,7 +86,7 @@ func (m *layoutManager) UpdateState() {
 	} else if !UseStatus().HasError() {
 		m.mu.Lock()
 		scroll.Content = *content
-		m.state = UseStatus().panels_count
+		m.state = UseStatus().PanelsCount()
 		m.mu.Unlock()
 	} else {
 		m.mu.Lock()
