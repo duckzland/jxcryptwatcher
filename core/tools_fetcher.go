@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-const FETCHER_MODE_DISPATCH = 0
-const FETCHER_MODE_CALL = 1
+const FETCHER_MODE_DISPATCH int32 = 0
+const FETCHER_MODE_CALL int32 = 1
 
 type FetcherInterface interface {
 	Fetch(ctx context.Context, payload any, callback func(FetchResultInterface))
@@ -19,12 +19,11 @@ type FetcherInterface interface {
 var fetcherManager *fetcher = nil
 
 type fetcher struct {
-	fetchers      sync.Map
-	conditions    sync.Map
-	activeWorkers sync.Map
-	dispatcher    *dispatcher
-	destroyed     atomic.Bool
-	paused        atomic.Bool
+	fetchers   sync.Map
+	conditions sync.Map
+	registry   *cancelRegistry
+	dispatcher *dispatcher
+	state      *stateManager
 }
 
 func (m *fetcher) Init() {
@@ -32,8 +31,9 @@ func (m *fetcher) Init() {
 		return
 	}
 
-	m.destroyed.Store(false)
-	m.paused.Store(false)
+	m.state = NewStateManager(STATE_RUNNING)
+
+	m.registry = NewCancelRegistry()
 
 	m.dispatcher = NewDispatcher(NETWORKING_MAXIMUM_CONNECTION*2, NETWORKING_MAXIMUM_CONNECTION, 50*time.Millisecond)
 
@@ -42,7 +42,7 @@ func (m *fetcher) Init() {
 }
 
 func (m *fetcher) Register(key string, f FetcherInterface, cond func() bool) {
-	if m.destroyed.Load() || m.paused.Load() {
+	if m.state.Is(STATE_DESTROYED) || m.state.Is(STATE_PAUSED) {
 		return
 	}
 
@@ -55,11 +55,11 @@ func (m *fetcher) Register(key string, f FetcherInterface, cond func() bool) {
 }
 
 func (m *fetcher) Deregister(key string) {
-	if cAny, ok := m.activeWorkers.Load(key); ok {
-		if cancel, ok := cAny.(context.CancelFunc); ok && cancel != nil {
+	if cancel, ok := m.registry.Get(key); ok {
+		if cancel != nil {
 			cancel()
 		}
-		m.activeWorkers.Delete(key)
+		m.registry.Delete(key)
 	}
 
 	m.fetchers.Delete(key)
@@ -67,7 +67,7 @@ func (m *fetcher) Deregister(key string) {
 }
 
 func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob int), onSuccess func(map[string]FetchResultInterface), onCancel func()) {
-	if m.destroyed.Load() || m.paused.Load() {
+	if m.state.Is(STATE_DESTROYED) || m.state.Is(STATE_PAUSED) {
 		return
 	}
 
@@ -95,10 +95,9 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		preprocess(total)
 	}
 
-	if oldCancelAny, ok := m.activeWorkers.Load(mapKey); ok {
-		oldCancel := oldCancelAny.(context.CancelFunc)
+	if oldCancel, ok := m.registry.Get(mapKey); ok {
 		oldCancel()
-		m.activeWorkers.Delete(mapKey)
+		m.registry.Delete(mapKey)
 	}
 
 	if total == 0 {
@@ -110,7 +109,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	m.activeWorkers.Store(mapKey, cancel)
+	m.registry.Set(mapKey, cancel)
 
 	switch mode {
 	case FETCHER_MODE_CALL:
@@ -135,7 +134,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 						}
 
 						cancel()
-						m.activeWorkers.Delete(mapKey)
+						m.registry.Delete(mapKey)
 					}()
 
 					if ctx.Err() != nil {
@@ -197,10 +196,10 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			}
 		}
 
-		if m.paused.Load() || m.destroyed.Load() {
+		if m.state.Is(STATE_PAUSED) || m.state.Is(STATE_DESTROYED) {
 			cancelled.Store(true)
 			cancel()
-			m.activeWorkers.Delete(mapKey)
+			m.registry.Delete(mapKey)
 			if onCancel != nil {
 				onCancel()
 			}
@@ -211,7 +210,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		go func() {
 			defer func() {
 				cancel()
-				m.activeWorkers.Delete(mapKey)
+				m.registry.Delete(mapKey)
 				if cancelled.Load() {
 					if onCancel != nil {
 						onCancel()
@@ -253,15 +252,20 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 }
 
 func (m *fetcher) Destroy() {
-	if m.destroyed.Swap(true) {
+	if !m.state.CompareAndChange(STATE_RUNNING, STATE_DESTROYED) &&
+		!m.state.CompareAndChange(STATE_PAUSED, STATE_DESTROYED) {
 		return
 	}
 
-	m.activeWorkers.Range(func(k, v any) bool {
-		if cancel, ok := v.(context.CancelFunc); ok && cancel != nil {
-			cancel()
-		}
-		m.activeWorkers.Delete(k)
+	m.registry.Destroy()
+
+	m.fetchers.Range(func(k, _ any) bool {
+		m.fetchers.Delete(k)
+		return true
+	})
+
+	m.conditions.Range(func(k, _ any) bool {
+		m.conditions.Delete(k)
 		return true
 	})
 
@@ -273,15 +277,9 @@ func (m *fetcher) Destroy() {
 }
 
 func (m *fetcher) Pause() {
-	m.activeWorkers.Range(func(k, v any) bool {
-		if cancel, ok := v.(context.CancelFunc); ok && cancel != nil {
-			cancel()
-		}
-		m.activeWorkers.Delete(k)
-		return true
-	})
+	m.registry.Destroy()
 
-	m.paused.Store(true)
+	m.state.Change(STATE_PAUSED)
 
 	if m.dispatcher != nil {
 		m.dispatcher.Pause()
@@ -289,7 +287,11 @@ func (m *fetcher) Pause() {
 }
 
 func (m *fetcher) Resume() {
-	m.paused.Store(false)
+	if m.state.Is(STATE_DESTROYED) {
+		return
+	}
+
+	m.state.Change(STATE_RUNNING)
 
 	if m.dispatcher != nil {
 		m.dispatcher.Resume()

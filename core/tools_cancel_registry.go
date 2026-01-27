@@ -12,9 +12,9 @@ type cancelRegistry struct {
 }
 
 func (r *cancelRegistry) Set(tag string, cancel context.CancelFunc) {
-	if _, loaded := r.data.LoadOrStore(tag, cancel); loaded {
-		r.data.Store(tag, cancel)
-	} else {
+	_, loaded := r.data.Load(tag)
+	r.data.Store(tag, cancel)
+	if !loaded {
 		r.count.Add(1)
 	}
 }

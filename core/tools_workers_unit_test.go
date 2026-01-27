@@ -22,8 +22,8 @@ func TestWorkerUnitListenerStartAndCall(t *testing.T) {
 
 	w.Start()
 
-	// ctx and cancel are atomic.Value, check Load() not nil
-	if w.ctx.Load() == nil || w.cancel.Load() == nil {
+	// ctx and registry should not be nil
+	if w.ctx.Load() == nil || !w.registry.Exists("worker") {
 		t.Error("Expected listener to create cancel context")
 	}
 

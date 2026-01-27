@@ -6,10 +6,6 @@ import (
 	"time"
 )
 
-const WORKER_UNIT_IDLE int32 = 1
-const WORKER_UNIT_ACTIVE int32 = 2
-const WORKER_UNIT_DESTROYED int32 = 3
-
 type workerUnit struct {
 	delay       atomic.Int64
 	interval    atomic.Int64
@@ -18,12 +14,12 @@ type workerUnit struct {
 	getInterval func() int64
 	queue       chan any
 	ctx         atomic.Value
-	cancel      atomic.Value
-	state       atomic.Int32
+	registry    *cancelRegistry
+	state       *stateManager
 }
 
 func (w *workerUnit) Call(payload any) {
-	if w.state.Load() != WORKER_UNIT_ACTIVE {
+	if !w.state.Is(STATE_RUNNING) {
 		return
 	}
 	if fnAny := w.fn.Load(); fnAny != nil {
@@ -33,7 +29,7 @@ func (w *workerUnit) Call(payload any) {
 }
 
 func (w *workerUnit) Flush() {
-	if w.state.Load() == WORKER_UNIT_DESTROYED {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 	for {
@@ -46,7 +42,7 @@ func (w *workerUnit) Flush() {
 }
 
 func (w *workerUnit) Push(payload any) {
-	if w.state.Load() != WORKER_UNIT_ACTIVE {
+	if !w.state.Is(STATE_RUNNING) {
 		return
 	}
 	select {
@@ -56,7 +52,7 @@ func (w *workerUnit) Push(payload any) {
 }
 
 func (w *workerUnit) Start() {
-	if w.state.Load() == WORKER_UNIT_DESTROYED || w.state.Load() == WORKER_UNIT_ACTIVE {
+	if w.state.Is(STATE_DESTROYED) || w.state.Is(STATE_RUNNING) {
 		return
 	}
 
@@ -68,35 +64,30 @@ func (w *workerUnit) Start() {
 		w.interval.Store(w.getInterval())
 	}
 
-	w.state.Store(WORKER_UNIT_ACTIVE)
+	w.state.Change(STATE_RUNNING)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	w.ctx.Store(&ctx)
-	w.cancel.Store(&cancel)
+	w.registry.Set("worker", cancel)
 
 	go w.worker()
 }
 
 func (w *workerUnit) Stop() {
-	if w.state.Load() == WORKER_UNIT_DESTROYED {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
-	w.state.Store(WORKER_UNIT_IDLE)
+	w.state.Change(STATE_PAUSED)
 
-	if cAny := w.cancel.Load(); cAny != nil {
-		if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
-			cancel := *cPtr
-			if cancel != nil {
-				cancel()
-			}
-		}
+	if cancel, ok := w.registry.Get("worker"); ok {
+		cancel()
 	}
 }
 
 func (w *workerUnit) Reset() {
 	w.Flush()
-	if w.state.Load() == WORKER_UNIT_ACTIVE {
+	if w.state.Is(STATE_RUNNING) {
 		w.Stop()
 		w.Start()
 	}
@@ -105,22 +96,14 @@ func (w *workerUnit) Reset() {
 func (w *workerUnit) Destroy() {
 	w.Flush()
 
-	if w.state.Load() == WORKER_UNIT_DESTROYED {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
-	w.state.Store(WORKER_UNIT_DESTROYED)
+	w.state.Change(STATE_DESTROYED)
 
-	if cAny := w.cancel.Load(); cAny != nil {
-		if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
-			cancel := *cPtr
-			if cancel != nil {
-				cancel()
-			}
-		}
-	}
+	w.registry.Destroy()
 
 	w.ctx.Store((*context.Context)(nil))
-	w.cancel.Store((*context.CancelFunc)(nil))
 
 	close(w.queue)
 }
@@ -138,14 +121,9 @@ func (w *workerUnit) worker() {
 	defer ticker.Stop()
 
 	defer func() {
-		if w.state.Load() != WORKER_UNIT_ACTIVE {
-			if cAny := w.cancel.Load(); cAny != nil {
-				if cPtr := cAny.(*context.CancelFunc); cPtr != nil {
-					cancel := *cPtr
-					if cancel != nil {
-						cancel()
-					}
-				}
+		if !w.state.Is(STATE_RUNNING) {
+			if cancel, ok := w.registry.Get("worker"); ok {
+				cancel()
 			}
 		}
 	}()
@@ -162,7 +140,7 @@ func (w *workerUnit) worker() {
 		ctx := *ctxPtr
 		delay := w.delay.Load()
 
-		if w.state.Load() != WORKER_UNIT_ACTIVE {
+		if !w.state.Is(STATE_RUNNING) {
 			return
 		}
 
@@ -172,6 +150,7 @@ func (w *workerUnit) worker() {
 
 		case <-ctx.Done():
 			return
+
 		case <-ticker.C:
 			w.Push(nil)
 
@@ -184,7 +163,7 @@ func (w *workerUnit) worker() {
 				time.Sleep(time.Duration(delay) * time.Millisecond)
 			}
 
-			if w.state.Load() != WORKER_UNIT_ACTIVE {
+			if !w.state.Is(STATE_RUNNING) {
 				return
 			}
 
@@ -198,12 +177,12 @@ func NewWorkerUnit(size int, getDelay func() int64, getInterval func() int64, fn
 		queue:       make(chan any, size),
 		getDelay:    getDelay,
 		getInterval: getInterval,
+		registry:    NewCancelRegistry(),
 	}
 	unit.fn.Store(fn)
-	unit.state.Store(WORKER_UNIT_IDLE)
+	unit.state = NewStateManager(STATE_PAUSED)
 
 	unit.ctx.Store((*context.Context)(nil))
-	unit.cancel.Store((*context.CancelFunc)(nil))
 
 	return unit
 }

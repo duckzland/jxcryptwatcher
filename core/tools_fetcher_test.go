@@ -15,11 +15,11 @@ func TestFetcherInit(t *testing.T) {
 		t.Error("Expected dispatcher to be initialized")
 	}
 
-	if f.destroyed.Load() {
+	if f.state.Is(STATE_DESTROYED) {
 		t.Error("Fetcher should not be marked destroyed after Init")
 	}
 
-	if f.paused.Load() {
+	if f.state.Is(STATE_PAUSED) {
 		t.Error("Fetcher should not be marked paused after Init")
 	}
 }
@@ -115,11 +115,11 @@ func TestFetcherDestroy(t *testing.T) {
 	)
 
 	_, cancel := context.WithCancel(context.Background())
-	f.activeWorkers.Store("destroyTest", cancel)
+	f.registry.Set("destroyTest", cancel)
 
 	f.Destroy()
 
-	if !f.destroyed.Load() {
+	if !f.state.Is(STATE_DESTROYED) {
 		t.Error("Expected fetcher to be marked destroyed after Destroy")
 	}
 
@@ -134,7 +134,7 @@ func TestFetcherDestroy(t *testing.T) {
 		t.Error("Expected conditions to be empty after destroy")
 	}
 
-	f.activeWorkers.Range(func(_, _ any) bool { found = true; return false })
+	f.registry.Range(func(_ string, _ context.CancelFunc) bool { found = true; return false })
 	if found {
 		t.Error("Expected activeWorkers to be empty after destroy")
 	}

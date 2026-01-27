@@ -16,7 +16,7 @@ func stopWorker(w *worker, key string, delayMs int64) {
 func TestWorkerInit(t *testing.T) {
 	w := &worker{}
 	w.Init()
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		t.Error("Expected worker not destroyed after Init")
 	}
 }
@@ -202,7 +202,7 @@ func TestWorkerDestroy(t *testing.T) {
 
 	w.Destroy()
 
-	if !w.destroyed.Load() {
+	if !w.state.Is(STATE_DESTROYED) {
 		t.Error("Expected worker destroyed flag to be true")
 	}
 

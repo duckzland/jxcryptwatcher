@@ -38,6 +38,7 @@ func TestDispatcherInit(t *testing.T) {
 			t.Error("Expected context to be canceled")
 		}
 	}()
+
 	cancelPtr := d.cancel.Load().(*context.CancelFunc)
 	(*cancelPtr)()
 
@@ -77,6 +78,7 @@ func TestRegisterAndUseDispatcher(t *testing.T) {
 func TestDispatcherSubmitAndStart(t *testing.T) {
 	d := NewDispatcher(5, 1, 10*time.Millisecond)
 	d.Init()
+
 	var mu sync.Mutex
 	called := false
 
@@ -109,8 +111,8 @@ func TestDispatcherSetters(t *testing.T) {
 	if d.maxConcurrent.Load() != 3 {
 		t.Errorf("Expected maxConcurrent 3, got %d", d.maxConcurrent.Load())
 	}
-	if d.getDelay() != 100*time.Millisecond {
-		t.Errorf("Expected delay 100ms, got %v", d.getDelay())
+	if time.Duration(d.delay.Load()) != 100*time.Millisecond {
+		t.Errorf("Expected delay 100ms, got %v", time.Duration(d.delay.Load()))
 	}
 }
 
@@ -137,7 +139,7 @@ func TestDispatcherConcurrentAccess(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			_ = d.getDelay()
+			_ = time.Duration(d.delay.Load())
 		}
 	}()
 

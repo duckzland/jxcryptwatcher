@@ -33,8 +33,7 @@ type dispatcher struct {
 	cancel        atomic.Value
 	drainer       atomic.Value
 	key           atomic.Value
-	destroyed     atomic.Bool
-	paused        atomic.Bool
+	state         *stateManager
 }
 
 func (d *dispatcher) Init() {
@@ -58,47 +57,63 @@ func (d *dispatcher) Init() {
 	ctx, cancel := context.WithCancel(context.Background())
 	d.ctx.Store(&ctx)
 	d.cancel.Store(&cancel)
+
+	d.state = NewStateManager(STATE_RUNNING)
 }
 
 func (d *dispatcher) Start() {
-	max := int(d.maxConcurrent.Load())
-	if int(d.generated.Load()) == max {
+	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
 
-	for i := 1; i <= max; i++ {
-		if d.destroyed.Load() {
+	if d.generated.Load() == d.maxConcurrent.Load() {
+		return
+	}
+
+	max := d.maxConcurrent.Load()
+	for i := int32(1); i <= max; i++ {
+		if d.state.Is(STATE_DESTROYED) {
 			return
 		}
 		go d.worker(i)
 		d.generated.Add(1)
 	}
 
-	Logf("Initializing Dispatcher [%s]: %d/%d", d.getKey(), d.generated.Load(), d.maxConcurrent.Load())
+	keyAny := d.key.Load()
+	key := ""
+	if keyAny != nil {
+		key = keyAny.(string)
+	}
+
+	Logf("Initializing Dispatcher [%s]: %d/%d", key, d.generated.Load(), d.maxConcurrent.Load())
 }
 
 func (d *dispatcher) Pause() {
-	d.paused.Store(true)
-	d.Drain()
+	if !d.state.Is(STATE_DESTROYED) {
+		d.state.Change(STATE_PAUSED)
+		d.Drain()
+	}
 }
 
 func (d *dispatcher) Resume() {
-	d.paused.Store(false)
+	if !d.state.Is(STATE_DESTROYED) {
+		d.state.Change(STATE_RUNNING)
+	}
 }
 
 func (d *dispatcher) Drain() {
 	for {
 		if d.queue == nil {
-			if d.hasDrainer() {
-				d.getDrainer()()
+			if fnAny := d.drainer.Load(); fnAny != nil {
+				fnAny.(func())()
 			}
 			return
 		}
 		select {
 		case <-d.queue:
 		default:
-			if d.hasDrainer() {
-				d.getDrainer()()
+			if fnAny := d.drainer.Load(); fnAny != nil {
+				fnAny.(func())()
 			}
 			return
 		}
@@ -106,9 +121,15 @@ func (d *dispatcher) Drain() {
 }
 
 func (d *dispatcher) Submit(fn func()) {
-	if d.paused.Load() || d.destroyed.Load() || d.queue == nil {
+	switch d.state.Get() {
+	case STATE_PAUSED, STATE_DESTROYED:
 		return
 	}
+
+	if d.queue == nil {
+		return
+	}
+
 	select {
 	case d.queue <- fn:
 	default:
@@ -116,9 +137,10 @@ func (d *dispatcher) Submit(fn func()) {
 }
 
 func (d *dispatcher) Destroy() {
-	if d.destroyed.Swap(true) {
+	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
+	d.state.Change(STATE_DESTROYED)
 
 	if cancelPtr := d.cancel.Load(); cancelPtr != nil {
 		(*cancelPtr.(*context.CancelFunc))()
@@ -152,32 +174,10 @@ func (d *dispatcher) SetKey(key string) {
 	d.key.Store(key)
 }
 
-func (d *dispatcher) getDelay() time.Duration {
-	return time.Duration(d.delay.Load())
-}
-
-func (d *dispatcher) hasDrainer() bool {
-	return d.drainer.Load() != nil
-}
-
-func (d *dispatcher) getDrainer() func() {
-	if fnAny := d.drainer.Load(); fnAny != nil {
-		return fnAny.(func())
-	}
-	return nil
-}
-
-func (d *dispatcher) getKey() string {
-	if kAny := d.key.Load(); kAny != nil {
-		return kAny.(string)
-	}
-	return ""
-}
-
-func (d *dispatcher) worker(id int) {
+func (d *dispatcher) worker(id int32) {
 	defer func() {
 		d.generated.Add(-1)
-		if !d.destroyed.Load() {
+		if !d.state.Is(STATE_DESTROYED) {
 			if cancelPtr := d.cancel.Load(); cancelPtr != nil {
 				(*cancelPtr.(*context.CancelFunc))()
 			}
@@ -186,7 +186,7 @@ func (d *dispatcher) worker(id int) {
 	}()
 
 	for {
-		if d.destroyed.Load() {
+		if d.state.Is(STATE_DESTROYED) {
 			return
 		}
 		if d.queue == nil {
@@ -201,15 +201,18 @@ func (d *dispatcher) worker(id int) {
 		select {
 		case <-ShutdownCtx.Done():
 			return
+
 		case <-ctxDone:
 			return
+
 		case fn, ok := <-d.queue:
-			if !ok || d.destroyed.Load() {
+			if !ok || d.state.Is(STATE_DESTROYED) {
 				return
 			}
 			if fn != nil {
 				fn()
-				delay := d.getDelay()
+
+				delay := time.Duration(d.delay.Load())
 				if delay < time.Millisecond {
 					delay = time.Millisecond
 				}
@@ -232,10 +235,12 @@ func UseDispatcher() *dispatcher {
 
 func NewDispatcher(buffer, maxConcurrent int, delay time.Duration) *dispatcher {
 	d := &dispatcher{}
+
 	d.buffer.Store(int32(buffer))
 	d.maxConcurrent.Store(int32(maxConcurrent))
 	d.delay.Store(int64(delay))
-	d.destroyed.Store(false)
+	d.state = NewStateManager(STATE_RUNNING)
 	d.Init()
+
 	return d
 }

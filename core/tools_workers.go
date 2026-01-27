@@ -2,7 +2,6 @@ package core
 
 import (
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -21,15 +20,15 @@ type worker struct {
 	registry   sync.Map
 	conditions sync.Map
 	lastRun    sync.Map
-	destroyed  atomic.Bool
+	state      *stateManager
 }
 
 func (w *worker) Init() {
-	w.destroyed.Store(false)
+	w.state = NewStateManager(STATE_RUNNING)
 }
 
 func (w *worker) Register(key string, size int, getDelay func() int64, getInterval func() int64, fn func(any) bool, shouldRun func() bool) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -43,7 +42,7 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 	w.lastRun.Store(key, time.Now())
 
 	unit := NewWorkerUnit(size, getDelay, getInterval, func(payload any) bool {
-		if w.destroyed.Load() {
+		if w.state.Is(STATE_DESTROYED) {
 			return false
 		}
 
@@ -62,7 +61,7 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 }
 
 func (w *worker) Deregister(key string) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -72,7 +71,7 @@ func (w *worker) Deregister(key string) {
 }
 
 func (w *worker) Call(key string, mode CallMode) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -110,7 +109,7 @@ func (w *worker) Call(key string, mode CallMode) {
 }
 
 func (w *worker) Push(key string, payload any) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -121,7 +120,7 @@ func (w *worker) Push(key string, payload any) {
 }
 
 func (w *worker) Flush(key string) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -132,7 +131,7 @@ func (w *worker) Flush(key string) {
 }
 
 func (w *worker) Reset(key string) {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -143,7 +142,7 @@ func (w *worker) Reset(key string) {
 }
 
 func (w *worker) Pause() {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -156,7 +155,7 @@ func (w *worker) Pause() {
 }
 
 func (w *worker) Resume() {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -174,7 +173,7 @@ func (w *worker) Reload() {
 }
 
 func (w *worker) GetLastUpdate(key string) time.Time {
-	if w.destroyed.Load() {
+	if w.state.Is(STATE_DESTROYED) {
 		return time.Time{}
 	}
 
@@ -186,7 +185,8 @@ func (w *worker) GetLastUpdate(key string) time.Time {
 }
 
 func (w *worker) Destroy() {
-	if w.destroyed.Swap(true) {
+	if !w.state.CompareAndChange(STATE_RUNNING, STATE_DESTROYED) &&
+		!w.state.CompareAndChange(STATE_PAUSED, STATE_DESTROYED) {
 		return
 	}
 
