@@ -17,7 +17,7 @@ const (
 )
 
 type worker struct {
-	registry   sync.Map
+	units      sync.Map
 	conditions sync.Map
 	lastRun    sync.Map
 	state      *stateManager
@@ -32,7 +32,7 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 		return
 	}
 
-	if existingAny, ok := w.registry.Load(key); ok {
+	if existingAny, ok := w.units.Load(key); ok {
 		existing := existingAny.(*workerUnit)
 		existing.Destroy()
 		w.delete(key)
@@ -56,7 +56,7 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 		return fn(payload)
 	})
 
-	w.registry.Store(key, unit)
+	w.units.Store(key, unit)
 	unit.Start()
 }
 
@@ -75,7 +75,7 @@ func (w *worker) Call(key string, mode CallMode) {
 		return
 	}
 
-	unitAny, ok := w.registry.Load(key)
+	unitAny, ok := w.units.Load(key)
 	if !ok {
 		return
 	}
@@ -113,7 +113,7 @@ func (w *worker) Push(key string, payload any) {
 		return
 	}
 
-	if unitAny, ok := w.registry.Load(key); ok {
+	if unitAny, ok := w.units.Load(key); ok {
 		unit := unitAny.(*workerUnit)
 		unit.Push(payload)
 	}
@@ -124,7 +124,7 @@ func (w *worker) Flush(key string) {
 		return
 	}
 
-	if unitAny, ok := w.registry.Load(key); ok {
+	if unitAny, ok := w.units.Load(key); ok {
 		unit := unitAny.(*workerUnit)
 		unit.Flush()
 	}
@@ -135,7 +135,7 @@ func (w *worker) Reset(key string) {
 		return
 	}
 
-	if unitAny, ok := w.registry.Load(key); ok {
+	if unitAny, ok := w.units.Load(key); ok {
 		unit := unitAny.(*workerUnit)
 		unit.Reset()
 	}
@@ -146,7 +146,7 @@ func (w *worker) Pause() {
 		return
 	}
 
-	w.registry.Range(func(_, v any) bool {
+	w.units.Range(func(_, v any) bool {
 		if unit, ok := v.(*workerUnit); ok {
 			unit.Stop()
 		}
@@ -159,7 +159,7 @@ func (w *worker) Resume() {
 		return
 	}
 
-	w.registry.Range(func(_, v any) bool {
+	w.units.Range(func(_, v any) bool {
 		if unit, ok := v.(*workerUnit); ok {
 			unit.Start()
 		}
@@ -191,14 +191,14 @@ func (w *worker) Destroy() {
 	}
 
 	var units []*workerUnit
-	w.registry.Range(func(_, v any) bool {
+	w.units.Range(func(_, v any) bool {
 		if unit, ok := v.(*workerUnit); ok {
 			units = append(units, unit)
 		}
 		return true
 	})
 
-	w.registry = sync.Map{}
+	w.units = sync.Map{}
 	w.conditions = sync.Map{}
 	w.lastRun = sync.Map{}
 
@@ -210,9 +210,9 @@ func (w *worker) Destroy() {
 func (w *worker) delete(key string) *workerUnit {
 	var unit *workerUnit
 
-	if u, ok := w.registry.Load(key); ok {
+	if u, ok := w.units.Load(key); ok {
 		unit = u.(*workerUnit)
-		w.registry.Delete(key)
+		w.units.Delete(key)
 	}
 
 	w.conditions.Delete(key)

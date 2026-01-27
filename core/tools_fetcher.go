@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -27,7 +26,7 @@ type fetcher struct {
 }
 
 func (m *fetcher) Init() {
-	if m.dispatcher != nil {
+	if m.state != nil {
 		return
 	}
 
@@ -42,26 +41,18 @@ func (m *fetcher) Init() {
 }
 
 func (m *fetcher) Register(key string, f FetcherInterface, cond func() bool) {
-	if m.state.Is(STATE_DESTROYED) || m.state.Is(STATE_PAUSED) {
+	if m.state.Is(STATE_DESTROYED) {
 		return
 	}
 
-	if _, ok := m.fetchers.Load(key); ok {
-		m.Deregister(key)
-	}
+	m.Deregister(key)
 
 	m.fetchers.Store(key, f)
 	m.conditions.Store(key, cond)
 }
 
 func (m *fetcher) Deregister(key string) {
-	if cancel, ok := m.registry.Get(key); ok {
-		if cancel != nil {
-			cancel()
-		}
-		m.registry.Delete(key)
-	}
-
+	m.registry.Cancel(key)
 	m.fetchers.Delete(key)
 	m.conditions.Delete(key)
 }
@@ -95,10 +86,7 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		preprocess(total)
 	}
 
-	if oldCancel, ok := m.registry.Get(mapKey); ok {
-		oldCancel()
-		m.registry.Delete(mapKey)
-	}
+	m.registry.Cancel(mapKey)
 
 	if total == 0 {
 		if onCancel != nil {
@@ -126,15 +114,14 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 
 				m.dispatcher.Submit(func() {
 					defer func() {
+
+						m.registry.Cancel(mapKey)
+
 						if ctx.Err() != nil {
 							if onCancel != nil {
 								onCancel()
 							}
-							return
 						}
-
-						cancel()
-						m.registry.Delete(mapKey)
 					}()
 
 					if ctx.Err() != nil {
@@ -158,8 +145,6 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		}
 
 	case FETCHER_MODE_DISPATCH:
-		var cancelled atomic.Bool
-		cancelled.Store(false)
 
 		results := sync.Map{}
 		done := make(chan struct{}, total)
@@ -174,22 +159,25 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			if cond, ok := conds[key]; ok && cond != nil && !cond() {
 				continue
 			}
+
 			for _, item := range items {
 				k := key
 				payload := item
+
 				m.dispatcher.Submit(func() {
 					defer func() {
-						if !cancelled.Load() {
-							done <- struct{}{}
-						}
+						done <- struct{}{}
 					}()
-					if ctx.Err() != nil || cancelled.Load() {
+
+					if ctx.Err() != nil {
 						return
 					}
+
 					m.execute(ctx, k, payload, func(result FetchResultInterface) {
-						if ctx.Err() != nil || cancelled.Load() {
+						if ctx.Err() != nil {
 							return
 						}
+
 						results.Store(payload, result)
 					})
 				})
@@ -197,25 +185,23 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 		}
 
 		if m.state.Is(STATE_PAUSED) || m.state.Is(STATE_DESTROYED) {
-			cancelled.Store(true)
-			cancel()
-			m.registry.Delete(mapKey)
-			if onCancel != nil {
-				onCancel()
+			m.registry.Cancel(mapKey)
+
+			if ctx.Err() != nil {
+				if onCancel != nil {
+					onCancel()
+				}
 			}
-			close(done)
+
 			return
 		}
 
 		go func() {
 			defer func() {
-				cancel()
-				m.registry.Delete(mapKey)
-				if cancelled.Load() {
-					if onCancel != nil {
-						onCancel()
-					}
-					close(done)
+				m.registry.Cancel(mapKey)
+
+				if onCancel != nil {
+					onCancel()
 				}
 			}()
 
@@ -223,15 +209,14 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 			for {
 				select {
 				case <-ShutdownCtx.Done():
-					cancelled.Store(true)
 					return
 
 				case <-ctx.Done():
-					cancelled.Store(true)
 					return
 
 				case <-done:
 					count++
+
 					if count == total {
 						if onSuccess != nil {
 							merged := make(map[string]FetchResultInterface)
@@ -239,10 +224,12 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 								merged[k.(string)] = v.(FetchResultInterface)
 								return true
 							})
+
 							onSuccess(merged)
 						}
 
 						close(done)
+
 						return
 					}
 				}
@@ -252,10 +239,11 @@ func (m *fetcher) Call(payloads map[string][]string, preprocess func(totalJob in
 }
 
 func (m *fetcher) Destroy() {
-	if !m.state.CompareAndChange(STATE_RUNNING, STATE_DESTROYED) &&
-		!m.state.CompareAndChange(STATE_PAUSED, STATE_DESTROYED) {
+	if m.state.Is(STATE_DESTROYED) {
 		return
 	}
+
+	m.state.Change(STATE_DESTROYED)
 
 	m.registry.Destroy()
 
@@ -269,21 +257,19 @@ func (m *fetcher) Destroy() {
 		return true
 	})
 
-	if m.dispatcher != nil {
-		m.dispatcher.Destroy()
-	}
-
-	m.dispatcher = nil
+	m.dispatcher.Destroy()
 }
 
 func (m *fetcher) Pause() {
-	m.registry.Destroy()
+	if m.state.Is(STATE_DESTROYED) {
+		return
+	}
 
 	m.state.Change(STATE_PAUSED)
 
-	if m.dispatcher != nil {
-		m.dispatcher.Pause()
-	}
+	m.registry.Destroy()
+
+	m.dispatcher.Pause()
 }
 
 func (m *fetcher) Resume() {
@@ -293,9 +279,7 @@ func (m *fetcher) Resume() {
 
 	m.state.Change(STATE_RUNNING)
 
-	if m.dispatcher != nil {
-		m.dispatcher.Resume()
-	}
+	m.dispatcher.Resume()
 }
 
 func (m *fetcher) execute(ctx context.Context, key string, payload any, setResult func(FetchResultInterface)) {

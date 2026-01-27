@@ -38,6 +38,14 @@ func (r *cancelRegistry) Delete(tag string) {
 	}
 }
 
+func (r *cancelRegistry) Cancel(tag string) {
+	if v, ok := r.data.Load(tag); ok {
+		cancel := v.(context.CancelFunc)
+		cancel()
+		r.Delete(tag)
+	}
+}
+
 func (r *cancelRegistry) Len() int {
 	return int(r.count.Load())
 }
@@ -50,12 +58,9 @@ func (r *cancelRegistry) Range(fn func(key string, cancel context.CancelFunc) bo
 
 func (r *cancelRegistry) Destroy() {
 	r.data.Range(func(k, v any) bool {
-		cancel := v.(context.CancelFunc)
-		cancel()
-		r.data.Delete(k)
+		r.Cancel(k.(string))
 		return true
 	})
-	r.count.Store(0)
 }
 
 func NewCancelRegistry() *cancelRegistry {

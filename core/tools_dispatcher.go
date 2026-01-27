@@ -29,10 +29,10 @@ type dispatcher struct {
 	maxConcurrent atomic.Int32
 	generated     atomic.Int32
 	delay         atomic.Int64
-	ctx           atomic.Value
-	cancel        atomic.Value
 	drainer       atomic.Value
 	key           atomic.Value
+	ctx           atomic.Value
+	cancel        *cancelRegistry
 	state         *stateManager
 }
 
@@ -44,9 +44,11 @@ func (d *dispatcher) Init() {
 	if d.buffer.Load() == 0 {
 		d.buffer.Store(100)
 	}
+
 	if d.maxConcurrent.Load() == 0 {
 		d.maxConcurrent.Store(4)
 	}
+
 	if d.delay.Load() == 0 {
 		d.delay.Store(int64(16 * time.Millisecond))
 	}
@@ -54,9 +56,11 @@ func (d *dispatcher) Init() {
 	d.generated.Store(0)
 	d.queue = make(chan func(), int(d.buffer.Load()))
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelFn := context.WithCancel(context.Background())
 	d.ctx.Store(&ctx)
-	d.cancel.Store(&cancel)
+
+	d.cancel = NewCancelRegistry()
+	d.cancel.Set("dispatcher", cancelFn)
 
 	d.state = NewStateManager(STATE_RUNNING)
 }
@@ -65,7 +69,6 @@ func (d *dispatcher) Start() {
 	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
-
 	if d.generated.Load() == d.maxConcurrent.Load() {
 		return
 	}
@@ -75,14 +78,14 @@ func (d *dispatcher) Start() {
 		if d.state.Is(STATE_DESTROYED) {
 			return
 		}
+
 		go d.worker(i)
 		d.generated.Add(1)
 	}
 
-	keyAny := d.key.Load()
 	key := ""
-	if keyAny != nil {
-		key = keyAny.(string)
+	if v := d.key.Load(); v != nil {
+		key = v.(string)
 	}
 
 	Logf("Initializing Dispatcher [%s]: %d/%d", key, d.generated.Load(), d.maxConcurrent.Load())
@@ -104,16 +107,17 @@ func (d *dispatcher) Resume() {
 func (d *dispatcher) Drain() {
 	for {
 		if d.queue == nil {
-			if fnAny := d.drainer.Load(); fnAny != nil {
-				fnAny.(func())()
+			if fn := d.drainer.Load(); fn != nil {
+				fn.(func())()
 			}
 			return
 		}
+
 		select {
 		case <-d.queue:
 		default:
-			if fnAny := d.drainer.Load(); fnAny != nil {
-				fnAny.(func())()
+			if fn := d.drainer.Load(); fn != nil {
+				fn.(func())()
 			}
 			return
 		}
@@ -140,13 +144,12 @@ func (d *dispatcher) Destroy() {
 	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
+
 	d.state.Change(STATE_DESTROYED)
 
-	if cancelPtr := d.cancel.Load(); cancelPtr != nil {
-		(*cancelPtr.(*context.CancelFunc))()
-		d.ctx.Store((*context.Context)(nil))
-		d.cancel.Store((*context.CancelFunc)(nil))
-	}
+	d.cancel.Destroy()
+
+	d.ctx.Store((*context.Context)(nil))
 
 	if d.queue != nil {
 		close(d.queue)
@@ -177,10 +180,10 @@ func (d *dispatcher) SetKey(key string) {
 func (d *dispatcher) worker(id int32) {
 	defer func() {
 		d.generated.Add(-1)
+
+		d.cancel.Cancel("dispatcher")
+
 		if !d.state.Is(STATE_DESTROYED) {
-			if cancelPtr := d.cancel.Load(); cancelPtr != nil {
-				(*cancelPtr.(*context.CancelFunc))()
-			}
 			d.Drain()
 		}
 	}()
@@ -209,6 +212,7 @@ func (d *dispatcher) worker(id int32) {
 			if !ok || d.state.Is(STATE_DESTROYED) {
 				return
 			}
+
 			if fn != nil {
 				fn()
 
@@ -216,6 +220,7 @@ func (d *dispatcher) worker(id int32) {
 				if delay < time.Millisecond {
 					delay = time.Millisecond
 				}
+
 				time.Sleep(delay)
 			}
 		}

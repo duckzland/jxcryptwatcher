@@ -7,7 +7,7 @@ import (
 
 func stopWorker(w *worker, key string, delayMs int64) {
 	time.Sleep(time.Duration(delayMs) * time.Millisecond)
-	if unitAny, ok := w.registry.Load(key); ok {
+	if unitAny, ok := w.units.Load(key); ok {
 		unit := unitAny.(*workerUnit)
 		unit.Stop()
 	}
@@ -207,7 +207,7 @@ func TestWorkerDestroy(t *testing.T) {
 	}
 
 	var found bool
-	w.registry.Range(func(_, _ any) bool { found = true; return false })
+	w.units.Range(func(_, _ any) bool { found = true; return false })
 	if found {
 		t.Error("Expected registry to be empty after destroy")
 	}

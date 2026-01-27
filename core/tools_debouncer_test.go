@@ -80,14 +80,13 @@ func TestDebouncerDestroyCleansMaps(t *testing.T) {
 	d.Call("destroyTest", 20*time.Millisecond, func() {})
 	d.Destroy()
 
-	if !d.destroyed.Load() {
+	if d.state.Is(STATE_DESTROYED) == false {
 		t.Error("Expected debouncer destroyed flag set")
 	}
 
-	d.registry.data.Range(func(k, v any) bool {
+	if d.registry.Len() != 0 {
 		t.Error("Expected cancelRegistry to be empty after destroy")
-		return false
-	})
+	}
 
 	d.generations.Range(func(k, v any) bool {
 		t.Error("Expected generations to be empty after destroy")

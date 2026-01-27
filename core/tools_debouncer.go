@@ -12,16 +12,20 @@ var coreDebouncer *debouncer
 type debouncer struct {
 	generations sync.Map
 	registry    *cancelRegistry
-	destroyed   atomic.Bool
+	state       *stateManager
 }
 
 func (d *debouncer) Init() {
-	d.destroyed.Store(false)
+	if d.state != nil {
+		return
+	}
+
+	d.state = NewStateManager(STATE_RUNNING)
 	d.registry = NewCancelRegistry()
 }
 
 func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
-	if d.destroyed.Load() {
+	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -39,10 +43,7 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 
 	gen := genCounter.Add(1)
 
-	if cancel, ok := d.registry.Get(key); ok {
-		cancel()
-		d.registry.Delete(key)
-	}
+	d.registry.Cancel(key)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	d.registry.Set(key, cancel)
@@ -76,50 +77,41 @@ func (d *debouncer) Call(key string, delay time.Duration, fn func()) {
 				return
 			}
 
-			if d.destroyed.Load() {
+			if d.state.Is(STATE_DESTROYED) {
 				return
 			}
 
 			if val, ok := d.generations.Load(key); ok {
 				currentGen := val.(*atomic.Int64).Load()
 				if gen == currentGen && fn != nil {
-					// Logf("Debouncer fired for %s/%d", key, gen)
 					fn()
 				}
 			}
 
 		case <-ShutdownCtx.Done():
-			// Logf("Debouncer shutdown for %s/%d", key, gen)
 			return
 
 		case <-ctx.Done():
-			// Logf("Debouncer cancelled for %s/%d", key, gen)
 			return
 		}
 	}(gen, ctx, cancel, timer, fn)
 }
 
 func (d *debouncer) Cancel(key string) {
-	if d.destroyed.Load() {
-		return
-	}
-
 	if val, ok := d.generations.Load(key); ok {
 		val.(*atomic.Int64).Add(1)
 	}
 
-	if cancel, ok := d.registry.Get(key); ok {
-		cancel()
-		d.registry.Delete(key)
-	}
-
+	d.registry.Cancel(key)
 	d.generations.Delete(key)
 }
 
 func (d *debouncer) Destroy() {
-	if d.destroyed.Swap(true) {
+	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
+
+	d.state.Change(STATE_DESTROYED)
 
 	d.registry.Destroy()
 

@@ -23,12 +23,13 @@ func TestDispatcherInit(t *testing.T) {
 	if time.Duration(d.delay.Load()) != 16*time.Millisecond {
 		t.Errorf("Expected default delay 16ms, got %v", time.Duration(d.delay.Load()))
 	}
-	if d.ctx.Load() == nil || d.cancel.Load() == nil {
-		t.Error("Expected context and cancel to be initialized")
+	if d.ctx.Load() == nil || d.cancel == nil {
+		t.Error("Expected context and cancel registry to be initialized")
 	}
 
 	// cancellation propagation
 	done := make(chan struct{})
+
 	go func() {
 		ctxPtr := d.ctx.Load().(*context.Context)
 		select {
@@ -39,8 +40,8 @@ func TestDispatcherInit(t *testing.T) {
 		}
 	}()
 
-	cancelPtr := d.cancel.Load().(*context.CancelFunc)
-	(*cancelPtr)()
+	// registry now stores cancel funcs by key
+	d.cancel.Cancel("dispatcher")
 
 	select {
 	case <-done:
@@ -61,7 +62,7 @@ func TestNewDispatcher(t *testing.T) {
 	if time.Duration(d.delay.Load()) != 50*time.Millisecond {
 		t.Errorf("Expected delay 50ms, got %v", time.Duration(d.delay.Load()))
 	}
-	if d.queue == nil || d.ctx.Load() == nil || d.cancel.Load() == nil {
+	if d.queue == nil || d.ctx.Load() == nil || d.cancel == nil {
 		t.Error("Expected internal fields to be initialized")
 	}
 }
@@ -149,7 +150,6 @@ func TestDispatcherConcurrentAccess(t *testing.T) {
 func TestDispatcherDrain(t *testing.T) {
 	d := NewDispatcher(10, 1, 0)
 
-	// Submit 5 dummy functions
 	for i := 0; i < 5; i++ {
 		d.Submit(func() {})
 	}
@@ -180,8 +180,8 @@ func TestDispatcherDestroy(t *testing.T) {
 	if d.queue == nil {
 		t.Fatal("Expected queue to be initialized before destroy")
 	}
-	if d.ctx.Load() == nil || d.cancel.Load() == nil {
-		t.Fatal("Expected context and cancel to be initialized before destroy")
+	if d.ctx.Load() == nil || d.cancel == nil {
+		t.Fatal("Expected context and cancel registry to be initialized before destroy")
 	}
 
 	d.Destroy()
@@ -190,10 +190,13 @@ func TestDispatcherDestroy(t *testing.T) {
 		t.Error("Expected queue to be nil after destroy")
 	}
 
+	// ctx should be nil after destroy
 	if ctxPtr, ok := d.ctx.Load().(*context.Context); ok && ctxPtr != nil {
 		t.Error("Expected ctx to be nil after destroy")
 	}
-	if cancelPtr, ok := d.cancel.Load().(*context.CancelFunc); ok && cancelPtr != nil {
-		t.Error("Expected cancel to be nil after destroy")
+
+	// cancel registry should still exist, but dispatcher key should be removed
+	if d.cancel != nil && d.cancel.Exists("dispatcher") {
+		t.Error("Expected dispatcher cancel entry to be removed after destroy")
 	}
 }

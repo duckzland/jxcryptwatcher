@@ -22,6 +22,7 @@ func (w *workerUnit) Call(payload any) {
 	if !w.state.Is(STATE_RUNNING) {
 		return
 	}
+
 	if fnAny := w.fn.Load(); fnAny != nil {
 		fn := fnAny.(func(any) bool)
 		fn(payload)
@@ -80,9 +81,7 @@ func (w *workerUnit) Stop() {
 
 	w.state.Change(STATE_PAUSED)
 
-	if cancel, ok := w.registry.Get("worker"); ok {
-		cancel()
-	}
+	w.registry.Cancel("worker")
 }
 
 func (w *workerUnit) Reset() {
@@ -99,6 +98,7 @@ func (w *workerUnit) Destroy() {
 	if w.state.Is(STATE_DESTROYED) {
 		return
 	}
+
 	w.state.Change(STATE_DESTROYED)
 
 	w.registry.Destroy()
@@ -122,9 +122,7 @@ func (w *workerUnit) worker() {
 
 	defer func() {
 		if !w.state.Is(STATE_RUNNING) {
-			if cancel, ok := w.registry.Get("worker"); ok {
-				cancel()
-			}
+			w.registry.Cancel("worker")
 		}
 	}()
 

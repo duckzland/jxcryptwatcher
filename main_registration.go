@@ -469,9 +469,9 @@ func registerWorkers() {
 	)
 
 	JC.UseWorker().Register(
-		JC.ACT_NOTIFICATION_PUSH, 50,
+		JC.ACT_NOTIFICATION_PUSH, 10,
 		func() int64 {
-			return 1000
+			return 600
 		},
 		nil,
 		func(payload any) bool {
