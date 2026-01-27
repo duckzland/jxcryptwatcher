@@ -2,7 +2,7 @@ package apps
 
 import (
 	"runtime"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	JC "jxwatcher/core"
@@ -14,26 +14,19 @@ import (
 var snapshotManagerStorage *snapshotManager = nil
 
 type snapshotManager struct {
-	mu          sync.RWMutex
-	snapshotted bool
+	snapshotted atomic.Bool
 }
 
 func (sm *snapshotManager) Init() {
-	sm.mu.Lock()
-	sm.snapshotted = false
-	sm.mu.Unlock()
+	sm.snapshotted.Store(false)
 }
 
 func (sm *snapshotManager) Reset() {
-	sm.mu.Lock()
-	sm.snapshotted = false
-	sm.mu.Unlock()
+	sm.snapshotted.Store(false)
 }
 
 func (sm *snapshotManager) IsSnapshotted() bool {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	return sm.snapshotted
+	return sm.snapshotted.Load()
 }
 
 func (sm *snapshotManager) LoadPanels() int {
@@ -171,10 +164,7 @@ func (sm *snapshotManager) Delete() int {
 }
 
 func (sm *snapshotManager) Save() {
-
-	sm.mu.Lock()
-	sm.snapshotted = true
-	sm.mu.Unlock()
+	sm.snapshotted.Store(true)
 
 	JC.SaveGobToStorage("snapshots-exchange.gob", JT.UseExchangeCache().Serialize())
 	JC.SaveGobToStorage("snapshots-ticker-cache.gob", JT.UseTickerCache().Serialize())

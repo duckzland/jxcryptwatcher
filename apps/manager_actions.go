@@ -1,7 +1,6 @@
 package apps
 
 import (
-	"slices"
 	"sync"
 
 	JW "jxwatcher/widgets"
@@ -10,33 +9,26 @@ import (
 var actionManagerStorage *actionManager = nil
 
 type actionManager struct {
-	mu      sync.RWMutex
-	buttons []JW.ActionButton
+	buttons sync.Map // key: string (tag), value: JW.ActionButton
 }
 
 func (a *actionManager) Init() {
-	a.mu.Lock()
-	a.buttons = []JW.ActionButton{}
-	a.mu.Unlock()
+	a.buttons = sync.Map{}
 }
 
 func (a *actionManager) Add(btn JW.ActionButton) {
-	a.mu.Lock()
-	a.buttons = append(a.buttons, btn)
-	a.mu.Unlock()
+	if btn == nil {
+		return
+	}
+	a.buttons.Store(btn.GetTag(), btn)
 }
 
 func (a *actionManager) Get(tag string) JW.ActionButton {
-	a.mu.Lock()
-	buttons := a.buttons
-	a.mu.Unlock()
-
-	for _, btn := range buttons {
-		if btn.GetTag() == tag {
-			return btn
-		}
+	v, ok := a.buttons.Load(tag)
+	if !ok {
+		return nil
 	}
-	return nil
+	return v.(JW.ActionButton)
 }
 
 func (a *actionManager) Call(tag string) bool {
@@ -49,49 +41,37 @@ func (a *actionManager) Call(tag string) bool {
 }
 
 func (a *actionManager) Remove(btn JW.ActionButton) {
-	a.mu.Lock()
-	a.buttons = slices.DeleteFunc(a.buttons, func(b JW.ActionButton) bool {
-		return b == btn
-	})
-	a.mu.Unlock()
+	if btn == nil {
+		return
+	}
+	a.buttons.Delete(btn.GetTag())
 }
 
 func (a *actionManager) Refresh() {
-	a.mu.Lock()
-	buttons := a.buttons
-	a.mu.Unlock()
-
-	for _, btn := range buttons {
-		if btn != nil {
-			btn.Refresh()
+	a.buttons.Range(func(_, v any) bool {
+		if v != nil {
+			v.(JW.ActionButton).Refresh()
 		}
-	}
+		return true
+	})
 }
 
 func (a *actionManager) Disable() {
-	a.mu.Lock()
-	buttons := a.buttons
-	a.mu.Unlock()
-
-	for _, btn := range buttons {
-		if btn != nil {
-			btn.Disable()
+	a.buttons.Range(func(_, v any) bool {
+		if v != nil {
+			v.(JW.ActionButton).Disable()
 		}
-	}
-
+		return true
+	})
 }
 
 func (a *actionManager) HideTooltip() {
-	a.mu.Lock()
-	buttons := a.buttons
-	a.mu.Unlock()
-
-	for _, btn := range buttons {
-		if btn != nil {
-			btn.HideTooltip()
+	a.buttons.Range(func(_, v any) bool {
+		if v != nil {
+			v.(JW.ActionButton).HideTooltip()
 		}
-	}
-
+		return true
+	})
 }
 
 func RegisterActionManager() *actionManager {
