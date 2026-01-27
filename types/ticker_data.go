@@ -51,7 +51,7 @@ type TickerData interface {
 	GetStatus() int
 	GetID() string
 	GetOldKey() string
-	UseData() *JC.DataBinding
+	UseData() JC.DataBinding
 	HasData() bool
 	IsType(val string) bool
 	IsTitle(val string) bool
@@ -78,7 +78,7 @@ type tickerDataCache struct {
 }
 
 type tickerDataType struct {
-	data     *JC.DataBinding
+	data     JC.DataBinding
 	oldKey   string
 	category string
 	title    string
@@ -159,7 +159,7 @@ func (p *tickerDataType) GetOldKey() string {
 	return p.oldKey
 }
 
-func (p *tickerDataType) UseData() *JC.DataBinding {
+func (p *tickerDataType) UseData() JC.DataBinding {
 	return p.data
 }
 

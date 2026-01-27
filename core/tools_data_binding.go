@@ -6,24 +6,22 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 )
 
-type DataBinding struct {
+type DataBinding interface {
+	AddListener(l binding.DataListener)
+	RemoveListener(l binding.DataListener)
+	GetData() string
+	SetData(v string)
+	GetStatus() int
+	SetStatus(v int)
+}
+
+type dataBinding struct {
 	data      atomic.Value
 	status    atomic.Int64
-	listeners atomic.Value // *[]binding.DataListener
+	listeners atomic.Value
 }
 
-func NewDataBinding(initialData string, initialStatus int) *DataBinding {
-	db := &DataBinding{}
-	db.data.Store(initialData)
-	db.status.Store(int64(initialStatus))
-
-	empty := []binding.DataListener{}
-	db.listeners.Store(&empty)
-
-	return db
-}
-
-func (db *DataBinding) AddListener(l binding.DataListener) {
+func (db *dataBinding) AddListener(l binding.DataListener) {
 	for {
 		oldPtr := db.listeners.Load().(*[]binding.DataListener)
 		old := *oldPtr
@@ -37,7 +35,7 @@ func (db *DataBinding) AddListener(l binding.DataListener) {
 	}
 }
 
-func (db *DataBinding) RemoveListener(l binding.DataListener) {
+func (db *dataBinding) RemoveListener(l binding.DataListener) {
 	for {
 		oldPtr := db.listeners.Load().(*[]binding.DataListener)
 		old := *oldPtr
@@ -56,27 +54,38 @@ func (db *DataBinding) RemoveListener(l binding.DataListener) {
 	}
 }
 
-func (db *DataBinding) notify() {
+func (db *dataBinding) notify() {
 	ls := *db.listeners.Load().(*[]binding.DataListener)
 	for _, l := range ls {
 		l.DataChanged()
 	}
 }
 
-func (db *DataBinding) GetData() string {
+func (db *dataBinding) GetData() string {
 	return db.data.Load().(string)
 }
 
-func (db *DataBinding) SetData(v string) {
+func (db *dataBinding) SetData(v string) {
 	db.data.Store(v)
 	db.notify()
 }
 
-func (db *DataBinding) GetStatus() int {
+func (db *dataBinding) GetStatus() int {
 	return int(db.status.Load())
 }
 
-func (db *DataBinding) SetStatus(v int) {
+func (db *dataBinding) SetStatus(v int) {
 	db.status.Store(int64(v))
 	db.notify()
+}
+
+func NewDataBinding(initialData string, initialStatus int) *dataBinding {
+	db := &dataBinding{}
+	db.data.Store(initialData)
+	db.status.Store(int64(initialStatus))
+
+	empty := []binding.DataListener{}
+	db.listeners.Store(&empty)
+
+	return db
 }

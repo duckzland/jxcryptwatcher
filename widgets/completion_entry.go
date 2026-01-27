@@ -380,13 +380,13 @@ func NewCompletionEntry(options []string, searchOptions []string, popup *fyne.Co
 		itemHeight:    40,
 		shifted:       false,
 		shiftX:        36,
-		worker: &completionWorker{
-			searchable: searchOptions,
-			data:       options,
-			total:      len(searchOptions),
-			chunk:      len(searchOptions) / JC.MaximumThreads(4),
-			delay:      delay,
-		},
+		worker: NewCompletionWorker(
+			searchOptions,
+			options,
+			len(searchOptions),
+			len(searchOptions)/JC.MaximumThreads(4),
+			delay,
+		),
 	}
 
 	c.ExtendBaseWidget(c)

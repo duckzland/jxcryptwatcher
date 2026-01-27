@@ -1,20 +1,21 @@
 package widgets
 
-import "sync"
+import "sync/atomic"
 
 type completionWorkerState struct {
-	mu    sync.Mutex
-	state bool
+	state atomic.Bool
 }
 
 func (s *completionWorkerState) SetCancel() {
-	s.mu.Lock()
-	s.state = true
-	s.mu.Unlock()
+	s.state.Store(true)
 }
 
 func (s *completionWorkerState) IsCancelled() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.state
+	return s.state.Load()
+}
+
+func NewCompletionWorkerState(initial bool) *completionWorkerState {
+	s := &completionWorkerState{}
+	s.state.Store(initial)
+	return s
 }

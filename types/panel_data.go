@@ -28,7 +28,7 @@ type PanelData interface {
 	GetParent() *panelsMapType
 	GetValueString() string
 	GetOldValueString() string
-	UseData() *JC.DataBinding
+	UseData() JC.DataBinding
 	UsePanelKey() *panelKeyType
 	IsStatus(val int) bool
 	IsID(val string) bool
@@ -60,7 +60,7 @@ type panelDataCache struct {
 }
 
 type panelDataType struct {
-	data   *JC.DataBinding
+	data   JC.DataBinding
 	oldKey string
 	id     string
 	parent *panelsMapType
@@ -147,7 +147,7 @@ func (p *panelDataType) GetOldValueString() string {
 	return pko.GetValueString()
 }
 
-func (p *panelDataType) UseData() *JC.DataBinding {
+func (p *panelDataType) UseData() JC.DataBinding {
 	return p.data
 }
 

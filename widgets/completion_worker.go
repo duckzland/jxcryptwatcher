@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	JC "jxwatcher/core"
@@ -13,21 +14,21 @@ type completionWorker struct {
 	searchable []string
 	data       []string
 	results    []string
-	total      int
-	chunk      int
-	expected   int
-	counter    int
-	searchKey  string
-	delay      time.Duration
+	total      atomic.Int64
+	chunk      atomic.Int64
+	expected   atomic.Int64
+	counter    atomic.Int64
+	searchKey  atomic.Value
+	delay      atomic.Int64
 	resultChan chan []string
 	closeChan  chan struct{}
-	done       func(string, []string)
+	done       atomic.Value
 	mu         sync.Mutex
 }
 
 func (c *completionWorker) Init() {
-	c.expected = (c.total + c.chunk - 1) / c.chunk
-	c.resultChan = make(chan []string, c.expected)
+	c.expected.Store((c.total.Load() + c.chunk.Load() - 1) / c.chunk.Load())
+	c.resultChan = make(chan []string, int(c.expected.Load()))
 	c.closeChan = make(chan struct{}, 100)
 }
 
@@ -35,8 +36,8 @@ func (c *completionWorker) Search(s string, fn func(input string, results []stri
 	c.Cancel()
 
 	c.mu.Lock()
-	c.searchKey = strings.ToLower(s)
-	c.done = fn
+	c.searchKey.Store(strings.ToLower(s))
+	c.done.Store(fn)
 	c.mu.Unlock()
 
 	go c.run()
@@ -56,7 +57,7 @@ func (c *completionWorker) Cancel() {
 
 	c.mu.Lock()
 	c.results = []string{}
-	c.counter = 0
+	c.counter.Store(0)
 	c.mu.Unlock()
 
 }
@@ -78,14 +79,16 @@ func (c *completionWorker) Destroy() {
 	c.data = nil
 	c.results = nil
 
-	c.total = 0
-	c.chunk = 0
-	c.expected = 0
-	c.counter = 0
-	c.searchKey = ""
-	c.delay = 0
+	c.total.Store(0)
+	c.chunk.Store(0)
+	c.expected.Store(0)
+	c.counter.Store(0)
+	c.searchKey.Store("")
+	c.delay.Store(0)
 
-	c.done = nil
+	var f func(string, []string)
+	c.done.Store(f)
+
 }
 
 func (c *completionWorker) close() {
@@ -98,7 +101,7 @@ func (c *completionWorker) close() {
 
 func (c *completionWorker) drain() {
 	c.mu.Lock()
-	c.counter = -9999
+	c.counter.Store(-9999)
 	c.mu.Unlock()
 
 	for {
@@ -116,10 +119,10 @@ func (c *completionWorker) run() {
 	// If stale after the delay and additional expected operational duration
 	// Force close to prevent ghost go routine
 	to := 500 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), c.delay+to)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.delay.Load())+to)
 
-	state := &completionWorkerState{state: false}
-	timer := time.NewTimer(c.delay)
+	state := NewCompletionWorkerState(false)
+	timer := time.NewTimer(time.Duration(c.delay.Load()))
 
 	defer timer.Stop()
 
@@ -167,14 +170,14 @@ func (c *completionWorker) run() {
 
 		c.mu.Lock()
 		c.results = []string{}
-		c.counter = 0
+		c.counter.Store(0)
 		c.mu.Unlock()
 
 		go c.listener(state)
 
-		for i := 0; i < c.total; i += c.chunk {
+		for i := 0; i < int(c.total.Load()); i += int(c.chunk.Load()) {
 			start := i
-			end := min(i+c.chunk, c.total)
+			end := min(i+int(c.chunk.Load()), int(c.total.Load()))
 			go c.worker(start, end, state)
 		}
 	}
@@ -190,7 +193,7 @@ func (c *completionWorker) worker(start, end int, state *completionWorkerState) 
 		if state.IsCancelled() {
 			return
 		}
-		if strings.Contains(c.searchable[j], c.searchKey) {
+		if strings.Contains(c.searchable[j], c.searchKey.Load().(string)) {
 			local = append(local, c.data[j])
 		}
 	}
@@ -241,10 +244,10 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 
 			c.mu.Lock()
 			c.results = append(c.results, res...)
-			c.counter++
+			c.counter.Add(1)
 
-			shouldFire := c.counter == c.expected && c.done != nil && c.counter >= 0
-			current := c.searchKey
+			shouldFire := c.counter.Load() == c.expected.Load() && c.done.Load() != nil && c.counter.Load() >= 0
+			current := c.searchKey.Load().(string)
 			c.mu.Unlock()
 
 			if shouldFire && !state.IsCancelled() {
@@ -252,7 +255,7 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 				c.results = JC.ReorderSearchable(c.results)
 				c.mu.Unlock()
 
-				c.done(current, c.results)
+				c.done.Load().(func(string, []string))(current, c.results)
 
 				// Important to close the run and go routine!
 				c.close()
@@ -260,4 +263,17 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 			}
 		}
 	}
+}
+
+func NewCompletionWorker(searchable []string, data []string, total int, chunk int, delay time.Duration) *completionWorker {
+	c := &completionWorker{
+		searchable: searchable,
+		data:       data,
+	}
+
+	c.total.Store(int64(total))
+	c.chunk.Store(int64(chunk))
+	c.delay.Store(int64(delay))
+
+	return c
 }
