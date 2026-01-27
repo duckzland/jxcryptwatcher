@@ -11,9 +11,9 @@ import (
 )
 
 type completionWorker struct {
-	searchable []string
-	data       []string
-	results    []string
+	searchable sync.Map
+	data       sync.Map
+	results    sync.Map
 	total      atomic.Int64
 	chunk      atomic.Int64
 	expected   atomic.Int64
@@ -23,7 +23,6 @@ type completionWorker struct {
 	resultChan chan []string
 	closeChan  chan struct{}
 	done       atomic.Value
-	mu         sync.Mutex
 }
 
 func (c *completionWorker) Init() {
@@ -34,38 +33,28 @@ func (c *completionWorker) Init() {
 
 func (c *completionWorker) Search(s string, fn func(input string, results []string)) {
 	c.Cancel()
-
-	c.mu.Lock()
 	c.searchKey.Store(strings.ToLower(s))
 	c.done.Store(fn)
-	c.mu.Unlock()
 
 	go c.run()
 }
 
 func (c *completionWorker) Cancel() {
+	if c.closeChan != nil {
+		c.close()
+		time.Sleep(15 * time.Millisecond)
+	}
 
-	c.close()
+	if c.resultChan != nil && c.closeChan != nil {
+		c.drain()
+		time.Sleep(15 * time.Millisecond)
+	}
 
-	// Allow closeChan to complete
-	time.Sleep(15 * time.Millisecond)
-
-	c.drain()
-
-	// Allow drain to complete
-	time.Sleep(15 * time.Millisecond)
-
-	c.mu.Lock()
-	c.results = []string{}
+	c.results = sync.Map{}
 	c.counter.Store(0)
-	c.mu.Unlock()
-
 }
 
 func (c *completionWorker) Destroy() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if c.resultChan != nil {
 		close(c.resultChan)
 		c.resultChan = nil
@@ -75,9 +64,9 @@ func (c *completionWorker) Destroy() {
 		c.closeChan = nil
 	}
 
-	c.searchable = nil
-	c.data = nil
-	c.results = nil
+	c.searchable = sync.Map{}
+	c.data = sync.Map{}
+	c.results = sync.Map{}
 
 	c.total.Store(0)
 	c.chunk.Store(0)
@@ -88,21 +77,24 @@ func (c *completionWorker) Destroy() {
 
 	var f func(string, []string)
 	c.done.Store(f)
-
 }
 
 func (c *completionWorker) close() {
+	if c.closeChan == nil {
+		return
+	}
 	select {
 	case c.closeChan <- struct{}{}:
 	default:
 	}
-
 }
 
 func (c *completionWorker) drain() {
-	c.mu.Lock()
+	if c.closeChan == nil || c.resultChan == nil {
+		return
+	}
+
 	c.counter.Store(-9999)
-	c.mu.Unlock()
 
 	for {
 		select {
@@ -123,7 +115,6 @@ func (c *completionWorker) run() {
 
 	state := NewCompletionWorkerState(false)
 	timer := time.NewTimer(time.Duration(c.delay.Load()))
-
 	defer timer.Stop()
 
 	go func() {
@@ -168,16 +159,17 @@ func (c *completionWorker) run() {
 			return
 		}
 
-		c.mu.Lock()
-		c.results = []string{}
+		c.results = sync.Map{}
 		c.counter.Store(0)
-		c.mu.Unlock()
 
 		go c.listener(state)
 
-		for i := 0; i < int(c.total.Load()); i += int(c.chunk.Load()) {
+		total := int(c.total.Load())
+		chunk := int(c.chunk.Load())
+
+		for i := 0; i < total; i += chunk {
 			start := i
-			end := min(i+int(c.chunk.Load()), int(c.total.Load()))
+			end := min(i+chunk, total)
 			go c.worker(start, end, state)
 		}
 	}
@@ -189,12 +181,21 @@ func (c *completionWorker) worker(start, end int, state *completionWorkerState) 
 	}
 
 	local := []string{}
+	key := c.searchKey.Load().(string)
+
 	for j := start; j < end; j++ {
 		if state.IsCancelled() {
 			return
 		}
-		if strings.Contains(c.searchable[j], c.searchKey.Load().(string)) {
-			local = append(local, c.data[j])
+
+		sv, ok1 := c.searchable.Load(j)
+		dv, ok2 := c.data.Load(j)
+		if !ok1 || !ok2 {
+			continue
+		}
+
+		if strings.Contains(sv.(string), key) {
+			local = append(local, dv.(string))
 		}
 	}
 
@@ -202,11 +203,9 @@ func (c *completionWorker) worker(start, end int, state *completionWorkerState) 
 		return
 	}
 
-	c.mu.Lock()
 	if c.resultChan != nil {
 		c.resultChan <- local
 	}
-	c.mu.Unlock()
 }
 
 func (c *completionWorker) listener(state *completionWorkerState) {
@@ -242,20 +241,33 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 				return
 			}
 
-			c.mu.Lock()
-			c.results = append(c.results, res...)
+			for _, v := range res {
+				c.results.Store(v, v)
+			}
+
 			c.counter.Add(1)
 
-			shouldFire := c.counter.Load() == c.expected.Load() && c.done.Load() != nil && c.counter.Load() >= 0
+			shouldFire := c.counter.Load() == c.expected.Load() &&
+				c.done.Load() != nil &&
+				c.counter.Load() >= 0
+
 			current := c.searchKey.Load().(string)
-			c.mu.Unlock()
 
 			if shouldFire && !state.IsCancelled() {
-				c.mu.Lock()
-				c.results = JC.ReorderSearchable(c.results)
-				c.mu.Unlock()
 
-				c.done.Load().(func(string, []string))(current, c.results)
+				ttl := 0
+				c.results.Range(func(_, v any) bool {
+					ttl++
+					return true
+				})
+
+				tmp := make([]string, 0, ttl)
+				c.results.Range(func(_, v any) bool {
+					tmp = append(tmp, v.(string))
+					return true
+				})
+
+				c.done.Load().(func(string, []string))(current, JC.ReorderSearchable(tmp))
 
 				// Important to close the run and go routine!
 				c.close()
@@ -266,9 +278,13 @@ func (c *completionWorker) listener(state *completionWorkerState) {
 }
 
 func NewCompletionWorker(searchable []string, data []string, total int, chunk int, delay time.Duration) *completionWorker {
-	c := &completionWorker{
-		searchable: searchable,
-		data:       data,
+	c := &completionWorker{}
+
+	for i, v := range searchable {
+		c.searchable.Store(i, v)
+	}
+	for i, v := range data {
+		c.data.Store(i, v)
 	}
 
 	c.total.Store(int64(total))
