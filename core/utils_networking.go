@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 	"syscall"
+	"time"
 )
 
 var httpClient = &http.Client{
@@ -120,7 +120,6 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 				}
 			}
 
-
 			var hostnameErr x509.HostnameError
 			if errors.As(urlErr.Err, &hostnameErr) {
 				Logln("Network TLS hostname mismatch:", hostnameErr)
@@ -139,11 +138,10 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 			}
 		}
 
-		Logf("Network Failed to fetch data: %w", err)
+		Logf("Network Failed to fetch data: %v", err)
 
 		return NETWORKING_ERROR_CONNECTION
 	}
-
 
 	defer resp.Body.Close()
 
