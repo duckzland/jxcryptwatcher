@@ -2,8 +2,8 @@ package core
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"syscall"
 )
 
 var httpClient = &http.Client{
@@ -32,11 +33,11 @@ var httpClient = &http.Client{
 }
 
 func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Values, req *http.Request), callback func(ctx context.Context, resp *http.Response) int64) int64 {
-	PrintPerfStats("Fetching Request", time.Now())
+	PrintPerfStats("Network Fetching Request", time.Now())
 
 	parsedURL, err := url.Parse(targetUrl)
 	if err != nil {
-		Logln("Invalid URL:", err)
+		Logln("Network Invalid URL:", err)
 		return NETWORKING_URL_ERROR
 	}
 
@@ -53,7 +54,13 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
 	if err != nil {
-		Logln("Error encountered:", err)
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			Logln("Network Bad URL in request:", urlErr)
+			return NETWORKING_URL_ERROR
+		}
+
+		Logln("Network Error creating request:", err)
 		return NETWORKING_ERROR_CONNECTION
 	}
 
@@ -71,11 +78,10 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 	}
 
 	req.URL.RawQuery = q.Encode()
-	// Logf("Fetching data from %v", req.URL)
+	// Logf("Network Fetching data from %v", req.URL)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-
 		if resp != nil {
 			resp.Body.Close()
 		}
@@ -84,29 +90,60 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 			tr.CloseIdleConnections()
 		}
 
+		var dnsErr *net.DNSError
+		if errors.As(err, &dnsErr) {
+			if dnsErr.IsNotFound || dnsErr.IsTemporary {
+				Logln("Network DNS error:", dnsErr)
+				return NETWORKING_NO_INTERNET
+			}
+		}
+
 		var opErr *net.OpError
 		if errors.As(err, &opErr) {
-			var dnsErr *net.DNSError
-			if opErr != nil {
-				if errors.As(opErr.Err, &dnsErr) && dnsErr.IsNotFound {
-					Logln("DNS error: no such host")
-					return NETWORKING_BAD_CONFIG
-				}
+			if opErr.Timeout() {
+				Logln("Network Connection timeout:", opErr)
+				return NETWORKING_ERROR_FIREWALL
+			}
+			if errors.Is(opErr.Err, syscall.ECONNREFUSED) {
+				Logln("Network Connection refused:", opErr)
+				return NETWORKING_ERROR_FIREWALL
 			}
 		}
 
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
-			// Logln("Raw Error", urlErr.Err.Error())
-			if strings.Contains(urlErr.Err.Error(), "tls") {
-				Logln("TLS handshake error:", urlErr.Err)
+			var opErr *net.OpError
+			if errors.As(urlErr.Err, &opErr) {
+				if opErr.Timeout() || errors.Is(opErr.Err, syscall.ECONNREFUSED) {
+					Logln("Network Connection refused/timeout inside url.Error:", opErr)
+					return NETWORKING_ERROR_FIREWALL
+				}
+			}
+
+
+			var hostnameErr x509.HostnameError
+			if errors.As(urlErr.Err, &hostnameErr) {
+				Logln("Network TLS hostname mismatch:", hostnameErr)
+				return NETWORKING_ERROR_CONNECTION
+			}
+
+			var unknownAuthErr x509.UnknownAuthorityError
+			if errors.As(urlErr.Err, &unknownAuthErr) {
+				Logln("Network TLS unknown authority:", unknownAuthErr)
 				return NETWORKING_BAD_CONFIG
+			}
+
+			if strings.Contains(urlErr.Err.Error(), "tls") {
+				Logln("Network TLS handshake/network error:", urlErr.Err)
+				return NETWORKING_ERROR_CONNECTION
 			}
 		}
 
-		Logln(fmt.Errorf("Failed to fetch data: %w", err))
+		Logf("Network Failed to fetch data: %w", err)
+
 		return NETWORKING_ERROR_CONNECTION
 	}
+
 
 	defer resp.Body.Close()
 
@@ -117,25 +154,33 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 	defer runtime.GC()
 
 	switch resp.StatusCode {
-	case 401, 404:
-		Logln(fmt.Sprintf("Error %d: Unauthorized", resp.StatusCode))
-		return NETWORKING_BAD_CONFIG
-	case 429:
-		Logln(fmt.Sprintf("Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode))
-		return NETWORKING_ERROR_CONNECTION
 	case 200:
-		// OK
+		if callback != nil {
+			output := callback(ctx, resp)
+			return output
+		}
+		return NETWORKING_SUCCESS
+
+	case 400, 401, 403:
+		Logf("Network Error %d: Client/config issue", resp.StatusCode)
+		return NETWORKING_BAD_CONFIG
+
+	case 404:
+		Logf("Network Error 404: Not Found")
+		return NETWORKING_ERROR_CONNECTION
+
+	case 429:
+		Logf("Network Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode)
+		return NETWORKING_RATE_LIMIT
+
+	case 500, 502, 503, 504:
+		Logf("Network Error %d: Server error", resp.StatusCode)
+		return NETWORKING_ERROR_CONNECTION
+
 	default:
-		Logln(fmt.Sprintf("Error %d: Request failed", resp.StatusCode))
+		Logf("Network Error %d: Request failed", resp.StatusCode)
 		return NETWORKING_ERROR_CONNECTION
 	}
-
-	if callback != nil {
-		output := callback(ctx, resp)
-		return output
-	}
-
-	return NETWORKING_SUCCESS
 }
 
 var networkingBufPools sync.Map

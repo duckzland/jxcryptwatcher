@@ -53,6 +53,10 @@ func (a *statusManager) Init() {
 	a.lastRefresh.Store(now)
 }
 
+func (a *statusManager) HasError() bool {
+	return a.bad_config.Load() || a.bad_cryptos.Load()
+}
+
 func (a *statusManager) IsReady() bool {
 	return a.ready.Load()
 }
@@ -87,6 +91,14 @@ func (a *statusManager) IsValidConfig() bool {
 
 func (a *statusManager) IsValidCrypto() bool {
 	return !a.bad_cryptos.Load()
+}
+
+func (a *statusManager) IsValidPanels() bool {
+	return !a.no_panels.Load()
+}
+
+func (a *statusManager) IsValidTickers() bool {
+	return !a.bad_tickers.Load()
 }
 
 func (a *statusManager) IsGoodNetworkStatus() bool {
@@ -303,26 +315,6 @@ func (a *statusManager) DetectData() *statusManager {
 	return a
 }
 
-func (a *statusManager) HasError() bool {
-	return a.bad_config.Load() || a.bad_cryptos.Load()
-}
-
-func (a *statusManager) ValidConfig() bool {
-	return !a.bad_config.Load()
-}
-
-func (a *statusManager) ValidCryptos() bool {
-	return !a.bad_cryptos.Load()
-}
-
-func (a *statusManager) ValidPanels() bool {
-	return !a.no_panels.Load()
-}
-
-func (a *statusManager) ValidTickers() bool {
-	return !a.bad_tickers.Load()
-}
-
 func (a *statusManager) Refresh() *statusManager {
 	lastChange := a.lastChange.Load()
 	lastRefresh := a.lastRefresh.Load()
@@ -345,7 +337,7 @@ func (a *statusManager) Refresh() *statusManager {
 	})
 
 	if !a.IsReady() || a.HasError() {
-		JC.Logf("Application Status: Ready: %v | NoPanels: %v|%d | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d", a.IsReady(), a.ValidPanels(), a.PanelsCount(), !a.ValidConfig(), !a.ValidCryptos(), a.bad_tickers.Load(), a.lastChange.Load(), a.lastRefresh.Load())
+		JC.Logf("Application Status: Ready: %v | NoPanels: %v|%d | BadConfig: %v | BadCryptos: %v | BadTickers: %v | LastChange: %d | LastRefresh: %d", a.IsReady(), a.IsValidPanels(), a.PanelsCount(), !a.IsValidConfig(), !a.IsValidCrypto(), a.bad_tickers.Load(), a.lastChange.Load(), a.lastRefresh.Load())
 	}
 
 	return a

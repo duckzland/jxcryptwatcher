@@ -98,7 +98,7 @@ func registerActions() {
 				return
 			}
 
-			if !JA.UseStatus().ValidTickers() {
+			if !JA.UseStatus().IsValidTickers() {
 				btn.Disable()
 				return
 			}
@@ -156,7 +156,7 @@ func registerActions() {
 				return
 			}
 
-			if !JA.UseStatus().ValidConfig() {
+			if !JA.UseStatus().IsValidConfig() {
 				btn.Disable()
 				return
 			}
@@ -168,11 +168,6 @@ func registerActions() {
 
 			if JA.UseStatus().IsFetchingCryptos() {
 				btn.Progress()
-				return
-			}
-
-			if !JA.UseStatus().ValidCryptos() {
-				btn.Error()
 				return
 			}
 
@@ -222,23 +217,18 @@ func registerActions() {
 				return
 			}
 
-			if !JA.UseStatus().ValidConfig() {
-				btn.Disable()
-				return
-			}
-
-			if !JA.UseStatus().ValidCryptos() {
-				btn.Disable()
-				return
-			}
-
-			if !JA.UseStatus().ValidPanels() {
-				btn.Disable()
-				return
-			}
-
 			if !JA.UseStatus().IsValidConfig() {
-				btn.Error()
+				btn.Disable()
+				return
+			}
+
+			if !JA.UseStatus().IsValidCrypto() {
+				btn.Disable()
+				return
+			}
+
+			if !JA.UseStatus().IsValidPanels() {
+				btn.Disable()
 				return
 			}
 
@@ -278,16 +268,6 @@ func registerActions() {
 
 			if JA.UseStatus().IsDraggable() {
 				btn.Disable()
-				return
-			}
-
-			if !JA.UseStatus().IsGoodNetworkStatus() {
-				btn.Error()
-				return
-			}
-
-			if !JA.UseStatus().ValidConfig() {
-				btn.Error()
 				return
 			}
 
@@ -337,7 +317,7 @@ func registerActions() {
 				return
 			}
 
-			if !JA.UseStatus().ValidPanels() {
+			if !JA.UseStatus().IsValidPanels() {
 				JA.UseStatus().DisallowDragging()
 				btn.Disable()
 				return
@@ -383,7 +363,7 @@ func registerActions() {
 				return
 			}
 
-			if !JA.UseStatus().ValidCryptos() {
+			if !JA.UseStatus().IsValidCrypto() {
 				btn.Disable()
 				return
 			}
@@ -418,7 +398,7 @@ func registerWorkers() {
 				JC.Logln("Unable to refresh rates: app is dragging")
 				return false
 			}
-			if !JA.UseStatus().ValidConfig() {
+			if !JA.UseStatus().IsValidConfig() {
 				JC.Logln("Unable to refresh rates: invalid configuration")
 				return false
 			}
@@ -426,7 +406,7 @@ func registerWorkers() {
 				JC.Logln("Unable to refresh rates: not cleared should refresh yet")
 				return false
 			}
-			if !JA.UseStatus().ValidPanels() {
+			if !JA.UseStatus().IsValidPanels() {
 				JC.Logln("Unable to refresh rates: No valid panels configured")
 				return false
 			}
@@ -518,7 +498,7 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch cryptos: app is paused")
 				return false
 			}
-			if !JA.UseStatus().ValidConfig() {
+			if !JA.UseStatus().IsValidConfig() {
 				JC.Notify(JC.NotifyInvalidConfigurationUnableToResetCryptos)
 				JC.Logln("Unable to do fetch cryptos: Invalid config")
 				return false
@@ -752,7 +732,7 @@ func registerFetchers() {
 				JC.Logln("Unable to fetch rates: app is paused")
 				return false
 			}
-			if !JA.UseStatus().ValidPanels() {
+			if !JA.UseStatus().IsValidPanels() {
 				JC.Logln("Unable to rates: no configured panels")
 				return false
 			}

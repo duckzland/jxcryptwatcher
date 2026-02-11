@@ -430,7 +430,7 @@ func detectHTTPResponse(rs int64) int {
 	case JC.NETWORKING_SUCCESS:
 		return JC.STATUS_SUCCESS
 
-	case JC.NETWORKING_ERROR_CONNECTION:
+	case JC.NETWORKING_ERROR_CONNECTION, JC.NETWORKING_RATE_LIMIT, JC.NETWORKING_ERROR_FIREWALL, JC.NETWORKING_NO_INTERNET:
 		return JC.STATUS_NETWORK_ERROR
 
 	case JC.NETWORKING_BAD_CONFIG, JC.NETWORKING_URL_ERROR:
@@ -456,6 +456,7 @@ func processUpdatePanelComplete(status int) {
 
 		JC.Notify(JC.NotifyPleaseCheckYourNetworkConnection)
 		JA.UseStatus().SetNetworkStatus(false)
+		JA.UseStatus().SetConfigStatus(true)
 
 		JT.UsePanelMaps().ChangeStatus(JC.STATE_ERROR, func(pdt JT.PanelData) bool {
 			return pdt.UsePanelKey().IsValueMatchingFloat(0, JC.STRING_LESS) || pdt.IsStatus(JC.STATE_LOADING)
@@ -547,7 +548,7 @@ func processFetchingCryptosComplete(status int) {
 		JT.CryptosLoaderInit()
 		JA.UseStatus().DetectData()
 
-		if !JA.UseStatus().ValidCryptos() {
+		if !JA.UseStatus().IsValidCrypto() {
 			JC.Notify(JC.NotifyFailedToConvertCryptoDataToMap)
 			JA.UseStatus().SetCryptoStatus(false)
 

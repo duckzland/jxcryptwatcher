@@ -68,22 +68,22 @@ func (m *layoutManager) UpdateState() {
 		scroll.Content = m.loading
 		m.state = -1
 		m.mu.Unlock()
-	} else if !UseStatus().ValidConfig() && !UseStatus().ValidPanels() {
+	} else if !UseStatus().IsValidConfig() && !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
 		m.state = -2
 		m.mu.Unlock()
-	} else if !UseStatus().ValidCryptos() && !UseStatus().ValidPanels() {
+	} else if !UseStatus().IsValidCrypto() && !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
 		m.state = -3
 		m.mu.Unlock()
-	} else if !UseStatus().ValidPanels() {
+	} else if !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionAddPanel
 		m.state = 0
 		m.mu.Unlock()
-	} else if !UseStatus().HasError() || UseStatus().ValidPanels() {
+	} else if !UseStatus().HasError() || UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = *content
 		m.state = UseStatus().PanelsCount()
@@ -104,7 +104,7 @@ func (m *layoutManager) UpdateState() {
 	}
 
 	if UseStatus().IsReady() {
-		if !UseStatus().ValidCryptos() || !UseStatus().IsTickerShown() {
+		if !UseStatus().IsValidCrypto() || !UseStatus().IsTickerShown() {
 			m.setTickers(container.NewWithoutLayout())
 			return
 		}
@@ -114,17 +114,17 @@ func (m *layoutManager) UpdateState() {
 		populated := m.tickersPopulated
 		m.mu.RUnlock()
 
-		if tickers != nil && tickers != populated && UseStatus().ValidTickers() {
+		if tickers != nil && tickers != populated && UseStatus().IsValidTickers() {
 			m.setTickers(m.tickersPopulated)
 			return
 		}
 
-		if tickers != nil && tickers == populated && !UseStatus().ValidTickers() {
+		if tickers != nil && tickers == populated && !UseStatus().IsValidTickers() {
 			m.setTickers(container.NewWithoutLayout())
 			return
 		}
 
-		if tickers == nil && UseStatus().ValidTickers() {
+		if tickers == nil && UseStatus().IsValidTickers() {
 			m.setTickers(populated)
 			return
 		}
