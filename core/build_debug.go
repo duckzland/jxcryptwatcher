@@ -71,6 +71,7 @@ func PrintPerfStats(title string, start time.Time) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 		elapsed := time.Since(start)
-		Logf("%s | Time=%v | Alloc=%vM | Tot=%vM | GC=%v | Heap=%vM/%vM (%vM idle, %vM rel) | M/F=%v/%v", title, elapsed, m.Alloc/1024/1024, m.TotalAlloc/1024/1024, m.NumGC, m.HeapAlloc/1024/1024, m.HeapSys/1024/1024, m.HeapIdle/1024/1024, m.HeapReleased/1024/1024, m.Mallocs, m.Frees)
+		count := runtime.NumGoroutine()
+		Logf("%s | Time=%v | Alloc=%vM | Tot=%vM | GC=%v | GR=%d | Heap=%vM/%vM (%vM idle, %vM rel) | M/F=%v/%v", title, elapsed, m.Alloc/1024/1024, m.TotalAlloc/1024/1024, m.NumGC, count, m.HeapAlloc/1024/1024, m.HeapSys/1024/1024, m.HeapIdle/1024/1024, m.HeapReleased/1024/1024, m.Mallocs, m.Frees)
 	}
 }

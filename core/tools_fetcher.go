@@ -297,7 +297,7 @@ func (m *fetcher) execute(ctx context.Context, key string, payload any, setResul
 		return
 	}
 
-	r := NewFetchResult(-1, nil)
+	r := NewFetchResult(-1)
 	r.SetSource(key)
 	r.SetError(fmt.Errorf("no fetcher for key %s", key))
 	setResult(r)

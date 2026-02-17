@@ -77,31 +77,6 @@ func TestWorkerCallDebounced(t *testing.T) {
 	stopWorker(w, "debounced", 100)
 }
 
-func TestWorkerCallBypassImmediateIgnoresCondition(t *testing.T) {
-	done := make(chan struct{})
-	w := &worker{}
-	w.Init()
-	w.Register("bypass", 1,
-		nil,
-		func() int64 { return 10 },
-		func(payload any) bool {
-			close(done)
-			return true
-		},
-		func() bool { return false },
-	)
-
-	w.Call("bypass", CallBypassImmediate)
-
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-		t.Error("Expected function to be called despite false condition")
-	}
-
-	stopWorker(w, "bypass", 20)
-}
-
 func TestWorkerPushFlushReset(t *testing.T) {
 	called := false
 	w := &worker{}

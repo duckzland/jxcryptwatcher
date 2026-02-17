@@ -486,7 +486,7 @@ func registerFetchers() {
 		JC.ACT_CRYPTO_GET_MAP,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.UseCryptosLoader().GetCryptos(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -512,7 +512,7 @@ func registerFetchers() {
 		JT.TickerTypeCMC100,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewCMC100Fetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -541,7 +541,7 @@ func registerFetchers() {
 		JT.TickerTypeMarketCap,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewMarketCapFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -570,7 +570,7 @@ func registerFetchers() {
 		JT.TickerTypeAltcoinIndex,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewAltSeasonFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -599,7 +599,7 @@ func registerFetchers() {
 		JT.TickerTypeFearGreed,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewFearGreedFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -628,7 +628,7 @@ func registerFetchers() {
 		JT.TickerTypeRSI,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewRSIFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -657,7 +657,7 @@ func registerFetchers() {
 		JT.TickerTypeETF,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewETFFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -686,7 +686,7 @@ func registerFetchers() {
 		JT.TickerTypeDominance,
 		JC.NewFetcherUnit(
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
-				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx, payload), nil), nil
+				return JC.NewFetchResult(JT.NewDominanceFetcher().GetRate(ctx, payload)), ctx.Err()
 			},
 		),
 		func() bool {
@@ -717,10 +717,10 @@ func registerFetchers() {
 			func(ctx context.Context, payload any) (JC.FetchResultInterface, error) {
 				rk, ok := payload.(string)
 				if !ok {
-					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD, nil), fmt.Errorf("invalid rk")
+					return JC.NewFetchResult(JC.NETWORKING_BAD_PAYLOAD), fmt.Errorf("invalid rk")
 				}
 
-				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(ctx, rk), nil), nil
+				return JC.NewFetchResult(JT.NewExchangeResults().GetRate(ctx, rk)), ctx.Err()
 			},
 		),
 		func() bool {

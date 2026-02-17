@@ -6,7 +6,6 @@ import (
 
 type FetchResultInterface interface {
 	Code() int64
-	Data() any
 	Err() error
 	Source() string
 	SetSource(string)
@@ -15,7 +14,6 @@ type FetchResultInterface interface {
 
 type fetchResult struct {
 	code   int64
-	data   any
 	err    error
 	source string
 	ctx    context.Context
@@ -23,10 +21,6 @@ type fetchResult struct {
 
 func (r *fetchResult) Code() int64 {
 	return r.code
-}
-
-func (r *fetchResult) Data() any {
-	return r.data
 }
 
 func (r *fetchResult) Err() error {
@@ -45,9 +39,8 @@ func (r *fetchResult) SetError(e error) {
 	r.err = e
 }
 
-func NewFetchResult(code int64, data any) FetchResultInterface {
+func NewFetchResult(code int64) FetchResultInterface {
 	return &fetchResult{
 		code: code,
-		data: data,
 	}
 }

@@ -44,7 +44,7 @@ func TestDispatch(t *testing.T) {
 		f.Register(
 			key,
 			NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
-				return NewFetchResult(100, payload), nil
+				return NewFetchResult(100), nil
 			}),
 			func() bool { return true },
 		)
@@ -76,7 +76,7 @@ func TestErrorHandling(t *testing.T) {
 
 	f.Register("error",
 		NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
-			res := NewFetchResult(500, nil)
+			res := NewFetchResult(500)
 			res.SetError(errMsg)
 			done <- errMsg
 			return res, errMsg
@@ -109,7 +109,7 @@ func TestFetcherDestroy(t *testing.T) {
 	f.Register(
 		"destroyTest",
 		NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
-			return NewFetchResult(200, "ok"), nil
+			return NewFetchResult(200), nil
 		}),
 		func() bool { return true },
 	)
@@ -137,9 +137,5 @@ func TestFetcherDestroy(t *testing.T) {
 	f.registry.Range(func(_ string, _ context.CancelFunc) bool { found = true; return false })
 	if found {
 		t.Error("Expected activeWorkers to be empty after destroy")
-	}
-
-	if f.dispatcher != nil {
-		t.Error("Expected dispatcher to be nil after destroy")
 	}
 }

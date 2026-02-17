@@ -13,7 +13,6 @@ const (
 	CallImmediate CallMode = iota
 	CallQueued
 	CallDebounced
-	CallBypassImmediate
 )
 
 type worker struct {
@@ -46,10 +45,8 @@ func (w *worker) Register(key string, size int, getDelay func() int64, getInterv
 			return false
 		}
 
-		if mode, ok := payload.(CallMode); !ok || mode != CallBypassImmediate {
-			if shouldRun != nil && !shouldRun() {
-				return false
-			}
+		if shouldRun != nil && !shouldRun() {
+			return false
 		}
 
 		w.lastRun.Store(key, time.Now())
@@ -87,16 +84,13 @@ func (w *worker) Call(key string, mode CallMode) {
 		cond = condAny.(func() bool)
 	}
 
-	if mode != CallBypassImmediate && cond != nil && !cond() {
+	if cond != nil && !cond() {
 		return
 	}
 
 	switch mode {
 	case CallImmediate:
 		go unit.Call(nil)
-
-	case CallBypassImmediate:
-		unit.Push(CallBypassImmediate)
 
 	case CallQueued:
 		unit.Push(nil)

@@ -154,19 +154,10 @@ func TestDispatcherDrain(t *testing.T) {
 		d.Submit(func() {})
 	}
 
-	drained := false
-	d.SetDrainer(func() {
-		drained = true
-	})
-
 	d.Drain()
 
 	if len(d.queue) != 0 {
 		t.Errorf("Expected queue to be empty after drain, got %d", len(d.queue))
-	}
-
-	if !drained {
-		t.Error("Expected drainer function to be called")
 	}
 }
 

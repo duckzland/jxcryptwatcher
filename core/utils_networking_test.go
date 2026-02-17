@@ -10,7 +10,7 @@ import (
 
 func TestFetcher_Success(t *testing.T) {
 	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
-		return NewFetchResult(123, nil), nil
+		return NewFetchResult(123), nil
 	})
 	f.Fetch(context.Background(), nil, func(res FetchResultInterface) {
 		if res.Code() != 123 {
@@ -25,9 +25,9 @@ func TestFetcher_CancelledContext(t *testing.T) {
 	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		select {
 		case <-ctx.Done():
-			return NewFetchResult(-1, nil), ctx.Err()
+			return NewFetchResult(-1), ctx.Err()
 		case <-time.After(50 * time.Millisecond):
-			return NewFetchResult(123, nil), nil
+			return NewFetchResult(123), nil
 		}
 	})
 	f.Fetch(ctx, nil, func(res FetchResultInterface) {
@@ -46,9 +46,9 @@ func TestFetcher_DeadlineExceeded(t *testing.T) {
 	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		select {
 		case <-ctx.Done():
-			return NewFetchResult(-1, nil), ctx.Err()
+			return NewFetchResult(-1), ctx.Err()
 		case <-time.After(100 * time.Millisecond):
-			return NewFetchResult(123, nil), nil
+			return NewFetchResult(123), nil
 		}
 	})
 	f.Fetch(ctx, nil, func(res FetchResultInterface) {
@@ -64,9 +64,9 @@ func TestFetcher_DeadlineExceeded(t *testing.T) {
 func TestFetcher_UsesPayload(t *testing.T) {
 	f := NewFetcherUnit(func(ctx context.Context, payload any) (FetchResultInterface, error) {
 		if payload == "ok" {
-			return NewFetchResult(200, nil), nil
+			return NewFetchResult(200), nil
 		}
-		return NewFetchResult(400, nil), fmt.Errorf("bad payload")
+		return NewFetchResult(400), fmt.Errorf("bad payload")
 	})
 	f.Fetch(context.Background(), "ok", func(res FetchResultInterface) {
 		if res.Code() != 200 {

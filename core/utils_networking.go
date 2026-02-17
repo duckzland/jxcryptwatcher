@@ -49,7 +49,7 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 		return NETWORKING_ERROR_CONNECTION
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", parsedURL.String(), nil)
@@ -159,13 +159,9 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 		}
 		return NETWORKING_SUCCESS
 
-	case 400, 401, 403:
+	case 400, 401, 403, 404:
 		Logf("Network Error %d: Client/config issue", resp.StatusCode)
 		return NETWORKING_BAD_CONFIG
-
-	case 404:
-		Logf("Network Error 404: Not Found")
-		return NETWORKING_ERROR_CONNECTION
 
 	case 429:
 		Logf("Network Error %d: Too Many Requests Rate limit exceeded", resp.StatusCode)

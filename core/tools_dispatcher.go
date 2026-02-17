@@ -14,7 +14,6 @@ type Dispatcher interface {
 	Start()
 	Drain()
 	Destroy()
-	SetDrainer(fn func())
 	SetBufferSize(int)
 	SetDelayBetween(time.Duration)
 	SetMaxConcurrent(int)
@@ -29,7 +28,6 @@ type dispatcher struct {
 	maxConcurrent atomic.Int32
 	generated     atomic.Int32
 	delay         atomic.Int64
-	drainer       atomic.Value
 	key           atomic.Value
 	ctx           atomic.Value
 	cancel        *cancelRegistry
@@ -105,32 +103,22 @@ func (d *dispatcher) Resume() {
 }
 
 func (d *dispatcher) Drain() {
-	for {
-		if d.queue == nil {
-			if fn := d.drainer.Load(); fn != nil {
-				fn.(func())()
-			}
-			return
-		}
+	switch d.state.Get() {
+	case STATE_DESTROYED:
+		return
+	}
 
+	for {
 		select {
 		case <-d.queue:
 		default:
-			if fn := d.drainer.Load(); fn != nil {
-				fn.(func())()
-			}
 			return
 		}
 	}
 }
 
 func (d *dispatcher) Submit(fn func()) {
-	switch d.state.Get() {
-	case STATE_PAUSED, STATE_DESTROYED:
-		return
-	}
-
-	if d.queue == nil {
+	if d.state.Is(STATE_DESTROYED) {
 		return
 	}
 
@@ -155,10 +143,6 @@ func (d *dispatcher) Destroy() {
 		close(d.queue)
 		d.queue = nil
 	}
-}
-
-func (d *dispatcher) SetDrainer(fn func()) {
-	d.drainer.Store(fn)
 }
 
 func (d *dispatcher) SetBufferSize(size int) {
@@ -190,9 +174,6 @@ func (d *dispatcher) worker(id int32) {
 
 	for {
 		if d.state.Is(STATE_DESTROYED) {
-			return
-		}
-		if d.queue == nil {
 			return
 		}
 
