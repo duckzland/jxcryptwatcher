@@ -66,6 +66,19 @@ This will:
 
 ---
 
+## Running for development
+Use this build tags for running in development
+
+```
+go run --tags="no_emoji,no_animations,no-fonts" .
+```
+
+Optionally you can use:
+- `jxwindows` for simulating as windows
+- `jxandroid` for simulating as android
+
+note: the `no-fonts` is for skipping fyne default fonts and its only available at the forked fyne version at https://github.com/duckzland/fyne/
+
 ## Configuration
 
 The app requires three configuration files for normal operation:
