@@ -101,7 +101,7 @@ func NewSettingsForm(
 		widget.NewFormItem("Delay (sec)", delay),
 	}
 
-	return JW.NewDialogForm("Settings", items, nil, nil, nil,
+	return JW.NewDialogForm("Settings", items, nil, nil, nil, nil,
 		func() bool {
 			defer func() { allowValidation = false }()
 

@@ -31,3 +31,5 @@ const ACT_TICKER_GET_MARKETCAP = "ticker_get_marketcap"
 const ACT_TICKER_GET_RSI = "ticker_get_rsi"
 
 const ACT_COMPLETION_ENTRY_CLOSE = "close_entry"
+
+const ACT_WATCHER_ACTION = "watcher_action"

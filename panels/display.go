@@ -32,24 +32,25 @@ type PanelDisplay interface {
 
 type panelDisplay struct {
 	widget.BaseWidget
-	tag           string
-	fps           time.Duration
-	status        int
-	shown         int
-	actionVisible bool
-	dragScroll    float32
-	dragPosition  fyne.Position
-	dragOffset    fyne.Position
-	dragging      bool
-	container     *fyne.Container
-	background    *canvas.Rectangle
-	action        *panelAction
-	title         *panelText
-	content       *panelText
-	subtitle      *panelText
-	bottomText    *panelText
-	onEdit        func()
-	onDelete      func()
+	tag             string
+	fps             time.Duration
+	status          int
+	shown           int
+	actionVisible   bool
+	dragScroll      float32
+	dragPosition    fyne.Position
+	dragOffset      fyne.Position
+	dragging        bool
+	container       *fyne.Container
+	background      *canvas.Rectangle
+	action          *panelAction
+	title           *panelText
+	content         *panelText
+	subtitle        *panelText
+	bottomText      *panelText
+	onEdit          func()
+	onDelete        func()
+	onWatcherAction func()
 }
 
 func (h *panelDisplay) GetTag() string {
@@ -509,7 +510,7 @@ func (h *panelDisplay) syncData() bool {
 
 func (h *panelDisplay) createAction() {
 	if h.action == nil {
-		h.action = NewPanelAction(h.onEdit, h.onDelete)
+		h.action = NewPanelAction(h.onEdit, h.onDelete, h.onWatcherAction)
 		h.container.Layout.(*panelDisplayLayout).action = h.action
 		h.container.Objects = append(h.container.Objects, h.action)
 		h.action.Show()
@@ -525,7 +526,7 @@ func (h *panelDisplay) removeAction() {
 	}
 }
 
-func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string)) *panelDisplay {
+func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDelete func(uuid string), onWatcherAction func(uuid string)) *panelDisplay {
 
 	uuid := JC.CreateUUID()
 	pdt.SetID(uuid)
@@ -553,6 +554,12 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 			}, false)
 
 			pd.HideTarget()
+		}
+	}
+
+	if onWatcherAction != nil {
+		pd.onWatcherAction = func() {
+			onWatcherAction(pd.GetTag())
 		}
 	}
 

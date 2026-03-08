@@ -27,6 +27,7 @@ type ActionButton interface {
 	IsDisabled() bool
 	Disable()
 	Enable()
+	SetText(string)
 	DisallowActions()
 	AllowActions()
 	Error()
@@ -154,6 +155,15 @@ func (b *actionButton) HideTooltip() {
 	if b.hastip {
 		b.ToolTipWidgetExtend.MouseOut()
 	}
+}
+
+func (b *actionButton) SetText(text string) {
+	switch btn := b.buttonWidget.(type) {
+	case *widget.Button:
+		btn.SetText(text)
+	case *actionButtonIcon:
+	}
+	b.Refresh()
 }
 
 func (b *actionButton) IsDisabled() bool {

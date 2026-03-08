@@ -7,4 +7,12 @@ type panelType struct {
 	Decimals     int64   `json:"decimals"`
 	SourceSymbol string  `json:"source_symbol"`
 	TargetSymbol string  `json:"target_symbol"`
+
+	// // Watcher
+	Rate      float64 `json:"target_rate"`
+	Sent      int     `json:"sent"`
+	Operator  int     `json:"operator"`
+	Limit     int     `json:"limit"`
+	Duration  int     `json:"duration"`
+	Timestamp int     `json:"timestamp"`
 }

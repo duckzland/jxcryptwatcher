@@ -834,9 +834,9 @@ func registerLifecycle() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Continuing apps")
 				JX.UseAnimationDispatcher().Resume()
-				JA.UseStatus().Resume()
-				JC.UseFetcher().Resume()
-				JC.UseWorker().Resume()
+				// JA.UseStatus().Resume()
+				// JC.UseFetcher().Resume()
+				// JC.UseWorker().Resume()
 			}
 
 			if !JA.UseStatus().IsReady() {
@@ -881,9 +881,9 @@ func registerLifecycle() {
 			if JC.IsMobile {
 				JC.Logln("Battery Saver: Pausing apps")
 				JX.UseAnimationDispatcher().Pause()
-				JA.UseStatus().Pause()
-				JC.UseFetcher().Pause()
-				JC.UseWorker().Pause()
+				// JA.UseStatus().Pause()
+				// JC.UseFetcher().Pause()
+				// JC.UseWorker().Pause()
 			}
 		})
 

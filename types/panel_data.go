@@ -1,11 +1,15 @@
 package types
 
 import (
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	JC "jxwatcher/core"
+
+	"fyne.io/fyne/v2"
 )
 
 const fmtSpace = " "
@@ -19,6 +23,7 @@ type PanelData interface {
 	SetStatus(val int)
 	SetID(val string)
 	SetOldKey(val string)
+	SetWatcherKey(val string)
 	SetParent(val *panelsMapType)
 	SetRate(val *big.Float) bool
 	Get() string
@@ -30,6 +35,7 @@ type PanelData interface {
 	GetOldValueString() string
 	UseData() JC.DataBinding
 	UsePanelKey() *panelKeyType
+	UseWatcherKey() *watcherKeyType
 	IsStatus(val int) bool
 	IsID(val string) bool
 	IsKey(val string) bool
@@ -51,25 +57,29 @@ type PanelData interface {
 	FormatContent() string
 	DidChange() bool
 	Serialize() panelDataCache
+	ProcessWatcher()
 }
 
 type panelDataCache struct {
-	Status int
-	Key    string
-	OldKey string
+	Status     int
+	Key        string
+	OldKey     string
+	WatcherKey string
 }
 
 type panelDataType struct {
-	data   JC.DataBinding
-	oldKey string
-	id     string
-	parent *panelsMapType
+	data       JC.DataBinding
+	oldKey     string
+	watcherKey string
+	id         string
+	parent     *panelsMapType
 }
 
 func (p *panelDataType) Init() {
 	p.data = JC.NewDataBinding(JC.STRING_EMPTY, JC.STATE_ERROR)
 	p.id = JC.STRING_EMPTY
 	p.oldKey = JC.STRING_EMPTY
+	p.watcherKey = JC.STRING_EMPTY
 }
 
 func (p *panelDataType) Set(val string) {
@@ -92,6 +102,10 @@ func (p *panelDataType) SetID(val string) {
 
 func (p *panelDataType) SetOldKey(val string) {
 	p.oldKey = val
+}
+
+func (p *panelDataType) SetWatcherKey(val string) {
+	p.watcherKey = val
 }
 
 func (p *panelDataType) SetParent(val *panelsMapType) {
@@ -134,6 +148,10 @@ func (p *panelDataType) GetOldKey() string {
 	return p.oldKey
 }
 
+func (p *panelDataType) GetWatcherKey() string {
+	return p.watcherKey
+}
+
 func (p *panelDataType) GetParent() *panelsMapType {
 	return p.parent
 }
@@ -153,6 +171,10 @@ func (p *panelDataType) UseData() JC.DataBinding {
 
 func (p *panelDataType) UsePanelKey() *panelKeyType {
 	return &panelKeyType{value: p.Get()}
+}
+
+func (p *panelDataType) UseWatcherKey() *watcherKeyType {
+	return &watcherKeyType{value: p.GetWatcherKey()}
 }
 
 func (p *panelDataType) IsStatus(val int) bool {
@@ -243,6 +265,58 @@ func (p *panelDataType) RefreshKey(key string) string {
 	}
 
 	return pkt.GenerateKey(source, target, value, sourceSymbol, targetSymbol, decimals, rate)
+}
+
+func (p *panelDataType) ProcessWatcher() {
+	wx := p.UseWatcherKey()
+
+	if wx.IsEmpty() {
+		return
+	}
+
+	px := p.UsePanelKey()
+	limit := wx.GetLimit()
+	sent := wx.GetSent()
+	timestamp := wx.GetTimestamp()
+	rate := JC.ToBigFloat(wx.GetRate())
+	now := time.Now().UTC().UnixMicro()
+
+	if sent == -9999 || sent > limit {
+		return
+	}
+
+	if int64(timestamp) > now {
+		return
+	}
+
+	var op string
+	switch wx.GetOperator() {
+	case 0:
+		op = JC.STRING_EQUAL
+	case 1:
+		op = JC.STRING_LESS
+	case 2:
+		op = JC.STRING_GREATER
+	default:
+		return
+	}
+
+	if !px.IsValueMatching(rate, op) {
+		return
+	}
+
+	JC.App.SendNotification(fyne.NewNotification(
+		"Rate Alert",
+		fmt.Sprintf("%s to %s rates reached %s",
+			px.GetSourceCoinString(),
+			px.GetTargetCoinString(),
+			wx.GetFormattedRateString()),
+	))
+
+	wx.UpdateTimestamp(now)
+	wx.UpdateSent(sent + 1)
+
+	p.SetWatcherKey(wx.GetRawValue())
 }
 
 func (p *panelDataType) Update(pk string) bool {
@@ -400,9 +474,10 @@ func (p *panelDataType) Insert(panel panelType, rate float64) {
 
 func (p *panelDataType) Serialize() panelDataCache {
 	return panelDataCache{
-		Status: p.GetStatus(),
-		Key:    p.RefreshKey(p.Get()),
-		OldKey: p.RefreshKey(p.GetOldKey()),
+		Status:     p.GetStatus(),
+		Key:        p.RefreshKey(p.Get()),
+		OldKey:     p.RefreshKey(p.GetOldKey()),
+		WatcherKey: p.GetWatcherKey(),
 	}
 }
 

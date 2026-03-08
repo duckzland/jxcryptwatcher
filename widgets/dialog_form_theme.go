@@ -28,6 +28,7 @@ func (t *dialogFormTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVari
 	}
 	return t.base.Color(name, variant)
 }
+
 func (t *dialogFormTheme) Font(style fyne.TextStyle) fyne.Resource {
 	return t.base.Font(style)
 }

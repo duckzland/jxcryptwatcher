@@ -3,7 +3,7 @@ module jxwatcher
 go 1.25
 
 require (
-	fyne.io/fyne/v2 v2.7.0-exp-0.0.1
+	fyne.io/fyne/v2 v2.7.0-exp-0.0.4
 	github.com/buger/jsonparser v1.1.1
 	github.com/dweymouth/fyne-tooltip v0.3.3
 	github.com/goccy/go-json v0.10.5
@@ -13,7 +13,7 @@ require (
 	golang.org/x/image v0.33.0
 )
 
-replace fyne.io/fyne/v2 => github.com/duckzland/fyne/v2 v2.7.0-exp-0.0.1
+replace fyne.io/fyne/v2 => github.com/duckzland/fyne/v2 v2.7.0-exp-0.0.4
 
 require (
 	fyne.io/systray v1.11.1-0.20250603113521-ca66a66d8b58 // indirect

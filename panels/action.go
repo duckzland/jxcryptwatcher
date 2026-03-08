@@ -13,9 +13,10 @@ import (
 
 type panelAction struct {
 	widget.BaseWidget
-	editBtn   JW.ActionButton
-	deleteBtn JW.ActionButton
-	container *fyne.Container
+	editBtn    JW.ActionButton
+	deleteBtn  JW.ActionButton
+	watcherBtn JW.ActionButton
+	container  *fyne.Container
 }
 
 func (pa *panelAction) CreateRenderer() fyne.WidgetRenderer {
@@ -26,6 +27,7 @@ func (pa *panelAction) Show() {
 	if pa.canShow() {
 		pa.container.Show()
 
+		JA.UseAction().Add(pa.watcherBtn)
 		JA.UseAction().Add(pa.deleteBtn)
 		JA.UseAction().Add(pa.editBtn)
 	}
@@ -33,6 +35,8 @@ func (pa *panelAction) Show() {
 
 func (pa *panelAction) Hide() {
 	pa.container.Hide()
+
+	JA.UseAction().Remove(pa.watcherBtn)
 	JA.UseAction().Remove(pa.deleteBtn)
 	JA.UseAction().Remove(pa.editBtn)
 }
@@ -52,15 +56,46 @@ func (pa *panelAction) canShow() bool {
 func NewPanelAction(
 	onEdit func(),
 	onDelete func(),
+	onWatcherAction func(),
 ) *panelAction {
 
 	pa := &panelAction{}
+	pa.watcherBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, JC.STRING_EMPTY, theme.CalendarIcon(), "Manage Watcher", JW.ActionStateNormal,
+		func(JW.ActionButton) {
+			if onWatcherAction != nil {
+				onWatcherAction()
+			}
+
+			pa.watcherBtn.MouseOut()
+			pa.editBtn.MouseOut()
+			pa.deleteBtn.MouseOut()
+
+		}, func(btn JW.ActionButton) {
+			if JA.UseStatus().IsOverlayShown() {
+				btn.DisallowActions()
+				return
+			}
+
+			if JA.UseStatus().IsFetchingCryptos() {
+				pa.Hide()
+				return
+			}
+
+			if JA.UseStatus().IsDraggable() {
+				pa.Hide()
+				return
+			}
+
+			btn.Enable()
+		})
+
 	pa.editBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, JC.STRING_EMPTY, theme.DocumentCreateIcon(), "Edit panel", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onEdit != nil {
 				onEdit()
 			}
 
+			pa.watcherBtn.MouseOut()
 			pa.editBtn.MouseOut()
 			pa.deleteBtn.MouseOut()
 
@@ -89,6 +124,7 @@ func NewPanelAction(
 				onDelete()
 			}
 
+			pa.watcherBtn.MouseOut()
 			pa.editBtn.MouseOut()
 			pa.deleteBtn.MouseOut()
 
@@ -111,7 +147,7 @@ func NewPanelAction(
 			btn.Enable()
 		})
 
-	pa.container = container.New(&panelActionLayout{height: 30, margin: 3}, pa.editBtn, pa.deleteBtn)
+	pa.container = container.New(&panelActionLayout{height: 30, margin: 3}, pa.watcherBtn, pa.editBtn, pa.deleteBtn)
 
 	return pa
 }

@@ -131,6 +131,11 @@ func (l *dialogContentLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 	}
 }
 
+func (l *dialogContentLayout) ClearCache() {
+	l.cHeight = 0
+	l.cWidth = 0
+}
+
 func (l *dialogContentLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	if l.cHeight == 0 {
 		l.cHeight = l.title.MinSize().Height +

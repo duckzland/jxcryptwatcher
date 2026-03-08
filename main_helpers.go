@@ -13,6 +13,7 @@ import (
 	JP "jxwatcher/panels"
 	JX "jxwatcher/tickers"
 	JT "jxwatcher/types"
+	JM "jxwatcher/watchers"
 	JW "jxwatcher/widgets"
 )
 
@@ -106,10 +107,12 @@ func updateDisplay() bool {
 		}
 
 		if pn.SetRate(val) {
-
 			pn.UpdateStatus()
+			pn.ProcessWatcher()
+
 			if updateCount == 0 {
 				JC.Notify(JC.NotifyPanelDisplayRefreshedWithLatestRates)
+
 			}
 
 			updateCount++
@@ -762,6 +765,32 @@ func openNewPanelForm() {
 
 }
 
+func openWatcherForm(uuid string) {
+
+	if JA.UseStatus().IsOverlayShown() {
+		return
+	}
+
+	JA.UseStatus().SetOverlayShownStatus(true)
+
+	d := JM.NewWatcherForm(uuid,
+		func(npdt JT.PanelData) {
+			savePanelForm(npdt)
+		},
+		func(layer *fyne.Container) {
+			JA.UseLayout().RegisterOverlay(layer)
+		},
+		func(layer *fyne.Container) {
+			JA.UseLayout().RemoveOverlay(layer)
+			JA.UseStatus().SetOverlayShownStatus(false)
+		})
+
+	if d != nil {
+		d.Show()
+	}
+
+}
+
 func openPanelEditForm(pk string, uuid string) {
 
 	if JA.UseStatus().IsOverlayShown() {
@@ -877,7 +906,7 @@ func scheduledNotificationReset() {
 }
 
 func createPanel(pkt JT.PanelData) fyne.CanvasObject {
-	return JP.NewPanelDisplay(pkt, openPanelEditForm, removePanel)
+	return JP.NewPanelDisplay(pkt, openPanelEditForm, removePanel, openWatcherForm)
 }
 
 func appShutdown() {

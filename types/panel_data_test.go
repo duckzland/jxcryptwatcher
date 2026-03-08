@@ -323,3 +323,63 @@ func TestPanelDataUpdateAndUpdateRate(t *testing.T) {
 
 	panelDataTurnOnLogs()
 }
+
+func TestPanelDataWatcherIntegration(t *testing.T) {
+	panelDataTurnOffLogs()
+	t.Setenv("FYNE_STORAGE", t.TempDir())
+	test.NewApp()
+
+	p := NewPanelData()
+	p.Init()
+
+	// Build a valid watcher key using the adapter
+	wx := NewWatcherKey()
+	rawWatcher := wx.GenerateKeyFromArgs(
+		0,   // sent
+		2,   // operator (greater)
+		0.6, // rate
+		5,   // limit
+		60,  // duration
+		0,   // timestamp
+	)
+
+	// Attach watcher key to panelData
+	p.SetWatcherKey(rawWatcher)
+	if p.GetWatcherKey() != rawWatcher {
+		t.Errorf("Expected watcherKey %q, got %q", rawWatcher, p.GetWatcherKey())
+	}
+
+	// UseWatcherKey should wrap the raw watcher string
+	wk := p.UseWatcherKey()
+	if wk.IsEmpty() {
+		t.Error("Expected UseWatcherKey to return non-empty watcherKeyType")
+	}
+	if wk.GetRate() != 0.6 {
+		t.Errorf("Expected rate=0.6, got %f", wk.GetRate())
+	}
+	if wk.GetOperator() != 2 {
+		t.Errorf("Expected operator=2, got %d", wk.GetOperator())
+	}
+
+	// Serialize should capture watcher key
+	snap := p.Serialize()
+	if snap.WatcherKey != rawWatcher {
+		t.Errorf("Serialize should capture watcher key, got %q", snap.WatcherKey)
+	}
+
+	// Prepare panel key so ProcessWatcher can evaluate
+	p.Set("1-2-0.5-BTC-ETH-4|0.6")
+	p.SetStatus(JC.STATE_LOADED)
+
+	// Call ProcessWatcher — with operator=2 (greater), rate=0.6, current value=0.6
+	// This should trigger notification and increment sent
+	p.ProcessWatcher()
+
+	// After processing, watcherKey should be updated (sent incremented, timestamp updated)
+	updated := p.GetWatcherKey()
+	if updated == rawWatcher {
+		t.Error("Expected watcherKey to be updated after ProcessWatcher")
+	}
+
+	panelDataTurnOnLogs()
+}

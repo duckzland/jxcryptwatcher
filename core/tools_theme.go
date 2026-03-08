@@ -456,7 +456,7 @@ func (t *appTheme) darkColor(name fyne.ThemeColorName) color.Color {
 	case theme.ColorNameSuccess:
 		return color.RGBA{R: 67, G: 244, B: 54, A: 255}
 	case theme.ColorNameWarning:
-		return color.RGBA{R: 255, G: 152, B: 0, A: 255}
+		return color.RGBA{R: 200, G: 120, B: 0, A: 255}
 	case ColorNamePanelBG:
 		return color.RGBA{R: 50, G: 53, B: 70, A: 255}
 	case ColorNamePanelPlaceholder:

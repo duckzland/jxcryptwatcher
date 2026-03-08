@@ -152,6 +152,11 @@ cat > AndroidManifest.xml <<EOF
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
 
     <!-- Maybe needed in the future
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -164,7 +169,7 @@ cat > AndroidManifest.xml <<EOF
     -->
 
     <!-- Application block -->
-    <application android:label="$name" android:debuggable="$androidXMLDebug">
+    <application android:label="$name" android:debuggable="$androidXMLDebug" android:extractNativeLibs="true">
         <activity
             android:name="org.golang.app.GoNativeActivity"
             android:label="$name"

@@ -94,6 +94,36 @@ func (p *panelsType) parseJSON(data []byte) error {
 			panel.TargetSymbol = ts
 		}
 
+		if rate, e := jsonparser.GetFloat(value, "target_rate"); e == nil {
+			panel.Rate = rate
+		}
+		if sent, e := jsonparser.GetInt(value, "sent"); e == nil {
+			panel.Sent = int(sent)
+		}
+		if op, e := jsonparser.GetInt(value, "operator"); e == nil {
+			panel.Operator = int(op)
+		}
+		if lim, e := jsonparser.GetInt(value, "limit"); e == nil {
+			panel.Limit = int(lim)
+		}
+		if dur, e := jsonparser.GetInt(value, "duration"); e == nil {
+			panel.Duration = int(dur)
+		}
+		if ts, e := jsonparser.GetInt(value, "timestamp"); e == nil {
+			panel.Timestamp = int(ts)
+		}
+
+		// This is probably from old value or invalid json. Give default value
+		if panel.Sent == 0 && panel.Operator == 0 && panel.Rate == 0 && panel.Limit == 0 && panel.Duration == 0 && panel.Timestamp == 0 {
+			wk := watcherKeyType{value: ""}
+			panel.Sent = wk.GetSent()
+			panel.Operator = wk.GetOperator()
+			panel.Rate = wk.GetRate()
+			panel.Limit = wk.GetLimit()
+			panel.Duration = wk.GetDuration()
+			panel.Timestamp = wk.GetTimestamp()
+		}
+
 		*p = append(*p, panel)
 	})
 
@@ -119,6 +149,7 @@ func (p *panelsType) save(maps *panelsMapType) bool {
 			continue
 		}
 		pk := pdt.UsePanelKey()
+		pw := pdt.UseWatcherKey()
 
 		panel := panelType{
 			Source:       pk.GetSourceCoinInt(),
@@ -127,6 +158,13 @@ func (p *panelsType) save(maps *panelsMapType) bool {
 			Decimals:     pk.GetDecimalsInt(),
 			SourceSymbol: pk.GetSourceSymbolString(),
 			TargetSymbol: pk.GetTargetSymbolString(),
+
+			Rate:      pw.GetRate(),
+			Sent:      pw.GetSent(),
+			Operator:  pw.GetOperator(),
+			Limit:     pw.GetLimit(),
+			Duration:  pw.GetDuration(),
+			Timestamp: pw.GetTimestamp(),
 		}
 
 		np = append(np, panel)
@@ -177,7 +215,11 @@ func (p *panelsType) convert(maps *panelsMapType) {
 
 		// JC.Logf("Generated key: %v", pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
 
-		maps.Append(pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
+		wko := watcherKeyType{}
+		wko.GenerateKeyFromPanel(*pp)
+
+		npdt := maps.Append(pko.GenerateKeyFromPanel(*pp, JC.ToBigFloat(-1)))
+		npdt.SetWatcherKey(wko.GetRawValue())
 	}
 }
 

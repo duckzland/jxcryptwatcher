@@ -65,6 +65,16 @@ func (e *numericalEntry) SetValidator(fn func(string) error) {
 	e.Validator = fn
 }
 
+func (e *numericalEntry) GetInt() int {
+	v, _ := strconv.Atoi(e.Text)
+	return v
+}
+
+func (e *numericalEntry) GetFloat() float64 {
+	v, _ := strconv.ParseFloat(e.Text, 64)
+	return v
+}
+
 func NewNumericalEntry(allow_decimals bool) *numericalEntry {
 	entry := &numericalEntry{}
 	entry.ExtendBaseWidget(entry)

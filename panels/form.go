@@ -141,7 +141,7 @@ func NewPanelForm(
 		widget.NewFormItem("Decimal Precision", de),
 	}
 
-	parent := JW.NewDialogForm(title, fi, nil, nil, pop,
+	parent := JW.NewDialogForm(title, fi, nil, nil, pop, nil,
 		func() bool {
 			defer func() { allowValidation = false }()
 			allowValidation = true

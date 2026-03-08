@@ -50,7 +50,10 @@ func (sm *snapshotManager) LoadPanels() int {
 		p.Set(p.RefreshKey(c.Key))
 		p.SetOldKey(c.OldKey)
 		p.SetStatus(c.Status)
+		p.SetWatcherKey(c.WatcherKey)
 		restored = append(restored, p)
+
+		// JC.Logln("Hydrating panel data:", c, p)
 	}
 
 	JT.PanelsInit()

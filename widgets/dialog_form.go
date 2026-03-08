@@ -23,11 +23,13 @@ type DialogForm interface {
 	GetContent() *fyne.Container
 	GetForm() *widget.Form
 	Submit()
+	Refresh()
 }
 
 type dialogForm struct {
 	layer           *fyne.Container
 	content         *fyne.Container
+	inner           *dialogContentLayout
 	confirm         ActionButton
 	cancel          ActionButton
 	form            *widget.Form
@@ -92,12 +94,33 @@ func (d *dialogForm) GetForm() *widget.Form {
 	return d.form
 }
 
+func (d *dialogForm) Refresh() {
+	d.inner.ClearCache()
+
+	if d.content != nil {
+		if d.content.Layout != nil {
+			d.content.Layout.Layout(d.content.Objects, d.content.Size())
+		}
+		d.content.Refresh()
+	}
+	if d.layer != nil {
+		if d.layer.Layout != nil {
+			d.layer.Layout.Layout(d.layer.Objects, d.layer.Size())
+		}
+		d.layer.Refresh()
+	}
+	if d.form != nil {
+		d.form.Refresh()
+	}
+}
+
 func NewDialogForm(
 	titleText string,
 	items []*widget.FormItem,
 	topContent []*fyne.Container,
 	bottomContent []*fyne.Container,
 	absolutePositionedContent []*fyne.Container,
+	customAction ActionButton,
 	callback func() bool,
 	render func(*fyne.Container),
 	destroy func(*fyne.Container),
@@ -147,16 +170,28 @@ func NewDialogForm(
 	spacer := canvas.NewRectangle(nil)
 	spacer.SetMinSize(fyne.NewSize(10, 10))
 
+	objs := []fyne.CanvasObject{}
+
+	if customAction != nil {
+		objs = append(objs, customAction, spacer)
+	}
+
+	objs = append(objs, fd.cancel, spacer, fd.confirm)
+
+	buttons := container.NewHBox(objs...)
+
 	innerLayout := &dialogContentLayout{
 		background:    canvas.NewRectangle(JC.UseTheme().GetColor(theme.ColorNameBackground)),
 		title:         widget.NewLabelWithStyle(titleText, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		topContent:    topContent,
 		form:          fd.form,
 		content:       container.NewVScroll(container.New(formLayout, container.NewThemeOverride(formLayout.form, &dialogFormTheme{base: JC.UseTheme()}), formLayout.dispatcher)),
-		buttons:       container.NewHBox(fd.cancel, spacer, fd.confirm),
+		buttons:       buttons,
 		bottomContent: bottomContent,
 		padding:       16,
 	}
+
+	fd.inner = innerLayout
 
 	formLayout.container = innerLayout.content
 	formLayout.dispatcher.SetScroller(innerLayout.content)
