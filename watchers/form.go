@@ -122,14 +122,15 @@ func NewWatcherForm(
 	spacer := canvas.NewRectangle(nil)
 	spacer.SetMinSize(fyne.NewSize(10, 10))
 
-	duration := container.NewBorder(nil, spacer, nil, widget.NewLabel("Minutes"), de)
-	ops := container.NewBorder(oe, spacer, nil, nil)
+	// Working with glitch. When disabled Label wont mutate to muted.
+	// duration := container.NewBorder(nil, spacer, nil, widget.NewLabel("Minutes"), de)
+	// ops := container.NewBorder(oe, spacer, nil, nil)
 
 	fi := []*widget.FormItem{
-		widget.NewFormItem("Operator", ops),
+		widget.NewFormItem("Operator", oe),
 		widget.NewFormItem("Rate", re),
 		widget.NewFormItem("Limit", le),
-		widget.NewFormItem("Duration", duration),
+		widget.NewFormItem("Duration", de),
 	}
 
 	var label string
