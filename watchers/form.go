@@ -99,7 +99,7 @@ func NewWatcherForm(
 	var bannerBox = container.NewVBox()
 	if isDisabled {
 		bannerBox.Add(JW.NewBanner(
-			"This watcher is disabled. Click the enable button to activate",
+			"This watcher is disabled.",
 			JW.BannerDanger))
 
 		oe.Disable()
@@ -109,7 +109,7 @@ func NewWatcherForm(
 
 	} else if sent > limit {
 		bannerBox.Add(JW.NewBanner(
-			"This watcher reached its sent limit. Hit Save to reset the limit.",
+			"This watcher reached its limit.",
 			JW.BannerWarning))
 	} else {
 		bannerBox.RemoveAll()
@@ -164,7 +164,7 @@ func NewWatcherForm(
 
 				bannerBox.RemoveAll()
 				bannerBox.Add(JW.NewBanner(
-					"This watcher is disabled. Click the enable button to activate",
+					"This watcher is disabled.",
 					JW.BannerDanger,
 				))
 

@@ -33,7 +33,7 @@ func NewRadioEntry(options map[int]string, onChanged func(string)) *radioEntry {
 		entry.RadioGroup.Options = append(entry.RadioGroup.Options, v)
 	}
 
-	entry.RadioGroup.Horizontal = true
+	//entry.RadioGroup.Horizontal = true
 	entry.RadioGroup.OnChanged = onChanged
 
 	entry.ExtendBaseWidget(entry)
