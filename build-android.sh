@@ -169,7 +169,7 @@ cat > AndroidManifest.xml <<EOF
     -->
 
     <!-- Application block -->
-    <application android:label="$name" android:debuggable="$androidXMLDebug" android:extractNativeLibs="true">
+    <application android:label="$name" android:debuggable="$androidXMLDebug">
         <activity
             android:name="org.golang.app.GoNativeActivity"
             android:label="$name"
