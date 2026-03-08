@@ -510,7 +510,7 @@ func (h *panelDisplay) syncData() bool {
 
 func (h *panelDisplay) createAction() {
 	if h.action == nil {
-		h.action = NewPanelAction(h.onEdit, h.onDelete, h.onWatcherAction)
+		h.action = NewPanelAction(h.GetTag(), h.onEdit, h.onDelete, h.onWatcherAction)
 		h.container.Layout.(*panelDisplayLayout).action = h.action
 		h.container.Objects = append(h.container.Objects, h.action)
 		h.action.Show()

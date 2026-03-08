@@ -383,7 +383,9 @@ func registerWorkers() {
 			return max(JT.UseConfig().Delay*1000, 30000)
 		},
 		func(any) bool {
-			return updateRates()
+			completed := updateRates()
+			processWatcher()
+			return completed
 		},
 		func() bool {
 			if !JA.UseStatus().IsReady() {

@@ -17,6 +17,20 @@ import (
 	JW "jxwatcher/widgets"
 )
 
+func processWatcher() {
+	panels := JT.UsePanelMaps().GetData()
+
+	if panels == nil || len(panels) == 0 {
+		JC.Logln("Unable to process watchers: No panels available to process")
+	}
+
+	for _, pot := range panels {
+		pot.ProcessWatcher()
+	}
+
+	JA.UseAction().Refresh()
+}
+
 func updateDisplay() bool {
 
 	if JC.IsShuttingDown() {
@@ -67,7 +81,6 @@ func updateDisplay() bool {
 			// Edge case where panel stuck not in loaded state, refresh status and rate using exchangerate directly
 			if !hasRecentUpdates && !pot.IsStatus(JC.STATE_LOADED) {
 				pot.UpdateRate()
-				pot.UpdateStatus()
 				continue
 			}
 

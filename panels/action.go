@@ -8,11 +8,13 @@ import (
 
 	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
+	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
 )
 
 type panelAction struct {
 	widget.BaseWidget
+	uuid       string
 	editBtn    JW.ActionButton
 	deleteBtn  JW.ActionButton
 	watcherBtn JW.ActionButton
@@ -26,6 +28,8 @@ func (pa *panelAction) CreateRenderer() fyne.WidgetRenderer {
 func (pa *panelAction) Show() {
 	if pa.canShow() {
 		pa.container.Show()
+
+		pa.watcherBtn.Refresh()
 
 		JA.UseAction().Add(pa.watcherBtn)
 		JA.UseAction().Add(pa.deleteBtn)
@@ -54,13 +58,14 @@ func (pa *panelAction) canShow() bool {
 }
 
 func NewPanelAction(
+	uuid string,
 	onEdit func(),
 	onDelete func(),
 	onWatcherAction func(),
 ) *panelAction {
 
 	pa := &panelAction{}
-	pa.watcherBtn = JW.NewActionButton(JC.ACT_PANEL_EDIT, JC.STRING_EMPTY, theme.CalendarIcon(), "Manage Watcher", JW.ActionStateNormal,
+	pa.watcherBtn = JW.NewActionButton(JC.ACT_WATCHER_EDIT, JC.STRING_EMPTY, theme.CalendarIcon(), "Manage Watcher", JW.ActionStateNormal,
 		func(JW.ActionButton) {
 			if onWatcherAction != nil {
 				onWatcherAction()
@@ -71,6 +76,10 @@ func NewPanelAction(
 			pa.deleteBtn.MouseOut()
 
 		}, func(btn JW.ActionButton) {
+
+			pdt := JT.UsePanelMaps().GetDataByID(uuid)
+			wpk := pdt.UseWatcherKey()
+
 			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return
@@ -83,6 +92,21 @@ func NewPanelAction(
 
 			if JA.UseStatus().IsDraggable() {
 				pa.Hide()
+				return
+			}
+
+			if wpk.IsDisabled() {
+				btn.Enable()
+				return
+			}
+
+			if wpk.IsLimited() {
+				btn.Error()
+				return
+			}
+
+			if wpk.IsActive() {
+				btn.Active()
 				return
 			}
 

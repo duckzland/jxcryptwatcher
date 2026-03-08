@@ -270,53 +270,48 @@ func (p *panelDataType) RefreshKey(key string) string {
 func (p *panelDataType) ProcessWatcher() {
 	wx := p.UseWatcherKey()
 
-	if wx.IsEmpty() {
+	if !wx.CanSend() {
 		return
 	}
 
 	px := p.UsePanelKey()
-	limit := wx.GetLimit()
 	sent := wx.GetSent()
-	timestamp := wx.GetTimestamp()
-	rate := JC.ToBigFloat(wx.GetRate())
 	now := time.Now().UTC().UnixMicro()
 
-	if sent == -9999 || sent > limit {
-		return
-	}
-
-	if int64(timestamp) > now {
-		return
-	}
-
 	var op string
+	var to string
 	switch wx.GetOperator() {
 	case 0:
 		op = JC.STRING_EQUAL
+		to = "equal"
 	case 1:
 		op = JC.STRING_LESS
+		to = "less than"
 	case 2:
 		op = JC.STRING_GREATER
+		to = "greater than"
 	default:
 		return
 	}
 
-	if !px.IsValueMatching(rate, op) {
+	if !px.IsValueMatching(JC.ToBigFloat(wx.GetRate()), op) {
 		return
 	}
 
 	JC.App.SendNotification(fyne.NewNotification(
 		"Rate Alert",
-		fmt.Sprintf("%s to %s rates reached %s",
-			px.GetSourceCoinString(),
-			px.GetTargetCoinString(),
+		fmt.Sprintf("%s to %s rates is %s %s",
+			px.GetSourceSymbolString(),
+			px.GetTargetSymbolString(),
+			to,
 			wx.GetFormattedRateString()),
 	))
 
 	wx.UpdateTimestamp(now)
 	wx.UpdateSent(sent + 1)
-
 	p.SetWatcherKey(wx.GetRawValue())
+
+	JC.Logln("Sending notification: ", wx.GetRawValue())
 }
 
 func (p *panelDataType) Update(pk string) bool {

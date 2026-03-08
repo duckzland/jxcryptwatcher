@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	JA "jxwatcher/apps"
 	JC "jxwatcher/core"
 	JT "jxwatcher/types"
 	JW "jxwatcher/widgets"
@@ -83,7 +84,7 @@ func NewWatcherForm(
 
 	if !wk.IsEmpty() {
 
-		if sent != -9999 {
+		if sent != JC.WATCHER_DISABLED {
 			isDisabled = false
 
 		}
@@ -161,7 +162,7 @@ func NewWatcherForm(
 				btn.Active()
 
 				isDisabled = true
-				sent = -9999
+				sent = JC.WATCHER_DISABLED
 
 				bannerBox.RemoveAll()
 				bannerBox.Add(JW.NewBanner(
@@ -210,6 +211,10 @@ func NewWatcherForm(
 				return false
 			}
 
+			if sent != JC.WATCHER_DISABLED {
+				sent = 0
+			}
+
 			pdt := JT.UsePanelMaps().GetDataByID(uuid)
 			wk := JT.NewWatcherKey()
 			pdt.SetWatcherKey(wk.GenerateKeyFromArgs(
@@ -235,6 +240,8 @@ func NewWatcherForm(
 			if onDestroy != nil {
 				onDestroy(layer)
 			}
+
+			JA.UseAction().Refresh()
 		},
 		JC.Window)
 

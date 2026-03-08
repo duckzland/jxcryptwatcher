@@ -18,6 +18,7 @@ const ACT_PANEL_DRAG = "panels_drag"
 const ACT_PANEL_NEW = "panels_new"
 const ACT_PANEL_EDIT = "panels_edit"
 const ACT_PANEL_DELETE = "panels_delete"
+const ACT_WATCHER_EDIT = "watcher_edit"
 
 const ACT_TICKER_TOGGLE = "tickers_toggle"
 const ACT_TICKER_UPDATE = "tickers_update"

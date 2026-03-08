@@ -3,6 +3,7 @@ package types
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	JC "jxwatcher/core"
 )
@@ -114,7 +115,7 @@ func (p *watcherKeyType) GetSent() int {
 			return v
 		}
 	}
-	return -9999
+	return JC.WATCHER_DISABLED
 }
 
 func (p *watcherKeyType) GetOperator() int {
@@ -180,6 +181,40 @@ func (p *watcherKeyType) GetFormattedRateString() string {
 	}
 
 	return JC.FormatNumberWithCommas(rate, frac)
+}
+
+func (p *watcherKeyType) IsDisabled() bool {
+	return p.IsEmpty() || p.GetSent() == JC.WATCHER_DISABLED
+}
+
+func (p *watcherKeyType) IsLimited() bool {
+	return !p.IsDisabled() && p.GetSent() >= p.GetLimit()
+}
+
+func (p *watcherKeyType) IsActive() bool {
+	return !p.IsDisabled() && p.GetSent() < p.GetLimit()
+}
+
+func (p *watcherKeyType) CanSend() bool {
+	if p.IsEmpty() {
+		return false
+	}
+
+	if p.IsDisabled() {
+		return false
+	}
+
+	if p.IsLimited() {
+		return false
+	}
+
+	now := time.Now().UTC().UnixMicro()
+	time := int64(p.GetTimestamp()) + int64(p.GetDuration())*int64(time.Minute/time.Microsecond)
+	if int64(time) > now {
+		return false
+	}
+
+	return true
 }
 
 func NewWatcherKey() *watcherKeyType {
