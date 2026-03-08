@@ -27,19 +27,6 @@ func NewWatcherForm(
 
 	var allowValidation bool = false
 
-	validateOps := func(key int, s string) error {
-		if !allowValidation {
-			return nil
-		}
-		if len(s) == 0 {
-			return fmt.Errorf("This field is required")
-		}
-		if key > 2 || key < 0 {
-			return fmt.Errorf("Invalid operation mode")
-		}
-		return nil
-	}
-
 	validateInt := func(s string) error {
 		if !allowValidation {
 			return nil
@@ -74,15 +61,14 @@ func NewWatcherForm(
 		return nil
 	}
 
-	re := JW.NewNumericalEntry(true)  // Rate
-	le := JW.NewNumericalEntry(false) // Limit
-	de := JW.NewNumericalEntry(false) // Duration
-
-	oe := JW.NewSelectEntry(map[int]string{
+	re := JW.NewNumericalEntry(true)
+	le := JW.NewNumericalEntry(false)
+	de := JW.NewNumericalEntry(false)
+	oe := JW.NewRadioEntry(map[int]string{
 		0: "Equal",
 		1: "Less Than",
 		2: "Greater Than",
-	})
+	}, func(s string) {})
 
 	title := "Adding New Watcher"
 
@@ -129,7 +115,6 @@ func NewWatcherForm(
 		bannerBox.RemoveAll()
 	}
 
-	oe.Validator = validateOps
 	re.Validator = validateFloat
 	le.Validator = validateInt
 	de.Validator = validateInt
@@ -138,8 +123,6 @@ func NewWatcherForm(
 	spacer.SetMinSize(fyne.NewSize(10, 10))
 
 	duration := container.NewBorder(nil, spacer, nil, widget.NewLabel("Minutes"), de)
-
-	// TODO: Create custom layout to normalize Selector!
 	ops := container.NewBorder(oe, spacer, nil, nil)
 
 	fi := []*widget.FormItem{
@@ -216,8 +199,7 @@ func NewWatcherForm(
 			}
 
 			hasError := false
-			if oe.Validate() != nil ||
-				re.Validate() != nil ||
+			if re.Validate() != nil ||
 				le.Validate() != nil ||
 				de.Validate() != nil {
 				hasError = true
