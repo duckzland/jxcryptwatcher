@@ -78,9 +78,10 @@ func GetRequest(ctx context.Context, targetUrl string, prefetch func(url url.Val
 	}
 
 	req.URL.RawQuery = q.Encode()
-	// Logf("Network Fetching data from %v", req.URL)
-
 	resp, err := httpClient.Do(req)
+
+	// Logf("Network Fetching data from %v [%d]", req.URL, resp.StatusCode)
+
 	if err != nil {
 		if resp != nil {
 			resp.Body.Close()

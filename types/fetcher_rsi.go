@@ -85,6 +85,10 @@ func (rf *rsiFetcher) GetRate(ctx context.Context, payload any) int64 {
 			url.Add("rsiPeriod", "14")
 			url.Add("volume24Range.min", "1000000")
 			url.Add("marketCapRange.min", "50000000")
+
+			if UseConfig().AuthKey != JC.STRING_EMPTY {
+				req.Header.Set("Authorization", UseConfig().AuthKey)
+			}
 		},
 		func(cctx context.Context, resp *http.Response) int64 {
 

@@ -69,7 +69,11 @@ func (df *dominanceFetcher) GetRate(ctx context.Context, payload any) int64 {
 	return JC.GetRequest(
 		ctx,
 		UseConfig().DominanceEndpoint,
-		func(url url.Values, req *http.Request) {},
+		func(url url.Values, req *http.Request) {
+			if UseConfig().AuthKey != JC.STRING_EMPTY {
+				req.Header.Set("Authorization", UseConfig().AuthKey)
+			}
+		},
 		func(cctx context.Context, resp *http.Response) int64 {
 
 			if cctx != nil && cctx.Err() != nil {

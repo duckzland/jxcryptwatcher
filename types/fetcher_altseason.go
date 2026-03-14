@@ -55,6 +55,10 @@ func (er *altSeasonFetcher) GetRate(ctx context.Context, payload any) int64 {
 			startUnix, endUnix := JC.GetMonthBounds(time.Now())
 			url.Add("start", strconv.FormatInt(startUnix, 10))
 			url.Add("end", strconv.FormatInt(endUnix, 10))
+
+			if UseConfig().AuthKey != JC.STRING_EMPTY {
+				req.Header.Set("Authorization", UseConfig().AuthKey)
+			}
 		},
 		func(cctx context.Context, resp *http.Response) int64 {
 

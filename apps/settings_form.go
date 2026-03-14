@@ -65,6 +65,7 @@ func NewSettingsForm(
 	rsi := JW.NewTextEntry()
 	etf := JW.NewTextEntry()
 	dominance := JW.NewTextEntry()
+	authkey := JW.NewTextEntry()
 
 	delay.SetDefaultValue(strconv.FormatInt(JT.UseConfig().Delay, 10))
 	cryptos.SetText(JT.UseConfig().DataEndpoint)
@@ -76,6 +77,7 @@ func NewSettingsForm(
 	rsi.SetText(JT.UseConfig().RSIEndpoint)
 	etf.SetText(JT.UseConfig().ETFEndpoint)
 	dominance.SetText(JT.UseConfig().DominanceEndpoint)
+	authkey.SetText(JT.UseConfig().AuthKey)
 
 	delay.Validator = validateDelay
 	cryptos.Validator = validateURL
@@ -98,6 +100,7 @@ func NewSettingsForm(
 		widget.NewFormItem("RSI Endpoint", rsi),
 		widget.NewFormItem("ETF Endpoint", etf),
 		widget.NewFormItem("Dominance Endpoint", dominance),
+		widget.NewFormItem("Authorization Key", authkey),
 		widget.NewFormItem("Delay (sec)", delay),
 	}
 
@@ -154,6 +157,7 @@ func NewSettingsForm(
 			JT.UseConfig().RSIEndpoint = rsi.Text
 			JT.UseConfig().ETFEndpoint = etf.Text
 			JT.UseConfig().DominanceEndpoint = dominance.Text
+			JT.UseConfig().AuthKey = authkey.Text
 
 			if onSave != nil {
 				onSave()

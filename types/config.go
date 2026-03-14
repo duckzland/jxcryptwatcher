@@ -23,6 +23,7 @@ type configType struct {
 	RSIEndpoint       string `json:"rsi_endpoint"`
 	ETFEndpoint       string `json:"etf_endpoint"`
 	DominanceEndpoint string `json:"dominance_endpoint"`
+	AuthKey           string `json:"auth_key"`
 	Delay             int64  `json:"delay"`
 	Version           string `json:"version"`
 }
@@ -95,6 +96,9 @@ func (c *configType) parseJSON(data []byte) error {
 	if val, err := jsonparser.GetString(data, "dominance_endpoint"); err == nil {
 		c.DominanceEndpoint = val
 	}
+	if val, err := jsonparser.GetString(data, "auth_key"); err == nil {
+		c.AuthKey = val
+	}
 	if val, err := jsonparser.GetString(data, "version"); err == nil {
 		c.Version = val
 	}
@@ -153,7 +157,8 @@ func (c *configType) check() *configType {
 			RSIEndpoint:       "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/rsi/heatmap/overall",
 			ETFEndpoint:       "https://api.coinmarketcap.com/data-api/v3/etf/overview/netflow/chart",
 			DominanceEndpoint: "https://api.coinmarketcap.com/data-api/v3/global-metrics/dominance/overview",
-			Version:           "1.8.0",
+			AuthKey:           "",
+			Version:           "1.8.1",
 			Delay:             60,
 		}
 
@@ -174,6 +179,10 @@ func (c *configType) PostInit() {
 	if c.IsVersionLessThan("1.7.0") {
 		JC.Logln("Updating old config to 1.8.0")
 		c.Version = "1.8.0"
+		c.save()
+	} else if c.IsVersionLessThan("1.8.1") {
+		JC.Logln("Updating old config to 1.8.1")
+		c.Version = "1.8.1"
 		c.save()
 	}
 }

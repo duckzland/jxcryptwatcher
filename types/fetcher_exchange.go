@@ -117,6 +117,10 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 			url.Add("amount", "1")
 			url.Add("id", sid)
 			url.Add("convert_id", tid)
+
+			if UseConfig().AuthKey != JC.STRING_EMPTY {
+				req.Header.Set("Authorization", UseConfig().AuthKey)
+			}
 		},
 		func(cctx context.Context, resp *http.Response) int64 {
 

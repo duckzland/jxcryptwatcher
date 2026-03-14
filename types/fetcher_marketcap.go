@@ -74,6 +74,10 @@ func (mc *marketCapFetcher) GetRate(ctx context.Context, payload any) int64 {
 		func(url url.Values, req *http.Request) {
 			url.Add("convertId", "2781")
 			url.Add("range", "30d")
+
+			if UseConfig().AuthKey != JC.STRING_EMPTY {
+				req.Header.Set("Authorization", UseConfig().AuthKey)
+			}
 		},
 		func(cctx context.Context, resp *http.Response) int64 {
 
