@@ -118,7 +118,7 @@ func (d *dispatcher) Drain() {
 }
 
 func (d *dispatcher) Submit(fn func()) {
-	if d.state.Is(STATE_DESTROYED) {
+	if !d.state.Is(STATE_RUNNING) {
 		return
 	}
 
