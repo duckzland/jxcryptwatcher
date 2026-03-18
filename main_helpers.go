@@ -2,6 +2,7 @@ package main
 
 import (
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
@@ -116,7 +117,11 @@ func updateDisplay() bool {
 		ck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetSourceCoinInt(), pkt.GetTargetCoinInt())
 		val, ok := recentUpdates[ck]
 		if !ok || val == nil {
-			continue
+			revck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetTargetCoinInt(), pkt.GetSourceCoinInt())
+			val, ok = recentUpdates[revck]
+			if !ok || val == nil {
+				continue
+			}
 		}
 
 		if pn.SetRate(val) {
@@ -238,25 +243,82 @@ func updateRates() bool {
 		return false
 	}
 
-	jb := make(map[string]string)
 	list := JT.UsePanelMaps().GetData()
+	clean := make(map[string]string)
+	seen := make(map[string]struct{})
 
 	for _, pot := range list {
 		pk := JT.UsePanelMaps().GetDataByID(pot.GetID())
-
-		if !JT.UsePanelMaps().ValidatePanel(pk.Get()) {
-			pk.SetStatus(JC.STATE_BAD_CONFIG)
-			continue
-		}
-
 		pkt := pk.UsePanelKey()
 		sid := pkt.GetSourceCoinString()
 		tid := pkt.GetTargetCoinString()
 
-		if _, exists := jb[sid]; !exists {
-			jb[sid] = sid + JC.STRING_PIPE + tid
+		key := sid + "_" + tid
+
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		rev := tid + "_" + sid
+		seen[key] = struct{}{}
+		seen[rev] = struct{}{}
+
+		clean[key] = key
+
+	}
+
+	for _, pot := range list {
+		pk := JT.UsePanelMaps().GetDataByID(pot.GetID())
+		pkt := pk.UsePanelKey()
+		sid := pkt.GetSourceCoinString()
+		tid := pkt.GetTargetCoinString()
+
+		key := sid + "_" + tid
+
+		// Clean unused cache
+		if _, exists := clean[key]; !exists {
+			JT.UseExchangeCache().UseData().Delete(key)
+		}
+	}
+
+	wb := make(map[string]int)
+
+	for key := range clean {
+		parts := strings.Split(key, "_")
+		srId := parts[0]
+		rrId := parts[1]
+
+		if _, exists := wb[srId]; !exists {
+			wb[srId] = 1
 		} else {
-			jb[sid] += "," + tid
+			wb[srId]++
+		}
+
+		if _, exists := wb[rrId]; !exists {
+			wb[rrId] = 1
+		} else {
+			wb[rrId]++
+		}
+	}
+
+	jb := make(map[string]string)
+
+	for key := range clean {
+		parts := strings.Split(key, "_")
+		srId := parts[0]
+		rrId := parts[1]
+
+		source := srId
+		target := rrId
+		if wb[rrId] > wb[srId] {
+			source = rrId
+			target = srId
+		}
+
+		if _, exists := jb[source]; !exists {
+			jb[source] = source + JC.STRING_PIPE + target
+		} else {
+			jb[source] += "," + target
 		}
 	}
 
@@ -265,20 +327,36 @@ func updateRates() bool {
 		return false
 	}
 
+	tidCount := 0
 	for sid, val := range jb {
-		parts := strings.Split(strings.TrimPrefix(val, sid+JC.STRING_PIPE), ",")
-		seen := make(map[string]struct{})
-		var uniq []string
-		for _, p := range parts {
-			if _, ok := seen[p]; !ok {
-				seen[p] = struct{}{}
-				uniq = append(uniq, p)
+		uniq := JC.MakeUniquePayload(sid, val)
+		tidCount += len(uniq)
+
+		if len(uniq) == 1 {
+			nv := uniq[0]
+
+			if _, exists := jb[nv]; !exists {
+				jb[nv] = nv + JC.STRING_PIPE + sid
+			} else {
+				nvu := JC.MakeUniquePayload(nv, jb[nv])
+
+				if !slices.Contains(nvu, sid) {
+					nvu = append(nvu, sid)
+				}
+
+				jb[nv] = nv + JC.STRING_PIPE + strings.Join(nvu, ",")
 			}
+
+			delete(jb, sid)
+			continue
 		}
+
 		jb[sid] = sid + JC.STRING_PIPE + strings.Join(uniq, ",")
 	}
 
 	payloads := make(map[string][]string, len(jb))
+
+	JC.Logf("Fetching data: %d request for %d rates", len(jb), tidCount)
 
 	for _, rk := range jb {
 		payloads[JC.ACT_EXCHANGE_GET_RATES] = append(payloads[JC.ACT_EXCHANGE_GET_RATES], rk)
@@ -614,8 +692,9 @@ func validateRatesCache() bool {
 		pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 		pks := pkt.UsePanelKey()
 		ck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+		revck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetTargetCoinInt(), pks.GetSourceCoinInt())
 
-		if !JT.UseExchangeCache().Has(ck) {
+		if !JT.UseExchangeCache().Has(ck) || !JT.UseExchangeCache().Has(revck) {
 			return false
 		}
 	}
@@ -629,8 +708,9 @@ func validateRateCache(pot JT.PanelData) bool {
 	pkt := JT.UsePanelMaps().GetDataByID(pot.GetID())
 	pks := pkt.UsePanelKey()
 	ck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+	revck := JT.UseExchangeCache().CreateKeyFromInt(pks.GetTargetCoinInt(), pks.GetSourceCoinInt())
 
-	if !JT.UseExchangeCache().Has(ck) {
+	if !JT.UseExchangeCache().Has(ck) || !JT.UseExchangeCache().Has(revck) {
 		return false
 	}
 

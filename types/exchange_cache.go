@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	JC "jxwatcher/core"
@@ -59,6 +60,14 @@ func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 		ex := val.(exchangeDataType)
 		return &ex
 	}
+
+	parts := strings.Split(ck, "-")
+	rck := fmt.Sprintf("%s-%s", parts[1], parts[0])
+	if val, ok := ec.UseData().Load(rck); ok {
+		ex := val.(exchangeDataType)
+		return &ex
+	}
+
 	return nil
 }
 

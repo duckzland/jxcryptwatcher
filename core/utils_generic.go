@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -133,4 +134,25 @@ func EqualIntSlices(a, b []int) bool {
 
 func IsShuttingDown() bool {
 	return ShutdownCtx.Err() == context.Canceled
+}
+
+func MakeUniquePayload(sid, val string) []string {
+
+	parts := strings.Split(strings.TrimPrefix(val, sid+STRING_PIPE), ",")
+
+	seen := make(map[string]struct{})
+	var uniq []string
+	for _, p := range parts {
+		if p == sid {
+			continue
+		}
+
+		if _, ok := seen[p]; !ok {
+			seen[p] = struct{}{}
+			uniq = append(uniq, p)
+		}
+	}
+
+	return uniq
+
 }

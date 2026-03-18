@@ -324,9 +324,18 @@ func (p *panelDataType) Update(pk string) bool {
 	pks := p.UsePanelKey()
 
 	ck := UseExchangeCache().CreateKeyFromInt(pks.GetSourceCoinInt(), pks.GetTargetCoinInt())
+	revck := UseExchangeCache().CreateKeyFromInt(pks.GetTargetCoinInt(), pks.GetSourceCoinInt())
 
 	if UseExchangeCache().Has(ck) {
 		data := UseExchangeCache().Get(ck)
+		if data != nil && data.TargetAmount != nil {
+			pko := panelKeyType{value: npk}
+			npk = pko.UpdateValue(data.TargetAmount)
+		}
+	}
+
+	if UseExchangeCache().Has(revck) {
+		data := UseExchangeCache().Get(revck)
 		if data != nil && data.TargetAmount != nil {
 			pko := panelKeyType{value: npk}
 			npk = pko.UpdateValue(data.TargetAmount)
@@ -363,9 +372,17 @@ func (p *panelDataType) UpdateRate() bool {
 
 	pk := p.UsePanelKey()
 	ck := UseExchangeCache().CreateKeyFromInt(pk.GetSourceCoinInt(), pk.GetTargetCoinInt())
+	revck := UseExchangeCache().CreateKeyFromInt(pk.GetTargetCoinInt(), pk.GetSourceCoinInt())
 
 	if UseExchangeCache().Has(ck) {
 		dt := UseExchangeCache().Get(ck)
+		if dt != nil && dt.TargetAmount != nil {
+			return p.SetRate(dt.TargetAmount)
+		}
+	}
+
+	if UseExchangeCache().Has(revck) {
+		dt := UseExchangeCache().Get(revck)
 		if dt != nil && dt.TargetAmount != nil {
 			return p.SetRate(dt.TargetAmount)
 		}

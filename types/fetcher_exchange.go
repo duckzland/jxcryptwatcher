@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"math/big"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -102,6 +103,8 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 	sid := strings.TrimSpace(rko[0])
 	tid := strings.Join(rkt, ",")
 
+	JC.Logln("Dispatching for new rate:", sid, tid)
+
 	if sid == JC.STRING_EMPTY || tid == JC.STRING_EMPTY {
 		return JC.NETWORKING_BAD_PAYLOAD
 	}
@@ -144,9 +147,23 @@ func (er *exchangeResults) GetRate(ctx context.Context, rk string) int64 {
 				// factor := new(big.Float).SetFloat64(rand.Float64() * 5)
 				// ex.TargetAmount = new(big.Float).Mul(ex.TargetAmount, factor)
 
-				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)" ex.SourceSymbol, ex.SourceId, ex.TargetAmount.Text('f', -1), ex.TargetSymbol, ex.TargetId)
+				// JC.Logf("Rates received: 1 %s (ID %d) = %s %s (ID %d)", ex.SourceSymbol, ex.SourceId, ex.TargetAmount.Text('f', -1), ex.TargetSymbol, ex.TargetId)
 
 				UseExchangeCache().Insert(&ex)
+
+				one := new(big.Float).SetPrec(256).SetFloat64(1)
+				revRate := new(big.Float).SetPrec(256).Quo(one, ex.TargetAmount)
+				rex := exchangeDataType{
+					SourceSymbol: ex.TargetSymbol,
+					SourceId:     ex.TargetId,
+					SourceAmount: 1,
+					TargetSymbol: ex.SourceSymbol,
+					TargetId:     ex.TargetId,
+					TargetAmount: revRate,
+					Timestamp:    ex.Timestamp,
+				}
+
+				UseExchangeCache().Insert(&rex)
 			}
 
 			return JC.NETWORKING_SUCCESS
