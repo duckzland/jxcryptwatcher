@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/big"
 	"runtime"
 	"slices"
 	"strings"
@@ -118,10 +119,15 @@ func updateDisplay() bool {
 		val, ok := recentUpdates[ck]
 		if !ok || val == nil {
 			revck := JT.UseExchangeCache().CreateKeyFromInt(pkt.GetTargetCoinInt(), pkt.GetSourceCoinInt())
-			val, ok = recentUpdates[revck]
-			if !ok || val == nil {
+			revVal, revok := recentUpdates[revck]
+			if !revok || revVal == nil {
 				continue
 			}
+
+			// Need to inverse the rate back!
+			one := new(big.Float).SetPrec(256).SetFloat64(1)
+			val = new(big.Float).SetPrec(256).Quo(one, revVal)
+
 		}
 
 		if pn.SetRate(val) {

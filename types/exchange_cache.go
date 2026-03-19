@@ -55,6 +55,22 @@ func (ec *exchangeDataCacheType) GetRecentUpdates() map[string]*big.Float {
 	return updates
 }
 
+func (ec *exchangeDataCacheType) Has(key string) bool {
+	v, ok := ec.UseData().Load(key)
+	if ok && v != nil {
+		return true
+	}
+
+	parts := strings.Split(key, "-")
+	rck := fmt.Sprintf("%s-%s", parts[1], parts[0])
+	rv, rok := ec.UseData().Load(rck)
+	if rok && rv != nil {
+		return true
+	}
+
+	return false
+}
+
 func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 	if val, ok := ec.UseData().Load(ck); ok {
 		ex := val.(exchangeDataType)
@@ -65,7 +81,21 @@ func (ec *exchangeDataCacheType) Get(ck string) *exchangeDataType {
 	rck := fmt.Sprintf("%s-%s", parts[1], parts[0])
 	if val, ok := ec.UseData().Load(rck); ok {
 		ex := val.(exchangeDataType)
-		return &ex
+
+		// Need to inverse the rate back!
+		one := new(big.Float).SetPrec(256).SetFloat64(1)
+		revRate := new(big.Float).SetPrec(256).Quo(one, ex.TargetAmount)
+		rex := exchangeDataType{
+			SourceSymbol: ex.TargetSymbol,
+			SourceId:     ex.TargetId,
+			SourceAmount: 1,
+			TargetSymbol: ex.SourceSymbol,
+			TargetId:     ex.TargetId,
+			TargetAmount: revRate,
+			Timestamp:    ex.Timestamp,
+		}
+
+		return &rex
 	}
 
 	return nil
