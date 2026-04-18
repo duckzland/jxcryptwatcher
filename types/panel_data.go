@@ -83,8 +83,8 @@ func (p *panelDataType) Init() {
 }
 
 func (p *panelDataType) Set(val string) {
-	if p.data != nil {
-		p.oldKey = p.data.GetData()
+	if p.data != nil && p.data.GetData() != val {
+		p.SetOldKey(p.data.GetData())
 		p.data.SetData(val)
 	}
 }
@@ -101,7 +101,9 @@ func (p *panelDataType) SetID(val string) {
 }
 
 func (p *panelDataType) SetOldKey(val string) {
-	p.oldKey = val
+	if p.oldKey != val {
+		p.oldKey = val
+	}
 }
 
 func (p *panelDataType) SetWatcherKey(val string) {
