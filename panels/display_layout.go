@@ -10,12 +10,13 @@ import (
 var panelDisplayLayoutCachedSize fyne.Size
 
 type panelDisplayLayout struct {
-	background *canvas.Rectangle
-	title      *panelText
-	content    *panelText
-	subtitle   *panelText
-	bottomText *panelText
-	action     *panelAction
+	background  *canvas.Rectangle
+	title       *panelText
+	content     *panelText
+	subtitle    *panelText
+	bottomText  *panelText
+	watcherSign *canvas.Image
+	action      *panelAction
 }
 
 func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
@@ -99,6 +100,18 @@ func (pl *panelDisplayLayout) Layout(objects []fyne.CanvasObject, size fyne.Size
 			pl.action.Resize(actionSize)
 		}
 	}
+
+	if pl.watcherSign != nil {
+		watcherSize := pl.watcherSign.MinSize()
+		watcherPos := fyne.NewPos(8, 8)
+		if pl.watcherSign.Position() != watcherPos {
+			pl.watcherSign.Move(watcherPos)
+		}
+
+		if pl.watcherSign.Size() != watcherSize {
+			pl.watcherSign.Resize(watcherSize)
+		}
+	}
 }
 
 func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
@@ -110,14 +123,15 @@ func (pl *panelDisplayLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 }
 
 func (pl *panelDisplayLayout) RemoveAll() {
-	pl.SetContent(nil, nil, nil, nil, nil, nil)
+	pl.SetContent(nil, nil, nil, nil, nil, nil, nil)
 }
 
-func (pl *panelDisplayLayout) SetContent(background *canvas.Rectangle, title *panelText, subtitle *panelText, content *panelText, bottomText *panelText, action *panelAction) {
+func (pl *panelDisplayLayout) SetContent(background *canvas.Rectangle, title *panelText, subtitle *panelText, content *panelText, bottomText *panelText, watcherSign *canvas.Image, action *panelAction) {
 	pl.background = background
 	pl.title = title
 	pl.subtitle = subtitle
 	pl.content = content
 	pl.bottomText = bottomText
+	pl.watcherSign = watcherSign
 	pl.action = action
 }

@@ -48,6 +48,7 @@ type panelDisplay struct {
 	content         *panelText
 	subtitle        *panelText
 	bottomText      *panelText
+	watcherSign     *canvas.Image
 	onEdit          func()
 	onDelete        func()
 	onWatcherAction func()
@@ -95,14 +96,21 @@ func (h *panelDisplay) Show() {
 
 	h.bottomText = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
 
+	res := theme.NewThemedResource(theme.CalendarIcon())
+	res.ColorName = JC.ColorNameTransparent
+	h.watcherSign = canvas.NewImageFromResource(res)
+	h.watcherSign.FillMode = canvas.ImageFillContain
+	h.watcherSign.SetMinSize(fyne.NewSize(18, 18))
+
 	h.container.Layout.(*panelDisplayLayout).RemoveAll()
-	h.container.Layout.(*panelDisplayLayout).SetContent(h.background, h.title, h.subtitle, h.content, h.bottomText, nil)
+	h.container.Layout.(*panelDisplayLayout).SetContent(h.background, h.title, h.subtitle, h.content, h.bottomText, h.watcherSign, nil)
 	h.container.Objects = []fyne.CanvasObject{
 		h.background,
 		h.title,
 		h.subtitle,
 		h.content,
 		h.bottomText,
+		h.watcherSign,
 	}
 
 	if h.actionVisible {
@@ -141,6 +149,7 @@ func (h *panelDisplay) Hide() {
 	h.subtitle = nil
 	h.content = nil
 	h.bottomText = nil
+	h.watcherSign = nil
 
 	h.removeAction()
 
@@ -305,6 +314,21 @@ func (h *panelDisplay) updateContent() {
 	h.subtitle.SetText(subtitle)
 	h.bottomText.SetText(bottomText)
 	h.content.SetText(content)
+
+	if h.watcherSign != nil {
+		wkt := pkt.UseWatcherKey()
+		res := h.watcherSign.Resource.(*theme.ThemedResource)
+		if wkt.IsActive() {
+			if wkt.CanSend() {
+				res.ColorName = theme.ColorNameForeground
+			} else {
+				res.ColorName = theme.ColorNameDisabled
+			}
+
+		} else {
+			res.ColorName = JC.ColorNameTransparent
+		}
+	}
 
 	if pkt.DidChange() {
 		if h.Visible() {
