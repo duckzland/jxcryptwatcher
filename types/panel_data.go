@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	JC "jxwatcher/core"
-
 	"fyne.io/fyne/v2"
+
+	JC "jxwatcher/core"
 )
 
 const fmtSpace = " "
@@ -107,7 +107,10 @@ func (p *panelDataType) SetOldKey(val string) {
 }
 
 func (p *panelDataType) SetWatcherKey(val string) {
-	p.watcherKey = val
+	if p.watcherKey != val {
+		p.watcherKey = val
+		p.UseData().Notify()
+	}
 }
 
 func (p *panelDataType) SetParent(val *panelsMapType) {

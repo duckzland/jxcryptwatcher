@@ -97,10 +97,12 @@ func (h *panelDisplay) Show() {
 	h.bottomText = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelBottomText), fyne.TextAlignCenter, fyne.TextStyle{Bold: false})
 
 	res := theme.NewThemedResource(theme.CalendarIcon())
-	res.ColorName = JC.ColorNameTransparent
+	res.ColorName = theme.ColorNameForeground
+
 	h.watcherSign = canvas.NewImageFromResource(res)
 	h.watcherSign.FillMode = canvas.ImageFillContain
 	h.watcherSign.SetMinSize(fyne.NewSize(18, 18))
+	h.watcherSign.Translucency = 1.0
 
 	h.container.Layout.(*panelDisplayLayout).RemoveAll()
 	h.container.Layout.(*panelDisplayLayout).SetContent(h.background, h.title, h.subtitle, h.content, h.bottomText, h.watcherSign, nil)
@@ -315,19 +317,28 @@ func (h *panelDisplay) updateContent() {
 	h.bottomText.SetText(bottomText)
 	h.content.SetText(content)
 
+	JC.Logln("Panel updating")
+
 	if h.watcherSign != nil {
 		wkt := pkt.UseWatcherKey()
-		res := h.watcherSign.Resource.(*theme.ThemedResource)
-		if wkt.IsActive() {
-			if wkt.CanSend() {
-				res.ColorName = theme.ColorNameForeground
-			} else {
-				res.ColorName = theme.ColorNameDisabled
-			}
+		opacity := 1.0
 
-		} else {
-			res.ColorName = JC.ColorNameTransparent
+		if !wkt.IsDisabled() {
+			if wkt.IsActive() {
+				opacity = 0.0
+			} else {
+				opacity = 0.6
+			}
 		}
+
+		JC.Logln("Final color is:", opacity, h.watcherSign.Translucency, wkt.IsActive(), wkt.IsDisabled())
+
+		if opacity != h.watcherSign.Translucency {
+			JC.Logln("Final opacity is:", opacity)
+			h.watcherSign.Translucency = opacity
+			h.watcherSign.Refresh()
+		}
+
 	}
 
 	if pkt.DidChange() {

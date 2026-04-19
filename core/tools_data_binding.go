@@ -13,6 +13,7 @@ type DataBinding interface {
 	SetData(v string)
 	GetStatus() int
 	SetStatus(v int)
+	Notify()
 }
 
 type dataBinding struct {
@@ -54,7 +55,7 @@ func (db *dataBinding) RemoveListener(l binding.DataListener) {
 	}
 }
 
-func (db *dataBinding) notify() {
+func (db *dataBinding) Notify() {
 	ls := *db.listeners.Load().(*[]binding.DataListener)
 	for _, l := range ls {
 		l.DataChanged()
@@ -67,7 +68,7 @@ func (db *dataBinding) GetData() string {
 
 func (db *dataBinding) SetData(v string) {
 	db.data.Store(v)
-	db.notify()
+	db.Notify()
 }
 
 func (db *dataBinding) GetStatus() int {
@@ -76,7 +77,7 @@ func (db *dataBinding) GetStatus() int {
 
 func (db *dataBinding) SetStatus(v int) {
 	db.status.Store(int64(v))
-	db.notify()
+	db.Notify()
 }
 
 func NewDataBinding(initialData string, initialStatus int) *dataBinding {
