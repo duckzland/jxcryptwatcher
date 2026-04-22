@@ -275,6 +275,10 @@ func (h *panelDisplay) updateContent() {
 	background := JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 	status := h.status
 
+	if h.background.FillColor == JC.UseTheme().GetColor(JC.ColorNameRed) || h.background.FillColor == JC.UseTheme().GetColor(JC.ColorNameGreen) {
+		background = h.background.FillColor
+	}
+
 	h.status = pkt.GetStatus()
 
 	switch h.status {
@@ -303,7 +307,9 @@ func (h *panelDisplay) updateContent() {
 			}
 
 		} else if pkt.IsOnInitialValue() {
-			background = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
+			if h.background.FillColor != JC.UseTheme().GetColor(JC.ColorNameRed) || h.background.FillColor != JC.UseTheme().GetColor(JC.ColorNameGreen) {
+				background = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
+			}
 		}
 
 		title = JC.TruncateText(pkt.FormatTitle(), pwidth-20, h.title.textSize, h.title.textStyle)
@@ -317,8 +323,6 @@ func (h *panelDisplay) updateContent() {
 	h.bottomText.SetText(bottomText)
 	h.content.SetText(content)
 
-	JC.Logln("Panel updating")
-
 	if h.watcherSign != nil {
 		wkt := pkt.UseWatcherKey()
 		opacity := 1.0
@@ -331,10 +335,7 @@ func (h *panelDisplay) updateContent() {
 			}
 		}
 
-		JC.Logln("Final color is:", opacity, h.watcherSign.Translucency, wkt.IsActive(), wkt.IsDisabled())
-
 		if opacity != h.watcherSign.Translucency {
-			JC.Logln("Final opacity is:", opacity)
 			h.watcherSign.Translucency = opacity
 			h.watcherSign.Refresh()
 		}

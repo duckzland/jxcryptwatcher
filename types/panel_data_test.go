@@ -45,6 +45,11 @@ func TestPanelDataInitAndSet(t *testing.T) {
 	if p.GetOldKey() != "1-2-0.5-BTC-ETH-4|0.5" {
 		t.Error("Expected oldKey to be updated after second Set")
 	}
+
+	p.Set("1-2-0.5-BTC-ETH-4|0.6")
+	if p.GetOldKey() == "1-2-0.5-BTC-ETH-4|0.6" {
+		t.Error("Expected oldKey not to be updated with same value Set")
+	}
 	panelDataTurnOnLogs()
 }
 
@@ -128,6 +133,30 @@ func TestPanelDataSetRate(t *testing.T) {
 	}
 	if p.Get() != "1-2-0.5-BTC-ETH-4|0.6" {
 		t.Error("Expected value to remain unchanged when SetRate with same value")
+	}
+
+	if p.GetOldKey() == "1-2-0.5-BTC-ETH-4|0.6" {
+		t.Error("Expected oldkey value to remain unchanged when SetRate with same value")
+	}
+
+	p.SetStatus(JC.STATE_LOADED)
+	if p.DidChange() == false {
+		t.Errorf("Expected DidChange to true with state loaded, new key: %s, old key %s, status %d", p.Get(), p.GetOldKey(), p.GetStatus())
+	}
+
+	p.SetStatus(JC.STATE_ERROR)
+	if p.DidChange() != false {
+		t.Errorf("Expected DidChange to false with state loaded, new key: %s, old key %s, status %d", p.Get(), p.GetOldKey(), p.GetStatus())
+	}
+
+	p.SetStatus(JC.STATE_LOADING)
+	if p.DidChange() != false {
+		t.Errorf("Expected DidChange to true with state loading, new key: %s, old key %s, status %d", p.Get(), p.GetOldKey(), p.GetStatus())
+	}
+
+	p.SetStatus(JC.STATE_FETCHING_NEW)
+	if p.DidChange() != false {
+		t.Errorf("Expected DidChange to true with state fetching, new key: %s, old key %s, status %d", p.Get(), p.GetOldKey(), p.GetStatus())
 	}
 
 	panelDataTurnOnLogs()
