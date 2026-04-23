@@ -2,6 +2,7 @@ package panels
 
 import (
 	"fmt"
+	"image/color"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -49,6 +50,7 @@ type panelDisplay struct {
 	subtitle        *panelText
 	bottomText      *panelText
 	watcherSign     *canvas.Image
+	activeColor     color.Color
 	onEdit          func()
 	onDelete        func()
 	onWatcherAction func()
@@ -85,7 +87,7 @@ func (h *panelDisplay) Show() {
 
 	tc := JC.UseTheme().GetColor(theme.ColorNameForeground)
 
-	h.background = canvas.NewRectangle(JC.UseTheme().GetColor(JC.ColorNamePanelBG))
+	h.background = canvas.NewRectangle(h.activeColor)
 	h.background.CornerRadius = JC.UseTheme().Size(JC.SizePanelBorderRadius)
 
 	h.title = NewPanelText(JC.STRING_EMPTY, tc, JC.UseTheme().Size(JC.SizePanelTitle), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
@@ -272,11 +274,10 @@ func (h *panelDisplay) updateContent() {
 	subtitle := JC.STRING_EMPTY
 	bottomText := JC.STRING_EMPTY
 	content := JC.STRING_EMPTY
-	background := JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 	status := h.status
 
 	if h.background.FillColor == JC.UseTheme().GetColor(JC.ColorNameRed) || h.background.FillColor == JC.UseTheme().GetColor(JC.ColorNameGreen) {
-		background = h.background.FillColor
+		h.activeColor = h.background.FillColor
 	}
 
 	h.status = pkt.GetStatus()
@@ -284,7 +285,7 @@ func (h *panelDisplay) updateContent() {
 	switch h.status {
 	case JC.STATE_ERROR:
 		title = "Error loading data"
-		background = JC.UseTheme().GetColor(JC.ColorNameError)
+		h.activeColor = JC.UseTheme().GetColor(JC.ColorNameError)
 
 	case JC.STATE_FETCHING_NEW:
 		title = "Fetching Rates..."
@@ -294,21 +295,21 @@ func (h *panelDisplay) updateContent() {
 
 	case JC.STATE_BAD_CONFIG:
 		title = "Invalid Panel"
-		background = JC.UseTheme().GetColor(JC.ColorNameError)
+		h.activeColor = JC.UseTheme().GetColor(JC.ColorNameError)
 
 	case JC.STATE_LOADED:
 		if pkt.DidChange() {
 			switch pkt.IsValueIncrease() {
 			case JC.VALUE_INCREASE:
-				background = JC.UseTheme().GetColor(JC.ColorNameGreen)
+				h.activeColor = JC.UseTheme().GetColor(JC.ColorNameGreen)
 
 			case JC.VALUE_DECREASE:
-				background = JC.UseTheme().GetColor(JC.ColorNameRed)
+				h.activeColor = JC.UseTheme().GetColor(JC.ColorNameRed)
 			}
 
 		} else if pkt.IsOnInitialValue() {
 			if h.background.FillColor != JC.UseTheme().GetColor(JC.ColorNameRed) || h.background.FillColor != JC.UseTheme().GetColor(JC.ColorNameGreen) {
-				background = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
+				h.activeColor = JC.UseTheme().GetColor(JC.ColorNamePanelBG)
 			}
 		}
 
@@ -348,8 +349,8 @@ func (h *panelDisplay) updateContent() {
 		}
 	}
 
-	if h.background.FillColor != background {
-		h.background.FillColor = background
+	if h.background.FillColor != h.activeColor {
+		h.background.FillColor = h.activeColor
 		if h.Visible() {
 			JA.StartFadeInBackground(h.tag, h.background, 300*time.Millisecond, nil, false)
 		}
@@ -574,6 +575,7 @@ func NewPanelDisplay(pdt JT.PanelData, onEdit func(pk string, uuid string), onDe
 		container:     container.New(&panelDisplayLayout{}),
 		shown:         0,
 		actionVisible: false,
+		activeColor:   JC.UseTheme().GetColor(JC.ColorNamePanelBG),
 	}
 
 	if onEdit != nil {

@@ -159,6 +159,14 @@ func TestPanelDataSetRate(t *testing.T) {
 		t.Errorf("Expected DidChange to true with state fetching, new key: %s, old key %s, status %d", p.Get(), p.GetOldKey(), p.GetStatus())
 	}
 
+	negativeVal, ok := JC.ToBigString("-1")
+	if !ok {
+		t.Fatal("failed to parse test value")
+	}
+	if p.SetRate(negativeVal) {
+		t.Error("Expected SetRate with negative one to return false", negativeVal, p.GetValueString())
+	}
+
 	panelDataTurnOnLogs()
 }
 

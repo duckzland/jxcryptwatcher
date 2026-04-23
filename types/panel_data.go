@@ -123,6 +123,15 @@ func (p *panelDataType) SetRate(val *big.Float) bool {
 	}
 
 	pk := p.UsePanelKey()
+
+	// Prevent data with good rates to be reverted back to -1
+	no := JC.ToBigFloat(-1)
+	if !pk.IsValueMatching(no, JC.STRING_EQUAL) {
+		if val.Cmp(no) == 0 {
+			return false
+		}
+	}
+
 	if pk.IsValueMatching(val, JC.STRING_NOT_EQUAL) {
 		p.Set(pk.UpdateValue(val))
 		return true
