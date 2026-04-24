@@ -93,6 +93,16 @@ func registerActions() {
 				return
 			}
 
+			if !JA.UseStatus().CanShowTicker() {
+				btn.Disable()
+				return
+			}
+
+			if !JA.UseStatus().IsTickerShown() {
+				btn.Error()
+				return
+			}
+
 			if JA.UseStatus().IsOverlayShown() {
 				btn.DisallowActions()
 				return

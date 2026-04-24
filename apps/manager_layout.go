@@ -66,31 +66,37 @@ func (m *layoutManager) UpdateState() {
 	if content == nil || !UseStatus().IsReady() {
 		m.mu.Lock()
 		scroll.Content = m.loading
+		UseStatus().SetTickersStatus(false)
 		m.state = -1
 		m.mu.Unlock()
 	} else if !UseStatus().IsValidConfig() && !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionFixSetting
+		UseStatus().SetTickersStatus(false)
 		m.state = -2
 		m.mu.Unlock()
 	} else if !UseStatus().IsValidCrypto() && !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionGetCryptos
+		UseStatus().SetTickersStatus(false)
 		m.state = -3
 		m.mu.Unlock()
 	} else if !UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = m.actionAddPanel
+		UseStatus().SetTickersStatus(true)
 		m.state = 0
 		m.mu.Unlock()
 	} else if !UseStatus().HasError() || UseStatus().IsValidPanels() {
 		m.mu.Lock()
 		scroll.Content = *content
+		UseStatus().SetTickersStatus(true)
 		m.state = UseStatus().PanelsCount()
 		m.mu.Unlock()
 	} else {
 		m.mu.Lock()
 		scroll.Content = m.error
+		UseStatus().SetTickersStatus(false)
 		m.state = -5
 		m.mu.Unlock()
 	}

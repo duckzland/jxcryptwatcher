@@ -26,6 +26,7 @@ type statusManager struct {
 	network_status   atomic.Bool
 	overlay_shown    atomic.Bool
 	show_tickers     atomic.Bool
+	has_tickers      atomic.Bool
 	panels_count     atomic.Int64
 	lastChange       atomic.Int64
 	lastRefresh      atomic.Int64
@@ -45,6 +46,7 @@ func (a *statusManager) Init() {
 	a.network_status.Store(true)
 	a.overlay_shown.Store(false)
 	a.show_tickers.Store(true)
+	a.has_tickers.Store(true)
 
 	a.panels_count.Store(0)
 
@@ -115,6 +117,10 @@ func (a *statusManager) IsDirty() bool {
 
 func (a *statusManager) touch() {
 	a.lastChange.Store(time.Now().UnixNano())
+}
+
+func (a *statusManager) CanShowTicker() bool {
+	return a.has_tickers.Load()
 }
 
 func (a *statusManager) AppReady() *statusManager {
@@ -224,6 +230,15 @@ func (a *statusManager) HideTickers() *statusManager {
 	a.show_tickers.Store(false)
 	a.touch()
 	a.Refresh()
+	return a
+}
+
+func (a *statusManager) SetTickersStatus(val bool) *statusManager {
+	if a.has_tickers.Load() != val {
+		a.has_tickers.Store(val)
+		a.touch()
+		a.Refresh()
+	}
 	return a
 }
 
