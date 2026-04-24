@@ -133,16 +133,20 @@ func (a *statusManager) AppReady() *statusManager {
 }
 
 func (a *statusManager) Pause() *statusManager {
-	a.paused.Store(true)
-	a.touch()
-	a.Refresh()
+	if a.paused.Load() != true {
+		a.paused.Store(true)
+		a.touch()
+		a.Refresh()
+	}
 	return a
 }
 
 func (a *statusManager) Resume() *statusManager {
-	a.paused.Store(false)
-	a.touch()
-	a.Refresh()
+	if a.paused.Load() != false {
+		a.paused.Store(false)
+		a.touch()
+		a.Refresh()
+	}
 	return a
 }
 
@@ -227,9 +231,11 @@ func (a *statusManager) ToggleTickers() *statusManager {
 }
 
 func (a *statusManager) HideTickers() *statusManager {
-	a.show_tickers.Store(false)
-	a.touch()
-	a.Refresh()
+	if a.show_tickers.Load() != false {
+		a.show_tickers.Store(false)
+		a.touch()
+		a.Refresh()
+	}
 	return a
 }
 
