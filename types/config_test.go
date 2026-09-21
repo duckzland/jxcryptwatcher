@@ -97,8 +97,8 @@ func TestConfigCheckFileCreatesDefault(t *testing.T) {
 	ConfigInit()
 	cfg := UseConfig()
 
-	if cfg.Version != "1.7.0" {
-		t.Errorf("Expected default version to be 1.7.0, got %s", cfg.Version)
+	if cfg.Version != "1.8.0" {
+		t.Errorf("Expected default version to be 1.8.0, got %s", cfg.Version)
 	}
 	if !cfg.IsValid() {
 		t.Error("Expected default config to be valid")
@@ -162,8 +162,8 @@ func TestUpdateDefaultVersionPatch(t *testing.T) {
 
 	ConfigInit()
 
-	if UseConfig().Version != "1.7.0" {
-		t.Errorf("Expected version to be updated to 1.7.0, got %s", UseConfig().Version)
+	if UseConfig().Version != "1.8.0" {
+		t.Errorf("Expected version to be updated to 1.8.0, got %s", UseConfig().Version)
 	}
 	if UseConfig().RSIEndpoint == JC.STRING_EMPTY || UseConfig().ETFEndpoint == JC.STRING_EMPTY || UseConfig().DominanceEndpoint == JC.STRING_EMPTY {
 		t.Error("Expected endpoints to be set by updateDefault")
