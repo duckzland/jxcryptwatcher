@@ -38,15 +38,21 @@ func (s *scrollDispatcher) Dragged(ev *fyne.DragEvent) {
 		return
 	}
 
-	if ev.Dragged.DY != 0 {
-		s.scroller.Dragged(ev)
+	// container.Scroll no longer exposes Dragged in fyne v2.8+.
+	// Translate drag events into scroll events (invert Y to match
+	// previous drag-to-scroll behavior).
+	if ev.Dragged.DY != 0 || ev.Dragged.DX != 0 {
+		s.scroller.Scrolled(&fyne.ScrollEvent{
+			Scrolled: fyne.Delta{
+				DX: ev.Dragged.DX,
+				DY: -ev.Dragged.DY,
+			},
+		})
 	}
 }
 
 func (s *scrollDispatcher) DragEnd() {
-	if s.scroller != nil {
-		s.scroller.DragEnd()
-	}
+	// No explicit DragEnd on container.Scroll in fyne v2.8+; nothing to do.
 }
 
 func NewScrollDispatcher() *scrollDispatcher {

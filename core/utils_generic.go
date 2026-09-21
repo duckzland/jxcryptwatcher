@@ -6,8 +6,7 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 var hwTotalCPU = runtime.NumCPU()
@@ -88,8 +87,7 @@ func ReorderSearchable(arr []string) []string {
 }
 
 func CreateUUID() string {
-	id := uuid.New()
-	return id.String()
+	return uuid.NewV4().String()
 }
 
 func GetMonthBounds(t time.Time) (startUnix, endUnix int64) {

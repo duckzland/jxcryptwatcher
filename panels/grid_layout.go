@@ -219,6 +219,22 @@ func (g *panelGridLayout) OnScrolled(pos fyne.Position) {
 	startIndex := max(0, startRow*g.colCount)
 	endIndex := min(len(g.objects), (endRow+1)*g.colCount)
 
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if endIndex < 0 {
+		endIndex = 0
+	}
+	if startIndex > len(g.objects) {
+		startIndex = len(g.objects)
+	}
+	if endIndex > len(g.objects) {
+		endIndex = len(g.objects)
+	}
+	if startIndex > endIndex {
+		startIndex = endIndex
+	}
+
 	newVisible := make([]PanelDisplay, 0, endIndex-startIndex)
 	visibleSet := make(map[PanelDisplay]bool)
 	visibleIds := []string{}

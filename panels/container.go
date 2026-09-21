@@ -70,7 +70,12 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 	}
 
 	if JC.IsMobile {
-		JA.UseLayout().UseScroll().Dragged(ev)
+		JA.UseLayout().UseScroll().Scrolled(&fyne.ScrollEvent{
+			Scrolled: fyne.Delta{
+				DX: ev.Dragged.DX,
+				DY: -ev.Dragged.DY,
+			},
+		})
 		return
 	}
 
@@ -111,7 +116,6 @@ func (c *panelContainer) Dragged(ev *fyne.DragEvent) {
 
 func (c *panelContainer) DragEnd() {
 	if JC.IsMobile {
-		JA.UseLayout().UseScroll().DragEnd()
 		return
 	}
 
