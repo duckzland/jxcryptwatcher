@@ -31,7 +31,7 @@ jobs:
         run: go install fyne.io/tools/cmd/fyne@latest
       
       - name: Install dependencies for cross compiling
-        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu curl unzip rpm
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev gcc-mingw-w64 wixl uuid-runtime gcc-aarch64-linux-gnu g++-aarch64-linux-gnu curl unzip rpm
 
       - name: Read version from version.txt
         id: get_version
@@ -51,32 +51,12 @@ jobs:
       - name: Clean build folders
         run: rm -rf build/libs
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
-          draft: false
-          prerelease: false
-          
-      - name: Upload all release assets
+          name: Release ${{ steps.get_version.outputs.version }}
+          files: build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-          UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
-        run: |
-          # Strip off the {?name,label} part if present
-          CLEAN_URL="${UPLOAD_URL%%\{*}"
-
-          for file in build/*; do
-            echo "Uploading $file to $CLEAN_URL?name=$(basename "$file")"
-            curl \
-              -X POST \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary @"$file" \
-              "$CLEAN_URL?name=$(basename "$file")"
-          done
 

@@ -5,7 +5,7 @@
 ## ================================================================
 ##
 ## Required dependencies:
-##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+##   sudo apt install golang gcc libgl1-mesa-dev libwayland-dev libxkbcommon-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ##
 ## This script builds a minimal Linux binary in the /build directory.
 ##

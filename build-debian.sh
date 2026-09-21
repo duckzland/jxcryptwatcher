@@ -8,7 +8,7 @@
 ## the output in the build/ directory.
 ##
 ## Required dependencies:
-##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev dpkg
+##   sudo apt install golang gcc dpkg libgl1-mesa-dev libwayland-dev libxkbcommon-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ##
 ## For debugging, run: ./build-debian.sh debug
 ##

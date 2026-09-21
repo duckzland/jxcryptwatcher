@@ -6,7 +6,7 @@
 ## the output in the build/ directory.
 ##
 ## Required dependencies:
-##   sudo apt install golang gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev rpm
+##   sudo apt install golang gcc rpm libgl1-mesa-dev libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ##
 ## Usage:
 ##   ./build-rpm.sh [debug|local|local-debug]
