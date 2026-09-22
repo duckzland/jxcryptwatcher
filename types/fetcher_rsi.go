@@ -23,49 +23,55 @@ type rsiFetcher struct {
 
 func (rf *rsiFetcher) parseJSON(data []byte) error {
 
+	rf.AverageRSI = JC.STRING_EMPTY
+	rf.OverboughtPercentage = JC.STRING_EMPTY
+	rf.OversoldPercentage = JC.STRING_EMPTY
+	rf.NeutralPercentage = JC.STRING_EMPTY
+	rf.LastUpdate = time.Now()
+
 	rsiBytes, _, _, err := jsonparser.Get(data, "data", "overall", "averageRsi")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing averageRsi:", err)
-		return err
+	} else {
+		rsiFloat, _ := strconv.ParseFloat(string(rsiBytes), 64)
+		rf.AverageRSI = strconv.FormatFloat(rsiFloat, 'f', -1, 64)
 	}
-	rsiFloat, _ := strconv.ParseFloat(string(rsiBytes), 64)
-	rf.AverageRSI = strconv.FormatFloat(rsiFloat, 'f', -1, 64)
 
 	bpBytes, _, _, err := jsonparser.Get(data, "data", "overall", "overboughtPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing overboughtPercentage:", err)
-		return err
+	} else {
+		bpFloat, _ := strconv.ParseFloat(string(bpBytes), 64)
+		rf.OverboughtPercentage = strconv.FormatFloat(bpFloat, 'f', -1, 64)
 	}
-	bpFloat, _ := strconv.ParseFloat(string(bpBytes), 64)
-	rf.OverboughtPercentage = strconv.FormatFloat(bpFloat, 'f', -1, 64)
 
 	spBytes, _, _, err := jsonparser.Get(data, "data", "overall", "oversoldPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing oversoldPercentage:", err)
-		return err
+	} else {
+		spFloat, _ := strconv.ParseFloat(string(spBytes), 64)
+		rf.OversoldPercentage = strconv.FormatFloat(spFloat, 'f', -1, 64)
 	}
-	spFloat, _ := strconv.ParseFloat(string(spBytes), 64)
-	rf.OversoldPercentage = strconv.FormatFloat(spFloat, 'f', -1, 64)
 
 	npBytes, _, _, err := jsonparser.Get(data, "data", "overall", "neutralPercentage")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing neutralPercentage:", err)
-		return err
+	} else {
+		npFloat, _ := strconv.ParseFloat(string(npBytes), 64)
+		rf.NeutralPercentage = strconv.FormatFloat(npFloat, 'f', -1, 64)
 	}
-	npFloat, _ := strconv.ParseFloat(string(npBytes), 64)
-	rf.NeutralPercentage = strconv.FormatFloat(npFloat, 'f', -1, 64)
 
 	tsStr, err := jsonparser.GetString(data, "status", "timestamp")
 	if err != nil {
 		JC.Logln("ParseJSON error: missing timestamp:", err)
 		rf.LastUpdate = time.Now()
-		return err
-	}
-	parsedTime, err := time.Parse(time.RFC3339, tsStr)
-	if err == nil {
-		rf.LastUpdate = parsedTime
 	} else {
-		rf.LastUpdate = time.Now()
+		parsedTime, err := time.Parse(time.RFC3339, tsStr)
+		if err == nil {
+			rf.LastUpdate = parsedTime
+		} else {
+			rf.LastUpdate = time.Now()
+		}
 	}
 
 	return nil
